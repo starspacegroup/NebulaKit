@@ -23,6 +23,7 @@ export async function createUser(
 	email: string,
 	name?: string
 ): Promise<User> {
+	// Generate UUID (Cloudflare Workers supports crypto.randomUUID)
 	const id = crypto.randomUUID();
 	const stmt = db.prepare(
 		'INSERT INTO users (id, email, name) VALUES (?, ?, ?) RETURNING *'
@@ -66,6 +67,7 @@ export async function createSession(
 	userId: string,
 	expiresInDays: number = 30
 ): Promise<Session> {
+	// Generate UUID (Cloudflare Workers supports crypto.randomUUID)
 	const id = crypto.randomUUID();
 	const expiresAt = new Date();
 	expiresAt.setDate(expiresAt.getDate() + expiresInDays);

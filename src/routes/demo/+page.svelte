@@ -264,7 +264,7 @@
 		padding: var(--spacing-md);
 		cursor: move;
 		transition: all var(--transition-fast);
-		touch-action: none;
+		touch-action: pan-y;
 	}
 	
 	.task:hover {

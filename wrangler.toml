@@ -3,22 +3,28 @@ compatibility_date = "2024-01-01"
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
 # D1 Database
+# Create with: wrangler d1 create nebulakit-db
+# Then replace the database_id below with the actual ID
 [[d1_databases]]
 binding = "DB"
 database_name = "nebulakit-db"
-database_id = "your-database-id"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 # KV Namespace
+# Create with: wrangler kv:namespace create "KV"
+# Then replace the id below with the actual ID
 [[kv_namespaces]]
 binding = "KV"
-id = "your-kv-id"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
 # R2 Bucket
+# Create with: wrangler r2 bucket create nebulakit-files
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "nebulakit-files"
 
 # Queue
+# Queues are created automatically when referenced
 [[queues.producers]]
 binding = "QUEUE"
 queue = "nebulakit-queue"
@@ -29,5 +35,7 @@ max_batch_size = 10
 max_batch_timeout = 30
 
 # Environment Variables
+# For production, set TURNSTILE_SECRET_KEY in Cloudflare Pages settings
+# For local dev, use .env file (see .env.example)
 [vars]
-TURNSTILE_SECRET_KEY = "your-turnstile-secret-key"
+# TURNSTILE_SECRET_KEY will be set via environment
