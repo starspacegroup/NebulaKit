@@ -109,7 +109,7 @@
 			if (response.ok) {
 				const result = await response.json();
 				if (editingKey) {
-					keys = keys.map((k) =>
+					keys = keys.map((k: any) =>
 						k.id === editingKey.id ? { ...k, ...formData, apiKey: undefined } : k
 					);
 				} else {
@@ -143,7 +143,7 @@
 			});
 
 			if (response.ok) {
-				keys = keys.filter((k) => k.id !== deletingKeyId);
+				keys = keys.filter((k: any) => k.id !== deletingKeyId);
 				closeDeleteConfirm();
 			}
 		} catch (error) {
@@ -161,7 +161,7 @@
 
 	async function toggleEnabled(keyId: string, currentEnabled: boolean) {
 		// Optimistically update UI
-		keys = keys.map((k) => (k.id === keyId ? { ...k, enabled: !currentEnabled } : k));
+		keys = keys.map((k: any) => (k.id === keyId ? { ...k, enabled: !currentEnabled } : k));
 
 		try {
 			const response = await fetch(`/api/admin/ai-keys/${keyId}/toggle`, {
@@ -174,12 +174,12 @@
 
 			if (!response.ok) {
 				// Revert on failure
-				keys = keys.map((k) => (k.id === keyId ? { ...k, enabled: currentEnabled } : k));
+				keys = keys.map((k: any) => (k.id === keyId ? { ...k, enabled: currentEnabled } : k));
 				console.error('Failed to toggle key status');
 			}
 		} catch (error) {
 			// Revert on error
-			keys = keys.map((k) => (k.id === keyId ? { ...k, enabled: currentEnabled } : k));
+			keys = keys.map((k: any) => (k.id === keyId ? { ...k, enabled: currentEnabled } : k));
 			console.error('Failed to toggle key status:', error);
 		}
 	}
@@ -289,7 +289,7 @@
 					</div>
 					{#if key.apiKey}
 						<div class="key-field">
-							<label>API Key</label>
+							<div class="label">API Key</div>
 							<div class="key-value">
 								<span>{visibleKeys[key.id] ? key.apiKey : maskValue(key.apiKey)}</span>
 								<button
@@ -337,7 +337,11 @@
 </div>
 
 {#if showForm}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="modal-overlay" on:click={closeForm}>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div class="modal" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>{editingKey ? 'Edit AI Key' : 'Add New AI Key'}</h2>
@@ -415,7 +419,11 @@
 {/if}
 
 {#if showDeleteConfirm}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="modal-overlay" on:click={closeDeleteConfirm}>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div class="modal modal-sm" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Confirm Deletion</h2>
@@ -622,7 +630,8 @@
 		margin-bottom: var(--spacing-md);
 	}
 
-	.key-field label {
+	.key-field label,
+	.key-field .label {
 		display: block;
 		font-size: 0.875rem;
 		font-weight: 500;

@@ -42,7 +42,7 @@ describe('Admin Users API', () => {
 		it('should require authentication', async () => {
 			mockLocals.user = null;
 
-			const { GET } = await import('../../src/routes/api/admin/users/+server.ts');
+			const { GET } = await import('../../src/routes/api/admin/users/+server.js');
 
 			try {
 				await GET({ platform: mockPlatform, locals: mockLocals } as any);
@@ -56,7 +56,7 @@ describe('Admin Users API', () => {
 			mockLocals.user.isOwner = false;
 			mockLocals.user.isAdmin = false;
 
-			const { GET } = await import('../../src/routes/api/admin/users/+server.ts');
+			const { GET } = await import('../../src/routes/api/admin/users/+server.js');
 
 			try {
 				await GET({ platform: mockPlatform, locals: mockLocals } as any);
@@ -81,7 +81,7 @@ describe('Admin Users API', () => {
 
 			mockPlatform.env.DB.all.mockResolvedValueOnce({ results: mockUsers });
 
-			const { GET } = await import('../../src/routes/api/admin/users/+server.ts');
+			const { GET } = await import('../../src/routes/api/admin/users/+server.js');
 			const response = await GET({ platform: mockPlatform, locals: mockLocals } as any);
 			const data = await response.json();
 
@@ -93,7 +93,7 @@ describe('Admin Users API', () => {
 		it('should require authentication', async () => {
 			mockLocals.user = null;
 
-			const { POST } = await import('../../src/routes/api/admin/users/+server.ts');
+			const { POST } = await import('../../src/routes/api/admin/users/+server.js');
 
 			try {
 				await POST({
@@ -113,7 +113,7 @@ describe('Admin Users API', () => {
 			mockLocals.user.isOwner = false;
 			mockLocals.user.isAdmin = false;
 
-			const { POST } = await import('../../src/routes/api/admin/users/+server.ts');
+			const { POST } = await import('../../src/routes/api/admin/users/+server.js');
 
 			try {
 				await POST({
@@ -130,7 +130,7 @@ describe('Admin Users API', () => {
 		});
 
 		it('should validate required fields', async () => {
-			const { POST } = await import('../../src/routes/api/admin/users/+server.ts');
+			const { POST } = await import('../../src/routes/api/admin/users/+server.js');
 
 			try {
 				await POST({
@@ -150,7 +150,7 @@ describe('Admin Users API', () => {
 		it('should create a new user', async () => {
 			mockPlatform.env.DB.run.mockResolvedValueOnce({ success: true });
 
-			const { POST } = await import('../../src/routes/api/admin/users/+server.ts');
+			const { POST } = await import('../../src/routes/api/admin/users/+server.js');
 			const response = await POST({
 				platform: mockPlatform,
 				locals: mockLocals,
@@ -170,7 +170,7 @@ describe('Admin Users API', () => {
 		it('should require authentication', async () => {
 			mockLocals.user = null;
 
-			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.js');
 
 			try {
 				await PATCH({
@@ -194,7 +194,7 @@ describe('Admin Users API', () => {
 				github_login: 'testowner'
 			});
 
-			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.js');
 
 			try {
 				await PATCH({
@@ -219,7 +219,7 @@ describe('Admin Users API', () => {
 			});
 			mockPlatform.env.DB.run.mockResolvedValueOnce({ success: true });
 
-			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.js');
 			const response = await PATCH({
 				platform: mockPlatform,
 				locals: mockLocals,
@@ -238,7 +238,7 @@ describe('Admin Users API', () => {
 		it('should require authentication', async () => {
 			mockLocals.user = null;
 
-			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.ts');
+			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.js');
 
 			try {
 				await DELETE({
@@ -258,7 +258,7 @@ describe('Admin Users API', () => {
 				email: 'owner@test.com'
 			});
 
-			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.ts');
+			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.js');
 
 			try {
 				await DELETE({
@@ -279,7 +279,7 @@ describe('Admin Users API', () => {
 			});
 			mockPlatform.env.DB.run.mockResolvedValueOnce({ success: true });
 
-			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.ts');
+			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.js');
 			const response = await DELETE({
 				platform: mockPlatform,
 				locals: mockLocals,
@@ -295,13 +295,13 @@ describe('Admin Users API', () => {
 		it('should require authentication', async () => {
 			mockLocals.user = null;
 
-			const { GET } = await import('../../src/routes/api/admin/users/search/+server.ts');
+			const { GET } = await import('../../src/routes/api/admin/users/search/+server.js');
 
 			try {
 				await GET({
 					url: new URL('http://localhost/api/admin/users/search?q=test'),
 					locals: mockLocals,
-					fetch: global.fetch
+					fetch: fetch
 				} as any);
 				expect.fail('Should have thrown error');
 			} catch (err: any) {
@@ -310,11 +310,11 @@ describe('Admin Users API', () => {
 		});
 
 		it('should return empty array for short queries', async () => {
-			const { GET } = await import('../../src/routes/api/admin/users/search/+server.ts');
+			const { GET } = await import('../../src/routes/api/admin/users/search/+server.js');
 			const response = await GET({
 				url: new URL('http://localhost/api/admin/users/search?q=a'),
 				locals: mockLocals,
-				fetch: global.fetch
+				fetch: fetch
 			} as any);
 
 			const data = await response.json();
@@ -322,3 +322,5 @@ describe('Admin Users API', () => {
 		});
 	});
 });
+
+

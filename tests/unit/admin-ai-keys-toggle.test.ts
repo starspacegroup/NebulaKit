@@ -54,7 +54,7 @@ describe('AI Keys Toggle API', () => {
 
 			mockKV.get.mockResolvedValue(JSON.stringify(existingKey));
 
-			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.js');
 
 			const request = {
 				json: async () => ({ enabled: false })
@@ -102,7 +102,7 @@ describe('AI Keys Toggle API', () => {
 
 			mockKV.get.mockResolvedValue(JSON.stringify(existingKey));
 
-			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.js');
 
 			const request = {
 				json: async () => ({ enabled: true })
@@ -134,7 +134,7 @@ describe('AI Keys Toggle API', () => {
 
 			mockKV.get.mockResolvedValue(JSON.stringify(existingKey));
 
-			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.js');
 
 			const request = {
 				json: async () => ({ enabled: false })
@@ -166,7 +166,7 @@ describe('AI Keys Toggle API', () => {
 				}
 			};
 
-			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.js');
 
 			const request = {
 				json: async () => ({ enabled: false })
@@ -189,7 +189,7 @@ describe('AI Keys Toggle API', () => {
 		it('should return 404 if key not found', async () => {
 			mockKV.get.mockResolvedValue(null);
 
-			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.js');
 
 			const request = {
 				json: async () => ({ enabled: false })
@@ -214,7 +214,7 @@ describe('AI Keys Toggle API', () => {
 				env: {}
 			};
 
-			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.js');
 
 			const request = {
 				json: async () => ({ enabled: false })
@@ -246,7 +246,7 @@ describe('AI Keys Toggle API', () => {
 
 			mockKV.get.mockResolvedValue(JSON.stringify(existingKey));
 
-			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.ts');
+			const { PATCH } = await import('../../src/routes/api/admin/ai-keys/[id]/toggle/+server.js');
 
 			const request = {
 				json: async () => ({ enabled: false })
@@ -267,3 +267,4 @@ describe('AI Keys Toggle API', () => {
 		});
 	});
 });
+

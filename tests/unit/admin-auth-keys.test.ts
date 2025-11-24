@@ -8,7 +8,7 @@ const mockFetch = vi.fn();
 
 // Mock user data
 const mockUser = {
-	id: 1,
+	id: '1',
 	login: 'testowner',
 	email: 'owner@test.com',
 	name: 'Test Owner',
@@ -22,13 +22,13 @@ describe('Admin Auth Keys Page', () => {
 	});
 
 	it('should render the page title', () => {
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: [] } } });
+		render(AuthKeysPage, { props: { data: { user: mockUser, hasAIProviders: false, keys: [] } } });
 		const title = screen.getByText('Authentication Keys');
 		expect(title).toBeTruthy();
 	});
 
 	it('should render an empty state when no keys exist', () => {
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: [] } } });
+		render(AuthKeysPage, { props: { data: { user: mockUser, hasAIProviders: false, keys: [] } } });
 		const emptyMessage = screen.getByText(/No authentication keys configured/i);
 		expect(emptyMessage).toBeTruthy();
 	});
@@ -39,20 +39,22 @@ describe('Admin Auth Keys Page', () => {
 			{ id: '2', name: 'Google OAuth', provider: 'google', type: 'oauth', createdAt: '2024-01-02' }
 		];
 
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: mockKeys } } });
+		render(AuthKeysPage, {
+			props: { data: { user: mockUser, hasAIProviders: false, keys: mockKeys } }
+		});
 
 		expect(screen.getByText('GitHub OAuth')).toBeTruthy();
 		expect(screen.getByText('Google OAuth')).toBeTruthy();
 	});
 
 	it('should show add key button', () => {
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: [] } } });
+		render(AuthKeysPage, { props: { data: { user: mockUser, hasAIProviders: false, keys: [] } } });
 		const addButton = screen.getByText(/Add Key/i);
 		expect(addButton).toBeTruthy();
 	});
 
 	it('should open add key form when add button is clicked', async () => {
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: [] } } });
+		render(AuthKeysPage, { props: { data: { user: mockUser, hasAIProviders: false, keys: [] } } });
 		const addButton = screen.getByText(/Add Key/i);
 
 		await fireEvent.click(addButton);
@@ -62,7 +64,7 @@ describe('Admin Auth Keys Page', () => {
 	});
 
 	it('should validate required fields when adding a key', async () => {
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: [] } } });
+		render(AuthKeysPage, { props: { data: { user: mockUser, hasAIProviders: false, keys: [] } } });
 		const addButton = screen.getByText(/Add Key/i);
 		await fireEvent.click(addButton);
 
@@ -88,7 +90,7 @@ describe('Admin Auth Keys Page', () => {
 			})
 		});
 
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: [] } } });
+		render(AuthKeysPage, { props: { data: { user: mockUser, hasAIProviders: false, keys: [] } } });
 		const addButton = screen.getByText(/Add Key/i);
 		await fireEvent.click(addButton);
 
@@ -118,7 +120,9 @@ describe('Admin Auth Keys Page', () => {
 			{ id: '1', name: 'GitHub OAuth', provider: 'github', type: 'oauth', createdAt: '2024-01-01' }
 		];
 
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: mockKeys } } });
+		render(AuthKeysPage, {
+			props: { data: { user: mockUser, hasAIProviders: false, keys: mockKeys } }
+		});
 
 		const editButton = screen.getByLabelText(/Edit GitHub OAuth/i);
 		await fireEvent.click(editButton);
@@ -137,7 +141,9 @@ describe('Admin Auth Keys Page', () => {
 			{ id: '1', name: 'GitHub OAuth', provider: 'github', type: 'oauth', createdAt: '2024-01-01' }
 		];
 
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: mockKeys } } });
+		render(AuthKeysPage, {
+			props: { data: { user: mockUser, hasAIProviders: false, keys: mockKeys } }
+		});
 
 		const deleteButton = screen.getByLabelText(/Delete GitHub OAuth/i);
 		await fireEvent.click(deleteButton);
@@ -168,7 +174,9 @@ describe('Admin Auth Keys Page', () => {
 			}
 		];
 
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: mockKeys } } });
+		render(AuthKeysPage, {
+			props: { data: { user: mockUser, hasAIProviders: false, keys: mockKeys } }
+		});
 
 		const maskedValue = screen.getByText(/••••••/i);
 		expect(maskedValue).toBeTruthy();
@@ -186,7 +194,9 @@ describe('Admin Auth Keys Page', () => {
 			}
 		];
 
-		render(AuthKeysPage, { props: { data: { user: mockUser, keys: mockKeys } } });
+		render(AuthKeysPage, {
+			props: { data: { user: mockUser, hasAIProviders: false, keys: mockKeys } }
+		});
 
 		const toggleButton = screen.getByLabelText(/Show value/i);
 		await fireEvent.click(toggleButton);

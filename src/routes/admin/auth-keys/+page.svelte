@@ -106,7 +106,7 @@
 			if (response.ok) {
 				const result = await response.json();
 				if (editingKey) {
-					keys = keys.map((k) => (k.id === editingKey.id ? { ...k, ...formData } : k));
+					keys = keys.map((k: any) => (k.id === editingKey.id ? { ...k, ...formData } : k));
 				} else {
 					keys = [...keys, result.key];
 				}
@@ -121,7 +121,7 @@
 
 	function openDeleteConfirm(keyId: string) {
 		// Prevent deleting setup keys
-		const key = keys.find((k) => k.id === keyId);
+		const key = keys.find((k: any) => k.id === keyId);
 		if (key?.isSetupKey) {
 			return;
 		}
@@ -143,7 +143,7 @@
 			});
 
 			if (response.ok) {
-				keys = keys.filter((k) => k.id !== deletingKeyId);
+				keys = keys.filter((k: any) => k.id !== deletingKeyId);
 				closeDeleteConfirm();
 			}
 		} catch (error) {
@@ -261,7 +261,7 @@
 					</div>
 					{#if key.clientId}
 						<div class="key-field">
-							<label>Client ID</label>
+							<div class="label">Client ID</div>
 							<div class="key-value">
 								<span>{visibleKeys[key.id] ? key.clientId : maskValue(key.clientId)}</span>
 								<button
@@ -309,7 +309,11 @@
 </div>
 
 {#if showForm}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="modal-overlay" on:click={closeForm}>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div class="modal" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>{editingKey ? 'Edit Key' : 'Add New Key'}</h2>
@@ -391,7 +395,11 @@
 {/if}
 
 {#if showDeleteConfirm}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="modal-overlay" on:click={closeDeleteConfirm}>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div class="modal modal-sm" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Confirm Deletion</h2>
@@ -614,7 +622,8 @@
 		margin-bottom: var(--spacing-md);
 	}
 
-	.key-field label {
+	.key-field label,
+	.key-field .label {
 		display: block;
 		font-size: 0.875rem;
 		font-weight: 500;
