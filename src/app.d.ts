@@ -6,12 +6,13 @@ declare global {
 	namespace App {
 		interface Locals {
 			user?: {
-				id: number;
+				id: string;
 				login: string;
 				email: string;
 				name?: string;
 				avatarUrl?: string;
 				isOwner: boolean;
+				isAdmin?: boolean;
 			};
 		}
 		interface Platform {

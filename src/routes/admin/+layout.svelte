@@ -2,6 +2,8 @@
 	import { page } from '$app/stores';
 
 	const navItems = [
+		{ path: '/admin', label: 'Dashboard', icon: 'home' },
+		{ path: '/admin/users', label: 'Users', icon: 'users' },
 		{ path: '/admin/auth-keys', label: 'Auth Keys', icon: 'key' },
 		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' }
 	];
@@ -18,7 +20,35 @@
 					class:active={$page.url.pathname === item.path}
 					aria-current={$page.url.pathname === item.path ? 'page' : undefined}
 				>
-					{#if item.icon === 'key'}
+					{#if item.icon === 'home'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+							<polyline points="9 22 9 12 15 12 15 22" />
+						</svg>
+					{:else if item.icon === 'users'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+							<circle cx="9" cy="7" r="4" />
+							<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+							<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+						</svg>
+					{:else if item.icon === 'key'}
 						<svg
 							class="nav-icon"
 							width="20"

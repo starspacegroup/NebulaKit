@@ -1,5 +1,28 @@
 # Local Development Setup for NebulaKit
 
+## Database Migrations
+
+**⚠️ IMPORTANT: Run this first before starting development!**
+
+Apply database migrations to create all required tables:
+
+```bash
+wrangler d1 execute nebulakit-db --local --file=migrations/schema.sql
+```
+
+This creates:
+
+- `users` - User accounts
+- `sessions` - Session management
+- `oauth_accounts` - OAuth provider linking
+- `chat_messages` - Chat history
+
+Verify tables were created:
+
+```bash
+wrangler d1 execute nebulakit-db --local --command="SELECT name FROM sqlite_master WHERE type='table';"
+```
+
 ## KV Namespace Setup
 
 For local development with persistent KV storage, you need to create a preview KV namespace:

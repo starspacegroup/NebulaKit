@@ -11,9 +11,23 @@ const authHandler: Handle = async ({ event, resolve }) => {
 		// For now, decode the session from the cookie
 		try {
 			const sessionData = JSON.parse(atob(sessionId));
+
+			// Check if user is admin from database
+			if (event.platform?.env?.DB) {
+				const userRecord = await event.platform.env.DB.prepare(
+					'SELECT is_admin FROM users WHERE id = ?'
+				)
+					.bind(sessionData.id)
+					.first<{ is_admin: number }>();
+
+				if (userRecord) {
+					sessionData.isAdmin = userRecord.is_admin === 1;
+				}
+			}
+
 			event.locals.user = sessionData;
 			console.log(
-				`[Auth] User authenticated: ${sessionData.login}, isOwner: ${sessionData.isOwner}`
+				`[Auth] User authenticated: ${sessionData.login}, isOwner: ${sessionData.isOwner}, isAdmin: ${sessionData.isAdmin}`
 			);
 		} catch (err) {
 			// Invalid session, clear cookie

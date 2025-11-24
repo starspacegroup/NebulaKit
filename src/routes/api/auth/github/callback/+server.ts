@@ -100,14 +100,64 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 
 		const isOwner = appOwnerId ? githubUser.id === parseInt(appOwnerId) : false;
 
+		// Store or update user in database
+		let isAdmin = false;
+		if (platform?.env?.DB) {
+			try {
+				// Check if user exists
+				const existingUser = await platform.env.DB.prepare(
+					'SELECT id, is_admin FROM users WHERE id = ?'
+				)
+					.bind(githubUser.id.toString())
+					.first<{ id: string; is_admin: number }>();
+
+				if (existingUser) {
+					// Update existing user
+					isAdmin = existingUser.is_admin === 1;
+					await platform.env.DB.prepare(
+						`UPDATE users 
+							SET name = ?, github_login = ?, github_avatar_url = ?, updated_at = CURRENT_TIMESTAMP 
+							WHERE id = ?`
+					)
+						.bind(
+							githubUser.name,
+							githubUser.login,
+							githubUser.avatar_url,
+							githubUser.id.toString()
+						)
+						.run();
+				} else {
+					// Create new user (owner is automatically admin)
+					isAdmin = isOwner;
+					await platform.env.DB.prepare(
+						`INSERT INTO users (id, email, name, github_login, github_avatar_url, is_admin, created_at) 
+							VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+					)
+						.bind(
+							githubUser.id.toString(),
+							githubUser.email || `${githubUser.login}@github.local`,
+							githubUser.name,
+							githubUser.login,
+							githubUser.avatar_url,
+							isAdmin ? 1 : 0
+						)
+						.run();
+				}
+			} catch (dbErr) {
+				console.error('Database error:', dbErr);
+				// Continue with auth even if DB fails
+			}
+		}
+
 		// Create session
 		const sessionData = {
-			id: githubUser.id,
+			id: githubUser.id.toString(),
 			login: githubUser.login,
 			name: githubUser.name,
 			email: githubUser.email,
 			avatarUrl: githubUser.avatar_url,
-			isOwner
+			isOwner,
+			isAdmin
 		};
 
 		// Store session in cookie (in production, store in D1/KV and use session ID)
