@@ -17,4 +17,7 @@ describe('Navigation', () => {
 	// - Mobile menu toggle works
 	// - Navigation links are accessible
 	// - Keyboard shortcuts work (⌘K)
+	// - Theme toggle in user dropdown shows three-way selector (light/dark/system)
+	// - Inline theme switcher is hidden when user is logged in
+	// - Inline theme switcher is visible when user is not logged in
 });

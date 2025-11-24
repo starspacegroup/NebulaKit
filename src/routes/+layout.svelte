@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import Navigation from '$lib/components/Navigation.svelte';
+	import { resolvedTheme } from '$lib/stores/theme';
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import type { PageData } from './$types';
@@ -8,6 +10,13 @@
 	export let data: PageData;
 
 	let showCommandPalette = false;
+
+	// Subscribe to theme changes and apply to DOM
+	if (browser) {
+		resolvedTheme.subscribe((theme) => {
+			document.documentElement.setAttribute('data-theme', theme);
+		});
+	}
 
 	onMount(() => {
 		// Listen for keyboard shortcut (Cmd/Ctrl + K)
@@ -29,6 +38,7 @@
 <div class="app">
 	<Navigation
 		user={data.user}
+		hasAIProviders={data.hasAIProviders}
 		onCommandPaletteClick={() => (showCommandPalette = !showCommandPalette)}
 	/>
 
@@ -36,7 +46,7 @@
 		<slot />
 	</main>
 
-	<CommandPalette bind:show={showCommandPalette} />
+	<CommandPalette bind:show={showCommandPalette} hasAIProviders={data.hasAIProviders} />
 </div>
 
 <style>

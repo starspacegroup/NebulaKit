@@ -1,18 +1,21 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
+	import ThemeToggle from './ThemeToggle.svelte';
 
 	let mobileMenuOpen = false;
 	let userDropdownOpen = false;
 
 	export let onCommandPaletteClick: () => void = () => {};
+	export let hasAIProviders = false;
 	export let user: {
-		id: number;
+		id: string;
 		login: string;
 		email: string;
 		name?: string;
 		avatarUrl?: string;
 		isOwner: boolean;
+		isAdmin?: boolean;
 	} | null = null;
 
 	function toggleMobileMenu() {
@@ -114,9 +117,6 @@
 			</button>
 
 			<div class="nav-links" class:open={mobileMenuOpen}>
-				<a href="/chat" class:active={$page.url.pathname === '/chat'} on:click={closeMobileMenu}>
-					Chat
-				</a>
 				{#if user}
 					{#if user.isOwner}
 						<a
@@ -167,7 +167,7 @@
 								</a>
 								<div class="dropdown-divider"></div>
 								<div class="dropdown-section">
-									<ThemeSwitcher variant="dropdown" />
+									<ThemeToggle />
 								</div>
 								<div class="dropdown-divider"></div>
 								<form action="/api/auth/logout" method="POST">
@@ -198,8 +198,8 @@
 					>
 						Sign In
 					</a>
+					<ThemeSwitcher variant="inline" simpleToggle={true} />
 				{/if}
-				<ThemeSwitcher variant="inline" simpleToggle={true} />
 			</div>
 		</div>
 	</div>

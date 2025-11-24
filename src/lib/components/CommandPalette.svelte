@@ -12,6 +12,7 @@
 	import { tick } from 'svelte';
 
 	export let show = false;
+	export let hasAIProviders = false;
 
 	let searchInput: HTMLInputElement;
 	let query = '';
@@ -69,13 +70,17 @@
 			action: () => goto('/'),
 			icon: '🏠'
 		},
-		{
-			id: 'chat',
-			label: 'Chat',
-			description: 'Open LLM chat interface',
-			action: () => goto('/chat'),
-			icon: '💬'
-		},
+		...(hasAIProviders
+			? [
+					{
+						id: 'chat',
+						label: 'Chat',
+						description: 'Open LLM chat interface',
+						action: () => goto('/chat'),
+						icon: '💬'
+					}
+				]
+			: []),
 		{
 			id: 'demo',
 			label: 'Demo',
@@ -185,7 +190,7 @@
 			e.preventDefault();
 			if (filteredCommands.length > 0) {
 				executeCommand(filteredCommands[selectedIndex]);
-			} else {
+			} else if (hasAIProviders) {
 				sendToAIChat();
 			}
 		} else if (e.key === 'Escape') {
@@ -249,7 +254,9 @@
 					bind:this={searchInput}
 					bind:value={query}
 					type="text"
-					placeholder="Search commands or ask AI anything..."
+					placeholder={hasAIProviders
+						? 'Search commands or ask AI anything...'
+						: 'Search commands...'}
 					class="search-input"
 				/>
 			</div>
@@ -283,7 +290,7 @@
 						</div>
 					</button>
 				{:else}
-					{#if query.trim()}
+					{#if query.trim() && hasAIProviders}
 						<button class="command ai-chat-fallback" on:click={sendToAIChat}>
 							<span class="command-icon">🤖</span>
 							<div class="command-info">
@@ -292,7 +299,11 @@
 							</div>
 						</button>
 					{:else}
-						<div class="no-results">Type to search commands or ask AI anything...</div>
+						<div class="no-results">
+							{hasAIProviders
+								? 'Type to search commands or ask AI anything...'
+								: 'Type to search commands...'}
+						</div>
 					{/if}
 				{/each}
 			</div>

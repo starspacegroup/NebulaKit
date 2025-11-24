@@ -10,7 +10,8 @@
 		name: '',
 		provider: 'openai',
 		apiKey: '',
-		model: ''
+		model: '',
+		enabled: true
 	};
 	let errors: Record<string, string> = {};
 	let visibleKeys: Record<string, boolean> = {};
@@ -42,7 +43,8 @@
 			name: '',
 			provider: 'openai',
 			apiKey: '',
-			model: ''
+			model: '',
+			enabled: true
 		};
 		errors = {};
 	}
@@ -54,7 +56,8 @@
 			name: key.name,
 			provider: key.provider,
 			apiKey: '',
-			model: key.model || ''
+			model: key.model || '',
+			enabled: key.enabled !== undefined ? key.enabled : true
 		};
 		errors = {};
 	}
@@ -66,7 +69,8 @@
 			name: '',
 			provider: 'openai',
 			apiKey: '',
-			model: ''
+			model: '',
+			enabled: true
 		};
 		errors = {};
 	}
@@ -154,6 +158,31 @@
 	function maskValue(value: string): string {
 		return '••••••';
 	}
+
+	async function toggleEnabled(keyId: string, currentEnabled: boolean) {
+		// Optimistically update UI
+		keys = keys.map((k) => (k.id === keyId ? { ...k, enabled: !currentEnabled } : k));
+
+		try {
+			const response = await fetch(`/api/admin/ai-keys/${keyId}/toggle`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ enabled: !currentEnabled })
+			});
+
+			if (!response.ok) {
+				// Revert on failure
+				keys = keys.map((k) => (k.id === keyId ? { ...k, enabled: currentEnabled } : k));
+				console.error('Failed to toggle key status');
+			}
+		} catch (error) {
+			// Revert on error
+			keys = keys.map((k) => (k.id === keyId ? { ...k, enabled: currentEnabled } : k));
+			console.error('Failed to toggle key status:', error);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -212,6 +241,15 @@
 							{/if}
 						</div>
 						<div class="key-actions">
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={key.enabled !== false}
+									on:change={() => toggleEnabled(key.id, key.enabled !== false)}
+									aria-label={`Toggle ${key.name}`}
+								/>
+								<span class="slider"></span>
+							</label>
 							<button
 								class="btn-icon"
 								on:click={() => openEditForm(key)}
@@ -724,5 +762,55 @@
 		margin-top: var(--spacing-xs);
 		font-size: 0.875rem;
 		color: #ef4444;
+	}
+
+	.toggle-switch {
+		position: relative;
+		display: inline-block;
+		width: 48px;
+		height: 24px;
+		margin-right: var(--spacing-sm);
+	}
+
+	.toggle-switch input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	.slider {
+		position: absolute;
+		cursor: pointer;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: var(--color-border);
+		transition: var(--transition-fast);
+		border-radius: 24px;
+	}
+
+	.slider:before {
+		position: absolute;
+		content: '';
+		height: 18px;
+		width: 18px;
+		left: 3px;
+		bottom: 3px;
+		background-color: var(--color-background);
+		transition: var(--transition-fast);
+		border-radius: 50%;
+	}
+
+	input:checked + .slider {
+		background-color: var(--color-primary);
+	}
+
+	input:checked + .slider:before {
+		transform: translateX(24px);
+	}
+
+	.toggle-switch:hover .slider {
+		opacity: 0.9;
 	}
 </style>

@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { resolvedTheme, themePreference } from '$lib/stores/theme';
-	import { onMount } from 'svelte';
 
 	// Props for styling control
 	export let variant: 'fixed' | 'inline' | 'dropdown' = 'fixed';
@@ -17,9 +15,6 @@
 			// Simple toggle between light and dark
 			const newTheme = currentTheme === 'light' ? 'dark' : 'light';
 			themePreference.set(newTheme);
-			if (browser) {
-				document.documentElement.setAttribute('data-theme', newTheme);
-			}
 		} else {
 			// Cycle through light, dark, system
 			const cycle = ['light', 'dark', 'system'] as const;
@@ -27,15 +22,6 @@
 			const nextIndex = (currentIndex + 1) % cycle.length;
 			themePreference.set(cycle[nextIndex]);
 		}
-	}
-
-	onMount(() => {
-		// Apply theme on mount
-		document.documentElement.setAttribute('data-theme', currentTheme);
-	});
-
-	$: if (typeof document !== 'undefined') {
-		document.documentElement.setAttribute('data-theme', currentTheme);
 	}
 </script>
 

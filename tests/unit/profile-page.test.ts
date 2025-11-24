@@ -85,7 +85,8 @@ describe('Profile Page', () => {
 					avatarUrl: 'https://avatars.githubusercontent.com/u/123456',
 					isOwner: false,
 					isAdmin: false
-				}
+				},
+				hasAIProviders: false
 			};
 
 			const { container, getByText } = render(ProfilePage.default, {
@@ -112,7 +113,8 @@ describe('Profile Page', () => {
 					login: 'testuser',
 					email: 'test@example.com',
 					isOwner: false
-				}
+				},
+				hasAIProviders: false
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -134,7 +136,8 @@ describe('Profile Page', () => {
 					email: 'test@example.com',
 					name: 'Test User',
 					isOwner: false
-				}
+				},
+				hasAIProviders: false
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -158,7 +161,8 @@ describe('Profile Page', () => {
 					avatarUrl: 'https://avatars.githubusercontent.com/u/123456',
 					isOwner: false,
 					isAdmin: true
-				}
+				},
+				hasAIProviders: false
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -179,7 +183,8 @@ describe('Profile Page', () => {
 					name: 'Test User',
 					avatarUrl: 'https://avatars.githubusercontent.com/u/123456',
 					isOwner: true
-				}
+				},
+				hasAIProviders: false
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -199,7 +204,8 @@ describe('Profile Page', () => {
 					email: 'test@example.com',
 					name: 'Test User',
 					isOwner: false
-				}
+				},
+				hasAIProviders: false
 			};
 
 			const { container } = render(ProfilePage.default, {

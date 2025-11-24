@@ -27,11 +27,18 @@ describe('CommandPalette', () => {
 		expect(container.querySelector('.palette')).toBeTruthy();
 	});
 
-	it('should display search input', () => {
-		const { container } = render(CommandPalette, { props: { show: true } });
+	it('should display search input with AI prompt when providers are available', () => {
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: true } });
 		const input = container.querySelector('.search-input') as HTMLInputElement;
 		expect(input).toBeTruthy();
 		expect(input.placeholder).toBe('Search commands or ask AI anything...');
+	});
+
+	it('should display search input without AI prompt when providers are not available', () => {
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: false } });
+		const input = container.querySelector('.search-input') as HTMLInputElement;
+		expect(input).toBeTruthy();
+		expect(input.placeholder).toBe('Search commands...');
 	});
 
 	it('should display all commands by default', () => {
@@ -40,8 +47,26 @@ describe('CommandPalette', () => {
 		expect(commands.length).toBeGreaterThan(0);
 	});
 
+	it('should include chat command when AI providers are available', () => {
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: true } });
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Chat'))).toBe(true);
+	});
+
+	it('should exclude chat command when AI providers are not available', () => {
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: false } });
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Chat'))).toBe(false);
+	});
+
 	it('should filter commands based on search query', async () => {
-		const { container } = render(CommandPalette, { props: { show: true } });
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: true } });
 		const input = container.querySelector('.search-input') as HTMLInputElement;
 
 		await fireEvent.input(input, { target: { value: 'chat' } });
@@ -188,9 +213,9 @@ describe('CommandPalette', () => {
 		expect(component.show).toBe(true);
 	});
 
-	it('should send query to AI chat when Enter is pressed with no matching commands', async () => {
+	it('should send query to AI chat when Enter is pressed with no matching commands and AI is enabled', async () => {
 		const { goto } = await import('$app/navigation');
-		const { container } = render(CommandPalette, { props: { show: true } });
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: true } });
 		const input = container.querySelector('.search-input') as HTMLInputElement;
 
 		// Type a query that doesn't match any commands
@@ -209,9 +234,27 @@ describe('CommandPalette', () => {
 		expect(goto).toHaveBeenCalledWith('/chat?q=explain%20quantum%20physics');
 	});
 
-	it('should send query to AI chat when clicking the no-results option', async () => {
+	it('should not send query to AI chat when Enter is pressed with no matching commands and AI is disabled', async () => {
 		const { goto } = await import('$app/navigation');
-		const { container } = render(CommandPalette, { props: { show: true } });
+		vi.clearAllMocks();
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: false } });
+		const input = container.querySelector('.search-input') as HTMLInputElement;
+
+		// Type a query that doesn't match any commands
+		input.value = 'explain quantum physics';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		// Press Enter
+		await fireEvent.keyDown(window, { key: 'Enter' });
+
+		// Should not navigate to chat
+		expect(goto).not.toHaveBeenCalled();
+	});
+
+	it('should send query to AI chat when clicking the no-results option and AI is enabled', async () => {
+		const { goto } = await import('$app/navigation');
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: true } });
 		const input = container.querySelector('.search-input') as HTMLInputElement;
 
 		// Type a query that doesn't match any commands
@@ -229,6 +272,24 @@ describe('CommandPalette', () => {
 		expect(goto).toHaveBeenCalledWith('/chat?q=write%20a%20poem');
 	});
 
+	it('should not show AI chat fallback when AI is disabled', async () => {
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: false } });
+		const input = container.querySelector('.search-input') as HTMLInputElement;
+
+		// Type a query that doesn't match any commands
+		input.value = 'write a poem';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		// AI chat fallback button should not exist
+		const aiChatButton = container.querySelector('.ai-chat-fallback');
+		expect(aiChatButton).toBeNull();
+
+		// Should show generic no-results message (trim whitespace from textContent)
+		const noResults = container.querySelector('.no-results');
+		expect(noResults?.textContent?.trim()).toBe('Type to search commands...');
+	});
+
 	it('should not send empty query to AI chat', async () => {
 		const { goto } = await import('$app/navigation');
 		vi.clearAllMocks(); // Clear previous calls
@@ -244,7 +305,7 @@ describe('CommandPalette', () => {
 
 	it('should trim whitespace from query before sending to AI chat', async () => {
 		const { goto } = await import('$app/navigation');
-		const { container } = render(CommandPalette, { props: { show: true } });
+		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: true } });
 		const input = container.querySelector('.search-input') as HTMLInputElement;
 
 		// Type a query with whitespace
