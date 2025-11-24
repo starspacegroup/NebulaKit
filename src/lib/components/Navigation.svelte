@@ -87,12 +87,8 @@
 			</button>
 
 			<div class="nav-links" class:open={mobileMenuOpen}>
-				<a href="/" class:active={$page.url.pathname === '/'} on:click={closeMobileMenu}> Home </a>
 				<a href="/chat" class:active={$page.url.pathname === '/chat'} on:click={closeMobileMenu}>
 					Chat
-				</a>
-				<a href="/demo" class:active={$page.url.pathname === '/demo'} on:click={closeMobileMenu}>
-					Demo
 				</a>
 				<a
 					href="/auth/login"

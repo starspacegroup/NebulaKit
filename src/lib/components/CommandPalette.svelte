@@ -299,9 +299,9 @@
 
 			<div class="footer">
 				<div class="hint">
-					<kbd>↑↓</kbd> to navigate
-					<kbd>↵</kbd> to select
-					<kbd>esc</kbd> to close
+					<span class="hint-item"><kbd>↑↓</kbd> to navigate</span>
+					<span class="hint-item"><kbd>↵</kbd> to select</span>
+					<span class="hint-item"><kbd>esc</kbd> to close</span>
 				</div>
 			</div>
 		</div>
@@ -337,11 +337,76 @@
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-xl);
 		width: 90%;
-		max-width: 640px;
+		max-width: 600px;
 		max-height: 60vh;
 		display: flex;
 		flex-direction: column;
 		animation: slideDown 0.2s ease;
+	}
+
+	@media (max-width: 768px) {
+		.palette {
+			width: 95%;
+			max-width: 500px;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.palette {
+			width: 95%;
+			max-width: none;
+		}
+
+		.search-box {
+			padding: var(--spacing-sm);
+		}
+
+		.search-icon {
+			width: 14px;
+			height: 14px;
+		}
+
+		.search-input {
+			font-size: 0.688rem;
+		}
+
+		.command {
+			padding: var(--spacing-xs);
+			gap: var(--spacing-xs);
+		}
+
+		.command-icon {
+			font-size: 0.938rem;
+		}
+
+		.command-label {
+			font-size: 0.688rem;
+		}
+
+		.command-badge {
+			font-size: 0.563rem;
+			padding: 0.0625rem 0.25rem;
+		}
+
+		.command-description {
+			font-size: 0.625rem;
+			line-height: 1.4;
+		}
+
+		.no-results {
+			font-size: 0.688rem;
+			padding: var(--spacing-sm);
+		}
+
+		.hint {
+			font-size: 0.563rem;
+			gap: 0.188rem;
+		}
+
+		kbd {
+			font-size: 0.563rem;
+			padding: 0.0625rem 0.188rem;
+		}
 	}
 
 	@keyframes slideDown {
@@ -391,7 +456,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-md);
-		padding: var(--spacing-md);
+		padding: var(--spacing-sm) var(--spacing-md);
 		background: transparent;
 		border: none;
 		cursor: pointer;
@@ -452,9 +517,14 @@
 	.hint {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-md);
+		gap: var(--spacing-sm);
 		font-size: 0.75rem;
 		color: var(--color-text-secondary);
+		flex-wrap: wrap;
+	}
+
+	.hint-item {
+		white-space: nowrap;
 	}
 
 	kbd {
