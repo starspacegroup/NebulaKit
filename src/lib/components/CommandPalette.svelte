@@ -231,7 +231,7 @@
 		role="presentation"
 		on:keydown={(e) => e.key === 'Escape' && closeCommandPalette()}
 	>
-		<div class="palette">
+		<div class="palette" role="dialog" aria-label="Command palette">
 			<div class="search-box">
 				<svg
 					class="search-icon"

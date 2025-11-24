@@ -28,6 +28,12 @@ export default defineConfig({
 				branches: 90,
 				statements: 90
 			}
-		}
+		},
+		poolOptions: {
+			threads: {
+				singleThread: true
+			}
+		},
+		teardownTimeout: 5000
 	}
 });

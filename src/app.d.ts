@@ -1,5 +1,7 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
+import type { D1Database, KVNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
+
 declare global {
 	namespace App {
 		interface Locals {

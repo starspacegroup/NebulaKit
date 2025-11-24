@@ -1,3 +1,5 @@
+![alt text](image.png)
+
 # ✨ NebulaKit
 
 > A cosmic-grade SvelteKit starter template powered by Cloudflare's full stack
