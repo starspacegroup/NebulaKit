@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 
 	// Props for styling control
-	export let variant: 'fixed' | 'inline' = 'fixed';
+	export let variant: 'fixed' | 'inline' | 'dropdown' = 'fixed';
 	export let simpleToggle = false; // If true, just toggle between light/dark
 
 	let currentTheme: 'light' | 'dark';
@@ -43,6 +43,7 @@
 	class="theme-switcher"
 	class:fixed={variant === 'fixed'}
 	class:inline={variant === 'inline'}
+	class:dropdown={variant === 'dropdown'}
 	on:click={toggleTheme}
 	aria-label="Toggle theme"
 	title="Toggle {currentTheme === 'light' ? 'dark' : 'light'} mode"
@@ -176,6 +177,20 @@
 	}
 
 	.theme-switcher.inline:hover {
+		background: var(--color-surface-hover);
+	}
+
+	/* Dropdown variant - for use inside dropdowns */
+	.theme-switcher.dropdown {
+		width: 100%;
+		height: auto;
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: 0;
+		justify-content: flex-start;
+		gap: var(--spacing-sm);
+	}
+
+	.theme-switcher.dropdown:hover {
 		background: var(--color-surface-hover);
 	}
 

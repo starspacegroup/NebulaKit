@@ -3,8 +3,17 @@
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
 
 	let mobileMenuOpen = false;
+	let userDropdownOpen = false;
 
 	export let onCommandPaletteClick: () => void = () => {};
+	export let user: {
+		id: number;
+		login: string;
+		email: string;
+		name?: string;
+		avatarUrl?: string;
+		isOwner: boolean;
+	} | null = null;
 
 	function toggleMobileMenu() {
 		mobileMenuOpen = !mobileMenuOpen;
@@ -13,7 +22,25 @@
 	function closeMobileMenu() {
 		mobileMenuOpen = false;
 	}
+
+	function toggleUserDropdown() {
+		userDropdownOpen = !userDropdownOpen;
+	}
+
+	function closeUserDropdown() {
+		userDropdownOpen = false;
+	}
+
+	// Close dropdown when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		if (!target.closest('.user-dropdown-container')) {
+			userDropdownOpen = false;
+		}
+	}
 </script>
+
+<svelte:window on:click={handleClickOutside} />
 
 <nav class="nav">
 	<div class="container">
@@ -90,13 +117,73 @@
 				<a href="/chat" class:active={$page.url.pathname === '/chat'} on:click={closeMobileMenu}>
 					Chat
 				</a>
-				<a
-					href="/auth/login"
-					class:active={$page.url.pathname.startsWith('/auth')}
-					on:click={closeMobileMenu}
-				>
-					Sign In
-				</a>
+				{#if user}
+					{#if user.isOwner}
+						<a
+							href="/admin"
+							class:active={$page.url.pathname.startsWith('/admin')}
+							on:click={closeMobileMenu}
+						>
+							Admin
+						</a>
+					{/if}
+					<div class="user-dropdown-container">
+						<button
+							class="user-avatar-btn"
+							on:click|stopPropagation={toggleUserDropdown}
+							aria-label="User menu"
+							aria-expanded={userDropdownOpen}
+						>
+							{#if user.avatarUrl}
+								<img src={user.avatarUrl} alt={user.name || user.login} class="avatar" />
+							{:else}
+								<div class="avatar-fallback">
+									{(user.name || user.login).charAt(0).toUpperCase()}
+								</div>
+							{/if}
+						</button>
+						{#if userDropdownOpen}
+							<div class="user-dropdown">
+								<div class="dropdown-header">
+									<div class="user-info">
+										<div class="user-name">{user.name || user.login}</div>
+										<div class="user-email">{user.email}</div>
+									</div>
+								</div>
+								<div class="dropdown-divider"></div>
+								<div class="dropdown-section">
+									<ThemeSwitcher variant="dropdown" />
+								</div>
+								<div class="dropdown-divider"></div>
+								<form action="/api/auth/logout" method="POST">
+									<button type="submit" class="dropdown-item logout-item">
+										<svg
+											width="16"
+											height="16"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+											<polyline points="16 17 21 12 16 7" />
+											<line x1="21" y1="12" x2="9" y2="12" />
+										</svg>
+										Logout
+									</button>
+								</form>
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<a
+						href="/auth/login"
+						class:active={$page.url.pathname.startsWith('/auth')}
+						on:click={closeMobileMenu}
+					>
+						Sign In
+					</a>
+				{/if}
 				<ThemeSwitcher variant="inline" simpleToggle={true} />
 			</div>
 		</div>
@@ -253,5 +340,125 @@
 	.nav-links a.active {
 		color: var(--color-primary);
 		background: var(--color-surface-hover);
+	}
+
+	.user-dropdown-container {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+
+	.user-avatar-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		background: transparent;
+		border: 2px solid var(--color-border);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		overflow: hidden;
+	}
+
+	.user-avatar-btn:hover {
+		border-color: var(--color-primary);
+		transform: scale(1.05);
+	}
+
+	.avatar {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.avatar-fallback {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-primary);
+		color: var(--color-background);
+		font-weight: 600;
+		font-size: 0.9rem;
+	}
+
+	.user-dropdown {
+		position: absolute;
+		top: calc(100% + 8px);
+		right: 0;
+		min-width: 240px;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-lg);
+		z-index: 100;
+		overflow: hidden;
+	}
+
+	.dropdown-header {
+		padding: var(--spacing-md);
+	}
+
+	.user-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.user-name {
+		color: var(--color-text);
+		font-weight: 600;
+		font-size: 0.95rem;
+	}
+
+	.user-email {
+		color: var(--color-text-secondary);
+		font-size: 0.85rem;
+	}
+
+	.dropdown-divider {
+		height: 1px;
+		background: var(--color-border);
+	}
+
+	.dropdown-section {
+		padding: var(--spacing-sm);
+	}
+
+	.dropdown-item {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: transparent;
+		color: var(--color-text);
+		border: none;
+		text-align: left;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+
+	.dropdown-item:hover {
+		background: var(--color-surface-hover);
+	}
+
+	.logout-item {
+		color: var(--color-error);
+	}
+
+	.logout-item:hover {
+		background: var(--color-surface-hover);
+	}
+
+	@media (max-width: 768px) {
+		.user-dropdown {
+			right: auto;
+			left: 0;
+		}
 	}
 </style>

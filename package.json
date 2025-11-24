@@ -27,6 +27,7 @@
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"@testing-library/jest-dom": "^6.1.5",
 		"@testing-library/svelte": "^4.2.3",
+		"@testing-library/user-event": "^14.6.1",
 		"@vitest/coverage-v8": "^1.0.4",
 		"@vitest/ui": "^1.0.4",
 		"happy-dom": "^12.10.3",

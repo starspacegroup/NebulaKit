@@ -12,11 +12,11 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 # KV Namespace
 # Create with: wrangler kv:namespace create "KV"
-# Then replace the id below with the actual ID
+# For local dev preview: wrangler kv:namespace create "KV" --preview
 [[kv_namespaces]]
 binding = "KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
-
+id = "12a6576334dd4e16bf1e08d5cc1fac4a"
+preview_id = "e9b0a93432b1406786dc7b9b334da90d"
 # R2 Bucket
 # Create with: wrangler r2 bucket create nebulakit-files
 [[r2_buckets]]
@@ -35,7 +35,10 @@ max_batch_size = 10
 max_batch_timeout = 30
 
 # Environment Variables
-# For production, set TURNSTILE_SECRET_KEY in Cloudflare Pages settings
+# For production, set these in Cloudflare Pages settings
 # For local dev, use .env file (see .env.example)
 [vars]
 # TURNSTILE_SECRET_KEY will be set via environment
+# GITHUB_OWNER_ID - Set this to your GitHub user ID to enable admin access
+# To find your GitHub ID: visit https://api.github.com/users/YOUR_USERNAME
+# GITHUB_OWNER_ID = "YOUR_GITHUB_USER_ID_HERE"

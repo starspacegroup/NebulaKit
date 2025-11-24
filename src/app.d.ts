@@ -6,9 +6,12 @@ declare global {
 	namespace App {
 		interface Locals {
 			user?: {
-				id: string;
+				id: number;
+				login: string;
 				email: string;
 				name?: string;
+				avatarUrl?: string;
+				isOwner: boolean;
 			};
 		}
 		interface Platform {
@@ -18,6 +21,9 @@ declare global {
 				BUCKET: R2Bucket;
 				QUEUE: Queue;
 				TURNSTILE_SECRET_KEY: string;
+				GITHUB_CLIENT_ID?: string;
+				GITHUB_CLIENT_SECRET?: string;
+				GITHUB_OWNER_ID?: string;
 			};
 			context: {
 				waitUntil(promise: Promise<any>): void;

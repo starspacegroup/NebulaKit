@@ -3,6 +3,9 @@
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { onMount } from 'svelte';
 	import '../app.css';
+	import type { PageData } from './$types';
+
+	export let data: PageData;
 
 	let showCommandPalette = false;
 
@@ -24,7 +27,10 @@
 </script>
 
 <div class="app">
-	<Navigation onCommandPaletteClick={() => (showCommandPalette = !showCommandPalette)} />
+	<Navigation
+		user={data.user}
+		onCommandPaletteClick={() => (showCommandPalette = !showCommandPalette)}
+	/>
 
 	<main>
 		<slot />
