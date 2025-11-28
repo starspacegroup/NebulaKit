@@ -1,5 +1,24 @@
 # GitHub Copilot Instructions for NebulaKit
 
+## 🖥️ Development Environment Assumptions
+
+**Dev Server is Always Running (Local Copilot Chat Only)**
+
+> ⚠️ **This section applies ONLY to GitHub Copilot Chat on local workstations, NOT to the Copilot Coding Agent (remote/cloud agent).**
+
+When using Copilot Chat locally:
+
+- Assume `npm run dev` is already running in a separate terminal on port 4277
+- Do NOT start the dev server when performing tasks
+- Do NOT run `npm run dev`, `vite dev`, or similar commands
+- When testing locally, assume the app is already accessible at `http://localhost:4277`
+- If you need to verify the app is running, check the existing terminal output rather than starting a new instance
+
+When using the Copilot Coding Agent (remote):
+
+- The coding agent should manage its own dev server as needed
+- Normal startup commands are expected in that context
+
 ## 🎯 Core Development Philosophy
 
 **Test-Driven Development (TDD) is MANDATORY**
