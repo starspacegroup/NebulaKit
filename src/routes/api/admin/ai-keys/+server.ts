@@ -68,6 +68,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			model: data.model,
 			apiKey: data.apiKey, // Store the API key
 			enabled: data.enabled !== undefined ? data.enabled : true, // Default to enabled
+			voiceEnabled: data.voiceEnabled ?? false, // Voice chat disabled by default
+			voiceModel: data.voiceModel || 'gpt-4o-realtime-preview-2024-10-01',
 			createdAt
 		};
 

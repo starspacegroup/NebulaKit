@@ -147,7 +147,8 @@ describe('Chat Page Redirect', () => {
 		} as any);
 
 		// Assert - Should not redirect, allowing access
-		expect(result).toEqual({});
+		expect(result).toHaveProperty('voiceAvailable');
+		expect(typeof (result as { voiceAvailable: boolean }).voiceAvailable).toBe('boolean');
 	});
 
 	it('should redirect when all API keys are disabled', async () => {

@@ -35,6 +35,9 @@ export const PUT: RequestHandler = async ({ params, request, platform, locals })
 			provider: data.provider,
 			model: data.model,
 			enabled: data.enabled !== undefined ? data.enabled : existing.enabled,
+			voiceEnabled:
+				data.voiceEnabled !== undefined ? data.voiceEnabled : (existing.voiceEnabled ?? false),
+			voiceModel: data.voiceModel || existing.voiceModel || 'gpt-4o-realtime-preview-2024-10-01',
 			updatedAt: new Date().toISOString()
 		};
 

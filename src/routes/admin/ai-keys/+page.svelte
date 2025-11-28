@@ -11,7 +11,9 @@
 		provider: 'openai',
 		apiKey: '',
 		model: '',
-		enabled: true
+		enabled: true,
+		voiceEnabled: false,
+		voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
 	};
 	let errors: Record<string, string> = {};
 	let visibleKeys: Record<string, boolean> = {};
@@ -34,6 +36,11 @@
 		{ value: 'cohere', label: 'Cohere', models: ['command', 'command-light'] }
 	];
 
+	const openaiVoiceModels = [
+		'gpt-4o-realtime-preview-2024-10-01',
+		'gpt-4o-realtime-preview-2024-12-17'
+	];
+
 	$: currentProviderModels = providers.find((p) => p.value === formData.provider)?.models || [];
 
 	function openAddForm() {
@@ -44,7 +51,9 @@
 			provider: 'openai',
 			apiKey: '',
 			model: '',
-			enabled: true
+			enabled: true,
+			voiceEnabled: false,
+			voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
 		};
 		errors = {};
 	}
@@ -57,7 +66,9 @@
 			provider: key.provider,
 			apiKey: '',
 			model: key.model || '',
-			enabled: key.enabled !== undefined ? key.enabled : true
+			enabled: key.enabled !== undefined ? key.enabled : true,
+			voiceEnabled: key.voiceEnabled ?? false,
+			voiceModel: key.voiceModel || 'gpt-4o-realtime-preview-2024-10-01'
 		};
 		errors = {};
 	}
@@ -70,7 +81,9 @@
 			provider: 'openai',
 			apiKey: '',
 			model: '',
-			enabled: true
+			enabled: true,
+			voiceEnabled: false,
+			voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
 		};
 		errors = {};
 	}
@@ -235,10 +248,30 @@
 					<div class="key-header">
 						<div class="key-info">
 							<h3>{key.name}</h3>
-							<span class="key-provider">{key.provider}</span>
-							{#if key.model}
-								<span class="key-model">{key.model}</span>
-							{/if}
+							<div class="key-badges">
+								<span class="key-provider">{key.provider}</span>
+								{#if key.model}
+									<span class="key-model">{key.model}</span>
+								{/if}
+								{#if key.provider === 'openai' && key.voiceEnabled}
+									<span class="key-voice-badge">
+										<svg
+											width="14"
+											height="14"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+											<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+											<line x1="12" y1="19" x2="12" y2="23" />
+											<line x1="8" y1="23" x2="16" y2="23" />
+										</svg>
+										Voice
+									</span>
+								{/if}
+							</div>
 						</div>
 						<div class="key-actions">
 							<label class="toggle-switch">
@@ -405,6 +438,32 @@
 						<span class="error-message">{errors.apiKey}</span>
 					{/if}
 				</div>
+
+				{#if formData.provider === 'openai'}
+					<div class="form-section">
+						<h3>Voice Chat Settings</h3>
+						<div class="form-group checkbox-group">
+							<label class="checkbox-label">
+								<input type="checkbox" bind:checked={formData.voiceEnabled} />
+								<span>Enable Voice Chat</span>
+							</label>
+							<p class="help-text">
+								Allow users to interact with AI using voice (requires OpenAI Realtime API)
+							</p>
+						</div>
+
+						{#if formData.voiceEnabled}
+							<div class="form-group">
+								<label for="voice-model">Voice Model</label>
+								<select id="voice-model" bind:value={formData.voiceModel}>
+									{#each openaiVoiceModels as voiceModel}
+										<option value={voiceModel}>{voiceModel}</option>
+									{/each}
+								</select>
+							</div>
+						{/if}
+					</div>
+				{/if}
 
 				{#if errors.submit}
 					<div class="error-message">{errors.submit}</div>
@@ -601,9 +660,19 @@
 		color: var(--color-text);
 	}
 
+	.key-badges {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		flex-wrap: wrap;
+	}
+
 	.key-provider,
-	.key-model {
-		display: inline-block;
+	.key-model,
+	.key-voice-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 		padding: 2px 8px;
 		border-radius: var(--radius-sm);
 		font-size: 0.875rem;
@@ -619,6 +688,12 @@
 		background: var(--color-primary);
 		color: var(--color-background);
 		opacity: 0.8;
+	}
+
+	.key-voice-badge {
+		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+		color: var(--color-background);
+		font-weight: 500;
 	}
 
 	.key-actions {
@@ -733,6 +808,19 @@
 		border-top: 1px solid var(--color-border);
 	}
 
+	.form-section {
+		margin-top: var(--spacing-xl);
+		padding-top: var(--spacing-lg);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.form-section h3 {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--color-text);
+		margin-bottom: var(--spacing-md);
+	}
+
 	.form-group {
 		margin-bottom: var(--spacing-md);
 	}
@@ -743,6 +831,32 @@
 		font-weight: 500;
 		color: var(--color-text);
 		margin-bottom: var(--spacing-xs);
+	}
+
+	.checkbox-group {
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		cursor: pointer;
+		font-weight: 500;
+	}
+
+	.checkbox-label input[type='checkbox'] {
+		width: 18px;
+		height: 18px;
+		cursor: pointer;
+	}
+
+	.help-text {
+		margin-top: var(--spacing-xs);
+		margin-left: 26px;
+		font-size: 0.813rem;
+		color: var(--color-text-secondary);
+		line-height: 1.4;
 	}
 
 	.form-group input,

@@ -15,8 +15,11 @@ export const load: ServerLoad = async ({ platform, locals }) => {
 		throw redirect(302, '/');
 	}
 
+	// Check if voice chat is available from any provider
+	const voiceAvailable = await checkVoiceAvailability(platform);
+
 	// If providers exist, allow access to chat page
-	return {};
+	return { voiceAvailable };
 };
 
 /**
@@ -51,6 +54,43 @@ async function checkEnabledProviders(platform: App.Platform | undefined): Promis
 		return false;
 	} catch (err) {
 		console.error('Failed to check AI provider status:', err);
+		// Default to false on error to be safe
+		return false;
+	}
+}
+
+/**
+ * Check if at least one enabled AI provider has voice chat enabled
+ */
+async function checkVoiceAvailability(platform: App.Platform | undefined): Promise<boolean> {
+	try {
+		if (!platform?.env?.KV) {
+			return false;
+		}
+
+		// Get list of key IDs
+		const keysList = await platform.env.KV.get('ai_keys_list');
+		if (!keysList) {
+			return false;
+		}
+
+		const keyIds = JSON.parse(keysList);
+
+		// Check if at least one key has voice enabled
+		for (const keyId of keyIds) {
+			const keyData = await platform.env.KV.get(`ai_key:${keyId}`);
+			if (keyData) {
+				const key = JSON.parse(keyData);
+				// Check if the key is enabled and voice is enabled
+				if (key.enabled !== false && key.voiceEnabled === true) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	} catch (err) {
+		console.error('Failed to check voice availability:', err);
 		// Default to false on error to be safe
 		return false;
 	}
