@@ -25,10 +25,10 @@ describe('Layout Server Load', () => {
 			});
 
 			const { load } = await import('../../src/routes/+layout.server');
-			const result = await load({
+			const result = (await load({
 				locals: { user: mockUser },
 				fetch: mockFetch
-			} as any);
+			} as any)) as { user: typeof mockUser | null; hasAIProviders: boolean };
 
 			expect(result.user).toEqual(mockUser);
 			expect(result.hasAIProviders).toBe(true);
@@ -42,10 +42,10 @@ describe('Layout Server Load', () => {
 			});
 
 			const { load } = await import('../../src/routes/+layout.server');
-			const result = await load({
+			const result = (await load({
 				locals: {},
 				fetch: mockFetch
-			} as any);
+			} as any)) as { user: null; hasAIProviders: boolean };
 
 			expect(result.user).toBeNull();
 			expect(result.hasAIProviders).toBe(false);
@@ -58,10 +58,10 @@ describe('Layout Server Load', () => {
 			});
 
 			const { load } = await import('../../src/routes/+layout.server');
-			const result = await load({
+			const result = (await load({
 				locals: { user: { id: 'user-123' } },
 				fetch: mockFetch
-			} as any);
+			} as any)) as { hasAIProviders: boolean };
 
 			expect(result.hasAIProviders).toBe(false);
 		});
@@ -70,10 +70,10 @@ describe('Layout Server Load', () => {
 			const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
 			const { load } = await import('../../src/routes/+layout.server');
-			const result = await load({
+			const result = (await load({
 				locals: { user: { id: 'user-123' } },
 				fetch: mockFetch
-			} as any);
+			} as any)) as { hasAIProviders: boolean };
 
 			expect(result.hasAIProviders).toBe(false);
 		});

@@ -13,9 +13,9 @@ vi.mock('$lib/services/openai-chat', () => ({
 import {
 	formatMessagesForOpenAI,
 	getEnabledOpenAIKey,
-	streamChatCompletion
+	streamChatCompletion,
+	type AIKey
 } from '$lib/services/openai-chat';
-import type { AIKey } from '$lib/types';
 import { POST } from '../../src/routes/api/chat/stream/+server';
 
 describe('Chat Stream API - Extended Coverage', () => {

@@ -59,7 +59,7 @@ describe('Admin Layout Server Load', () => {
 				locals: { user: mockUser }
 			} as any);
 
-			expect(result.user).toEqual(mockUser);
+			expect((result as { user: typeof mockUser }).user).toEqual(mockUser);
 		});
 	});
 });
@@ -90,9 +90,17 @@ describe('Admin Dashboard Page Server Load', () => {
 			};
 
 			const { load } = await import('../../src/routes/admin/+page.server');
-			const result = await load({
+			const result = (await load({
 				platform: mockPlatform
-			} as any);
+			} as any)) as {
+				setupInfo: {
+					hasOAuthConfig: boolean;
+					oauthProvider: string | null;
+					oauthClientId: string | null;
+					adminId: string | null;
+					adminUsername: string | null;
+				};
+			};
 
 			expect(result.setupInfo.hasOAuthConfig).toBe(true);
 			expect(result.setupInfo.oauthProvider).toBe('github');
@@ -103,9 +111,15 @@ describe('Admin Dashboard Page Server Load', () => {
 
 		it('should return empty setup info when KV not available', async () => {
 			const { load } = await import('../../src/routes/admin/+page.server');
-			const result = await load({
+			const result = (await load({
 				platform: {}
-			} as any);
+			} as any)) as {
+				setupInfo: {
+					hasOAuthConfig: boolean;
+					oauthProvider: string | null;
+					adminId: string | null;
+				};
+			};
 
 			expect(result.setupInfo.hasOAuthConfig).toBe(false);
 			expect(result.setupInfo.oauthProvider).toBeNull();
@@ -122,9 +136,9 @@ describe('Admin Dashboard Page Server Load', () => {
 			};
 
 			const { load } = await import('../../src/routes/admin/+page.server');
-			const result = await load({
+			const result = (await load({
 				platform: mockPlatform
-			} as any);
+			} as any)) as { setupInfo: { hasOAuthConfig: boolean } };
 
 			expect(result.setupInfo.hasOAuthConfig).toBe(false);
 		});
@@ -143,9 +157,9 @@ describe('Admin Dashboard Page Server Load', () => {
 			};
 
 			const { load } = await import('../../src/routes/admin/+page.server');
-			const result = await load({
+			const result = (await load({
 				platform: mockPlatform
-			} as any);
+			} as any)) as { setupInfo: { hasOAuthConfig: boolean; adminId: string | null } };
 
 			expect(result.setupInfo.hasOAuthConfig).toBe(false);
 			expect(result.setupInfo.adminId).toBe('12345');

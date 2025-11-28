@@ -31,7 +31,8 @@ describe('GitHub OAuth Callback - Extended Coverage', () => {
 	let mockKVPut: ReturnType<typeof vi.fn>;
 	let mockDBPrepare: ReturnType<typeof vi.fn>;
 	let mockCookiesSet: ReturnType<typeof vi.fn>;
-	let consoleSpy: ReturnType<typeof vi.spyOn>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	let consoleSpy: any;
 
 	beforeEach(() => {
 		mockFetch = vi.fn();

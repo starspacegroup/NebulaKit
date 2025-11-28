@@ -47,7 +47,11 @@ describe('Voice Session API - Extended Coverage', () => {
 
 	it('should return 403 when voice chat is not enabled', async () => {
 		vi.mocked(getEnabledOpenAIKey).mockResolvedValue({
+			id: 'key-1',
+			name: 'Test Key',
+			provider: 'openai',
 			apiKey: 'test-key',
+			enabled: true,
 			voiceEnabled: false
 		});
 
@@ -58,7 +62,11 @@ describe('Voice Session API - Extended Coverage', () => {
 
 	it('should create session with configured voice model', async () => {
 		vi.mocked(getEnabledOpenAIKey).mockResolvedValue({
+			id: 'key-1',
+			name: 'Test Key',
+			provider: 'openai',
 			apiKey: 'test-key',
+			enabled: true,
 			voiceEnabled: true,
 			voiceModel: 'gpt-4o-realtime-custom'
 		});
@@ -76,7 +84,11 @@ describe('Voice Session API - Extended Coverage', () => {
 
 	it('should use default voice model when not configured', async () => {
 		vi.mocked(getEnabledOpenAIKey).mockResolvedValue({
+			id: 'key-1',
+			name: 'Test Key',
+			provider: 'openai',
 			apiKey: 'test-key',
+			enabled: true,
 			voiceEnabled: true
 		});
 		vi.mocked(createRealtimeSession).mockResolvedValue({
@@ -100,7 +112,11 @@ describe('Voice Session API - Extended Coverage', () => {
 	it('should throw 500 for unknown errors', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		vi.mocked(getEnabledOpenAIKey).mockResolvedValue({
+			id: 'key-1',
+			name: 'Test Key',
+			provider: 'openai',
 			apiKey: 'test-key',
+			enabled: true,
 			voiceEnabled: true
 		});
 		vi.mocked(createRealtimeSession).mockRejectedValue(new Error('Unknown error'));
