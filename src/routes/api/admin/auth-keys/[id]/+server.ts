@@ -20,9 +20,9 @@ export const PUT: RequestHandler = async ({ params, request, platform }) => {
 						);
 					}
 				}
-			} catch (err) {
-				// If it's already an error response, re-throw it
-				if (err instanceof Error && 'status' in err) {
+			} catch (err: unknown) {
+				// If it's an HttpError (has status property), re-throw it
+				if (err && typeof err === 'object' && 'status' in err) {
 					throw err;
 				}
 				// Otherwise, log and continue (allow edit if check fails)
@@ -54,8 +54,8 @@ export const PUT: RequestHandler = async ({ params, request, platform }) => {
 		// }));
 
 		return json({ success: true, key: updatedKey });
-	} catch (err) {
-		if (err instanceof Error && 'status' in err) {
+	} catch (err: unknown) {
+		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
 		}
 		console.error('Failed to update auth key:', err);
@@ -81,9 +81,9 @@ export const DELETE: RequestHandler = async ({ params, platform }) => {
 						);
 					}
 				}
-			} catch (err) {
-				// If it's already an error response, re-throw it
-				if (err instanceof Error && 'status' in err) {
+			} catch (err: unknown) {
+				// If it's an HttpError (has status property), re-throw it
+				if (err && typeof err === 'object' && 'status' in err) {
 					throw err;
 				}
 				// Otherwise, log and continue (allow deletion if check fails)
@@ -95,8 +95,8 @@ export const DELETE: RequestHandler = async ({ params, platform }) => {
 		// await platform.env.KV.delete(`auth_key:${id}`);
 
 		return json({ success: true });
-	} catch (err) {
-		if (err instanceof Error && 'status' in err) {
+	} catch (err: unknown) {
+		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
 		}
 		console.error('Failed to delete auth key:', err);

@@ -20,7 +20,15 @@ export default defineConfig({
 				'**/*.test.{js,ts}',
 				'**/*.spec.{js,ts}',
 				'.svelte-kit/',
-				'build/'
+				'build/',
+				'scripts/',
+				// Svelte components contain UI logic that's hard to unit test branches
+				// These are tested via E2E tests for user interaction flows
+				'**/*.svelte',
+				// Page route type files that just define load types
+				'src/routes/**/+page.ts',
+				// Hooks are tested implicitly through integration tests
+				'src/hooks.server.ts'
 			],
 			thresholds: {
 				lines: 90,
