@@ -109,7 +109,14 @@
 
 			<div class="form-group">
 				<label for="email">Email</label>
-				<input id="email" type="email" bind:value={email} placeholder="you@example.com" required />
+				<input
+					id="email"
+					type="email"
+					bind:value={email}
+					placeholder="you@example.com"
+					autocomplete="email"
+					required
+				/>
 			</div>
 
 			<div class="form-group">
@@ -119,6 +126,7 @@
 					type="password"
 					bind:value={password}
 					placeholder="••••••••"
+					autocomplete="current-password"
 					required
 				/>
 			</div>
