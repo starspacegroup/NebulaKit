@@ -29,10 +29,8 @@ bucket_name = "nebulakit-files"
 binding = "QUEUE"
 queue = "nebulakit-queue"
 
-[[queues.consumers]]
-queue = "nebulakit-queue"
-max_batch_size = 10
-max_batch_timeout = 30
+# Note: queues.consumers is not supported by Cloudflare Pages
+# If you need queue consumers, use a separate Cloudflare Worker
 
 # Environment Variables
 # For production, set these in Cloudflare Pages settings
