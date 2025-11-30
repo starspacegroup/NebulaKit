@@ -1,0 +1,910 @@
+﻿
+> nebulakit@0.0.1 test:coverage
+> vitest run --coverage
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mF:/009_PROJECTS/starspace/NebulaKit[39m
+[2m      Coverage enabled with [22m[33mv8[39m
+
+ [32mΓ£ô[39m src/lib/components/CommandPalette.test.ts [2m ([22m[2m35 tests[22m[2m)[22m[33m 796[2mms[22m[39m
+node.exe : [90mstderr[2m | 
+tests/unit/chat-interface.test.ts[2m > 
+[22m[2mChatInterface Component[2m > 
+[22m[2mUnified Chat Interface[2m > 
+[22m[2mshould send message when user 
+submits[22m[39m
+At C:\nvm4w\nodejs\npm.ps1:16 char:5
++     & "$basedir/node$exe"  
+"$basedir/node_modules/npm/bin/npm-cli.js" ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([9 
+   0mstderr[2m...bmits[22m[39m:String) [], R  
+  emoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Send message error: TypeError: Failed to parse 
+URL from /api/chat/stream
+[90m    at 
+node:internal/deps/undici/undici:13510:13[39m
+    at HTMLButtonElement.sendMessage [90m(F:\009
+_PROJECTS\starspace\NebulaKit\[39msrc\lib\compon
+ents\ChatInterface.svelte:97:10[90m)[39m {
+  [cause]: TypeError: Invalid URL
+  [90m    at new URL 
+(node:internal/url:825:25)[39m
+      at new URL [90m(file:///F:/009_PROJECTS/st
+arspace/NebulaKit/[39mnode_modules/[4mhappy-dom
+[24m/src/url/URL.ts:8:15[90m)[39m
+  [90m    at new Request 
+(node:internal/deps/undici/undici:9586:25)[39m
+  [90m    at fetch 
+(node:internal/deps/undici/undici:10315:25)[39m
+  [90m    at fetch 
+(node:internal/deps/undici/undici:13508:10)[39m
+  [90m    at fetch (node:internal/bootstrap/web/
+exposed-window-or-worker:75:12)[39m
+      at HTMLButtonElement.sendMessage [90m(F:\0
+09_PROJECTS\starspace\NebulaKit\[39msrc\lib\comp
+onents\ChatInterface.svelte:97:27[90m)[39m
+      at HTMLButtonElement.dispatchEvent [90m(fi
+le:///F:/009_PROJECTS/starspace/NebulaKit/[39mno
+de_modules/[4mhappy-dom[24m/src/event/EventTarg
+et.ts:203:42[90m)[39m
+      at HTMLButtonElement.dispatchEvent [90m(fi
+le:///F:/009_PROJECTS/starspace/NebulaKit/[39mno
+de_modules/[4mhappy-dom[24m/src/nodes/element/E
+lement.ts:923:29[90m)[39m
+      at HTMLButtonElement.dispatchEvent [90m(fi
+le:///F:/009_PROJECTS/starspace/NebulaKit/[39mno
+de_modules/[4mhappy-dom[24m/src/nodes/html-butt
+on-element/HTMLButtonElement.ts:202:29[90m)[39m
+ {
+    code: [32m'ERR_INVALID_URL'[39m,
+    input: [32m'/api/chat/stream'[39m
+  }
+}
+
+[90mstderr[2m | 
+tests/unit/chat-interface.test.ts[2m > 
+[22m[2mChatInterface Component[2m > 
+[22m[2mUnified Chat Interface[2m > 
+[22m[2mshould send message on Enter key 
+(without Shift)[22m[39m
+Send message error: TypeError: Failed to parse 
+URL from /api/chat/stream
+[90m    at 
+node:internal/deps/undici/undici:13510:13[39m
+    at sendMessage [90m(F:\009_PROJECTS\starspac
+e\NebulaKit\[39msrc\lib\components\ChatInterface
+.svelte:97:10[90m)[39m {
+  [cause]: TypeError: Invalid URL
+  [90m    at new URL 
+(node:internal/url:825:25)[39m
+      at new URL [90m(file:///F:/009_PROJECTS/st
+arspace/NebulaKit/[39mnode_modules/[4mhappy-dom
+[24m/src/url/URL.ts:8:15[90m)[39m
+  [90m    at new Request 
+(node:internal/deps/undici/undici:9586:25)[39m
+  [90m    at fetch 
+(node:internal/deps/undici/undici:10315:25)[39m
+  [90m    at fetch 
+(node:internal/deps/undici/undici:13508:10)[39m
+  [90m    at fetch (node:internal/bootstrap/web/
+exposed-window-or-worker:75:12)[39m
+      at sendMessage [90m(F:\009_PROJECTS\starsp
+ace\NebulaKit\[39msrc\lib\components\ChatInterfa
+ce.svelte:97:27[90m)[39m
+      at HTMLTextAreaElement.handleKeydown [90m(
+F:\009_PROJECTS\starspace\NebulaKit\[39msrc\lib\
+components\ChatInterface.svelte:171:4[90m)[39m
+      at HTMLTextAreaElement.dispatchEvent [90m(
+file:///F:/009_PROJECTS/starspace/NebulaKit/[39m
+node_modules/[4mhappy-dom[24m/src/event/EventTa
+rget.ts:203:42[90m)[39m
+      at HTMLTextAreaElement.dispatchEvent [90m(
+file:///F:/009_PROJECTS/starspace/NebulaKit/[39m
+node_modules/[4mhappy-dom[24m/src/nodes/element
+/Element.ts:923:29[90m)[39m {
+    code: [32m'ERR_INVALID_URL'[39m,
+    input: [32m'/api/chat/stream'[39m
+  }
+}
+
+ [32mΓ£ô[39m tests/unit/chat-interface.test.ts [2m ([22m[2m31 tests[22m[2m)[22m[33m 533[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/github-oauth-flow.test.ts[2m > 
+[22m[2mGitHub Auth API[2m > [22m[2mGET 
+/api/auth/github/callback[2m > [22m[2mshould 
+redirect to login when OAuth not 
+configured[22m[39m
+GitHub OAuth not configured - missing clientId 
+or clientSecret
+
+[90mstderr[2m | 
+tests/unit/github-oauth-flow.test.ts[2m > 
+[22m[2mGitHub Auth API[2m > [22m[2mGET 
+/api/auth/github/callback[2m > [22m[2mshould 
+handle token exchange failure[22m[39m
+Failed to exchange code for token: [33m400[39m 
+Bad Request
+
+[90mstderr[2m | 
+tests/unit/github-oauth-flow.test.ts[2m > 
+[22m[2mGitHub Auth API[2m > [22m[2mGET 
+/api/auth/github/callback[2m > [22m[2mshould 
+handle missing access token in response[22m[39m
+No access token in response: { error: [32m'no 
+token'[39m }
+
+[90mstderr[2m | 
+tests/unit/github-oauth-flow.test.ts[2m > 
+[22m[2mGitHub Auth API[2m > [22m[2mGET 
+/api/auth/github/callback[2m > [22m[2mshould 
+handle user fetch failure[22m[39m
+Failed to fetch user info: [33m401[39m 
+Unauthorized
+
+[90mstdout[2m | tests/unit/github-oauth-flow.test.ts[2m > [22m[2mGitHub Auth API[2m > [22m[2mGET /api/auth/github/callback[2m > [22m[2mshould complete OAuth flow and set session cookie[22m[39m
+GitHub OAuth success: user=testuser, id=12345, isOwner=true, redirecting to /admin
+
+[90mstdout[2m | tests/unit/github-oauth-flow.test.ts[2m > [22m[2mGitHub Auth API[2m > [22m[2mGET /api/auth/github/callback[2m > [22m[2mshould redirect non-owner to home[22m[39m
+GitHub OAuth success: user=regularuser, id=12345, isOwner=false, redirecting to /
+
+[90mstdout[2m | tests/unit/github-oauth-flow.test.ts[2m > [22m[2mGitHub Auth API[2m > [22m[2mGET /api/auth/github/callback[2m > [22m[2mshould store user in database when available[22m[39m
+GitHub OAuth success: user=newuser, id=12345, isOwner=false, redirecting to /
+
+[90mstderr[2m | 
+tests/unit/github-oauth-flow.test.ts[2m > 
+[22m[2mGitHub Auth API[2m > [22m[2mGET 
+/api/auth/github/callback[2m > [22m[2mshould 
+store user in database when available[22m[39m
+GITHUB_OWNER_ID not set - all users will have 
+isOwner=false. Set GITHUB_OWNER_ID in 
+wrangler.toml to enable admin access.
+
+[90mstdout[2m | tests/unit/github-oauth-flow.test.ts[2m > [22m[2mGitHub Auth API[2m > [22m[2mGET /api/auth/github/callback[2m > [22m[2mshould update existing user in database[22m[39m
+GitHub OAuth success: user=existinguser, id=12345, isOwner=false, redirecting to /
+
+[90mstderr[2m | 
+tests/unit/github-oauth-flow.test.ts[2m > 
+[22m[2mGitHub Auth API[2m > [22m[2mGET 
+/api/auth/github/callback[2m > [22m[2mshould 
+update existing user in database[22m[39m
+GITHUB_OWNER_ID not set - all users will have 
+isOwner=false. Set GITHUB_OWNER_ID in 
+wrangler.toml to enable admin access.
+
+[90mstdout[2m | tests/unit/github-oauth-flow.test.ts[2m > [22m[2mGitHub Auth API[2m > [22m[2mGET /api/auth/github/callback[2m > [22m[2mshould mark first admin login as completed[22m[39m
+Γ£ô Admin first login completed - setup page is now locked
+GitHub OAuth success: user=owner, id=12345, isOwner=true, redirecting to /admin
+
+ [32mΓ£ô[39m tests/unit/github-oauth-flow.test.ts [2m ([22m[2m15 tests[22m[2m)[22m[90m 65[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mPOST 
+/api/admin/ai-keys[2m > [22m[2mshould return 
+400 when required fields are missing[22m[39m
+Failed to create AI key: HttpError { status: 
+[33m400[39m, body: { message: [32m'Missing 
+required fields'[39m } }
+
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mPOST 
+/api/admin/ai-keys[2m > [22m[2mshould return 
+500 when KV is not available[22m[39m
+Failed to create AI key: HttpError {
+  status: [33m500[39m,
+  body: { message: [32m'KV storage not 
+available'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mPUT 
+/api/admin/ai-keys/[id][2m > [22m[2mshould 
+return 400 when name is missing[22m[39m
+Failed to update AI key: HttpError { status: 
+[33m400[39m, body: { message: [32m'Missing 
+required fields'[39m } }
+
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mPUT 
+/api/admin/ai-keys/[id][2m > [22m[2mshould 
+return 500 when KV is not available[22m[39m
+Failed to update AI key: HttpError {
+  status: [33m500[39m,
+  body: { message: [32m'KV storage not 
+available'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mPUT 
+/api/admin/ai-keys/[id][2m > [22m[2mshould 
+return 404 when key not found[22m[39m
+Failed to update AI key: HttpError { status: 
+[33m404[39m, body: { message: [32m'Key not 
+found'[39m } }
+
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mDELETE 
+/api/admin/ai-keys/[id][2m > [22m[2mshould 
+return 500 when KV is not available[22m[39m
+Failed to delete AI key: HttpError {
+  status: [33m500[39m,
+  body: { message: [32m'KV storage not 
+available'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mPATCH 
+/api/admin/ai-keys/[id][2m > [22m[2mshould 
+return 500 when KV is not available[22m[39m
+Failed to toggle AI key: HttpError {
+  status: [33m500[39m,
+  body: { message: [32m'KV storage not 
+available'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/ai-keys-api-extended.test.ts[2m > 
+[22m[2mAI Keys API[2m > [22m[2mPATCH 
+/api/admin/ai-keys/[id][2m > [22m[2mshould 
+return 404 when key not found[22m[39m
+Failed to toggle AI key: HttpError { status: 
+[33m404[39m, body: { message: [32m'Key not 
+found'[39m } }
+
+ [32mΓ£ô[39m tests/unit/ai-keys-api-extended.test.ts [2m ([22m[2m25 tests[22m[2m)[22m[90m 103[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-users.test.ts [2m ([22m[2m19 tests[22m[2m)[22m[33m 1629[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mGET /api/admin/users/search[2m > 
+[22m[2mshould handle GitHub API 
+errors[22m[39m
+Failed to search GitHub users: HttpError {
+  status: [33m500[39m,
+  body: { message: [32m'GitHub API request 
+failed'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mPATCH /api/admin/users/[id][2m > 
+[22m[2mshould return 500 when database is not 
+available[22m[39m
+Failed to update user: HttpError { status: 
+[33m500[39m, body: { message: [32m'Database 
+not available'[39m } }
+
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mPATCH /api/admin/users/[id][2m > 
+[22m[2mshould return 404 when user not 
+found[22m[39m
+Failed to update user: HttpError { status: 
+[33m404[39m, body: { message: [32m'User not 
+found'[39m } }
+
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mPATCH /api/admin/users/[id][2m > 
+[22m[2mshould return 400 when trying to modify 
+self[22m[39m
+Failed to update user: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Cannot modify your own 
+admin status'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mPATCH /api/admin/users/[id][2m > 
+[22m[2mshould prevent demoting setup 
+owner[22m[39m
+Failed to update user: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Cannot demote the setup 
+owner'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mDELETE /api/admin/users/[id][2m > 
+[22m[2mshould return 400 when trying to delete 
+self[22m[39m
+Failed to delete user: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Cannot delete your own 
+account'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mDELETE /api/admin/users/[id][2m > 
+[22m[2mshould return 404 when user not 
+found[22m[39m
+Failed to delete user: HttpError { status: 
+[33m404[39m, body: { message: [32m'User not 
+found'[39m } }
+
+[90mstderr[2m | 
+tests/unit/admin-users-extended.test.ts[2m > 
+[22m[2mAdmin Users Extended API[2m > 
+[22m[2mDELETE /api/admin/users/[id][2m > 
+[22m[2mshould prevent deleting setup 
+owner[22m[39m
+Failed to delete user: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Cannot delete the setup 
+owner'[39m }
+}
+
+ [32mΓ£ô[39m tests/unit/admin-users-extended.test.ts [2m ([22m[2m21 tests[22m[2m)[22m[90m 81[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-ai-keys.test.ts [2m ([22m[2m18 tests[22m[2m)[22m[90m 79[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/voice-button.test.ts [2m ([22m[2m30 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/voice-chat-audio.test.ts [2m ([22m[2m18 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/db-utils.test.ts [2m ([22m[2m14 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+[90mstdout[2m | tests/unit/admin-ai-keys-voice.test.ts[2m > [22m[2mAI Keys Voice Chat Configuration[2m > [22m[2mVoice Session Creation with voice settings[2m > [22m[2mshould create voice session when voice is enabled[22m[39m
+Creating realtime session with model: gpt-4o-realtime-preview-2024-10-01
+Creating realtime session for model: gpt-4o-realtime-preview-2024-10-01
+Realtime session API response keys: [ [32m'client_secret'[39m ]
+Full response data: {
+  "client_secret": {
+    "value": "ephemeral-token"
+  }
+}
+Successfully got client_secret, length: [33m15[39m
+Session ID: [90mundefined[39m
+Expires at: [90mundefined[39m
+Realtime session created, token length: [33m15[39m
+Token prefix: ephemeral-token...
+
+[90mstdout[2m | tests/unit/admin-ai-keys-voice.test.ts[2m > [22m[2mAI Keys Voice Chat Configuration[2m > [22m[2mVoice Session Creation with voice settings[2m > [22m[2mshould use custom voice model when configured[22m[39m
+Creating realtime session with model: gpt-4o-realtime-preview-2024-12-17
+Creating realtime session for model: gpt-4o-realtime-preview-2024-12-17
+Realtime session API response keys: [ [32m'client_secret'[39m ]
+Full response data: {
+  "client_secret": {
+    "value": "ephemeral-token"
+  }
+}
+Successfully got client_secret, length: [33m15[39m
+Session ID: [90mundefined[39m
+Expires at: [90mundefined[39m
+Realtime session created, token length: [33m15[39m
+Token prefix: ephemeral-token...
+
+[90mstderr[2m | 
+tests/unit/admin-ai-keys-voice.test.ts[2m > 
+[22m[2mAI Keys Voice Chat Configuration[2m > 
+[22m[2mVoice Session Creation with voice 
+settings[2m > [22m[2mshould return 403 when 
+voice is not enabled[22m[39m
+Voice session error: HttpError {
+  status: [33m403[39m,
+  body: { message: [32m'Voice chat is not 
+enabled'[39m }
+}
+Error details: [90mundefined[39m [33m403[39m
+
+ [32mΓ£ô[39m tests/unit/admin-ai-keys-voice.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 37[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/admin-users-api.test.ts[2m > 
+[22m[2mAdmin Users API[2m > [22m[2mPOST 
+/api/admin/users[2m > [22m[2mshould validate 
+required fields[22m[39m
+Failed to invite user: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'GitHub login and email 
+are required'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/admin-users-api.test.ts[2m > 
+[22m[2mAdmin Users API[2m > [22m[2mPATCH 
+/api/admin/users/:id[2m > [22m[2mshould 
+prevent user from modifying their own 
+status[22m[39m
+Failed to update user: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Cannot modify your own 
+admin status'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/admin-users-api.test.ts[2m > 
+[22m[2mAdmin Users API[2m > [22m[2mDELETE 
+/api/admin/users/:id[2m > [22m[2mshould 
+prevent user from deleting themselves[22m[39m
+Failed to delete user: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Cannot delete your own 
+account'[39m }
+}
+
+ [32mΓ£ô[39m tests/unit/admin-users-api.test.ts [2m ([22m[2m15 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/setup-api-extended.test.ts[2m > 
+[22m[2mSetup API[2m > [22m[2mGET 
+/api/setup[2m > [22m[2mshould handle KV 
+errors gracefully[22m[39m
+Failed to check setup status: Error: KV Error
+    at [90mF:\009_PROJECTS\starspace\NebulaKit\
+[39mtests\unit\setup-api-extended.test.ts:74:38
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4m@vitest/runner[24m/
+dist/index.js:135:14
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4m@vitest/runner[24m/
+dist/index.js:60:26
+    at runTest [90m(file:///F:/009_PROJECTS/star
+space/NebulaKit/[39mnode_modules/[4m@vitest/run
+ner[24m/dist/index.js:781:17[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///F:/009_PROJECTS/s
+tarspace/NebulaKit/[39mnode_modules/[4m@vitest/
+runner[24m/dist/index.js:967:3[90m)[39m
+
+[90mstderr[2m | 
+tests/unit/setup-api-extended.test.ts[2m > 
+[22m[2mSetup API[2m > [22m[2mPOST 
+/api/setup[2m > [22m[2mshould return 403 when 
+setup is locked[22m[39m
+Failed to save setup configuration: HttpError {
+  status: [33m403[39m,
+  body: {
+    message: [32m'Setup is locked. The admin 
+user has already logged in. Setup can only be 
+performed once.'[39m
+  }
+}
+
+[90mstderr[2m | 
+tests/unit/setup-api-extended.test.ts[2m > 
+[22m[2mSetup API[2m > [22m[2mPOST 
+/api/setup[2m > [22m[2mshould return 400 when 
+client credentials missing for new 
+setup[22m[39m
+Failed to save setup configuration: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Client ID and Client 
+Secret are required'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/setup-api-extended.test.ts[2m > 
+[22m[2mSetup API[2m > [22m[2mPOST 
+/api/setup[2m > [22m[2mshould return 400 when 
+admin username is missing[22m[39m
+Failed to save setup configuration: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Admin GitHub Username 
+is required'[39m }
+}
+
+[90mstderr[2m | 
+tests/unit/setup-api-extended.test.ts[2m > 
+[22m[2mSetup API[2m > [22m[2mPOST 
+/api/setup[2m > [22m[2mshould return 400 for 
+invalid GitHub username format[22m[39m
+Failed to save setup configuration: HttpError {
+  status: [33m400[39m,
+  body: { message: [32m'Invalid GitHub username 
+format'[39m }
+}
+
+[90mstdout[2m | tests/unit/setup-api-extended.test.ts[2m > [22m[2mSetup API[2m > [22m[2mPOST /api/setup[2m > [22m[2mshould save config when valid data provided[22m[39m
+Γ£ô Resolved admin GitHub user: testuser (ID: 12345)
+Γ£ô Saved auth config to KV: { id: [32m'config-uuid'[39m, provider: [32m'github'[39m, clientId: [32m'test-client'[39m }
+Γ£ô Saved admin owner to KV: testuser (ID: 12345)
+
+[90mstderr[2m | 
+tests/unit/setup-api-extended.test.ts[2m > 
+[22m[2mSetup API[2m > [22m[2mPOST 
+/api/setup[2m > [22m[2mshould handle GitHub 
+API 404 error[22m[39m
+Failed to fetch GitHub user: HttpError {
+  status: [33m404[39m,
+  body: { message: [32m"GitHub user 
+'nonexistent-user-12345' not found"[39m }
+}
+Failed to save setup configuration: HttpError {
+  status: [33m500[39m,
+  body: { message: [32m'Failed to verify GitHub 
+username'[39m }
+}
+
+[90mstdout[2m | tests/unit/setup-api-extended.test.ts[2m > [22m[2mSetup API[2m > [22m[2mPOST /api/setup[2m > [22m[2mshould work without KV (development mode)[22m[39m
+Γ£ô Resolved admin GitHub user: testuser (ID: 12345)
+
+[90mstderr[2m | 
+tests/unit/setup-api-extended.test.ts[2m > 
+[22m[2mSetup API[2m > [22m[2mPOST 
+/api/setup[2m > [22m[2mshould work without KV 
+(development mode)[22m[39m
+ΓÜá∩╕Å  KV not available. Setup KV namespace for 
+local dev:
+   wrangler kv:namespace create "KV" --preview
+   Then update wrangler.toml with the preview_id
+
+Or use .dev.vars file:
+   GITHUB_CLIENT_ID=test-client
+   GITHUB_CLIENT_SECRET=test-secret
+   GITHUB_OWNER_ID=12345
+   # Admin user: @testuser (ID: 12345)
+
+[90mstdout[2m | tests/unit/setup-api-extended.test.ts[2m > [22m[2mSetup API[2m > [22m[2mPOST /api/setup[2m > [22m[2mshould allow updating admin without credentials when config exists[22m[39m
+Γ£ô Resolved admin GitHub user: newadmin (ID: 67890)
+Γ£ô Saved auth config to KV: { id: [32m'existing-id'[39m, provider: [32m'github'[39m, clientId: [90mundefined[39m }
+Γ£ô Saved admin owner to KV: newadmin (ID: 67890)
+
+ [32mΓ£ô[39m tests/unit/setup-api-extended.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 50[2mms[22m[39m
+[90mstdout[2m | tests/unit/openai-chat-service.test.ts[2m > [22m[2mOpenAI Chat Service[2m > [22m[2mcreateRealtimeSession[2m > [22m[2mshould create ephemeral token for realtime API[22m[39m
+Creating realtime session for model: gpt-4o-realtime-preview-2024-10-01
+Realtime session API response keys: [ [32m'client_secret'[39m ]
+Full response data: {
+  "client_secret": {
+    "value": "eph_token_12345"
+  }
+}
+Successfully got client_secret, length: [33m15[39m
+Session ID: [90mundefined[39m
+Expires at: [90mundefined[39m
+
+[90mstdout[2m | tests/unit/openai-chat-service.test.ts[2m > [22m[2mOpenAI Chat Service[2m > [22m[2mcreateRealtimeSession[2m > [22m[2mshould handle session creation errors[22m[39m
+Creating realtime session for model: gpt-4o-realtime-preview-2024-10-01
+
+[90mstderr[2m | 
+tests/unit/openai-chat-service.test.ts[2m > 
+[22m[2mOpenAI Chat Service[2m > 
+[22m[2mcreateRealtimeSession[2m > 
+[22m[2mshould handle session creation 
+errors[22m[39m
+Failed to create realtime session: [33m500[39m 
+Internal Server Error
+
+ [32mΓ£ô[39m tests/unit/openai-chat-service.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/setup-restriction.test.ts [2m ([22m[2m11 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/chat-page-server.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-auth-keys-setup-oauth.test.ts [2m ([22m[2m11 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32mΓ£ô[39m src/lib/utils/contrast.test.ts [2m ([22m[2m21 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/auth-keys-api.test.ts[2m > 
+[22m[2mAuth Keys API[2m > [22m[2mGET 
+/api/admin/auth-keys[2m > [22m[2mshould 
+handle KV parse errors gracefully[22m[39m
+Failed to parse GitHub OAuth config: 
+SyntaxError: Unexpected token 'i', 
+"invalid-json" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at GET [90m(F:\009_PROJECTS\starspace\Nebula
+Kit\[39msrc\routes\api\admin\auth-keys\+server.t
+s:14:30[90m)[39m
+    at [90mF:\009_PROJECTS\starspace\NebulaKit\
+[39mtests\unit\auth-keys-api.test.ts:70:21
+    at runTest [90m(file:///F:/009_PROJECTS/star
+space/NebulaKit/[39mnode_modules/[4m@vitest/run
+ner[24m/dist/index.js:781:11[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///F:/009_PROJECTS/s
+tarspace/NebulaKit/[39mnode_modules/[4m@vitest/
+runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4mvitest[24m/dist/chu
+nks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+[90mstderr[2m | 
+tests/unit/auth-keys-api.test.ts[2m > 
+[22m[2mAuth Keys API[2m > [22m[2mPOST 
+/api/admin/auth-keys[2m > [22m[2mshould 
+return 400 when required fields are 
+missing[22m[39m
+Failed to create auth key: HttpError { status: 
+[33m400[39m, body: { message: [32m'Missing 
+required fields'[39m } }
+
+ [32mΓ£ô[39m tests/unit/auth-keys-api.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 48[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-dashboard-setup-info.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-auth-keys.test.ts [2m ([22m[2m11 tests[22m[2m)[22m[90m 52[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/setup-page.test.ts [2m ([22m[2m13 tests[22m[2m)[22m[33m 941[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-ai-keys-toggle.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/chat-api.test.ts[2m > [22m[2mPOST 
+/api/chat/stream - Text Chat Streaming[2m > 
+[22m[2mshould stream chat responses from 
+OpenAI[22m[39m
+Streaming error: TypeError: Cannot read 
+properties of undefined (reading 'ok')
+    at Module.streamChatCompletion [90m(F:\009_P
+ROJECTS\starspace\NebulaKit\[39msrc\lib\services
+\openai-chat.ts:84:16[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at Object.start [90m(F:\009_PROJECTS\starspa
+ce\NebulaKit\[39msrc\routes\api\chat\stream\+ser
+ver.ts:45:23[90m)[39m
+
+[90mstderr[2m | 
+tests/unit/chat-api.test.ts[2m > [22m[2mPOST 
+/api/chat/stream - Text Chat Streaming[2m > 
+[22m[2mshould return 400 if messages are 
+invalid[22m[39m
+Chat stream error: HttpError { status: 
+[33m400[39m, body: { message: [32m'Invalid 
+messages format'[39m } }
+
+[90mstderr[2m | 
+tests/unit/chat-api.test.ts[2m > [22m[2mPOST 
+/api/chat/stream - Text Chat Streaming[2m > 
+[22m[2mshould return 503 if no OpenAI key is 
+available[22m[39m
+Chat stream error: HttpError {
+  status: [33m503[39m,
+  body: { message: [32m'No OpenAI API key 
+configured'[39m }
+}
+
+[90mstdout[2m | tests/unit/chat-api.test.ts[2m > [22m[2mPOST /api/chat/voice/session - Voice Chat Session[2m > [22m[2mshould create ephemeral token for voice chat[22m[39m
+Creating realtime session with model: gpt-4o-realtime-preview-2024-10-01
+Creating realtime session for model: gpt-4o-realtime-preview-2024-10-01
+Realtime session API response keys: [ [32m'client_secret'[39m ]
+Full response data: {
+  "client_secret": {
+    "value": "ephemeral-token-123"
+  }
+}
+Successfully got client_secret, length: [33m19[39m
+Session ID: [90mundefined[39m
+Expires at: [90mundefined[39m
+Realtime session created, token length: [33m19[39m
+Token prefix: ephemeral-token-123...
+
+ [32mΓ£ô[39m tests/unit/chat-api.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/chat-api.test.ts[2m > [22m[2mPOST 
+/api/chat/voice/session - Voice Chat Session[2m 
+> [22m[2mshould return 503 if no OpenAI key is 
+available[22m[39m
+Voice session error: HttpError {
+  status: [33m503[39m,
+  body: { message: [32m'No OpenAI API key 
+configured'[39m }
+}
+Error details: [90mundefined[39m [33m503[39m
+
+ [32mΓ£ô[39m tests/unit/chat-voice-availability.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/profile-page.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[90m 81[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-pages-server.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/github-auth.test.ts [2m ([22m[2m15 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/chat-redirect.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/setup-api.test.ts [2m ([22m[2m11 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+[90mstdout[2m | tests/unit/theme-contrast.test.ts[2m > [22m[2mTheme Contrast Validation[2m > [22m[2mLight Theme[2m > [22m[2mshould warn about any failing contrast ratios[22m[39m
+Γ£ô text/background: 17.40:1
+Γ£ô text-secondary/background: 6.27:1
+Γ£ô primary/background: 5.57:1
+Γ£ô text/surface: 16.51:1
+Γ£ô text-secondary/surface: 5.95:1
+
+[90mstdout[2m | tests/unit/theme-contrast.test.ts[2m > [22m[2mTheme Contrast Validation[2m > [22m[2mDark Theme[2m > [22m[2mshould warn about any failing contrast ratios[22m[39m
+Γ£ô text/background: 18.78:1
+Γ£ô text-secondary/background: 9.54:1
+Γ£ô primary/background: 5.38:1
+Γ£ô text/surface: 16.51:1
+Γ£ô text-secondary/surface: 8.39:1
+
+[90mstdout[2m | tests/unit/theme-contrast.test.ts[2m > [22m[2mTheme Contrast Validation[2m > [22m[2mColor Recommendations[2m > [22m[2mshould suggest better colors when contrast fails[22m[39m
+
+≡ƒÄ¿ Color Improvement Suggestions:
+
+  text-secondary/surface:
+    Current: #6c757d on #f8f9fa
+    Ratio: 4.45:1 (needs 4.5:1)
+    Suggestion: Use a darker gray like #5a6169 (5.95:1) or #495057 (7.39:1)
+
+ [32mΓ£ô[39m tests/unit/theme-contrast.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/ai-keys-status-extended.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/home-page.test.ts [2m ([22m[2m13 tests[22m[2m)[22m[90m 244[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/ai-provider-status.test.ts [2m ([22m[2m4 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/admin-layout.test.ts[2m > 
+[22m[2mAdmin Dashboard Page Server Load[2m > 
+[22m[2mload function[2m > [22m[2mshould 
+handle KV errors gracefully[22m[39m
+Failed to fetch setup info from KV: Error: KV 
+Error
+    at [90mF:\009_PROJECTS\starspace\NebulaKit\
+[39mtests\unit\admin-layout.test.ts:118:38
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4m@vitest/runner[24m/
+dist/index.js:135:14
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4m@vitest/runner[24m/
+dist/index.js:60:26
+    at runTest [90m(file:///F:/009_PROJECTS/star
+space/NebulaKit/[39mnode_modules/[4m@vitest/run
+ner[24m/dist/index.js:781:17[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///F:/009_PROJECTS/s
+tarspace/NebulaKit/[39mnode_modules/[4m@vitest/
+runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4mvitest[24m/dist/chu
+nks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+ [32mΓ£ô[39m tests/unit/admin-layout.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-auth-keys-delete-protection.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/theme-toggle.test.ts [2m ([22m[2m10 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/theme-store.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 93[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/setup-page-server.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32mΓ£ô[39m src/lib/stores/theme.test.ts [2m ([22m[2m8 tests[22m[2m)[22m[90m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/admin-protection.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+[90mstderr[2m | 
+tests/unit/layout-server.test.ts[2m > 
+[22m[2mLayout Server Load[2m > [22m[2mload 
+function[2m > [22m[2mshould handle fetch 
+error gracefully[22m[39m
+Failed to check AI provider status: Error: 
+Network error
+    at [90mF:\009_PROJECTS\starspace\NebulaKit\
+[39mtests\unit\layout-server.test.ts:70:48
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4m@vitest/runner[24m/
+dist/index.js:135:14
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4m@vitest/runner[24m/
+dist/index.js:60:26
+    at runTest [90m(file:///F:/009_PROJECTS/star
+space/NebulaKit/[39mnode_modules/[4m@vitest/run
+ner[24m/dist/index.js:781:17[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///F:/009_PROJECTS/sta
+rspace/NebulaKit/[39mnode_modules/[4m@vitest/ru
+nner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///F:/009_PROJECTS/s
+tarspace/NebulaKit/[39mnode_modules/[4m@vitest/
+runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///F:/009_PROJECTS/starspace/Neb
+ulaKit/[39mnode_modules/[4mvitest[24m/dist/chu
+nks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+ [32mΓ£ô[39m tests/unit/layout-server.test.ts [2m ([22m[2m4 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32mΓ£ô[39m src/lib/components/ChatInterface.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/db.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+ [32mΓ£ô[39m src/lib/components/ThemeSwitcher.test.ts [2m ([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32mΓ£ô[39m src/lib/components/Navigation.test.ts [2m ([22m[2m1 test[22m[2m)[22m
+
+[2m Test Files [22m [1m[32m46 passed[39m[22m[90m (46)[39m
+[2m      Tests [22m [1m[32m541 passed[39m[22m[90m (541)[39m
+[2m   Start at [22m 04:46:17
+[2m   Duration [22m 17.45s[2m (transform 2.76s, setup 7.87s, collect 2.75s, tests 5.22s, environment 201ms, prepare 150ms)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |    96.4 |    85.54 |   90.66 |    96.4 |                   
+ lib/components    |   98.22 |    79.33 |      70 |   98.22 |                   
+  ...erface.svelte |   96.72 |    48.14 |   66.66 |   96.72 | 109-150           
+  ...alette.svelte |   99.63 |    83.92 |   58.33 |   99.63 | 258-259           
+  ...itcher.svelte |     100 |       50 |     100 |     100 | 35-37             
+  ...Toggle.svelte |     100 |      100 |     100 |     100 |                   
+  ...Button.svelte |     100 |      100 |     100 |     100 |                   
+ lib/services      |   94.65 |    84.61 |     100 |   94.65 |                   
+  openai-chat.ts   |   94.65 |    84.61 |     100 |   94.65 | ...16-117,154-156 
+ lib/stores        |   68.96 |       60 |   66.66 |   68.96 |                   
+  theme.ts         |   68.96 |       60 |   66.66 |   68.96 | 10-11,18-22,45-55 
+ lib/utils         |   99.32 |    97.05 |     100 |   99.32 |                   
+  contrast.ts      |   98.98 |    95.45 |     100 |   98.98 | 128-129           
+  db.ts            |     100 |      100 |     100 |     100 |                   
+ routes            |     100 |      100 |     100 |     100 |                   
+  ...out.server.ts |     100 |      100 |     100 |     100 |                   
+ routes/admin      |     100 |      100 |     100 |     100 |                   
+  ...out.server.ts |     100 |      100 |     100 |     100 |                   
+  +page.server.ts  |     100 |      100 |     100 |     100 |                   
+ .../admin/ai-keys |     100 |      100 |     100 |     100 |                   
+  +page.server.ts  |     100 |      100 |     100 |     100 |                   
+ ...dmin/auth-keys |     100 |      100 |     100 |     100 |                   
+  +page.server.ts  |     100 |      100 |     100 |     100 |                   
+ ...es/admin/users |     100 |      100 |     100 |     100 |                   
+  +page.server.ts  |     100 |      100 |     100 |     100 |                   
+ .../admin/ai-keys |   94.84 |       90 |     100 |   94.84 |                   
+  +server.ts       |   94.84 |       90 |     100 |   94.84 | 37-39,92-93       
+ ...n/ai-keys/[id] |   97.16 |    89.47 |     100 |   97.16 |                   
+  +server.ts       |   97.16 |    89.47 |     100 |   97.16 | 59-60,105-106     
+ ...ys/[id]/toggle |   93.75 |    88.88 |     100 |   93.75 |                   
+  +server.ts       |   93.75 |    88.88 |     100 |   93.75 | 45-47             
+ ...ai-keys/status |     100 |      100 |     100 |     100 |                   
+  +server.ts       |     100 |      100 |     100 |     100 |                   
+ ...dmin/auth-keys |   93.58 |    72.72 |     100 |   93.58 |                   
+  +server.ts       |   93.58 |    72.72 |     100 |   93.58 | 36-38,73-74       
+ ...auth-keys/[id] |   88.57 |    76.47 |     100 |   88.57 |                   
+  +server.ts       |   88.57 |    76.47 |     100 |   88.57 | ...,89-91,102-104 
+ ...pi/admin/users |   91.08 |       70 |     100 |   91.08 |                   
+  +server.ts       |   91.08 |       70 |     100 |   91.08 | ...46,62-63,97-98 
+ ...min/users/[id] |   95.48 |    88.09 |     100 |   95.48 |                   
+  +server.ts       |   95.48 |    88.09 |     100 |   95.48 | ...,89-90,131-132 
+ ...n/users/search |     100 |    94.11 |     100 |     100 |                   
+  +server.ts       |     100 |    94.11 |     100 |     100 | 38                
+ ...pi/auth/github |      95 |    85.71 |     100 |      95 |                   
+  +server.ts       |      95 |    85.71 |     100 |      95 | 17-18             
+ ...ithub/callback |   89.32 |     82.5 |     100 |   89.32 |                   
+  +server.ts       |   89.32 |     82.5 |     100 |   89.32 | ...47-149,202-205 
+ ...pi/auth/logout |     100 |      100 |     100 |     100 |                   
+  +server.ts       |     100 |      100 |     100 |     100 |                   
+ ...pi/chat/stream |   88.46 |    81.81 |     100 |   88.46 |                   
+  +server.ts       |   88.46 |    81.81 |     100 |   88.46 | 46-52,76-77       
+ .../voice/session |   95.83 |    83.33 |     100 |   95.83 |                   
+  +server.ts       |   95.83 |    83.33 |     100 |   95.83 | 46-47             
+ routes/api/setup  |   96.77 |    81.39 |     100 |   96.77 |                   
+  +server.ts       |   96.77 |    81.39 |     100 |   96.77 | ...38-139,181-182 
+ routes/chat       |   91.75 |    89.65 |     100 |   91.75 |                   
+  +page.server.ts  |   91.75 |    89.65 |     100 |   91.75 | 56-59,68-69,74-75 
+ routes/profile    |     100 |      100 |     100 |     100 |                   
+  +page.server.ts  |     100 |      100 |     100 |     100 |                   
+ routes/setup      |     100 |      100 |     100 |     100 |                   
+  +page.server.ts  |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
+ERROR: Coverage for branches (85.54%) does not 
+meet global threshold (90%)
+close timed out after 5000ms
+Tests closed successfully but something prevents 
+Vite server from exiting
+You can try to identify the cause by enabling 
+"hanging-process" reporter. See 
+https://vitest.dev/config/#reporters

@@ -1,0 +1,11 @@
+# Local development environment variables for Cloudflare Workers
+# Copy this file to .dev.vars and fill in your actual values
+
+# GitHub OAuth Configuration
+# Get these from https://github.com/settings/developers
+GITHUB_CLIENT_ID=your_github_client_id_here
+GITHUB_CLIENT_SECRET=your_github_client_secret_here
+GITHUB_OWNER_ID=your_github_user_id_here
+
+# Note: .dev.vars is gitignored and should never be committed
+# These values are used by `wrangler dev` for local development

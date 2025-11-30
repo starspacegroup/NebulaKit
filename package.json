@@ -1,0 +1,49 @@
+{
+	"name": "nebulakit",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"dev": "vite dev --host 0.0.0.0 --port 4277",
+		"build": "vite build",
+		"preview": "vite preview --host 0.0.0.0 --port 4277",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"deploy": "npm run build && wrangler pages deploy .svelte-kit/cloudflare",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"test:ui": "vitest --ui",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:headed": "playwright test --headed",
+		"test:all": "npm run test && npm run test:e2e",
+		"validate:contrast": "node scripts/validate-theme-contrast.cjs",
+		"validate:all": "npm run check && npm run test && npm run validate:contrast"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.40.0",
+		"@sveltejs/adapter-cloudflare": "^4.7.2",
+		"@sveltejs/kit": "^2.0.0",
+		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@testing-library/jest-dom": "^6.1.5",
+		"@testing-library/svelte": "^4.2.3",
+		"@testing-library/user-event": "^14.6.1",
+		"@vitest/coverage-v8": "^1.0.4",
+		"@vitest/ui": "^1.0.4",
+		"happy-dom": "^12.10.3",
+		"prettier": "^3.1.0",
+		"prettier-plugin-svelte": "^3.1.2",
+		"svelte": "^4.2.7",
+		"svelte-check": "^3.6.0",
+		"tslib": "^2.4.1",
+		"typescript": "^5.0.0",
+		"vite": "^5.0.3",
+		"vitest": "^1.0.4",
+		"wrangler": "^3.78.0"
+	},
+	"dependencies": {
+		"@auth/core": "^0.35.0",
+		"@auth/sveltekit": "^1.5.0"
+	},
+	"type": "module"
+}
