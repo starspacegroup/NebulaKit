@@ -5,10 +5,38 @@
 
 	$: setupInfo = data.setupInfo;
 
+	let togglingReset = false;
+	let resetError = '';
+
 	// Mask client ID for security (show first 8 chars + ***)
 	function maskClientId(clientId: string | null): string {
 		if (!clientId) return 'Not configured';
 		return clientId.slice(0, 8) + '***';
+	}
+
+	async function toggleResetRoute() {
+		togglingReset = true;
+		resetError = '';
+
+		try {
+			const response = await fetch('/api/admin/settings/reset-route', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ disabled: !setupInfo.resetRouteDisabled })
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.message || 'Failed to update setting');
+			}
+
+			// Update local state
+			setupInfo.resetRouteDisabled = !setupInfo.resetRouteDisabled;
+		} catch (err) {
+			resetError = err instanceof Error ? err.message : 'Failed to update setting';
+		} finally {
+			togglingReset = false;
+		}
 	}
 </script>
 
@@ -163,6 +191,83 @@
 					<p class="hint">No admin user set. Please complete the initial setup.</p>
 				{/if}
 			</div>
+
+			<!-- Security Settings -->
+			<div class="info-card">
+				<h3>
+					<svg
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+						<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+					</svg>
+					Security Settings
+				</h3>
+				<div class="setting-row">
+					<div class="setting-info">
+						<span class="setting-label">Reset Route</span>
+						<span class="setting-description">
+							{#if setupInfo.resetRouteDisabled}
+								The /reset route is disabled
+							{:else}
+								The /reset route is publicly accessible
+							{/if}
+						</span>
+					</div>
+					<button
+						class="toggle-btn"
+						class:active={!setupInfo.resetRouteDisabled}
+						on:click={toggleResetRoute}
+						disabled={togglingReset}
+						aria-label={setupInfo.resetRouteDisabled ? 'Enable reset route' : 'Disable reset route'}
+					>
+						<span class="toggle-slider"></span>
+					</button>
+				</div>
+				{#if resetError}
+					<p class="error-text">{resetError}</p>
+				{/if}
+				{#if !setupInfo.resetRouteDisabled}
+					<div class="status status-warning">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<line x1="12" y1="8" x2="12" y2="12" />
+							<line x1="12" y1="16" x2="12.01" y2="16" />
+						</svg>
+						Security Risk
+					</div>
+					<p class="hint">
+						The reset route allows anyone to reset your OAuth configuration. Disable it to secure
+						your installation.
+					</p>
+				{:else}
+					<div class="status status-success">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M20 6L9 17l-5-5" />
+						</svg>
+						Secured
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>
@@ -309,5 +414,70 @@
 		color: var(--color-text-secondary);
 		margin-top: var(--spacing-sm);
 		font-style: italic;
+	}
+
+	.setting-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--spacing-sm) 0;
+	}
+
+	.setting-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.setting-label {
+		font-size: 0.9rem;
+		font-weight: 500;
+		color: var(--color-text);
+	}
+
+	.setting-description {
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+	}
+
+	.toggle-btn {
+		position: relative;
+		width: 48px;
+		height: 26px;
+		background: var(--color-border);
+		border: none;
+		border-radius: 13px;
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+
+	.toggle-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.toggle-btn.active {
+		background: var(--color-warning);
+	}
+
+	.toggle-slider {
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		width: 20px;
+		height: 20px;
+		background: white;
+		border-radius: 50%;
+		transition: transform var(--transition-fast);
+	}
+
+	.toggle-btn.active .toggle-slider {
+		transform: translateX(22px);
+	}
+
+	.error-text {
+		color: var(--color-error);
+		font-size: 0.8rem;
+		margin-top: var(--spacing-sm);
 	}
 </style>
