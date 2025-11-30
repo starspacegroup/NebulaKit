@@ -23,11 +23,10 @@ preview_id = "e9b0a93432b1406786dc7b9b334da90d"
 binding = "BUCKET"
 bucket_name = "nebulakit-files"
 
-# Queue
-# Queues are created automatically when referenced
-[[queues.producers]]
-binding = "QUEUE"
-queue = "nebulakit-queue"
+# Queue (disabled - enable Queues at https://dash.cloudflare.com before uncommenting)
+# [[queues.producers]]
+# binding = "QUEUE"
+# queue = "nebulakit-queue"
 
 # Note: queues.consumers is not supported by Cloudflare Pages
 # If you need queue consumers, use a separate Cloudflare Worker
