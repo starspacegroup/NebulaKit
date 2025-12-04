@@ -125,7 +125,7 @@ describe('Chat Page Voice Availability', () => {
 								apiKey: 'sk-test2',
 								enabled: true,
 								voiceEnabled: true,
-								voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+								voiceModel: 'gpt-4o-realtime-preview-2024-12-17'
 							})
 						)
 				}

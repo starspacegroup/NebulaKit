@@ -124,7 +124,7 @@ export async function* streamChatCompletion(
  */
 export async function createRealtimeSession(
 	apiKey: string,
-	model: string = 'gpt-4o-realtime-preview-2024-10-01'
+	model: string = 'gpt-4o-realtime-preview-2024-12-17'
 ): Promise<RealtimeSessionResponse> {
 	console.log('Creating realtime session for model:', model);
 

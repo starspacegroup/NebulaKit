@@ -1,7 +1,23 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
+
+	interface ModelWithPricing {
+		id: string;
+		pricing?: {
+			input: number;
+			output: number;
+			cached?: number;
+		};
+		audioPricing?: {
+			input: number;
+			output: number;
+		};
+		ownedBy: string;
+		created: number;
+	}
 
 	let keys = data.keys || [];
 	let showForm = false;
@@ -10,18 +26,25 @@
 		name: '',
 		provider: 'openai',
 		apiKey: '',
-		model: '',
+		models: [] as string[],
 		enabled: true,
 		voiceEnabled: false,
-		voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+		voiceModels: [] as string[]
 	};
 	let errors: Record<string, string> = {};
 	let visibleKeys: Record<string, boolean> = {};
 	let showDeleteConfirm = false;
 	let deletingKeyId: string | null = null;
 
+	// OpenAI models loaded from API
+	let openaiChatModels: ModelWithPricing[] = [];
+	let openaiVoiceModels: ModelWithPricing[] = [];
+	let loadingModels = false;
+	let modelsError = '';
+	let modelsLoadedFromApi = false;
+
 	const providers = [
-		{ value: 'openai', label: 'OpenAI', models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
+		{ value: 'openai', label: 'OpenAI', models: [] as string[] },
 		{
 			value: 'anthropic',
 			label: 'Anthropic',
@@ -36,12 +59,121 @@
 		{ value: 'cohere', label: 'Cohere', models: ['command', 'command-light'] }
 	];
 
-	const openaiVoiceModels = [
-		'gpt-4o-realtime-preview-2024-10-01',
-		'gpt-4o-realtime-preview-2024-12-17'
-	];
+	// Format pricing for display
+	function formatPricing(
+		pricing: { input: number; output: number; cached?: number } | undefined
+	): string {
+		if (!pricing) return '';
+		let text = `$${pricing.input}/$${pricing.output}/M`;
+		if (pricing.cached) {
+			text += ` (cached: $${pricing.cached})`;
+		}
+		return text;
+	}
 
-	$: currentProviderModels = providers.find((p) => p.value === formData.provider)?.models || [];
+	function formatAudioPricing(pricing: { input: number; output: number } | undefined): string {
+		if (!pricing) return '';
+		return `$${pricing.input}/$${pricing.output}/min`;
+	}
+
+	// Format compact pricing for display
+	function formatCompactPricing(
+		pricing?: { input: number; output: number; cached?: number },
+		audioPricing?: { input: number; output: number }
+	): string {
+		const parts: string[] = [];
+		if (pricing) {
+			parts.push(`$${pricing.input}/$${pricing.output}/M`);
+		}
+		if (audioPricing) {
+			parts.push(`$${audioPricing.input}/$${audioPricing.output}/min audio`);
+		}
+		return parts.join(' • ');
+	}
+
+	// Load OpenAI models when provider is selected or on mount
+	async function loadOpenAIModels() {
+		if (loadingModels) return;
+		loadingModels = true;
+		modelsError = '';
+
+		try {
+			const response = await fetch('/api/admin/ai-keys/models');
+			if (!response.ok) {
+				throw new Error('Failed to load models');
+			}
+
+			const data = await response.json();
+			openaiChatModels = data.chatModels || [];
+			openaiVoiceModels = data.voiceModels || [];
+			modelsLoadedFromApi = data.fromApi || false;
+		} catch (err) {
+			console.error('Failed to load OpenAI models:', err);
+			modelsError = 'Failed to load models. Using default list.';
+			// Fallback to static list
+			openaiChatModels = [
+				{ id: 'gpt-4o', pricing: { input: 2.5, output: 10 }, ownedBy: 'openai', created: 0 },
+				{ id: 'gpt-4o-mini', pricing: { input: 0.15, output: 0.6 }, ownedBy: 'openai', created: 0 },
+				{ id: 'gpt-4-turbo', pricing: { input: 10, output: 30 }, ownedBy: 'openai', created: 0 },
+				{ id: 'gpt-3.5-turbo', pricing: { input: 0.5, output: 1.5 }, ownedBy: 'openai', created: 0 }
+			];
+			openaiVoiceModels = [
+				{
+					id: 'gpt-4o-realtime-preview-2024-12-17',
+					pricing: { input: 5, output: 20 },
+					audioPricing: { input: 0.06, output: 0.24 },
+					ownedBy: 'openai',
+					created: 0
+				},
+				{
+					id: 'gpt-4o-mini-realtime-preview-2024-12-17',
+					pricing: { input: 0.6, output: 2.4 },
+					audioPricing: { input: 0.01, output: 0.04 },
+					ownedBy: 'openai',
+					created: 0
+				}
+			];
+		} finally {
+			loadingModels = false;
+		}
+	}
+
+	// Get models for current provider (only those with pricing for OpenAI)
+	$: currentProviderModels =
+		formData.provider === 'openai'
+			? openaiChatModels.filter((m) => m.pricing)
+			: providers
+					.find((p) => p.value === formData.provider)
+					?.models.map((m) => ({ id: m, pricing: undefined, ownedBy: '', created: 0 })) || [];
+
+	// Get voice models with pricing only
+	$: filteredVoiceModels = openaiVoiceModels.filter((m) => m.pricing || m.audioPricing);
+
+	// Calculate total selected models pricing
+	$: selectedTextModels = currentProviderModels.filter((m) => formData.models.includes(m.id));
+	$: selectedVoiceModelsList = filteredVoiceModels.filter((m) =>
+		formData.voiceModels.includes(m.id)
+	);
+
+	onMount(() => {
+		loadOpenAIModels();
+	});
+
+	function toggleModel(modelId: string) {
+		if (formData.models.includes(modelId)) {
+			formData.models = formData.models.filter((m) => m !== modelId);
+		} else {
+			formData.models = [...formData.models, modelId];
+		}
+	}
+
+	function toggleVoiceModel(modelId: string) {
+		if (formData.voiceModels.includes(modelId)) {
+			formData.voiceModels = formData.voiceModels.filter((m) => m !== modelId);
+		} else {
+			formData.voiceModels = [...formData.voiceModels, modelId];
+		}
+	}
 
 	function openAddForm() {
 		showForm = true;
@@ -50,10 +182,10 @@
 			name: '',
 			provider: 'openai',
 			apiKey: '',
-			model: '',
+			models: [],
 			enabled: true,
 			voiceEnabled: false,
-			voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+			voiceModels: []
 		};
 		errors = {};
 	}
@@ -61,14 +193,17 @@
 	function openEditForm(key: any) {
 		showForm = true;
 		editingKey = key;
+		// Support both old single model format and new multiple models format
+		const existingModels = key.models || (key.model ? [key.model] : []);
+		const existingVoiceModels = key.voiceModels || (key.voiceModel ? [key.voiceModel] : []);
 		formData = {
 			name: key.name,
 			provider: key.provider,
 			apiKey: '',
-			model: key.model || '',
+			models: existingModels,
 			enabled: key.enabled !== undefined ? key.enabled : true,
 			voiceEnabled: key.voiceEnabled ?? false,
-			voiceModel: key.voiceModel || 'gpt-4o-realtime-preview-2024-10-01'
+			voiceModels: existingVoiceModels
 		};
 		errors = {};
 	}
@@ -80,10 +215,10 @@
 			name: '',
 			provider: 'openai',
 			apiKey: '',
-			model: '',
+			models: [],
 			enabled: true,
 			voiceEnabled: false,
-			voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+			voiceModels: []
 		};
 		errors = {};
 	}
@@ -244,16 +379,30 @@
 	{:else}
 		<div class="keys-list">
 			{#each keys as key (key.id)}
+				{@const keyModels = key.models || (key.model ? [key.model] : [])}
+				{@const keyVoiceModels = key.voiceModels || (key.voiceModel ? [key.voiceModel] : [])}
 				<div class="key-card">
 					<div class="key-header">
 						<div class="key-info">
 							<h3>{key.name}</h3>
 							<div class="key-badges">
 								<span class="key-provider">{key.provider}</span>
-								{#if key.model}
-									<span class="key-model">{key.model}</span>
+								{#if keyModels.length > 0}
+									<span class="key-model-count">
+										<svg
+											width="14"
+											height="14"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+										</svg>
+										{keyModels.length} text model{keyModels.length > 1 ? 's' : ''}
+									</span>
 								{/if}
-								{#if key.provider === 'openai' && key.voiceEnabled}
+								{#if key.provider === 'openai' && key.voiceEnabled && keyVoiceModels.length > 0}
 									<span class="key-voice-badge">
 										<svg
 											width="14"
@@ -268,7 +417,7 @@
 											<line x1="12" y1="19" x2="12" y2="23" />
 											<line x1="8" y1="23" x2="16" y2="23" />
 										</svg>
-										Voice
+										{keyVoiceModels.length} voice model{keyVoiceModels.length > 1 ? 's' : ''}
 									</span>
 								{/if}
 							</div>
@@ -375,7 +524,7 @@
 	<div class="modal-overlay" on:click={closeForm}>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div class="modal" on:click|stopPropagation>
+		<div class="modal modal-lg" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>{editingKey ? 'Edit AI Key' : 'Add New AI Key'}</h2>
 				<button class="btn-close" on:click={closeForm} aria-label="Close">
@@ -392,37 +541,29 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<div class="form-group">
-					<label for="key-name">Key Name</label>
-					<input
-						id="key-name"
-						type="text"
-						bind:value={formData.name}
-						class:error={errors.name}
-						placeholder="e.g., OpenAI Production"
-					/>
-					{#if errors.name}
-						<span class="error-message">{errors.name}</span>
-					{/if}
-				</div>
+				<div class="form-row">
+					<div class="form-group">
+						<label for="key-name">Key Name</label>
+						<input
+							id="key-name"
+							type="text"
+							bind:value={formData.name}
+							class:error={errors.name}
+							placeholder="e.g., OpenAI Production"
+						/>
+						{#if errors.name}
+							<span class="error-message">{errors.name}</span>
+						{/if}
+					</div>
 
-				<div class="form-group">
-					<label for="provider">Provider</label>
-					<select id="provider" bind:value={formData.provider}>
-						{#each providers as provider}
-							<option value={provider.value}>{provider.label}</option>
-						{/each}
-					</select>
-				</div>
-
-				<div class="form-group">
-					<label for="model">Model (Optional)</label>
-					<select id="model" bind:value={formData.model}>
-						<option value="">-- Select a model --</option>
-						{#each currentProviderModels as model}
-							<option value={model}>{model}</option>
-						{/each}
-					</select>
+					<div class="form-group">
+						<label for="provider">Provider</label>
+						<select id="provider" bind:value={formData.provider}>
+							{#each providers as provider}
+								<option value={provider.value}>{provider.label}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 
 				<div class="form-group">
@@ -439,39 +580,262 @@
 					{/if}
 				</div>
 
-				{#if formData.provider === 'openai'}
-					<div class="form-section">
-						<h3>Voice Chat Settings</h3>
-						<div class="form-group checkbox-group">
-							<label class="checkbox-label">
-								<input type="checkbox" bind:checked={formData.voiceEnabled} />
-								<span>Enable Voice Chat</span>
-							</label>
-							<p class="help-text">
-								Allow users to interact with AI using voice (requires OpenAI Realtime API)
-							</p>
-						</div>
-
-						{#if formData.voiceEnabled}
-							<div class="form-group">
-								<label for="voice-model">Voice Model</label>
-								<select id="voice-model" bind:value={formData.voiceModel}>
-									{#each openaiVoiceModels as voiceModel}
-										<option value={voiceModel}>{voiceModel}</option>
-									{/each}
-								</select>
+				{#if formData.provider === 'openai' && (selectedTextModels.length > 0 || selectedVoiceModelsList.length > 0)}
+					<div class="pricing-summary">
+						<h4>
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+							</svg>
+							Selected Models Pricing
+						</h4>
+						{#if selectedTextModels.length > 0}
+							<div class="pricing-group">
+								<span class="pricing-group-title">Text Models ({selectedTextModels.length})</span>
+								{#each selectedTextModels as model}
+									<div class="pricing-item">
+										<span class="pricing-item-name">{model.id}</span>
+										<span class="pricing-item-value">{formatPricing(model.pricing)}</span>
+									</div>
+								{/each}
+							</div>
+						{/if}
+						{#if formData.voiceEnabled && selectedVoiceModelsList.length > 0}
+							<div class="pricing-group">
+								<span class="pricing-group-title"
+									>Voice Models ({selectedVoiceModelsList.length})</span
+								>
+								{#each selectedVoiceModelsList as model}
+									<div class="pricing-item">
+										<span class="pricing-item-name">{model.id}</span>
+										<span class="pricing-item-value">
+											{model.pricing ? formatPricing(model.pricing) : ''}
+											{model.pricing && model.audioPricing ? ' • ' : ''}
+											{model.audioPricing ? formatAudioPricing(model.audioPricing) : ''}
+										</span>
+									</div>
+								{/each}
 							</div>
 						{/if}
 					</div>
 				{/if}
 
+				{#if formData.provider === 'openai'}
+					<div class="form-section">
+						<div class="section-header">
+							<h3>
+								<svg
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+								</svg>
+								Text Models
+							</h3>
+							<span class="selection-count">{formData.models.length} selected</span>
+						</div>
+						{#if loadingModels}
+							<div class="loading-state">
+								<span class="loading-indicator">Loading models...</span>
+							</div>
+						{:else if modelsError}
+							<span class="warning-message">{modelsError}</span>
+						{:else}
+							{#if modelsLoadedFromApi}
+								<span class="success-hint">Models loaded from your OpenAI API</span>
+							{/if}
+							<div class="model-grid">
+								{#each currentProviderModels as model}
+									<button
+										type="button"
+										class="model-card"
+										class:selected={formData.models.includes(model.id)}
+										on:click={() => toggleModel(model.id)}
+									>
+										<div class="model-card-header">
+											<span class="model-name">{model.id}</span>
+											<label class="toggle-switch-sm">
+												<input
+													type="checkbox"
+													checked={formData.models.includes(model.id)}
+													on:click|stopPropagation={() => toggleModel(model.id)}
+												/>
+												<span class="slider-sm"></span>
+											</label>
+										</div>
+										{#if model.pricing}
+											<div class="model-pricing">
+												<span class="price-tag">
+													<span class="price-label">In:</span> ${model.pricing.input}/M
+												</span>
+												<span class="price-tag">
+													<span class="price-label">Out:</span> ${model.pricing.output}/M
+												</span>
+												{#if model.pricing.cached}
+													<span class="price-tag cached">
+														<span class="price-label">Cached:</span> ${model.pricing.cached}/M
+													</span>
+												{/if}
+											</div>
+										{/if}
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+
+					<div class="form-section">
+						<div class="section-header">
+							<h3>
+								<svg
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+									<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+									<line x1="12" y1="19" x2="12" y2="23" />
+									<line x1="8" y1="23" x2="16" y2="23" />
+								</svg>
+								Voice Models
+							</h3>
+							<div class="section-header-actions">
+								<span class="selection-count">{formData.voiceModels.length} selected</span>
+								<label class="toggle-switch">
+									<input type="checkbox" bind:checked={formData.voiceEnabled} />
+									<span class="slider"></span>
+								</label>
+							</div>
+						</div>
+						{#if formData.voiceEnabled}
+							<p class="help-text-inline">
+								Enable voice chat to allow users to interact with AI using speech (OpenAI Realtime
+								API).
+							</p>
+							{#if loadingModels}
+								<div class="loading-state">
+									<span class="loading-indicator">Loading models...</span>
+								</div>
+							{:else}
+								<div class="model-grid">
+									{#each filteredVoiceModels as model}
+										<button
+											type="button"
+											class="model-card voice-card"
+											class:selected={formData.voiceModels.includes(model.id)}
+											on:click={() => toggleVoiceModel(model.id)}
+										>
+											<div class="model-card-header">
+												<span class="model-name">{model.id}</span>
+												<label class="toggle-switch-sm">
+													<input
+														type="checkbox"
+														checked={formData.voiceModels.includes(model.id)}
+														on:click|stopPropagation={() => toggleVoiceModel(model.id)}
+													/>
+													<span class="slider-sm"></span>
+												</label>
+											</div>
+											<div class="model-pricing">
+												{#if model.pricing}
+													<div class="price-row">
+														<span class="price-category">Tokens:</span>
+														<span class="price-tag">
+															<span class="price-label">In:</span> ${model.pricing.input}/M
+														</span>
+														<span class="price-tag">
+															<span class="price-label">Out:</span> ${model.pricing.output}/M
+														</span>
+													</div>
+												{/if}
+												{#if model.audioPricing}
+													<div class="price-row">
+														<span class="price-category">Audio:</span>
+														<span class="price-tag audio">
+															<span class="price-label">In:</span> ${model.audioPricing.input}/min
+														</span>
+														<span class="price-tag audio">
+															<span class="price-label">Out:</span> ${model.audioPricing.output}/min
+														</span>
+													</div>
+												{/if}
+											</div>
+										</button>
+									{/each}
+								</div>
+							{/if}
+						{:else}
+							<p class="help-text-inline disabled">
+								Toggle voice models on to enable real-time voice conversations.
+							</p>
+						{/if}
+					</div>
+				{:else}
+					<!-- Non-OpenAI providers -->
+					<div class="form-section">
+						<div class="section-header">
+							<h3>Models</h3>
+							<span class="selection-count">{formData.models.length} selected</span>
+						</div>
+						<div class="model-grid">
+							{#each currentProviderModels as model}
+								<button
+									type="button"
+									class="model-card"
+									class:selected={formData.models.includes(model.id)}
+									on:click={() => toggleModel(model.id)}
+								>
+									<div class="model-card-header">
+										<span class="model-name">{model.id}</span>
+										<label class="toggle-switch-sm">
+											<input
+												type="checkbox"
+												checked={formData.models.includes(model.id)}
+												on:click|stopPropagation={() => toggleModel(model.id)}
+											/>
+											<span class="slider-sm"></span>
+										</label>
+									</div>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				{#if errors.submit}
-					<div class="error-message">{errors.submit}</div>
+					<div class="error-message submit-error">{errors.submit}</div>
 				{/if}
 			</div>
 			<div class="modal-footer">
 				<button class="btn btn-secondary" on:click={closeForm}>Cancel</button>
-				<button class="btn btn-primary" on:click={saveKey}>Save Key</button>
+				<button class="btn btn-primary" on:click={saveKey}>
+					<svg
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+						<polyline points="17 21 17 13 7 13 7 21" />
+						<polyline points="7 3 7 8 15 8" />
+					</svg>
+					Save Key
+				</button>
 			</div>
 		</div>
 	</div>
@@ -668,7 +1032,6 @@
 	}
 
 	.key-provider,
-	.key-model,
 	.key-voice-badge {
 		display: inline-flex;
 		align-items: center;
@@ -682,12 +1045,6 @@
 	.key-provider {
 		background: var(--color-background);
 		color: var(--color-text-secondary);
-	}
-
-	.key-model {
-		background: var(--color-primary);
-		color: var(--color-background);
-		opacity: 0.8;
 	}
 
 	.key-voice-badge {
@@ -705,7 +1062,6 @@
 		margin-bottom: var(--spacing-md);
 	}
 
-	.key-field label,
 	.key-field .label {
 		display: block;
 		font-size: 0.875rem;
@@ -833,32 +1189,6 @@
 		margin-bottom: var(--spacing-xs);
 	}
 
-	.checkbox-group {
-		margin-bottom: var(--spacing-lg);
-	}
-
-	.checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		cursor: pointer;
-		font-weight: 500;
-	}
-
-	.checkbox-label input[type='checkbox'] {
-		width: 18px;
-		height: 18px;
-		cursor: pointer;
-	}
-
-	.help-text {
-		margin-top: var(--spacing-xs);
-		margin-left: 26px;
-		font-size: 0.813rem;
-		color: var(--color-text-secondary);
-		line-height: 1.4;
-	}
-
 	.form-group input,
 	.form-group select {
 		width: 100%;
@@ -885,6 +1215,46 @@
 		margin-top: var(--spacing-xs);
 		font-size: 0.875rem;
 		color: #ef4444;
+	}
+
+	.warning-message {
+		display: block;
+		margin-top: var(--spacing-xs);
+		font-size: 0.813rem;
+		color: #f59e0b;
+	}
+
+	.success-hint {
+		display: block;
+		margin-top: var(--spacing-xs);
+		font-size: 0.813rem;
+		color: #10b981;
+	}
+
+	.loading-indicator {
+		font-size: 0.813rem;
+		color: var(--color-text-secondary);
+		font-weight: 400;
+		margin-left: var(--spacing-xs);
+	}
+
+	.pricing-summary {
+		margin-bottom: var(--spacing-md);
+		padding: var(--spacing-md);
+		background: linear-gradient(
+			135deg,
+			var(--color-primary-soft, rgba(99, 102, 241, 0.1)),
+			var(--color-secondary-soft, rgba(139, 92, 246, 0.1))
+		);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--color-border);
+	}
+
+	.pricing-summary h4 {
+		margin: 0 0 var(--spacing-sm) 0;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--color-text);
 	}
 
 	.toggle-switch {
@@ -935,5 +1305,296 @@
 
 	.toggle-switch:hover .slider {
 		opacity: 0.9;
+	}
+
+	select:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	/* New styles for multi-select model interface */
+	.modal-lg {
+		max-width: 700px;
+	}
+
+	.form-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--spacing-md);
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--spacing-md);
+	}
+
+	.section-header h3 {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.section-header-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-md);
+	}
+
+	.selection-count {
+		font-size: 0.813rem;
+		color: var(--color-text-secondary);
+		background: var(--color-background);
+		padding: 2px 8px;
+		border-radius: var(--radius-sm);
+	}
+
+	.model-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: var(--spacing-sm);
+		max-height: 280px;
+		overflow-y: auto;
+		padding: var(--spacing-xs);
+	}
+
+	.model-card {
+		display: flex;
+		flex-direction: column;
+		padding: var(--spacing-sm);
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		text-align: left;
+	}
+
+	.model-card:hover {
+		border-color: var(--color-primary);
+		background: var(--color-surface);
+	}
+
+	.model-card.selected {
+		border-color: var(--color-primary);
+		background: linear-gradient(
+			135deg,
+			var(--color-primary-soft, rgba(99, 102, 241, 0.1)),
+			var(--color-secondary-soft, rgba(139, 92, 246, 0.05))
+		);
+	}
+
+	.model-card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.model-name {
+		font-size: 0.813rem;
+		font-weight: 500;
+		color: var(--color-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		flex: 1;
+	}
+
+	.model-pricing {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.price-row {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		flex-wrap: wrap;
+	}
+
+	.price-category {
+		font-size: 0.688rem;
+		color: var(--color-text-secondary);
+		min-width: 45px;
+	}
+
+	.price-tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		font-size: 0.688rem;
+		color: var(--color-text-secondary);
+		background: var(--color-surface);
+		padding: 1px 4px;
+		border-radius: var(--radius-sm);
+		font-family: monospace;
+	}
+
+	.price-tag.cached {
+		background: rgba(16, 185, 129, 0.1);
+		color: #10b981;
+	}
+
+	.price-tag.audio {
+		background: rgba(139, 92, 246, 0.1);
+		color: var(--color-secondary, #8b5cf6);
+	}
+
+	.price-label {
+		font-weight: 500;
+		opacity: 0.7;
+	}
+
+	.toggle-switch-sm {
+		position: relative;
+		display: inline-block;
+		width: 32px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+
+	.toggle-switch-sm input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	.slider-sm {
+		position: absolute;
+		cursor: pointer;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: var(--color-border);
+		transition: var(--transition-fast);
+		border-radius: 18px;
+	}
+
+	.slider-sm:before {
+		position: absolute;
+		content: '';
+		height: 14px;
+		width: 14px;
+		left: 2px;
+		bottom: 2px;
+		background-color: var(--color-background);
+		transition: var(--transition-fast);
+		border-radius: 50%;
+	}
+
+	.toggle-switch-sm input:checked + .slider-sm {
+		background-color: var(--color-primary);
+	}
+
+	.toggle-switch-sm input:checked + .slider-sm:before {
+		transform: translateX(14px);
+	}
+
+	.loading-state {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--spacing-xl);
+		color: var(--color-text-secondary);
+	}
+
+	.help-text-inline {
+		font-size: 0.813rem;
+		color: var(--color-text-secondary);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.help-text-inline.disabled {
+		opacity: 0.6;
+		font-style: italic;
+	}
+
+	.voice-card {
+		min-height: 80px;
+	}
+
+	.pricing-summary h4 {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.pricing-group {
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.pricing-group:last-child {
+		margin-bottom: 0;
+	}
+
+	.pricing-group-title {
+		display: block;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.pricing-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 2px 0;
+		font-size: 0.813rem;
+	}
+
+	.pricing-item-name {
+		color: var(--color-text);
+		font-weight: 500;
+	}
+
+	.pricing-item-value {
+		color: var(--color-text-secondary);
+		font-family: monospace;
+	}
+
+	.submit-error {
+		margin-top: var(--spacing-md);
+		padding: var(--spacing-sm);
+		background: rgba(239, 68, 68, 0.1);
+		border-radius: var(--radius-md);
+	}
+
+	.key-model-count {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 2px 8px;
+		border-radius: var(--radius-sm);
+		font-size: 0.875rem;
+		background: var(--color-primary);
+		color: var(--color-background);
+		opacity: 0.8;
+	}
+
+	@media (max-width: 600px) {
+		.form-row {
+			grid-template-columns: 1fr;
+		}
+
+		.model-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.section-header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: var(--spacing-sm);
+		}
 	}
 </style>

@@ -98,7 +98,7 @@ describe('Voice Session API - Extended Coverage', () => {
 		const response = await POST(createMockEvent() as unknown as Parameters<typeof POST>[0]);
 		const data = await response.json();
 
-		expect(data.model).toBe('gpt-4o-realtime-preview-2024-10-01');
+		expect(data.model).toBe('gpt-4o-realtime-preview-2024-12-17');
 	});
 
 	it('should re-throw errors with status property', async () => {

@@ -206,7 +206,7 @@ describe('OpenAI Chat Service', () => {
 
 			const result = await createRealtimeSession(
 				'sk-test123',
-				'gpt-4o-realtime-preview-2024-10-01'
+				'gpt-4o-realtime-preview-2024-12-17'
 			);
 
 			expect(result).toEqual({
@@ -219,7 +219,7 @@ describe('OpenAI Chat Service', () => {
 					headers: expect.objectContaining({
 						Authorization: 'Bearer sk-test123'
 					}),
-					body: expect.stringContaining('gpt-4o-realtime-preview-2024-10-01')
+					body: expect.stringContaining('gpt-4o-realtime-preview-2024-12-17')
 				})
 			);
 		});
@@ -236,7 +236,7 @@ describe('OpenAI Chat Service', () => {
 			const { createRealtimeSession } = await import('$lib/services/openai-chat');
 
 			await expect(
-				createRealtimeSession('sk-test123', 'gpt-4o-realtime-preview-2024-10-01')
+				createRealtimeSession('sk-test123', 'gpt-4o-realtime-preview-2024-12-17')
 			).rejects.toThrow('Failed to create realtime session');
 		});
 	});

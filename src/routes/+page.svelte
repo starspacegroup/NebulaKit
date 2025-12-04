@@ -1962,10 +1962,6 @@
 			line-height: 1.6;
 		}
 
-		.subtitle br {
-			display: none;
-		}
-
 		.command-palette {
 			padding: var(--spacing-sm);
 			border-radius: 16px;

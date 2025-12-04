@@ -141,7 +141,7 @@ describe('POST /api/chat/voice/session - Voice Chat Session', () => {
 							apiKey: 'sk-test123',
 							enabled: true,
 							voiceEnabled: true,
-							voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+							voiceModel: 'gpt-4o-realtime-preview-2024-12-17'
 						})
 					);
 				}

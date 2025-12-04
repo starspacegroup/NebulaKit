@@ -73,8 +73,8 @@ describe('Chat Page Redirect', () => {
 		}
 	});
 
-	it('should redirect to / when no API keys enabled and user is not logged in', async () => {
-		// Arrange
+	it('should redirect to /auth/login when user is not logged in', async () => {
+		// Arrange - No need to mock keys since auth check happens first
 		const mockPlatform = {
 			env: {
 				KV: {
@@ -99,7 +99,7 @@ describe('Chat Page Redirect', () => {
 			expect.fail('Expected redirect to be thrown');
 		} catch (error: any) {
 			expect(error.status).toBe(302);
-			expect(error.location).toBe('/');
+			expect(error.location).toBe('/auth/login?redirect=/chat');
 		}
 	});
 

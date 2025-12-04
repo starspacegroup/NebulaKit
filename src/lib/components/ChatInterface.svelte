@@ -226,7 +226,7 @@
 			voiceState = 'listening';
 
 			// Connect to OpenAI Realtime API via WebSocket
-			const wsModel = model || 'gpt-4o-realtime-preview-2024-10-01';
+			const wsModel = model || 'gpt-4o-realtime-preview-2024-12-17';
 			console.log('Connecting to OpenAI Realtime API with model:', wsModel);
 			console.log('Token length:', token?.length, 'Token prefix:', token?.substring(0, 20) + '...');
 
@@ -303,16 +303,19 @@
 							const sessionConfig = {
 								type: 'session.update',
 								session: {
+									modalities: ['text', 'audio'],
+									voice: 'alloy',
+									input_audio_format: 'pcm16',
+									output_audio_format: 'pcm16',
+									input_audio_transcription: {
+										model: 'whisper-1'
+									},
 									turn_detection: {
 										type: 'server_vad',
 										threshold: 0.5,
 										prefix_padding_ms: 300,
 										silence_duration_ms: 500
 									},
-									input_audio_transcription: {
-										model: 'whisper-1'
-									},
-									modalities: ['text', 'audio'],
 									temperature: 0.8
 								}
 							};
@@ -417,7 +420,23 @@
 					}
 
 					// Handle AI response completion - back to listening
-					if (data.type === 'response.audio_transcript.done' || data.type === 'response.done') {
+					if (data.type === 'response.done') {
+						console.log('Response done - full data:', JSON.stringify(data, null, 2));
+						console.log('Response status:', data.response?.status);
+						console.log('Response output:', data.response?.output);
+
+						// Check if response was cancelled or had no output
+						if (data.response?.status === 'cancelled') {
+							console.warn('Response was cancelled');
+						} else if (!data.response?.output || data.response.output.length === 0) {
+							console.warn('Response had no output items');
+						}
+
+						currentAssistantId = null;
+						voiceState = 'listening';
+					}
+
+					if (data.type === 'response.audio_transcript.done') {
 						currentAssistantId = null;
 						voiceState = 'listening';
 					}

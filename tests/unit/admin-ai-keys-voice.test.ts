@@ -34,7 +34,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 					model: 'gpt-4',
 					enabled: true,
 					voiceEnabled: true,
-					voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+					voiceModel: 'gpt-4o-realtime-preview-2024-12-17'
 				})
 			};
 
@@ -53,7 +53,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 				name: 'OpenAI Voice',
 				provider: 'openai',
 				voiceEnabled: true,
-				voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+				voiceModel: 'gpt-4o-realtime-preview-2024-12-17'
 			});
 		});
 
@@ -158,7 +158,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 				model: 'gpt-4',
 				enabled: true,
 				voiceEnabled: true,
-				voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+				voiceModel: 'gpt-4o-realtime-preview-2024-12-17'
 			};
 
 			const mockPlatform = {
@@ -209,7 +209,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 				apiKey: 'sk-test-key',
 				enabled: true,
 				voiceEnabled: true,
-				voiceModel: 'gpt-4o-realtime-preview-2024-10-01'
+				voiceModel: 'gpt-4o-realtime-preview-2024-12-17'
 			};
 
 			const mockPlatform = {
@@ -246,7 +246,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 
 			expect(response.status).toBe(200);
 			expect(result.token).toBe('ephemeral-token');
-			expect(result.model).toBe('gpt-4o-realtime-preview-2024-10-01');
+			expect(result.model).toBe('gpt-4o-realtime-preview-2024-12-17');
 		});
 
 		it('should return 403 when voice is not enabled', async () => {
