@@ -2,14 +2,17 @@
 	import { browser } from '$app/environment';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import Navigation from '$lib/components/Navigation.svelte';
+	import {
+		closeCommandPalette,
+		showCommandPalette,
+		toggleCommandPalette
+	} from '$lib/stores/commandPalette';
 	import { resolvedTheme } from '$lib/stores/theme';
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
-
-	let showCommandPalette = false;
 
 	// Subscribe to theme changes and apply to DOM
 	if (browser) {
@@ -23,10 +26,10 @@
 		const handleKeydown = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
 				e.preventDefault();
-				showCommandPalette = !showCommandPalette;
+				toggleCommandPalette();
 			}
 			if (e.key === 'Escape') {
-				showCommandPalette = false;
+				closeCommandPalette();
 			}
 		};
 
@@ -39,14 +42,14 @@
 	<Navigation
 		user={data.user}
 		hasAIProviders={data.hasAIProviders}
-		onCommandPaletteClick={() => (showCommandPalette = !showCommandPalette)}
+		onCommandPaletteClick={toggleCommandPalette}
 	/>
 
 	<main>
 		<slot />
 	</main>
 
-	<CommandPalette bind:show={showCommandPalette} hasAIProviders={data.hasAIProviders} />
+	<CommandPalette bind:show={$showCommandPalette} hasAIProviders={data.hasAIProviders} />
 </div>
 
 <style>

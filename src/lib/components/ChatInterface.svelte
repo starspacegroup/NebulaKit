@@ -1,17 +1,21 @@
 <script lang="ts">
+	import { chatHistoryStore, currentMessages } from '$lib/stores/chatHistory';
 	import { onDestroy, onMount } from 'svelte';
 	import { quintOut } from 'svelte/easing';
-	import { fade, fly, scale } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import VoiceButton from './VoiceButton.svelte';
 
-	export let messages: Array<{
-		id: string;
-		role: 'user' | 'assistant';
-		content: string;
-		timestamp: Date;
-	}> = [];
-	export let isLoading = false;
-	export let streamingContent = '';
+	// Voice availability is passed from server - defaults to false for safety
+	export let voiceAvailable = false;
+
+	// Use store-based messages
+	$: messages = $currentMessages.map((msg) => ({
+		...msg,
+		timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)
+	}));
+
+	let isLoading = false;
+	let streamingContent = '';
 
 	let input = '';
 	let chatContainer: HTMLDivElement;
@@ -29,9 +33,6 @@
 	let isPlayingAudio = false;
 	let audioProcessor: ScriptProcessorNode | null = null;
 	let sessionConfigured = false;
-
-	// Voice availability is passed from server - defaults to false for safety
-	export let voiceAvailable = false;
 
 	// Input state
 	const MAX_INPUT_LENGTH = 4000;
@@ -79,14 +80,19 @@
 	async function sendMessage() {
 		if (!canSend) return;
 
-		const userMessage = {
-			id: Date.now().toString(),
-			role: 'user' as const,
-			content: input.trim(),
-			timestamp: new Date()
-		};
+		// Ensure we have a current conversation
+		let conversationId = $chatHistoryStore.currentConversationId;
+		if (!conversationId) {
+			const conv = chatHistoryStore.createConversation();
+			conversationId = conv.id;
+		}
 
-		messages = [...messages, userMessage];
+		// Add user message to store
+		chatHistoryStore.addMessage(conversationId, {
+			role: 'user',
+			content: input.trim()
+		});
+
 		input = '';
 		isLoading = true;
 		autoResizeTextarea();
@@ -97,7 +103,7 @@
 			const response = await fetch('/api/chat/stream', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ messages })
+				body: JSON.stringify({ messages: $currentMessages })
 			});
 
 			if (!response.ok) {
@@ -109,7 +115,6 @@
 
 			const decoder = new TextDecoder();
 			let assistantContent = '';
-			const assistantId = (Date.now() + 1).toString();
 
 			while (true) {
 				const { done, value } = await reader.read();
@@ -136,29 +141,19 @@
 				}
 			}
 
-			// Add complete assistant message
-			messages = [
-				...messages,
-				{
-					id: assistantId,
-					role: 'assistant',
-					content: assistantContent,
-					timestamp: new Date()
-				}
-			];
+			// Add complete assistant message to store
+			chatHistoryStore.addMessage(conversationId, {
+				role: 'assistant',
+				content: assistantContent
+			});
 			streamingContent = '';
 		} catch (err) {
 			console.error('Send message error:', err);
 			// Show error message
-			messages = [
-				...messages,
-				{
-					id: (Date.now() + 1).toString(),
-					role: 'assistant',
-					content: 'Sorry, I encountered an error. Please try again.',
-					timestamp: new Date()
-				}
-			];
+			chatHistoryStore.addMessage(conversationId, {
+				role: 'assistant',
+				content: 'Sorry, I encountered an error. Please try again.'
+			});
 		} finally {
 			isLoading = false;
 			scrollToBottom();
@@ -606,31 +601,6 @@
 </svelte:head>
 
 <div class="chat-interface">
-	<!-- Header -->
-	<div class="chat-header">
-		<div class="header-content">
-			<h2>AI Assistant</h2>
-			<div class="status-indicator">
-				{#if isVoiceActive}
-					<span class="voice-active-badge" in:scale={{ duration: 200 }}>
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-							<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-						</svg>
-						Voice Active
-					</span>
-				{/if}
-			</div>
-		</div>
-	</div>
-
 	<!-- Messages container -->
 	<div class="chat-messages" bind:this={chatContainer} role="region" aria-label="Chat messages">
 		{#each messages as message (message.id)}
@@ -836,75 +806,6 @@
 		height: 100%;
 		background: var(--color-background);
 		position: relative;
-	}
-
-	.chat-header {
-		background: var(--color-surface);
-		border-bottom: 1px solid var(--color-border);
-		padding: var(--spacing-md) var(--spacing-lg);
-		backdrop-filter: blur(10px);
-		position: sticky;
-		top: 0;
-		z-index: 10;
-	}
-
-	.header-content {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		max-width: 1200px;
-		margin: 0 auto;
-	}
-
-	.header-content h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		margin: 0;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
-	.voice-active-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		padding: var(--spacing-xs) var(--spacing-md);
-		border-radius: var(--radius-full);
-		background: linear-gradient(135deg, var(--color-error), #dc2626);
-		color: white;
-		font-size: 0.813rem;
-		font-weight: 600;
-		animation: pulse-glow 2s ease-in-out infinite;
-	}
-
-	.status-indicator {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: white;
-		animation: pulse-dot 1.5s ease-in-out infinite;
-	}
-
-	@keyframes pulse-glow {
-		0%,
-		100% {
-			box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-		}
-		50% {
-			box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
-		}
-	}
-
-	@keyframes pulse-dot {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.5;
-		}
 	}
 
 	.chat-messages {
@@ -1258,7 +1159,6 @@
 			max-width: 90%;
 		}
 
-		.chat-header,
 		.unified-input-area {
 			padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
 		}

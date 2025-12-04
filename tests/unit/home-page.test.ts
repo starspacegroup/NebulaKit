@@ -1,6 +1,8 @@
 import { goto } from '$app/navigation';
+import { showCommandPalette } from '$lib/stores/commandPalette';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { describe, expect, it, vi } from 'vitest';
+import { get } from 'svelte/store';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Page from '../../src/routes/+page.svelte';
 
 // Mock $app/navigation
@@ -9,6 +11,15 @@ vi.mock('$app/navigation', () => ({
 }));
 
 describe('Home Page Hero', () => {
+	beforeEach(() => {
+		// Reset the command palette store before each test
+		showCommandPalette.set(false);
+	});
+
+	afterEach(() => {
+		showCommandPalette.set(false);
+	});
+
 	it('should render the main title', () => {
 		render(Page);
 		const title = screen.getByText('NebulaKit');
@@ -68,38 +79,35 @@ describe('Home Page Hero', () => {
 	});
 
 	it('should open command palette when search input is clicked', async () => {
-		const { container } = render(Page);
+		render(Page);
 		const searchInput = screen.getByPlaceholderText(
 			'Start typing or ask something...'
 		) as HTMLInputElement;
 
 		await fireEvent.click(searchInput);
 
-		// Check if command palette is shown
-		const commandPalette = container.querySelector('.backdrop');
-		expect(commandPalette).toBeTruthy();
+		// Check if command palette store is set to true
+		expect(get(showCommandPalette)).toBe(true);
 	});
 
 	it('should open command palette when search input is focused', async () => {
-		const { container } = render(Page);
+		render(Page);
 		const searchInput = screen.getByPlaceholderText('Start typing or ask something...');
 
 		await fireEvent.focus(searchInput);
 
-		// Check if command palette is shown
-		const commandPalette = container.querySelector('.backdrop');
-		expect(commandPalette).toBeTruthy();
+		// Check if command palette store is set to true
+		expect(get(showCommandPalette)).toBe(true);
 	});
 
 	it('should open command palette when typing in search input', async () => {
-		const { container } = render(Page);
+		render(Page);
 		const searchInput = screen.getByPlaceholderText('Start typing or ask something...');
 
 		await fireEvent.keyDown(searchInput, { key: 'a' });
 
-		// Check if command palette is shown
-		const commandPalette = container.querySelector('.backdrop');
-		expect(commandPalette).toBeTruthy();
+		// Check if command palette store is set to true
+		expect(get(showCommandPalette)).toBe(true);
 	});
 
 	it('should render cosmic background elements', () => {

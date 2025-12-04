@@ -2,6 +2,11 @@ import type { ServerLoad } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 
 export const load: ServerLoad = async ({ platform, locals }) => {
+	// Require authentication to use chat
+	if (!locals.user) {
+		throw redirect(302, '/auth/login?redirect=/chat');
+	}
+
 	// Check if any AI providers are enabled
 	const hasProviders = await checkEnabledProviders(platform);
 
@@ -18,8 +23,11 @@ export const load: ServerLoad = async ({ platform, locals }) => {
 	// Check if voice chat is available from any provider
 	const voiceAvailable = await checkVoiceAvailability(platform);
 
-	// If providers exist, allow access to chat page
-	return { voiceAvailable };
+	// Return user info along with voice availability
+	return {
+		voiceAvailable,
+		userId: locals.user.id
+	};
 };
 
 /**

@@ -35,7 +35,7 @@ interface MockLoadEvent {
 
 describe('Chat Page Server - Extended Coverage', () => {
 	let mockKVGet: ReturnType<typeof vi.fn>;
-	let load: (event: MockLoadEvent) => Promise<{ voiceAvailable: boolean }>;
+	let load: (event: MockLoadEvent) => Promise<{ voiceAvailable: boolean; userId: string }>;
 
 	beforeEach(async () => {
 		vi.resetModules();
@@ -43,7 +43,58 @@ describe('Chat Page Server - Extended Coverage', () => {
 		mockKVGet = vi.fn();
 
 		const module = await import('../../src/routes/chat/+page.server');
-		load = module.load as (event: MockLoadEvent) => Promise<{ voiceAvailable: boolean }>;
+		load = module.load as (
+			event: MockLoadEvent
+		) => Promise<{ voiceAvailable: boolean; userId: string }>;
+	});
+
+	describe('Authentication', () => {
+		it('should redirect unauthenticated users to login', async () => {
+			await expect(
+				load({
+					platform: {
+						env: {
+							KV: { get: mockKVGet }
+						}
+					},
+					locals: {}
+				})
+			).rejects.toThrow('Redirect to /auth/login?redirect=/chat');
+		});
+
+		it('should redirect when user is null', async () => {
+			await expect(
+				load({
+					platform: {
+						env: {
+							KV: { get: mockKVGet }
+						}
+					},
+					locals: { user: null }
+				})
+			).rejects.toThrow('Redirect to /auth/login?redirect=/chat');
+		});
+
+		it('should return userId for authenticated users', async () => {
+			mockKVGet
+				.mockResolvedValueOnce(JSON.stringify(['key1']))
+				.mockResolvedValueOnce(JSON.stringify({ id: 'key1', enabled: true }))
+				.mockResolvedValueOnce(JSON.stringify(['key1']))
+				.mockResolvedValueOnce(JSON.stringify({ id: 'key1', enabled: true, voiceEnabled: false }));
+
+			const result = await load({
+				platform: {
+					env: {
+						KV: { get: mockKVGet }
+					}
+				},
+				locals: {
+					user: { id: 'user123', isAdmin: false, isOwner: false }
+				}
+			});
+
+			expect(result.userId).toBe('user123');
+		});
 	});
 
 	it('should return voiceAvailable: true when providers exist with voice enabled', async () => {
@@ -61,7 +112,9 @@ describe('Chat Page Server - Extended Coverage', () => {
 					KV: { get: mockKVGet }
 				}
 			},
-			locals: {}
+			locals: {
+				user: { id: 'user1' }
+			}
 		});
 
 		expect(result.voiceAvailable).toBe(true);
@@ -82,7 +135,9 @@ describe('Chat Page Server - Extended Coverage', () => {
 					KV: { get: mockKVGet }
 				}
 			},
-			locals: {}
+			locals: {
+				user: { id: 'user1' }
+			}
 		});
 
 		expect(result.voiceAvailable).toBe(false);
@@ -139,26 +194,13 @@ describe('Chat Page Server - Extended Coverage', () => {
 		).rejects.toThrow('Redirect to /');
 	});
 
-	it('should redirect unauthenticated user to / when no providers exist', async () => {
-		mockKVGet.mockResolvedValue(null);
-
-		await expect(
-			load({
-				platform: {
-					env: {
-						KV: { get: mockKVGet }
-					}
-				},
-				locals: {}
-			})
-		).rejects.toThrow('Redirect to /');
-	});
-
-	it('should handle missing platform gracefully', async () => {
+	it('should handle missing platform gracefully for authenticated user', async () => {
 		await expect(
 			load({
 				platform: undefined,
-				locals: {}
+				locals: {
+					user: { id: 'user1' }
+				}
 			})
 		).rejects.toThrow('Redirect to /');
 	});
@@ -175,7 +217,9 @@ describe('Chat Page Server - Extended Coverage', () => {
 						KV: { get: mockKVGet }
 					}
 				},
-				locals: {}
+				locals: {
+					user: { id: 'user1' }
+				}
 			})
 		).rejects.toThrow('Redirect to /');
 	});
@@ -196,7 +240,9 @@ describe('Chat Page Server - Extended Coverage', () => {
 					KV: { get: mockKVGet }
 				}
 			},
-			locals: {}
+			locals: {
+				user: { id: 'user1' }
+			}
 		});
 
 		expect(result.voiceAvailable).toBe(false);
@@ -219,7 +265,9 @@ describe('Chat Page Server - Extended Coverage', () => {
 					KV: { get: mockKVGet }
 				}
 			},
-			locals: {}
+			locals: {
+				user: { id: 'user1' }
+			}
 		});
 
 		expect(result.voiceAvailable).toBe(true);
@@ -242,7 +290,9 @@ describe('Chat Page Server - Extended Coverage', () => {
 					KV: { get: mockKVGet }
 				}
 			},
-			locals: {}
+			locals: {
+				user: { id: 'user1' }
+			}
 		});
 
 		expect(result.voiceAvailable).toBe(false);
@@ -263,7 +313,9 @@ describe('Chat Page Server - Extended Coverage', () => {
 					KV: { get: mockKVGet }
 				}
 			},
-			locals: {}
+			locals: {
+				user: { id: 'user1' }
+			}
 		});
 
 		expect(result.voiceAvailable).toBe(false);

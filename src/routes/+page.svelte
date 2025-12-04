@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import { openCommandPalette } from '$lib/stores/commandPalette';
 	import { onMount } from 'svelte';
 
 	let mounted = false;
 	let searchInput = '';
 	let focusedOption = -1;
-	let showCommandPalette = false;
 
 	onMount(() => {
 		mounted = true;
@@ -19,18 +18,16 @@
 	}
 
 	function handleSearchFocus() {
-		showCommandPalette = true;
+		openCommandPalette();
 	}
 
 	function handleSearchClick() {
-		showCommandPalette = true;
+		openCommandPalette();
 	}
 
 	function handleSearchKeydown(e: KeyboardEvent) {
 		// Open command palette on any key press
-		if (!showCommandPalette) {
-			showCommandPalette = true;
-		}
+		openCommandPalette();
 	}
 </script>
 
@@ -1020,7 +1017,6 @@
 		</div>
 	</div>
 </section>
-<CommandPalette bind:show={showCommandPalette} />
 
 <style>
 	.hero {
