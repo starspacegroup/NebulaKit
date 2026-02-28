@@ -106,12 +106,12 @@
 						<stop offset="100%" style="stop-color: var(--color-primary); stop-opacity: 0" />
 					</radialGradient>
 
-					<!-- Turbulence for organic texture -->
+					<!-- Turbulence for organic texture (reduced octaves - imperceptible with heavy blur) -->
 					<filter id="nebula-filter-1">
 						<feTurbulence
 							type="fractalNoise"
 							baseFrequency="0.008 0.012"
-							numOctaves="4"
+							numOctaves="3"
 							seed="1"
 							result="turbulence"
 						/>
@@ -128,7 +128,7 @@
 						<feTurbulence
 							type="fractalNoise"
 							baseFrequency="0.01 0.015"
-							numOctaves="3"
+							numOctaves="2"
 							seed="5"
 							result="turbulence"
 						/>
@@ -145,7 +145,7 @@
 						<feTurbulence
 							type="fractalNoise"
 							baseFrequency="0.012 0.01"
-							numOctaves="5"
+							numOctaves="3"
 							seed="10"
 							result="turbulence"
 						/>
@@ -162,7 +162,7 @@
 						<feTurbulence
 							type="fractalNoise"
 							baseFrequency="0.009 0.014"
-							numOctaves="4"
+							numOctaves="3"
 							seed="15"
 							result="turbulence"
 						/>
@@ -179,7 +179,7 @@
 						<feTurbulence
 							type="fractalNoise"
 							baseFrequency="0.011 0.008"
-							numOctaves="3"
+							numOctaves="2"
 							seed="20"
 							result="turbulence"
 						/>
@@ -1066,6 +1066,8 @@
 		overflow: hidden;
 		z-index: 0;
 		pointer-events: none;
+		/* PERF: Isolate paint/layout from rest of page */
+		contain: layout style paint;
 	}
 
 	/* Wavy colored background blobs */
@@ -1080,6 +1082,8 @@
 		border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
 		filter: blur(60px);
 		animation: blob-float 20s ease-in-out infinite;
+		/* PERF: Promote to compositor layer for GPU-accelerated transforms */
+		will-change: transform;
 	}
 
 	.wavy-blob-left {
@@ -1162,92 +1166,50 @@
 		width: calc(100% + 240px);
 		height: 100%;
 		mix-blend-mode: screen;
+		/* PERF: Animate the entire SVG container instead of individual filtered
+		   elements. The GPU transforms the cached raster bitmap (near-zero cost)
+		   instead of recomputing 8 SVG filter chains per frame. */
+		will-change: transform;
+		animation: nebula-container-drift 38s ease-in-out infinite;
 	}
 
-	/* Organic nebula cloud animations */
+	/*
+	 * PERF: Individual nebula-cloud and nebula-glow elements are NO LONGER
+	 * animated. SVG filters (feTurbulence + feDisplacementMap + feGaussianBlur)
+	 * are extremely expensive to recompute per-frame on the CPU.
+	 *
+	 * Instead, the entire SVG container (.nebula-waves-svg) is animated as one
+	 * unit. The browser rasterizes the filtered SVG ONCE, caches the bitmap,
+	 * and the GPU simply transforms the cached texture each frame.
+	 *
+	 * This eliminates ~480 filter recomputations/sec (8 filters × 60fps)
+	 * and replaces them with a single GPU-composited transform.
+	 */
 	.nebula-cloud {
-		animation: nebula-drift 30s ease-in-out infinite;
+		/* Static - no animation; filters render once and are cached */
 		transform-origin: center center;
 	}
 
-	.nebula-1 {
-		animation-duration: 35s;
-		animation-delay: 0s;
+	/* Glowing ellipses are also static - part of the cached SVG bitmap */
+	.nebula-glow {
+		/* No animation - rendered once with filter and cached */
+		transform-origin: center center;
 	}
 
-	.nebula-2 {
-		animation-duration: 40s;
-		animation-delay: -8s;
-	}
-
-	.nebula-3 {
-		animation-duration: 32s;
-		animation-delay: -16s;
-	}
-
-	.nebula-4 {
-		animation-duration: 38s;
-		animation-delay: -24s;
-	}
-
-	.nebula-5 {
-		animation-duration: 36s;
-		animation-delay: -12s;
-	}
-
-	@keyframes nebula-drift {
+	/* Container-level drift animation replaces per-element nebula animations */
+	@keyframes nebula-container-drift {
 		0%,
 		100% {
-			opacity: 0.9;
-			transform: translateX(0) translateY(0) scale(1);
+			transform: translate(0, 0) scale(1);
 		}
 		25% {
-			opacity: 1;
-			transform: translateX(15px) translateY(-20px) scale(1.05);
+			transform: translate(15px, -20px) scale(1.04);
 		}
 		50% {
-			opacity: 0.85;
-			transform: translateX(-10px) translateY(-30px) scale(0.98);
+			transform: translate(-10px, -28px) scale(0.97);
 		}
 		75% {
-			opacity: 0.95;
-			transform: translateX(20px) translateY(-15px) scale(1.02);
-		}
-	}
-
-	/* Glowing ellipse animations */
-	.nebula-glow {
-		animation: glow-pulse 25s ease-in-out infinite;
-	}
-
-	.glow-1 {
-		animation-duration: 28s;
-		animation-delay: -5s;
-	}
-
-	.glow-2 {
-		animation-duration: 32s;
-		animation-delay: -15s;
-	}
-
-	.glow-3 {
-		animation-duration: 30s;
-		animation-delay: -22s;
-	}
-
-	@keyframes glow-pulse {
-		0%,
-		100% {
-			opacity: 0.5;
-			transform: scale(1) translateX(0);
-		}
-		33% {
-			opacity: 0.7;
-			transform: scale(1.15) translateX(10px);
-		}
-		66% {
-			opacity: 0.4;
-			transform: scale(0.95) translateX(-8px);
+			transform: translate(20px, -12px) scale(1.02);
 		}
 	}
 
@@ -1261,6 +1223,7 @@
 		box-shadow: 0 0 12px 2px color-mix(in srgb, var(--color-text) 90%, transparent);
 		animation: nebula-star-twinkle 3s ease-in-out infinite;
 		z-index: 1;
+		will-change: transform, opacity;
 	}
 
 	.nebula-star.small {
@@ -1294,6 +1257,7 @@
 		filter: blur(100px);
 		opacity: 0.5;
 		animation: float 25s ease-in-out infinite;
+		will-change: transform;
 	}
 
 	.nebula-left {
@@ -1314,6 +1278,7 @@
 		position: absolute;
 		border-radius: 50%;
 		filter: blur(60px);
+		will-change: transform;
 	}
 
 	.nebula-left-overlay {
@@ -1337,6 +1302,7 @@
 		width: 12px;
 		height: 12px;
 		animation: sparkle 3s ease-in-out infinite;
+		will-change: transform, opacity;
 	}
 
 	.star-sparkle::before,
@@ -1454,12 +1420,14 @@
 		animation: float 20s ease-in-out infinite;
 		animation-delay: -3s;
 		filter: drop-shadow(0 10px 30px color-mix(in srgb, var(--color-primary) 40%, transparent));
+		will-change: transform;
 	}
 
 	/* Planets with enhanced realism */
 	.planet {
 		position: absolute;
 		border-radius: 50%;
+		will-change: transform;
 	}
 
 	.planet-left {
@@ -1513,6 +1481,7 @@
 		box-shadow: 0 0 10px 2px color-mix(in srgb, var(--color-text) 80%, transparent);
 		animation: comet 8s linear infinite;
 		opacity: 0;
+		will-change: transform, opacity;
 	}
 
 	.comet::after {
