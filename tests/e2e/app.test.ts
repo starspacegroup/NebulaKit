@@ -13,12 +13,17 @@ test.describe('Homepage', () => {
 		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
 		await commandPaletteBtn.click();
 
+		// Wait for command palette dialog to appear
+		const palette = page.locator('[role="dialog"]');
+		await expect(palette).toBeVisible();
+
 		// Search for documentation
-		const searchInput = page.locator('input[placeholder*="Search"]');
+		const searchInput = palette.locator('input[placeholder*="Search"]');
 		await searchInput.fill('documentation');
 
-		// Click on the documentation command
-		const docCommand = page.locator('button:has-text("Documentation")');
+		// Click on the documentation command (scoped to palette)
+		const docCommand = palette.locator('button:has-text("Documentation")').first();
+		await expect(docCommand).toBeVisible();
 		await docCommand.click();
 
 		await expect(page).toHaveURL('/documentation');
@@ -27,9 +32,8 @@ test.describe('Homepage', () => {
 	test('should open command palette with keyboard shortcut', async ({ page }) => {
 		await page.goto('/');
 
-		// Click the command palette button in navigation
-		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
-		await commandPaletteBtn.click();
+		// Use Ctrl+K keyboard shortcut to open command palette
+		await page.keyboard.press('Control+k');
 
 		// Command palette should be visible
 		const palette = page.locator('[role="dialog"]');
@@ -41,29 +45,53 @@ test.describe('Theme System', () => {
 	test('should toggle theme', async ({ page }) => {
 		await page.goto('/');
 
+		// Wait for hydration to set initial data-theme
+		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'));
+
 		// Find theme switcher button
 		const themeSwitcher = page.locator('button[aria-label*="theme" i]').first();
+		await expect(themeSwitcher).toBeVisible();
+
+		const initialTheme = await page.locator('html').getAttribute('data-theme');
 		await themeSwitcher.click();
 
-		// Check that theme changed
-		const html = page.locator('html');
-		const theme = await html.getAttribute('data-theme');
-		expect(['light', 'dark']).toContain(theme);
+		// Wait for theme to change
+		await page.waitForFunction(
+			(initial) => document.documentElement.getAttribute('data-theme') !== initial,
+			initialTheme
+		);
+
+		const newTheme = await page.locator('html').getAttribute('data-theme');
+		expect(['light', 'dark']).toContain(newTheme);
 	});
 
-	test('should persist theme preference', async ({ page, context }) => {
+	test('should persist theme preference', async ({ page }) => {
 		await page.goto('/');
 
+		// Wait for hydration to set initial data-theme
+		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'));
+
 		const themeSwitcher = page.locator('button[aria-label*="theme" i]').first();
+		await expect(themeSwitcher).toBeVisible();
+
+		const initialTheme = await page.locator('html').getAttribute('data-theme');
 		await themeSwitcher.click();
+
+		// Wait for theme to actually change
+		await page.waitForFunction(
+			(initial) => document.documentElement.getAttribute('data-theme') !== initial,
+			initialTheme
+		);
+		const newTheme = await page.locator('html').getAttribute('data-theme');
 
 		// Reload page
 		await page.reload();
 
-		// Theme should persist
-		const html = page.locator('html');
-		const theme = await html.getAttribute('data-theme');
-		expect(theme).toBeDefined();
+		// Wait for hydration to re-apply the persisted theme
+		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'));
+
+		const persistedTheme = await page.locator('html').getAttribute('data-theme');
+		expect(persistedTheme).toBe(newTheme);
 	});
 });
 
