@@ -35,6 +35,7 @@ test.describe('Homepage', () => {
 		// Wait for hydration so the keyboard handler from onMount is registered
 		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
 		await expect(commandPaletteBtn).toBeVisible();
+		await page.waitForLoadState('networkidle');
 
 		// Use Ctrl+K keyboard shortcut to open command palette
 		await page.keyboard.press('Control+k');
