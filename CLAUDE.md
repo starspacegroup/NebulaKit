@@ -1,5 +1,13 @@
 # CLAUDE.md - Instructions for Claude Code and AI Assistants
 
+## Temporary / Scratch Files
+
+**Always use the `.llm-outputs/` directory for any temporary local files** (test output logs, coverage dumps, debug traces, scratch notes, etc.). This folder is in `.gitignore` so nothing placed there will end up in the repository.
+
+- **DO**: Write command output, test results, coverage reports, or any other throwaway files to `.llm-outputs/`
+- **DO NOT**: Create `.txt`, `.log`, or other scratch files in the project root or any other tracked directory
+- The folder already exists with a `.gitkeep`; just drop files directly into it
+
 ## Database Migrations - MANDATORY RULES
 
 **NEVER modify migration files that have already been committed to `main`.**

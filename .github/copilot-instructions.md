@@ -19,6 +19,14 @@ When using the Copilot Coding Agent (remote):
 - The coding agent should manage its own dev server as needed
 - Normal startup commands are expected in that context
 
+## 📂 Temporary / Scratch Files
+
+**Always use the `.llm-outputs/` directory for any temporary local files** (test output logs, coverage dumps, debug traces, scratch notes, etc.). This folder is in `.gitignore` so nothing placed there will end up in the repository.
+
+- **DO**: Write command output, test results, coverage reports, or any other throwaway files to `.llm-outputs/`
+- **DO NOT**: Create `.txt`, `.log`, or other scratch files in the project root or any other tracked directory
+- The folder already exists with a `.gitkeep`; just drop files directly into it
+
 ## 🎯 Core Development Philosophy
 
 **Test-Driven Development (TDD) is MANDATORY**

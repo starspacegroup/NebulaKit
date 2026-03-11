@@ -14,6 +14,9 @@ vite.config.ts.timestamp-*
 .wrangler
 wrangler.toml.local
 
+# LLM outputs (test logs, coverage dumps, etc.)
+.llm-outputs/
+
 # Testing
 coverage/
 .nyc_output/
