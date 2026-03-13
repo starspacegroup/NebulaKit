@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
+
+	let isMac = false;
+	onMount(() => {
+		isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+	});
 
 	let mobileMenuOpen = false;
 	let userDropdownOpen = false;
@@ -82,7 +88,7 @@
 						<circle cx="11" cy="11" r="8"></circle>
 						<path d="m21 21-4.35-4.35"></path>
 					</svg>
-					<kbd class="command-palette-kbd">⌘K</kbd>
+					<kbd class="command-palette-kbd">{isMac ? '⌘' : 'Ctrl+'}K</kbd>
 				</button>
 			</div>
 

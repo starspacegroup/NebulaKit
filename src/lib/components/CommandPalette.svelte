@@ -254,9 +254,7 @@
 					bind:this={searchInput}
 					bind:value={query}
 					type="text"
-					placeholder={hasAIProviders
-						? 'Search commands or ask AI anything...'
-						: 'Search commands...'}
+					placeholder={hasAIProviders ? 'Search commands or ask AI anything...' : 'Search/Commands'}
 					class="search-input"
 				/>
 			</div>

@@ -38,7 +38,7 @@ describe('CommandPalette', () => {
 		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: false } });
 		const input = container.querySelector('.search-input') as HTMLInputElement;
 		expect(input).toBeTruthy();
-		expect(input.placeholder).toBe('Search commands...');
+		expect(input.placeholder).toBe('Search/Commands');
 	});
 
 	it('should display all commands by default', () => {
