@@ -1,12 +1,13 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	const currentYear = new Date().getFullYear();
 	const lastUpdated = 'January 1, 2026';
 </script>
 
-<svelte:head>
-	<title>Privacy Policy - NebulaKit</title>
-	<meta name="description" content="Privacy Policy for NebulaKit" />
-</svelte:head>
+<SharingMeta
+	title="Privacy Policy"
+	description="Privacy Policy for NebulaKit"
+/>
 
 <main class="legal-page">
 	<div class="legal-container">

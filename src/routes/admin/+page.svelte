@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -40,9 +41,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Admin - NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="Admin"
+	noindex={true}
+/>
 
 <div class="admin-home">
 	<h1>Admin Dashboard</h1>

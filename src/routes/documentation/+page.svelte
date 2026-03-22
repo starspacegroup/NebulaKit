@@ -1,14 +1,12 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	// No runtime state needed
 </script>
 
-<svelte:head>
-	<title>Documentation - NebulaKit</title>
-	<meta
-		name="description"
-		content="NebulaKit documentation - Learn how to build with the cosmic-grade SvelteKit starter powered by Cloudflare"
-	/>
-</svelte:head>
+<SharingMeta
+	title="Documentation"
+	description="NebulaKit documentation - Learn how to build with the cosmic-grade SvelteKit starter powered by Cloudflare"
+/>
 
 <main class="docs-page">
 	<div class="docs-container">

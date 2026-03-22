@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 
 	let loading = false;
 	let error = '';
@@ -39,9 +40,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Reset Configuration - NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="Reset Configuration"
+	noindex={true}
+/>
 
 <div class="container">
 	<div class="reset-card">

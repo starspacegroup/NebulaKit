@@ -5,6 +5,7 @@
   create/edit modals, and delete confirmation.
 -->
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -329,9 +330,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{contentType.name} - CMS Admin</title>
-</svelte:head>
+<SharingMeta
+	title="{contentType.name} - CMS Admin"
+	noindex={true}
+/>
 
 <div class="cms-manage">
 	<!-- Header -->

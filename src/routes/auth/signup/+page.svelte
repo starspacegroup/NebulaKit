@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	let name = '';
 	let email = '';
 	let password = '';
@@ -28,9 +29,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Sign Up - NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="Sign Up"
+	description="Create your NebulaKit account"
+/>
 
 <div class="auth-page">
 	<div class="auth-container">

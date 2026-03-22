@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 
 	// Error messages and icons for different status codes
 	const errorInfo: Record<number, { title: string; message: string; icon: string }> = {
@@ -54,9 +55,10 @@
 	};
 </script>
 
-<svelte:head>
-	<title>{status} - {info.title} | NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="{status} - {info.title}"
+	noindex={true}
+/>
 
 <div class="error-page">
 	<!-- Animated cosmic background -->

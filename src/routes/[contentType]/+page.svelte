@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import type { PageData } from './$types';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 
 	export let data: PageData;
 
@@ -28,12 +29,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{contentType.name} - NebulaKit</title>
-	{#if contentType.description}
-		<meta name="description" content={contentType.description} />
-	{/if}
-</svelte:head>
+<SharingMeta
+	title={contentType.name}
+	description={contentType.description || ''}
+/>
 
 <div class="cms-list-page">
 	<header class="cms-list-header">

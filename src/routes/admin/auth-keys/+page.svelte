@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -161,9 +162,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Authentication Keys - Admin - NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="Authentication Keys - Admin"
+	noindex={true}
+/>
 
 <div class="auth-keys-page">
 	<header class="page-header">

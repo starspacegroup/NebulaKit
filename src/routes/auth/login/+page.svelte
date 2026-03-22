@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -65,9 +66,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Sign In - NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="Sign In"
+	description="Sign in to your NebulaKit account"
+/>
 
 <div class="auth-page">
 	<div class="auth-container">

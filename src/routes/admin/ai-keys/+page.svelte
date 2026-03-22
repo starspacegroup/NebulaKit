@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -333,9 +334,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>AI Provider Keys - Admin - NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="AI Provider Keys - Admin"
+	noindex={true}
+/>
 
 <div class="ai-keys-page">
 	<header class="page-header">

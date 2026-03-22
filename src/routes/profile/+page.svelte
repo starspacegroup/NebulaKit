@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -84,9 +85,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Profile - NebulaKit</title>
-</svelte:head>
+<SharingMeta
+	title="Profile"
+	noindex={true}
+/>
 
 <div class="profile-container">
 	<div class="profile-card">

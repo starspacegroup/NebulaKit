@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import type { PageData } from './$types';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 
 	export let data: PageData;
 
@@ -27,20 +28,13 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{item.seoTitle || item.title} - NebulaKit</title>
-	{#if item.seoDescription}
-		<meta name="description" content={item.seoDescription} />
-	{/if}
-	{#if item.seoImage}
-		<meta property="og:image" content={item.seoImage} />
-	{/if}
-	<meta property="og:title" content={item.seoTitle || item.title} />
-	<meta property="og:type" content="article" />
-	{#if item.publishedAt}
-		<meta property="article:published_time" content={item.publishedAt} />
-	{/if}
-</svelte:head>
+<SharingMeta
+	title={item.seoTitle || item.title}
+	description={item.seoDescription || ''}
+	image={item.seoImage || ''}
+	type="article"
+	publishedTime={item.publishedAt || ''}
+/>
 
 <div class="cms-item-page">
 	<!-- Back link -->

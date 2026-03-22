@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { openCommandPalette } from '$lib/stores/commandPalette';
 	import { onMount } from 'svelte';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 
 	let mounted = false;
 	let searchInput = '';
@@ -62,10 +63,11 @@
 	}
 </script>
 
-<svelte:head>
-	<title>NebulaKit - Cosmic SvelteKit Starter</title>
-	<meta name="description" content="A cosmic-grade SvelteKit starter powered by Cloudflare" />
-</svelte:head>
+<SharingMeta
+	title="NebulaKit"
+	description="A cosmic-grade SvelteKit starter powered by Cloudflare"
+	siteName=""
+/>
 
 <div class="hero">
 	<!-- Cosmic Background -->
