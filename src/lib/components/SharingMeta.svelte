@@ -5,11 +5,13 @@
   directives inside <svelte:head>. Use on every page with page-specific props.
 -->
 <script lang="ts">
+	import { page } from '$app/stores';
+
 	/** Page title (displayed in browser tab and social shares) */
 	export let title: string;
 	/** Page description for search engines and social shares */
 	export let description: string = '';
-	/** Absolute URL to the page's share image */
+	/** Absolute or root-relative URL to the page's share image */
 	export let image: string = '';
 	/** Alt text for the share image */
 	export let imageAlt: string = '';
@@ -22,7 +24,8 @@
 	/** Locale for OG tags */
 	export let locale: string = 'en_US';
 	/** Twitter card type */
-	export let twitterCard: 'summary' | 'summary_large_image' | 'app' | 'player' = 'summary_large_image';
+	export let twitterCard: 'summary' | 'summary_large_image' | 'app' | 'player' =
+		'summary_large_image';
 	/** Twitter @handle for the site */
 	export let twitterSite: string = '';
 	/** Twitter @handle for the content creator */
@@ -35,8 +38,14 @@
 	export let author: string = '';
 	/** If true, adds noindex/nofollow robots meta */
 	export let noindex: boolean = false;
+	/** Width of the share image in pixels */
+	export let imageWidth: number = 0;
+	/** Height of the share image in pixels */
+	export let imageHeight: number = 0;
 
 	$: fullTitle = siteName ? `${title} - ${siteName}` : title;
+	// Resolve root-relative image paths to absolute URLs for OG/Twitter compliance
+	$: absoluteImage = image && image.startsWith('/') ? `${$page.url.origin}${image}` : image;
 </script>
 
 <svelte:head>
@@ -62,9 +71,15 @@
 		<meta property="og:description" content={description} />
 	{/if}
 	<meta property="og:type" content={type} />
-	{#if image}
-		<meta property="og:image" content={image} />
+	{#if absoluteImage}
+		<meta property="og:image" content={absoluteImage} />
 		<meta property="og:image:alt" content={imageAlt || title} />
+		{#if imageWidth}
+			<meta property="og:image:width" content={String(imageWidth)} />
+		{/if}
+		{#if imageHeight}
+			<meta property="og:image:height" content={String(imageHeight)} />
+		{/if}
 	{/if}
 	{#if url}
 		<meta property="og:url" content={url} />
@@ -78,8 +93,8 @@
 	{#if description}
 		<meta name="twitter:description" content={description} />
 	{/if}
-	{#if image}
-		<meta name="twitter:image" content={image} />
+	{#if absoluteImage}
+		<meta name="twitter:image" content={absoluteImage} />
 		{#if imageAlt || title}
 			<meta name="twitter:image:alt" content={imageAlt || title} />
 		{/if}

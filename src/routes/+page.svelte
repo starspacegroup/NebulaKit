@@ -66,8 +66,10 @@
 <SharingMeta
 	title="NebulaKit"
 	description="A cosmic-grade SvelteKit starter powered by Cloudflare. Built with SvelteKit, Cloudflare Workers, D1 database, Auth.js authentication, and AI chat capabilities."
-	image="/og-image.svg"
+	image="/og-image.png"
 	imageAlt="NebulaKit - A cosmic-grade SvelteKit starter with nebula-themed design"
+	imageWidth={1200}
+	imageHeight={630}
 />
 
 <div class="hero">
