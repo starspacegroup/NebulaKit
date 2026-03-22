@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { openCommandPalette } from '$lib/stores/commandPalette';
 	import { onMount } from 'svelte';
-	import SharingMeta from '$lib/components/SharingMeta.svelte';
 
 	let mounted = false;
 	let searchInput = '';
@@ -65,8 +65,9 @@
 
 <SharingMeta
 	title="NebulaKit"
-	description="A cosmic-grade SvelteKit starter powered by Cloudflare"
-	siteName=""
+	description="A cosmic-grade SvelteKit starter powered by Cloudflare. Built with SvelteKit, Cloudflare Workers, D1 database, Auth.js authentication, and AI chat capabilities."
+	image="/og-image.svg"
+	imageAlt="NebulaKit - A cosmic-grade SvelteKit starter with nebula-themed design"
 />
 
 <div class="hero">

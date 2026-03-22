@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="50%" stop-color="#16213e"/>
+      <stop offset="100%" stop-color="#0f0f23"/>
+    </radialGradient>
+    <radialGradient id="nebula1" cx="30%" cy="40%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#6366f1" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nebula2" cx="70%" cy="60%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#6366f1" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nebula3" cx="50%" cy="30%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.4"/>
+      <stop offset="60%" stop-color="#a855f7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-grad)"/>
+
+  <!-- Nebula clouds -->
+  <ellipse cx="300" cy="250" rx="350" ry="280" fill="url(#nebula1)"/>
+  <ellipse cx="850" cy="380" rx="400" ry="300" fill="url(#nebula2)"/>
+  <ellipse cx="600" cy="200" rx="300" ry="200" fill="url(#nebula3)"/>
+
+  <!-- Stars -->
+  <circle cx="100" cy="80" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="250" cy="120" r="1" fill="white" opacity="0.6"/>
+  <circle cx="400" cy="60" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="550" cy="100" r="1" fill="white" opacity="0.5"/>
+  <circle cx="700" cy="50" r="2" fill="white" opacity="0.9"/>
+  <circle cx="850" cy="90" r="1" fill="white" opacity="0.6"/>
+  <circle cx="1000" cy="70" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="1100" cy="130" r="1" fill="white" opacity="0.5"/>
+  <circle cx="150" cy="500" r="1" fill="white" opacity="0.6"/>
+  <circle cx="350" cy="550" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="500" cy="520" r="1" fill="white" opacity="0.5"/>
+  <circle cx="750" cy="560" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="950" cy="500" r="1" fill="white" opacity="0.6"/>
+  <circle cx="1050" cy="540" r="2" fill="white" opacity="0.7"/>
+  <circle cx="80" cy="300" r="1" fill="white" opacity="0.5"/>
+  <circle cx="1120" cy="350" r="1.5" fill="white" opacity="0.6"/>
+
+  <!-- Logo / Icon area -->
+  <g transform="translate(600, 240)" filter="url(#glow)">
+    <!-- Nebula ring -->
+    <ellipse cx="0" cy="0" rx="65" ry="20" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.7" transform="rotate(-20)"/>
+    <ellipse cx="0" cy="0" rx="55" ry="18" fill="none" stroke="#06b6d4" stroke-width="1.5" opacity="0.5" transform="rotate(15)"/>
+    <!-- Core star -->
+    <circle cx="0" cy="0" r="12" fill="#a855f7" opacity="0.9"/>
+    <circle cx="0" cy="0" r="8" fill="#c4b5fd" opacity="0.8"/>
+    <circle cx="0" cy="0" r="4" fill="white" opacity="0.95"/>
+  </g>
+
+  <!-- Title -->
+  <text x="600" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="white" letter-spacing="4" filter="url(#glow)">
+    NebulaKit
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="390" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#a5b4fc" letter-spacing="2" opacity="0.9">
+    A cosmic-grade SvelteKit starter powered by Cloudflare
+  </text>
+
+  <!-- Bottom accent line -->
+  <line x1="400" y1="430" x2="800" y2="430" stroke="url(#nebula1)" stroke-width="1" opacity="0.5"/>
+
+  <!-- Feature pills -->
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#c4b5fd" opacity="0.8">
+    <text x="350" y="480" text-anchor="middle">SvelteKit</text>
+    <text x="480" y="480" text-anchor="middle">Cloudflare Workers</text>
+    <text x="630" y="480" text-anchor="middle">D1 Database</text>
+    <text x="760" y="480" text-anchor="middle">Auth.js</text>
+    <text x="870" y="480" text-anchor="middle">AI Chat</text>
+  </g>
+
+  <!-- Dots between features -->
+  <g fill="#7c3aed" opacity="0.6">
+    <circle cx="415" cy="476" r="2"/>
+    <circle cx="555" cy="476" r="2"/>
+    <circle cx="695" cy="476" r="2"/>
+    <circle cx="815" cy="476" r="2"/>
+  </g>
+</svg>
