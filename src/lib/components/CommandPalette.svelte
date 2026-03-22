@@ -9,12 +9,13 @@
 		themePreference,
 		type ThemePreference
 	} from '$lib/stores/theme';
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 
 	export let show = false;
 	export let hasAIProviders = false;
 
 	let searchInput: HTMLInputElement;
+	let commandsContainer: HTMLDivElement;
 	let query = '';
 	let selectedIndex = 0;
 	let previousShow = false;
@@ -27,6 +28,12 @@
 	themePreference.subscribe((value) => (currentPreference = value));
 	systemTheme.subscribe((value) => (currentSystemTheme = value));
 	resolvedTheme.subscribe((value) => (currentResolvedTheme = value));
+
+	onDestroy(() => {
+		if (browser) {
+			document.body.style.overflow = '';
+		}
+	});
 
 	interface Command {
 		id: string;
@@ -154,11 +161,17 @@
 		previousShow = true;
 		query = '';
 		selectedIndex = 0;
+		if (browser) {
+			document.body.style.overflow = 'hidden';
+		}
 		tick().then(() => {
 			searchInput?.focus();
 		});
 	} else if (!show) {
 		previousShow = false;
+		if (browser) {
+			document.body.style.overflow = '';
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -221,6 +234,13 @@
 		}
 	}
 
+	function handleBackdropWheel(e: WheelEvent) {
+		if (commandsContainer) {
+			e.preventDefault();
+			commandsContainer.scrollTop += e.deltaY;
+		}
+	}
+
 	function closeCommandPalette() {
 		endPreview();
 		show = false;
@@ -233,6 +253,7 @@
 	<div
 		class="backdrop"
 		on:click={handleBackdropClick}
+		on:wheel|nonpassive={handleBackdropWheel}
 		role="presentation"
 		on:keydown={(e) => e.key === 'Escape' && closeCommandPalette()}
 	>
@@ -259,7 +280,7 @@
 				/>
 			</div>
 
-			<div class="commands">
+			<div class="commands" bind:this={commandsContainer}>
 				{#each filteredCommands as command, i}
 					<button
 						class="command"
@@ -458,6 +479,7 @@
 	.commands {
 		overflow-y: auto;
 		max-height: 400px;
+		overscroll-behavior: contain;
 	}
 
 	.command {
