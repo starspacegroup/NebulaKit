@@ -51,7 +51,9 @@ test.describe('Theme System', () => {
 		await page.goto('/');
 
 		// Wait for hydration to set initial data-theme
-		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'));
+		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'), {
+			timeout: 10000
+		});
 
 		// Find theme switcher button
 		const themeSwitcher = page.locator('button[aria-label*="theme" i]').first();
@@ -60,40 +62,57 @@ test.describe('Theme System', () => {
 		const initialTheme = await page.locator('html').getAttribute('data-theme');
 		await themeSwitcher.click();
 
-		// Wait for theme to change
+		// Wait for theme to change with extended timeout
 		await page.waitForFunction(
 			(initial) => document.documentElement.getAttribute('data-theme') !== initial,
-			initialTheme
+			initialTheme,
+			{ timeout: 15000 }
 		);
 
 		const newTheme = await page.locator('html').getAttribute('data-theme');
 		expect(['light', 'dark']).toContain(newTheme);
+		expect(newTheme).not.toBe(initialTheme);
 	});
 
-	test('should persist theme preference', async ({ page }) => {
+	test('should persist theme preference', async ({ page, context }) => {
 		await page.goto('/');
 
 		// Wait for hydration to set initial data-theme
-		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'));
+		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'), {
+			timeout: 10000
+		});
 
 		const themeSwitcher = page.locator('button[aria-label*="theme" i]').first();
 		await expect(themeSwitcher).toBeVisible();
 
 		const initialTheme = await page.locator('html').getAttribute('data-theme');
+
+		// Click the theme switcher
 		await themeSwitcher.click();
 
-		// Wait for theme to actually change
+		// Wait for theme to actually change with extended timeout
+		// The store subscription and DOM update can take a moment
 		await page.waitForFunction(
 			(initial) => document.documentElement.getAttribute('data-theme') !== initial,
-			initialTheme
+			initialTheme,
+			{ timeout: 15000 }
 		);
-		const newTheme = await page.locator('html').getAttribute('data-theme');
 
-		// Reload page
+		const newTheme = await page.locator('html').getAttribute('data-theme');
+		expect(['light', 'dark']).toContain(newTheme);
+		expect(newTheme).not.toBe(initialTheme);
+
+		// Verify localStorage was updated
+		const storedTheme = await page.evaluate(() => localStorage.getItem('theme-preference'));
+		expect(storedTheme).toBe(newTheme);
+
+		// Reload page to verify persistence
 		await page.reload();
 
 		// Wait for hydration to re-apply the persisted theme
-		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'));
+		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'), {
+			timeout: 10000
+		});
 
 		const persistedTheme = await page.locator('html').getAttribute('data-theme');
 		expect(persistedTheme).toBe(newTheme);
