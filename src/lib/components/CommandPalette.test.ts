@@ -135,6 +135,15 @@ describe('CommandPalette', () => {
 		expect(component.show).toBe(false);
 	});
 
+	it('should open on Escape key when closed', async () => {
+		const { component } = render(CommandPalette, { props: { show: false } });
+
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(component.show).toBe(true);
+	});
+
 	it('should display command icons', () => {
 		const { container } = render(CommandPalette, { props: { show: true } });
 		const icons = container.querySelectorAll('.command-icon');

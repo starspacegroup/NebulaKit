@@ -7,7 +7,7 @@ The Command Palette is a keyboard-first interface for quickly navigating and exe
 - **Keyboard Shortcuts**:
   - Press `Ctrl+K` (or `Cmd+K` on Mac) to open/toggle
   - Press `Ctrl+Shift+P` to open/toggle
-  - Press `Esc` to close (including from the root page)
+  - Press `Esc` to toggle open/close (including from the root page)
 - **Fuzzy Search**: Filter commands by typing
 - **Keyboard Navigation**: Use arrow keys to navigate, Enter to execute
 - **Quick Actions**: Navigate to any page or execute commands instantly
@@ -20,13 +20,13 @@ The Command Palette is a keyboard-first interface for quickly navigating and exe
 1. **Keyboard**:
    - Press `Ctrl+K` (Windows/Linux) or `Cmd+K` (Mac)
    - Press `Ctrl+Shift+P`
-2. **Closing**: Press `Escape` or click outside the palette
+2. **Toggle/Close**: Press `Escape` (opens if closed, closes if open) or click outside the palette
 
 ### Navigation
 
 - **`↑` / `↓`**: Navigate between commands
 - **`Enter`**: Execute selected command
-- **`Escape`**: Close the palette (also from the root page)
+- **`Escape`**: Toggle the palette (open when closed, close when open)
 - **`Type`**: Filter commands by name or description
 
 ### Available Commands

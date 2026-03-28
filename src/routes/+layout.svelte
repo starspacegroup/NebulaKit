@@ -4,11 +4,7 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import Navigation from '$lib/components/Navigation.svelte';
-	import {
-		closeCommandPalette,
-		showCommandPalette,
-		toggleCommandPalette
-	} from '$lib/stores/commandPalette';
+	import { showCommandPalette, toggleCommandPalette } from '$lib/stores/commandPalette';
 	import { resolvedTheme } from '$lib/stores/theme';
 	import { onMount } from 'svelte';
 	import '../app.css';
@@ -39,9 +35,6 @@
 			if (isPaletteShortcut) {
 				e.preventDefault();
 				toggleCommandPalette();
-			}
-			if (e.key === 'Escape') {
-				closeCommandPalette();
 			}
 		};
 

@@ -175,7 +175,13 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (!show) return;
+		if (!show) {
+			if (e.key === 'Escape' && !e.defaultPrevented) {
+				e.preventDefault();
+				show = true;
+			}
+			return;
+		}
 
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
@@ -255,7 +261,12 @@
 		on:click={handleBackdropClick}
 		on:wheel|nonpassive={handleBackdropWheel}
 		role="presentation"
-		on:keydown={(e) => e.key === 'Escape' && closeCommandPalette()}
+		on:keydown={(e) => {
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				closeCommandPalette();
+			}
+		}}
 	>
 		<div class="palette" role="dialog" aria-label="Command palette">
 			<div class="search-box">
@@ -332,7 +343,7 @@
 					<span class="hint-item"><kbd>ctrl+shift+p</kbd> to toggle</span>
 					<span class="hint-item"><kbd>↑↓</kbd> to navigate</span>
 					<span class="hint-item"><kbd>↵</kbd> to select</span>
-					<span class="hint-item"><kbd>esc</kbd> to close (also from root page)</span>
+					<span class="hint-item"><kbd>esc</kbd> to toggle open/close</span>
 				</div>
 			</div>
 		</div>
