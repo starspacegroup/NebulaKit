@@ -30,9 +30,13 @@
 	}
 
 	onMount(() => {
-		// Listen for keyboard shortcut (Cmd/Ctrl + K)
+		// Listen for keyboard shortcuts (Cmd/Ctrl + K, Cmd/Ctrl + Shift + P)
 		const handleKeydown = (e: KeyboardEvent) => {
-			if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+			const isModifierPressed = e.metaKey || e.ctrlKey;
+			const key = e.key.toLowerCase();
+			const isPaletteShortcut = isModifierPressed && (key === 'k' || (e.shiftKey && key === 'p'));
+
+			if (isPaletteShortcut) {
 				e.preventDefault();
 				toggleCommandPalette();
 			}

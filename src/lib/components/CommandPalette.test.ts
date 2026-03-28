@@ -148,8 +148,11 @@ describe('CommandPalette', () => {
 	it('should display keyboard shortcuts hint', () => {
 		const { container } = render(CommandPalette, { props: { show: true } });
 		const hints = container.querySelectorAll('kbd');
+		const footerText = container.querySelector('.footer')?.textContent?.toLowerCase() || '';
 
 		expect(hints.length).toBeGreaterThan(0);
+		expect(footerText).toContain('ctrl+shift+p');
+		expect(footerText).toContain('esc');
 	});
 
 	it('should have proper accessibility attributes', () => {

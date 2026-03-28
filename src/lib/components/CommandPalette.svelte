@@ -329,9 +329,10 @@
 
 			<div class="footer">
 				<div class="hint">
+					<span class="hint-item"><kbd>ctrl+shift+p</kbd> to toggle</span>
 					<span class="hint-item"><kbd>↑↓</kbd> to navigate</span>
 					<span class="hint-item"><kbd>↵</kbd> to select</span>
-					<span class="hint-item"><kbd>esc</kbd> to close</span>
+					<span class="hint-item"><kbd>esc</kbd> to close (also from root page)</span>
 				</div>
 			</div>
 		</div>
