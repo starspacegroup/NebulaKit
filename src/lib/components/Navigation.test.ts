@@ -1,23 +1,84 @@
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+import { tick } from 'svelte';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import Navigation from './Navigation.svelte';
 
 describe('Navigation', () => {
-	it('should pass basic structure test', () => {
-		// Navigation component uses $page store from SvelteKit which requires
-		// special setup for testing. The component is tested via E2E tests.
-		// This placeholder ensures the test file is valid.
-		expect(true).toBe(true);
+	const originalMatchMedia = window.matchMedia;
+	const adminUser = {
+		id: 'user-1',
+		login: 'david',
+		email: 'david@example.com',
+		name: 'David Monaghan',
+		avatarUrl: 'https://example.com/avatar.png',
+		isOwner: false,
+		isAdmin: true
+	};
+
+	beforeEach(() => {
+		document.body.style.overflow = '';
+		Object.defineProperty(window, 'matchMedia', {
+			writable: true,
+			value: (query: string) => ({
+				matches: false,
+				media: query,
+				onchange: null,
+				addListener: () => {},
+				removeListener: () => {},
+				addEventListener: () => {},
+				removeEventListener: () => {},
+				dispatchEvent: () => true
+			})
+		});
 	});
 
-	// Note: Full Navigation component tests are performed in E2E tests
-	// because the component depends on $app/stores which requires a full
-	// SvelteKit context. Unit testing would require complex mocking.
-	//
-	// Features tested in E2E:
-	// - Command palette button renders and functions
-	// - Mobile menu toggle works
-	// - Navigation links are accessible
-	// - Keyboard shortcuts work (⌘K)
-	// - Theme toggle in user dropdown shows three-way selector (light/dark/system)
-	// - Inline theme switcher is hidden when user is logged in
-	// - Inline theme switcher is visible when user is not logged in
+	afterEach(() => {
+		document.body.style.overflow = '';
+		Object.defineProperty(window, 'matchMedia', {
+			writable: true,
+			value: originalMatchMedia
+		});
+	});
+
+	it('locks body scroll while the mobile menu is open and restores it when closed', async () => {
+		const { container } = render(Navigation, {
+			props: {
+				user: adminUser
+			}
+		});
+
+		const menuToggle = screen.getByRole('button', { name: 'Toggle menu' });
+		const menu = container.querySelector('.nav-links');
+		expect(menu).toBeTruthy();
+		expect(document.body.style.overflow).toBe('');
+
+		await fireEvent.click(menuToggle);
+		await tick();
+
+		expect(menu?.classList.contains('open')).toBe(true);
+
+		const adminLink = screen.getByRole('link', { name: 'Admin' });
+		await fireEvent.click(adminLink);
+		await tick();
+
+		expect(menu?.classList.contains('open')).toBe(false);
+	});
+
+	it('renders logged-in account controls directly in the mobile nav', async () => {
+		render(Navigation, {
+			props: {
+				user: adminUser
+			}
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }));
+		await tick();
+
+		expect(screen.getByText('David Monaghan')).toBeInTheDocument();
+		expect(screen.getByText('david@example.com')).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: 'Profile' })).toBeInTheDocument();
+		expect(screen.getByRole('group', { name: 'Theme selector' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Logout' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'User menu' })).not.toBeInTheDocument();
+	});
 });
