@@ -13,6 +13,7 @@
 
 	export let show = false;
 	export let hasAIProviders = false;
+	export let isAuthenticated = false;
 
 	let searchInput: HTMLInputElement;
 	let commandsContainer: HTMLDivElement;
@@ -95,20 +96,32 @@
 			action: () => goto('/documentation'),
 			icon: '📚'
 		},
-		{
-			id: 'login',
-			label: 'Sign In',
-			description: 'Go to login page',
-			action: () => goto('/auth/login'),
-			icon: '🔐'
-		},
-		{
-			id: 'signup',
-			label: 'Sign Up',
-			description: 'Create a new account',
-			action: () => goto('/auth/signup'),
-			icon: '✨'
-		},
+		...(isAuthenticated
+			? [
+					{
+						id: 'logout',
+						label: 'Log Out',
+						description: 'Sign out of your account',
+						action: () => goto('/api/auth/logout'),
+						icon: '↩️'
+					}
+				]
+			: [
+					{
+						id: 'login',
+						label: 'Sign In',
+						description: 'Go to login page',
+						action: () => goto('/auth/login'),
+						icon: '🔐'
+					},
+					{
+						id: 'signup',
+						label: 'Sign Up',
+						description: 'Create a new account',
+						action: () => goto('/auth/signup'),
+						icon: '✨'
+					}
+				]),
 		{
 			id: 'theme-light',
 			label: 'Light Theme',

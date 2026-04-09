@@ -54,7 +54,11 @@
 		<Footer />
 	{/if}
 
-	<CommandPalette bind:show={$showCommandPalette} hasAIProviders={data.hasAIProviders} />
+	<CommandPalette
+		bind:show={$showCommandPalette}
+		hasAIProviders={data.hasAIProviders}
+		isAuthenticated={Boolean(data.user)}
+	/>
 </div>
 
 <style>

@@ -65,6 +65,32 @@ describe('CommandPalette', () => {
 		expect(commandLabels.some((label) => label?.includes('Chat'))).toBe(false);
 	});
 
+	it('should show sign in and sign up commands when logged out', () => {
+		const { container } = render(CommandPalette, {
+			props: { show: true, isAuthenticated: false }
+		});
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Sign In'))).toBe(true);
+		expect(commandLabels.some((label) => label?.includes('Sign Up'))).toBe(true);
+		expect(commandLabels.some((label) => label?.includes('Log Out'))).toBe(false);
+	});
+
+	it('should show only logout command when logged in', () => {
+		const { container } = render(CommandPalette, {
+			props: { show: true, isAuthenticated: true }
+		});
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Sign In'))).toBe(false);
+		expect(commandLabels.some((label) => label?.includes('Sign Up'))).toBe(false);
+		expect(commandLabels.some((label) => label?.includes('Log Out'))).toBe(true);
+	});
+
 	it('should filter commands based on search query', async () => {
 		const { container } = render(CommandPalette, { props: { show: true, hasAIProviders: true } });
 		const input = container.querySelector('.search-input') as HTMLInputElement;
