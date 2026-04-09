@@ -1,21 +1,34 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
 
 	let unlinkingProvider: string | null = null;
+	let passwordSaving = false;
+	let mergeSaving = false;
 	let linkError = '';
 	let linkSuccess = '';
+	let passwordError = '';
+	let passwordSuccess = '';
+	let mergeError = '';
+	let mergeSuccess = '';
+	let newPassword = '';
+	let confirmNewPassword = '';
+	let mergeEmail = '';
+	let mergePassword = '';
 
-	// Reactive connected accounts - needed for UI to update after disconnect
-	$: connectedAccounts = data.connectedAccounts || [];
+	let connectedAccounts = data.connectedAccounts || [];
+	let hasPassword = data.hasPassword ?? false;
+	let loginEmails = data.loginEmails || [data.user.email];
 	// Reactive Set for O(1) lookup in template - triggers re-render when connectedAccounts changes
 	$: connectedProviderIds = new Set(connectedAccounts.map((acc) => acc.provider));
 	// Can only disconnect if there's more than one connected account (need at least one login method)
-	$: canDisconnect = connectedAccounts.length > 1;
+	$: canDisconnect = connectedAccounts.length > 1 || hasPassword;
+	$: githubProfileLogin =
+		data.user.githubLogin || (connectedProviderIds.has('github') ? data.user.login : null);
 
 	// Filter providers to only show configured ones
 	$: configuredProviders = data.configuredProviders || { github: false, discord: false };
@@ -47,7 +60,9 @@
 			// Clear the URL param
 			const url = new URL(window.location.href);
 			url.searchParams.delete('linked');
-			window.history.replaceState({}, '', url);
+			if (typeof window.history?.replaceState === 'function') {
+				window.history.replaceState({}, '', url);
+			}
 		}
 
 		// Note: account_already_linked error is no longer possible as accounts are now merged automatically
@@ -55,7 +70,7 @@
 
 	function connectAccount(providerId: string) {
 		// Redirect to OAuth flow - the callback will detect we're logged in and link the account
-		window.location.href = `/api/auth/${providerId}`;
+		window.location.assign(`/api/auth/${providerId}`);
 	}
 
 	async function unlinkAccount(providerId: string) {
@@ -83,12 +98,71 @@
 			unlinkingProvider = null;
 		}
 	}
+
+	async function savePassword() {
+		passwordError = '';
+		passwordSuccess = '';
+		passwordSaving = true;
+
+		try {
+			const response = await fetch('/api/auth/password', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					password: newPassword,
+					confirmPassword: confirmNewPassword
+				})
+			});
+
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				throw new Error(payload.message || 'Failed to update password.');
+			}
+
+			hasPassword = payload.hasPassword ?? true;
+			loginEmails = payload.loginEmails || loginEmails;
+			newPassword = '';
+			confirmNewPassword = '';
+			passwordSuccess = payload.message || 'Password updated.';
+		} catch (err) {
+			passwordError = err instanceof Error ? err.message : 'Failed to update password.';
+		} finally {
+			passwordSaving = false;
+		}
+	}
+
+	async function mergeAccount() {
+		mergeError = '';
+		mergeSuccess = '';
+		mergeSaving = true;
+
+		try {
+			const response = await fetch('/api/auth/merge', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email: mergeEmail, password: mergePassword })
+			});
+
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				throw new Error(payload.message || 'Failed to merge account.');
+			}
+
+			connectedAccounts = payload.connectedAccounts || connectedAccounts;
+			hasPassword = payload.hasPassword ?? hasPassword;
+			loginEmails = payload.loginEmails || loginEmails;
+			mergeEmail = '';
+			mergePassword = '';
+			mergeSuccess = payload.message || 'Account merged successfully.';
+		} catch (err) {
+			mergeError = err instanceof Error ? err.message : 'Failed to merge account.';
+		} finally {
+			mergeSaving = false;
+		}
+	}
 </script>
 
-<SharingMeta
-	title="Profile"
-	noindex={true}
-/>
+<SharingMeta title="Profile" noindex={true} />
 
 <div class="profile-container">
 	<div class="profile-card">
@@ -144,33 +218,56 @@
 				</div>
 			</div>
 
-			<div class="detail-item">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="icon"
-				>
-					<path
-						d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
-					/>
-				</svg>
-				<div class="detail-content">
-					<span class="detail-label">GitHub</span>
-					<a
-						href="https://github.com/{data.user.login}"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="detail-value link"
+			{#if githubProfileLogin}
+				<div class="detail-item">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="icon"
 					>
-						github.com/{data.user.login}
-					</a>
+						<path
+							d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+						/>
+					</svg>
+					<div class="detail-content">
+						<span class="detail-label">GitHub</span>
+						<a
+							href="https://github.com/{githubProfileLogin}"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="detail-value link"
+						>
+							github.com/{githubProfileLogin}
+						</a>
+					</div>
 				</div>
-			</div>
+			{:else}
+				<div class="detail-item">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="icon"
+					>
+						<path d="M18 20V10" />
+						<path d="M12 20V4" />
+						<path d="M6 20v-6" />
+					</svg>
+					<div class="detail-content">
+						<span class="detail-label">Login</span>
+						<span class="detail-value">@{data.user.login}</span>
+					</div>
+				</div>
+			{/if}
 
 			<div class="detail-item">
 				<svg
@@ -190,6 +287,107 @@
 					<span class="detail-label">User ID</span>
 					<span class="detail-value mono">{data.user.id}</span>
 				</div>
+			</div>
+		</div>
+
+		<div class="account-management-section">
+			<h2>Password Login</h2>
+			<p class="section-description">
+				Manage password access and merged email aliases for this account.
+			</p>
+
+			<div class="account-method-card">
+				<div class="method-header">
+					<div>
+						<h3>Password Login</h3>
+						<p class="method-status">{hasPassword ? 'Configured' : 'Not configured yet'}</p>
+					</div>
+				</div>
+
+				{#if passwordError}
+					<div class="alert alert-error">{passwordError}</div>
+				{/if}
+				{#if passwordSuccess}
+					<div class="alert alert-success">{passwordSuccess}</div>
+				{/if}
+
+				<div class="auth-email-list">
+					<span class="detail-label">Login Emails</span>
+					<div class="email-chips">
+						{#each loginEmails as loginEmail}
+							<span class="email-chip">{loginEmail}</span>
+						{/each}
+					</div>
+				</div>
+
+				<div class="form-grid">
+					<div class="form-field">
+						<label for="new-password">New Password</label>
+						<input
+							id="new-password"
+							type="password"
+							bind:value={newPassword}
+							autocomplete="new-password"
+						/>
+					</div>
+					<div class="form-field">
+						<label for="confirm-new-password">Confirm New Password</label>
+						<input
+							id="confirm-new-password"
+							type="password"
+							bind:value={confirmNewPassword}
+							autocomplete="new-password"
+						/>
+					</div>
+				</div>
+
+				<button class="btn btn-primary" on:click={savePassword} disabled={passwordSaving}>
+					{#if passwordSaving}
+						Saving...
+					{:else if hasPassword}
+						Update Password
+					{:else}
+						Set Password
+					{/if}
+				</button>
+			</div>
+
+			<div class="account-method-card">
+				<h3>Merge Another Account</h3>
+				<p class="section-description">
+					Bring another email/password account into this one and keep its login email as an alias.
+				</p>
+
+				{#if mergeError}
+					<div class="alert alert-error">{mergeError}</div>
+				{/if}
+				{#if mergeSuccess}
+					<div class="alert alert-success">{mergeSuccess}</div>
+				{/if}
+
+				<div class="form-grid">
+					<div class="form-field">
+						<label for="merge-email">Account Email to Merge</label>
+						<input id="merge-email" type="email" bind:value={mergeEmail} autocomplete="email" />
+					</div>
+					<div class="form-field">
+						<label for="merge-password">Account Password to Merge</label>
+						<input
+							id="merge-password"
+							type="password"
+							bind:value={mergePassword}
+							autocomplete="current-password"
+						/>
+					</div>
+				</div>
+
+				<button class="btn btn-outline" on:click={mergeAccount} disabled={mergeSaving}>
+					{#if mergeSaving}
+						Merging...
+					{:else}
+						Merge Account
+					{/if}
+				</button>
 			</div>
 		</div>
 
@@ -385,18 +583,105 @@
 		text-decoration: underline;
 	}
 
-	/* Connected Accounts Section */
-	.connected-accounts-section {
+	.account-management-section {
 		margin-top: var(--spacing-xl);
 		padding-top: var(--spacing-xl);
 		border-top: 1px solid var(--color-border);
 	}
 
+	.account-management-section h2,
 	.connected-accounts-section h2 {
 		margin: 0 0 var(--spacing-xs) 0;
 		font-size: 1.25rem;
 		font-weight: 600;
 		color: var(--color-text);
+	}
+
+	.account-method-card {
+		background-color: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.account-method-card h3 {
+		margin: 0 0 var(--spacing-xs) 0;
+		font-size: 1rem;
+	}
+
+	.method-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.method-status {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--color-text-secondary);
+	}
+
+	.auth-email-list {
+		margin-bottom: var(--spacing-md);
+	}
+
+	.email-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-sm);
+	}
+
+	.email-chip {
+		display: inline-flex;
+		align-items: center;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		border-radius: var(--radius-full);
+		background-color: var(--color-surface);
+		border: 1px solid var(--color-border);
+		font-size: 0.875rem;
+	}
+
+	.form-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.form-field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.form-field label {
+		font-size: 0.875rem;
+		font-weight: 500;
+	}
+
+	.form-field input {
+		width: 100%;
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		color: var(--color-text);
+	}
+
+	.form-field input:focus {
+		outline: none;
+		border-color: var(--color-primary);
+	}
+
+	/* Connected Accounts Section */
+	.connected-accounts-section {
+		margin-top: var(--spacing-xl);
+		padding-top: var(--spacing-xl);
+		border-top: 1px solid var(--color-border);
 	}
 
 	.section-description {
@@ -552,6 +837,10 @@
 
 		.account-actions {
 			justify-content: center;
+		}
+
+		.form-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>

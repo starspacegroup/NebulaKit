@@ -8,6 +8,7 @@ declare global {
 			user?: {
 				id: string;
 				login: string;
+				githubLogin?: string;
 				email: string;
 				name?: string;
 				avatarUrl?: string;

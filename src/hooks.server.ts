@@ -1,3 +1,4 @@
+import { decodeSessionCookie } from '$lib/utils/session';
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
@@ -7,26 +8,9 @@ const authHandler: Handle = async ({ event, resolve }) => {
 	const sessionId = event.cookies.get('session');
 
 	if (sessionId) {
-		// In production, fetch session from D1 or KV
-		// For now, decode the session from the cookie
-		try {
-			// Handle both standard base64 and URL-safe base64
-			// URL-safe uses - instead of +, _ instead of /, and no padding
-			let base64 = sessionId;
+		const sessionData = decodeSessionCookie(sessionId);
 
-			// Only apply URL-safe decoding if the string contains URL-safe characters
-			if (base64.includes('-') || base64.includes('_')) {
-				base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
-			}
-
-			// Add padding if needed (for both standard and URL-safe base64)
-			while (base64.length % 4) {
-				base64 += '=';
-			}
-
-			const decoded = atob(base64);
-			const sessionData = JSON.parse(decoded);
-
+		if (sessionData) {
 			// Check if user is admin from database (optional - don't fail auth if DB unavailable)
 			if (event.platform?.env?.DB) {
 				try {
@@ -45,7 +29,7 @@ const authHandler: Handle = async ({ event, resolve }) => {
 			}
 
 			event.locals.user = sessionData;
-		} catch {
+		} else {
 			// Invalid session, clear cookie
 			event.cookies.delete('session', { path: '/' });
 		}

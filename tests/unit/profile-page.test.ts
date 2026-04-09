@@ -63,10 +63,11 @@ describe('Profile Page', () => {
 			const { load } = await import('../../src/routes/profile/+page.server');
 			const result = await load(mockEvent as any);
 
-			// Connected accounts only come from DB - empty when DB not available
 			expect(result).toEqual({
 				user: mockUser,
 				connectedAccounts: [],
+				hasPassword: false,
+				loginEmails: ['test@example.com'],
 				configuredProviders: {
 					github: false,
 					discord: false
@@ -97,8 +98,9 @@ describe('Profile Page', () => {
 			expect(result.user).toBeDefined();
 			expect(result.user.name).toBeUndefined();
 			expect(result.user.avatarUrl).toBeUndefined();
-			// Connected accounts only come from DB - empty when DB not available
 			expect(result.connectedAccounts).toEqual([]);
+			expect(result.hasPassword).toBe(false);
+			expect(result.loginEmails).toEqual(['test@example.com']);
 		});
 	});
 
@@ -118,7 +120,9 @@ describe('Profile Page', () => {
 				},
 				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				hasPassword: false,
+				loginEmails: ['test@example.com'],
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container, getByText } = render(ProfilePage.default, {
@@ -128,7 +132,7 @@ describe('Profile Page', () => {
 			// Check for user information
 			expect(getByText('Test User')).toBeTruthy();
 			expect(container.textContent).toContain('testuser');
-			expect(getByText('test@example.com')).toBeTruthy();
+			expect(container.textContent).toContain('test@example.com');
 
 			// Check for avatar image
 			const avatar = container.querySelector('img[alt="Test User"]');
@@ -148,7 +152,9 @@ describe('Profile Page', () => {
 				},
 				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				hasPassword: false,
+				loginEmails: ['test@example.com'],
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -173,7 +179,9 @@ describe('Profile Page', () => {
 				},
 				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				hasPassword: false,
+				loginEmails: ['test@example.com'],
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -200,7 +208,9 @@ describe('Profile Page', () => {
 				},
 				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				hasPassword: false,
+				loginEmails: ['test@example.com'],
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -224,7 +234,9 @@ describe('Profile Page', () => {
 				},
 				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				hasPassword: false,
+				loginEmails: ['test@example.com'],
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -241,13 +253,16 @@ describe('Profile Page', () => {
 				user: {
 					id: 'test-user-id',
 					login: 'testuser',
+					githubLogin: 'testuser',
 					email: 'test@example.com',
 					name: 'Test User',
 					isOwner: false
 				},
 				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				hasPassword: false,
+				loginEmails: ['test@example.com'],
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -259,5 +274,3 @@ describe('Profile Page', () => {
 		});
 	});
 });
-
-

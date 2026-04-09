@@ -111,12 +111,22 @@ describe('Account Merge Service', () => {
 		it('should merge admin status (source is admin should make target admin)', async () => {
 			const { mergeAccounts } = await import('../../src/lib/services/account-merge');
 
-			const mockPrepare = vi.fn().mockReturnValue({
+			const mockPrepare = vi.fn().mockImplementation((sql: string) => ({
 				bind: vi.fn().mockReturnValue({
 					run: vi.fn().mockResolvedValue({}),
-					first: vi.fn().mockResolvedValue({ is_admin: 1 })
+					first: vi.fn().mockResolvedValue(
+						sql.includes('SELECT id, email, name, password_hash, is_admin FROM users WHERE id = ?')
+							? {
+									id: 'admin-source-id',
+									email: 'admin@example.com',
+									name: 'Admin Source',
+									password_hash: null,
+									is_admin: 1
+								}
+							: { password_hash: null, name: 'Target User', email: 'target@example.com' }
+					)
 				})
-			});
+			}));
 			const mockBatch = vi.fn().mockResolvedValue({ success: true });
 
 			const mockDB = {
@@ -126,8 +136,10 @@ describe('Account Merge Service', () => {
 
 			await mergeAccounts(mockDB as any, 'admin-source-id', 'target-user-id');
 
-			// Should check source user's admin status and update target if source was admin
-			expect(mockPrepare).toHaveBeenCalledWith('SELECT is_admin FROM users WHERE id = ?');
+			expect(mockPrepare).toHaveBeenCalledWith(
+				'SELECT id, email, name, password_hash, is_admin FROM users WHERE id = ?'
+			);
+			expect(mockPrepare).toHaveBeenCalledWith('UPDATE users SET is_admin = 1 WHERE id = ?');
 		});
 
 		it('should use batch operations for atomic updates', async () => {
@@ -150,6 +162,70 @@ describe('Account Merge Service', () => {
 
 			// Verify batch is called for atomic operations
 			expect(mockBatch).toHaveBeenCalled();
+		});
+
+		it('should preserve the source email as a login alias on the target account', async () => {
+			const { mergeAccounts } = await import('../../src/lib/services/account-merge');
+
+			const mockPrepare = vi.fn().mockImplementation((sql: string) => ({
+				bind: vi.fn().mockReturnValue({
+					first: vi.fn().mockResolvedValue(
+						sql.includes('SELECT id, email, name, password_hash, is_admin FROM users WHERE id = ?')
+							? {
+									id: 'source-user-id',
+									email: 'source@example.com',
+									name: 'Source',
+									password_hash: 'source-password-hash',
+									is_admin: 0
+								}
+							: { password_hash: null, name: 'Target' }
+					),
+					run: vi.fn().mockResolvedValue({})
+				})
+			}));
+			const mockBatch = vi.fn().mockResolvedValue({ success: true });
+
+			await mergeAccounts(
+				{ prepare: mockPrepare, batch: mockBatch } as any,
+				'source-user-id',
+				'target-user-id'
+			);
+
+			expect(mockPrepare).toHaveBeenCalledWith(
+				'INSERT OR IGNORE INTO user_login_aliases (id, user_id, email, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)'
+			);
+		});
+
+		it('should transfer the source password hash when the target has no password', async () => {
+			const { mergeAccounts } = await import('../../src/lib/services/account-merge');
+
+			const mockPrepare = vi.fn().mockImplementation((sql: string) => ({
+				bind: vi.fn().mockReturnValue({
+					first: vi.fn().mockResolvedValue(
+						sql.includes('SELECT id, email, name, password_hash, is_admin FROM users WHERE id = ?')
+							? {
+									id: 'source-user-id',
+									email: 'source@example.com',
+									name: 'Source',
+									password_hash: 'source-password-hash',
+									is_admin: 0
+								}
+							: { password_hash: null, name: 'Target' }
+					),
+					run: vi.fn().mockResolvedValue({})
+				})
+			}));
+			const mockBatch = vi.fn().mockResolvedValue({ success: true });
+
+			await mergeAccounts(
+				{ prepare: mockPrepare, batch: mockBatch } as any,
+				'source-user-id',
+				'target-user-id'
+			);
+
+			expect(mockPrepare).toHaveBeenCalledWith(
+				'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+			);
 		});
 	});
 });
