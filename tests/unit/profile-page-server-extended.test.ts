@@ -310,6 +310,48 @@ describe('Profile Page Server - Extended Coverage', () => {
 			expect(result.connectedAccounts[0]).toEqual(existingAccount);
 		});
 
+		it('should surface GitHub as connected when the session has githubLogin but the oauth row is missing', async () => {
+			const mockEvent = {
+				locals: {
+					user: {
+						id: 'user-1',
+						login: 'testuser',
+						email: 'test@example.com',
+						githubLogin: 'testuser'
+					}
+				},
+				platform: {
+					env: {
+						DB: {
+							prepare: vi.fn().mockImplementation((sql: string) => {
+								if (sql.includes('oauth_accounts WHERE user_id')) {
+									return {
+										bind: vi.fn().mockReturnValue({
+											all: vi.fn().mockResolvedValue({ results: [] })
+										})
+									};
+								}
+
+								return {
+									bind: vi.fn().mockReturnValue({
+										first: vi.fn().mockResolvedValue(null),
+										all: vi.fn().mockResolvedValue({ results: [] })
+									})
+								};
+							})
+						}
+					}
+				}
+			};
+
+			const { load } = await import('../../src/routes/profile/+page.server');
+			const result = (await load(mockEvent as any)) as any;
+
+			expect(result.connectedAccounts).toHaveLength(1);
+			expect(result.connectedAccounts[0].provider).toBe('github');
+			expect(result.connectedAccounts[0].provider_account_id).toBe('testuser');
+		});
+
 		it('should handle DB errors gracefully when fetching accounts', async () => {
 			const mockEvent = {
 				locals: {

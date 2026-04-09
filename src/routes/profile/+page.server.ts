@@ -53,6 +53,19 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 						}
 					];
 				}
+			} else if (!hasGitHubConnection) {
+				const githubLogin = locals.user.githubLogin;
+
+				if (githubLogin) {
+					connectedAccounts = [
+						...connectedAccounts,
+						{
+							provider: 'github',
+							provider_account_id: githubLogin,
+							created_at: new Date().toISOString()
+						}
+					];
+				}
 			}
 		} catch (err) {
 			console.error('[Profile] Failed to fetch auth state:', err);
