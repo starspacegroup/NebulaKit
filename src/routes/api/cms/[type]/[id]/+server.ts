@@ -57,6 +57,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request })
 			seoTitle: body.seoTitle,
 			seoDescription: body.seoDescription,
 			seoImage: body.seoImage,
+			showInCommandPalette: body.showInCommandPalette,
 			tagIds: body.tagIds
 		});
 

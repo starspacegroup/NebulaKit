@@ -77,5 +77,51 @@ describe('Layout Server Load', () => {
 
 			expect(result.hasAIProviders).toBe(false);
 		});
+
+		it('should include eligible CMS items for the command palette', async () => {
+			const mockFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: vi.fn().mockResolvedValue({ hasProviders: false })
+			});
+			const mockDB = {
+				prepare: vi.fn().mockReturnThis(),
+				bind: vi.fn().mockReturnThis(),
+				all: vi
+					.fn()
+					.mockResolvedValueOnce({ results: [] })
+					.mockResolvedValueOnce({
+						results: [
+							{
+								content_type_slug: 'blog',
+								content_type_name: 'Blog Posts',
+								route_prefix: '/blog',
+								item_id: 'item-1',
+								item_slug: 'hello-world',
+								item_title: 'Hello World',
+								item_description: 'First post'
+							}
+						]
+					}),
+				batch: vi.fn()
+			};
+
+			const { load } = await import('../../src/routes/+layout.server');
+			const result = (await load({
+				locals: { user: null },
+				fetch: mockFetch,
+				platform: { env: { DB: mockDB } }
+			} as any)) as {
+				cmsPaletteItems: Array<{ id: string; label: string; href: string; description: string }>;
+			};
+
+			expect(result.cmsPaletteItems).toEqual([
+				{
+					id: 'cms-item-1',
+					label: 'Hello World',
+					href: '/blog/hello-world',
+					description: 'Blog Posts: First post'
+				}
+			]);
+		});
 	});
 });

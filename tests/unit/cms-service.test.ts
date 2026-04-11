@@ -152,6 +152,8 @@ describe('CMS Service', () => {
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
 			});
+			// For author existence check
+			mockDB.first.mockResolvedValueOnce({ id: 'user-1' });
 			// For slug uniqueness check
 			mockDB.first.mockResolvedValueOnce(null);
 			// For the insert returning
@@ -237,6 +239,50 @@ describe('CMS Service', () => {
 			});
 
 			expect(item!.slug).toBe('custom-slug');
+		});
+
+		it('should fall back to null author when author record does not exist', async () => {
+			const { createContentItem } = await import('../../src/lib/services/cms.js');
+
+			mockDB.first
+				.mockResolvedValueOnce({
+					id: 'ct-1',
+					slug: 'blog',
+					name: 'Blog Posts',
+					fields: '[]',
+					settings: '{}',
+					icon: 'article',
+					sort_order: 0,
+					created_at: '2024-01-01',
+					updated_at: '2024-01-01'
+				})
+				.mockResolvedValueOnce(null)
+				.mockResolvedValueOnce(null)
+				.mockResolvedValueOnce({
+					id: 'ci-1',
+					content_type_id: 'ct-1',
+					slug: 'hello-world',
+					title: 'Hello World',
+					status: 'draft',
+					fields: '{}',
+					seo_title: null,
+					seo_description: null,
+					seo_image: null,
+					author_id: null,
+					published_at: null,
+					created_at: '2024-01-01',
+					updated_at: '2024-01-01'
+				});
+
+			const item = await createContentItem(mockDB, {
+				contentTypeSlug: 'blog',
+				title: 'Hello World',
+				fields: {},
+				authorId: 'missing-user'
+			});
+
+			expect(item).toBeTruthy();
+			expect(item?.authorId).toBeNull();
 		});
 	});
 

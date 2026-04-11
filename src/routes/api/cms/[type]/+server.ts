@@ -99,6 +99,7 @@ export const POST: RequestHandler = async ({ platform, locals, params, request }
 			seoTitle: body.seoTitle,
 			seoDescription: body.seoDescription,
 			seoImage: body.seoImage,
+			showInCommandPalette: body.showInCommandPalette,
 			authorId: locals.user.id,
 			tagIds: body.tagIds
 		});

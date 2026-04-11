@@ -594,6 +594,8 @@ describe('CMS API /api/cms/[type] - Branch Coverage', () => {
 			mockDB._firstQueue.push(mockContentTypeRow);
 			// createContentItem: get content type
 			mockDB._firstQueue.push(mockContentTypeRow);
+			// createContentItem: author existence
+			mockDB._firstQueue.push({ id: 'user-1' });
 			// createContentItem: check slug uniqueness
 			mockDB._firstQueue.push(null);
 			// createContentItem: insert
@@ -618,6 +620,8 @@ describe('CMS API /api/cms/[type] - Branch Coverage', () => {
 			mockDB._firstQueue.push(mockContentTypeRow);
 			// createContentItem: get content type
 			mockDB._firstQueue.push(mockContentTypeRow);
+			// createContentItem: author existence
+			mockDB._firstQueue.push({ id: 'user-1' });
 			// createContentItem: check slug uniqueness
 			mockDB._firstQueue.push(null);
 			// createContentItem: insert fails

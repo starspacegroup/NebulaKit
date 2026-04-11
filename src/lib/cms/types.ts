@@ -78,6 +78,8 @@ export interface ContentTypeSettings {
 	defaultSortDirection?: 'asc' | 'desc';
 	/** Whether this type is publicly listable (default: true) */
 	isPublic?: boolean;
+	/** Whether items of this type can appear in the command palette (default: true) */
+	showInCommandPalette?: boolean;
 	/** Template to use for rendering items (default: 'default') */
 	listTemplate?: string;
 	/** Template to use for rendering single items (default: 'default') */
@@ -150,6 +152,7 @@ export interface ContentItem {
 	seo_description: string | null;
 	seo_image: string | null;
 	author_id: string | null;
+	show_in_command_palette?: number;
 	published_at: string | null;
 	created_at: string;
 	updated_at: string;
@@ -167,6 +170,7 @@ export interface ContentItemParsed {
 	seoDescription: string | null;
 	seoImage: string | null;
 	authorId: string | null;
+	showInCommandPalette: boolean;
 	publishedAt: string | null;
 	createdAt: string;
 	updatedAt: string;
@@ -201,6 +205,7 @@ export interface CreateContentItemInput {
 	seoDescription?: string;
 	seoImage?: string;
 	authorId?: string;
+	showInCommandPalette?: boolean;
 	tagIds?: string[];
 }
 
@@ -213,6 +218,7 @@ export interface UpdateContentItemInput {
 	seoTitle?: string;
 	seoDescription?: string;
 	seoImage?: string;
+	showInCommandPalette?: boolean;
 	tagIds?: string[];
 }
 

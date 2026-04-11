@@ -208,6 +208,7 @@ describe('CMS API - Content Items', () => {
 						seo_description: null,
 						seo_image: null,
 						author_id: null,
+						show_in_command_palette: 1,
 						published_at: null,
 						created_at: '2024-01-01',
 						updated_at: '2024-01-01'
@@ -226,6 +227,7 @@ describe('CMS API - Content Items', () => {
 			const data = await response.json();
 			expect(data.items).toHaveLength(1);
 			expect(data.total).toBe(1);
+			expect(data.items[0].showInCommandPalette).toBe(true);
 		});
 	});
 
@@ -257,6 +259,8 @@ describe('CMS API - Content Items', () => {
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
 			});
+			// createContentItem: author existence
+			mockDB.first.mockResolvedValueOnce({ id: 'user-1' });
 			// slug check
 			mockDB.first.mockResolvedValueOnce(null);
 			// insert
@@ -271,6 +275,7 @@ describe('CMS API - Content Items', () => {
 				seo_description: null,
 				seo_image: null,
 				author_id: 'user-1',
+				show_in_command_palette: 0,
 				published_at: null,
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
@@ -281,7 +286,8 @@ describe('CMS API - Content Items', () => {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					title: 'Hello World',
-					fields: { body: 'Content here' }
+					fields: { body: 'Content here' },
+					showInCommandPalette: false
 				})
 			});
 
@@ -295,6 +301,7 @@ describe('CMS API - Content Items', () => {
 			expect(response.status).toBe(201);
 			const data = await response.json();
 			expect(data.item.title).toBe('Hello World');
+			expect(data.item.showInCommandPalette).toBe(false);
 		});
 
 		it('should require title', async () => {
@@ -348,6 +355,7 @@ describe('CMS API - Content Items', () => {
 				seo_description: null,
 				seo_image: null,
 				author_id: null,
+				show_in_command_palette: 1,
 				published_at: '2024-01-01',
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
@@ -414,6 +422,7 @@ describe('CMS API - Content Items', () => {
 				seo_description: null,
 				seo_image: null,
 				author_id: null,
+				show_in_command_palette: 0,
 				published_at: '2024-01-15',
 				created_at: '2024-01-01',
 				updated_at: '2024-01-15'
@@ -425,7 +434,8 @@ describe('CMS API - Content Items', () => {
 				body: JSON.stringify({
 					title: 'Updated',
 					status: 'published',
-					fields: { body: 'New' }
+					fields: { body: 'New' },
+					showInCommandPalette: false
 				})
 			});
 
@@ -439,6 +449,7 @@ describe('CMS API - Content Items', () => {
 			expect(response.status).toBe(200);
 			const data = await response.json();
 			expect(data.item.title).toBe('Updated');
+			expect(data.item.showInCommandPalette).toBe(false);
 		});
 	});
 

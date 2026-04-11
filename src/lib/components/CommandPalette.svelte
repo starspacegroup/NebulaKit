@@ -11,9 +11,26 @@
 	} from '$lib/stores/theme';
 	import { onDestroy, tick } from 'svelte';
 
+	interface CMSCommand {
+		id: string;
+		label: string;
+		description: string;
+		href: string;
+	}
+
+	interface $$Props {
+		show?: boolean;
+		hasAIProviders?: boolean;
+		isAuthenticated?: boolean;
+		canAccessAdmin?: boolean;
+		cmsCommands?: CMSCommand[];
+	}
+
 	export let show = false;
 	export let hasAIProviders = false;
 	export let isAuthenticated = false;
+	export let canAccessAdmin = false;
+	export let cmsCommands: CMSCommand[] = [];
 
 	let searchInput: HTMLInputElement;
 	let commandsContainer: HTMLDivElement;
@@ -96,8 +113,33 @@
 			action: () => goto('/documentation'),
 			icon: '📚'
 		},
+		...cmsCommands.map((command) => ({
+			id: command.id,
+			label: command.label,
+			description: command.description,
+			action: () => goto(command.href),
+			icon: '📝'
+		})),
 		...(isAuthenticated
 			? [
+					{
+						id: 'profile',
+						label: 'Profile',
+						description: 'View and manage your profile',
+						action: () => goto('/profile'),
+						icon: '👤'
+					},
+					...(canAccessAdmin
+						? [
+								{
+									id: 'admin',
+									label: 'Admin',
+									description: 'Open the admin dashboard',
+									action: () => goto('/admin'),
+									icon: '🛠️'
+								}
+							]
+						: []),
 					{
 						id: 'logout',
 						label: 'Log Out',

@@ -5,6 +5,7 @@
   create/edit modals, and delete confirmation.
 -->
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
@@ -38,6 +39,7 @@
 	let formSeoTitle = '';
 	let formSeoDescription = '';
 	let formSeoImage = '';
+	let formShowInCommandPalette = true;
 	let formTagIds: string[] = [];
 
 	// SEO section visibility
@@ -87,6 +89,7 @@
 		formSeoTitle = '';
 		formSeoDescription = '';
 		formSeoImage = '';
+		formShowInCommandPalette = true;
 		formTagIds = [];
 		showSeoFields = false;
 		errors = {};
@@ -106,6 +109,7 @@
 		formSeoTitle = item.seoTitle || '';
 		formSeoDescription = item.seoDescription || '';
 		formSeoImage = item.seoImage || '';
+		formShowInCommandPalette = item.showInCommandPalette !== false;
 		formTagIds = item.tags?.map((t: any) => t.id) || [];
 		showSeoFields = !!(item.seoTitle || item.seoDescription || item.seoImage);
 		errors = {};
@@ -171,6 +175,7 @@
 			if (formSeoTitle) body.seoTitle = formSeoTitle;
 			if (formSeoDescription) body.seoDescription = formSeoDescription;
 			if (formSeoImage) body.seoImage = formSeoImage;
+			body.showInCommandPalette = formShowInCommandPalette;
 			if (formTagIds.length > 0) body.tagIds = formTagIds;
 
 			const res = await fetch(`/api/cms/${contentType.slug}`, {
@@ -187,6 +192,7 @@
 
 			closeModals();
 			await refreshItems();
+			await invalidateAll();
 		} catch (err) {
 			errors.general = 'An unexpected error occurred';
 		} finally {
@@ -216,6 +222,7 @@
 				body.seoDescription = formSeoDescription || null;
 				body.seoImage = formSeoImage || null;
 			}
+			body.showInCommandPalette = formShowInCommandPalette;
 			if (contentType.settings?.hasTags) {
 				body.tagIds = formTagIds;
 			}
@@ -234,6 +241,7 @@
 
 			closeModals();
 			await refreshItems();
+			await invalidateAll();
 		} catch (err) {
 			errors.general = 'An unexpected error occurred';
 		} finally {
@@ -263,6 +271,7 @@
 
 			closeModals();
 			await refreshItems();
+			await invalidateAll();
 		} catch (err) {
 			errors.general = 'An unexpected error occurred';
 		} finally {
@@ -330,10 +339,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="{contentType.name} - CMS Admin"
-	noindex={true}
-/>
+<SharingMeta title="{contentType.name} - CMS Admin" noindex={true} />
 
 <div class="cms-manage">
 	<!-- Header -->
@@ -594,6 +600,18 @@
 						</select>
 					</div>
 				{/if}
+
+				<div class="form-group">
+					<label class="checkbox-label" for="form-show-in-command-palette">
+						<input
+							id="form-show-in-command-palette"
+							type="checkbox"
+							bind:checked={formShowInCommandPalette}
+						/>
+						<span>Show in command palette</span>
+					</label>
+					<span class="field-help">Disable this to hide the item from global command search.</span>
+				</div>
 
 				<!-- Custom Fields -->
 				{#if contentType.fields?.length}

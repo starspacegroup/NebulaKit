@@ -15,6 +15,13 @@ import type {
 	ContentTypeSettings
 } from './types';
 
+function normalizeContentTypeSettings(settings: ContentTypeSettings = {}): ContentTypeSettings {
+	return {
+		...settings,
+		showInCommandPalette: settings.showInCommandPalette !== false
+	};
+}
+
 /**
  * Generate a URL-friendly slug from a title string.
  */
@@ -32,13 +39,15 @@ export function generateSlug(title: string): string {
  * Parse a content type from D1 row format to runtime format.
  */
 export function parseContentType(row: ContentType): ContentTypeParsed {
+	const settings = normalizeContentTypeSettings(JSON.parse(row.settings) as ContentTypeSettings);
+
 	return {
 		id: row.id,
 		slug: row.slug,
 		name: row.name,
 		description: row.description,
 		fields: JSON.parse(row.fields) as ContentFieldDefinition[],
-		settings: JSON.parse(row.settings) as ContentTypeSettings,
+		settings,
 		icon: row.icon,
 		sortOrder: row.sort_order,
 		isSystem: row.is_system === 1,
@@ -62,6 +71,7 @@ export function parseContentItem(row: ContentItem): ContentItemParsed {
 		seoDescription: row.seo_description,
 		seoImage: row.seo_image,
 		authorId: row.author_id,
+		showInCommandPalette: row.show_in_command_palette !== 0,
 		publishedAt: row.published_at,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at

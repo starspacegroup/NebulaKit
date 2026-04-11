@@ -70,7 +70,7 @@ describe('CMS Utils', () => {
 			expect(parsed.slug).toBe('blog');
 			expect(parsed.name).toBe('Blog Posts');
 			expect(parsed.fields).toEqual([{ name: 'body', label: 'Body', type: 'richtext' }]);
-			expect(parsed.settings).toEqual({ hasDrafts: true });
+			expect(parsed.settings).toEqual({ hasDrafts: true, showInCommandPalette: true });
 			expect(parsed.sortOrder).toBe(0);
 		});
 	});
@@ -101,6 +101,7 @@ describe('CMS Utils', () => {
 			expect(parsed.fields).toEqual({ body: 'Hello!' });
 			expect(parsed.seoTitle).toBe('Hello World - Blog');
 			expect(parsed.authorId).toBe('user-1');
+			expect(parsed.showInCommandPalette).toBe(true);
 		});
 	});
 

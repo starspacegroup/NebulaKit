@@ -88,6 +88,34 @@ describe('CMS Service - Content Type Management', () => {
 			expect(result.settings.routePrefix).toBe('/faq');
 		});
 
+		it('should default command palette visibility on when not provided', async () => {
+			mockDB.first
+				.mockResolvedValueOnce(null)
+				.mockResolvedValueOnce({ max_order: null })
+				.mockResolvedValueOnce({
+					id: 'new-id',
+					slug: 'faq',
+					name: 'FAQ',
+					description: null,
+					fields: '[]',
+					settings: '{}',
+					icon: 'document',
+					sort_order: 0,
+					is_system: 0,
+					created_at: '2026-01-01',
+					updated_at: '2026-01-01'
+				});
+
+			const result = await createContentTypeInDB(mockDB, {
+				name: 'FAQ',
+				fields: [],
+				settings: {}
+			});
+
+			expect(result).toBeTruthy();
+			expect(result.settings.showInCommandPalette).toBe(true);
+		});
+
 		it('should return null if slug already exists', async () => {
 			// First call checks for existing slug
 			mockDB.first.mockResolvedValueOnce({ id: 'existing-id' });
@@ -278,6 +306,27 @@ describe('CMS Service - Content Type Management', () => {
 			expect(result.settings.routePrefix).toBe('/faq');
 		});
 
+		it('should default command palette visibility on when absent in stored settings', async () => {
+			mockDB.first.mockResolvedValue({
+				id: 'type-1',
+				slug: 'faq',
+				name: 'FAQ',
+				description: 'Questions',
+				fields: '[]',
+				settings: '{}',
+				icon: 'help-circle',
+				sort_order: 0,
+				is_system: 0,
+				created_at: '2026-01-01',
+				updated_at: '2026-01-01'
+			});
+
+			const result = await getContentTypeById(mockDB, 'type-1');
+
+			expect(result).toBeTruthy();
+			expect(result?.settings.showInCommandPalette).toBe(true);
+		});
+
 		it('should return null when not found', async () => {
 			mockDB.first.mockResolvedValue(null);
 
@@ -382,6 +431,41 @@ describe('CMS Content Types API - POST /api/cms/types', () => {
 		expect(data.contentType).toBeTruthy();
 		expect(data.contentType.slug).toBe('faq');
 	});
+
+	it('should persist command palette visibility when creating a content type', async () => {
+		const mockDB = createMockDB();
+		mockDB._firstResults.push(null);
+		mockDB._firstResults.push({ max_order: null });
+		mockDB._firstResults.push({
+			id: 'new-type-id',
+			slug: 'faq',
+			name: 'FAQ',
+			description: 'Questions',
+			fields: '[]',
+			settings: '{"showInCommandPalette":false}',
+			icon: 'help-circle',
+			sort_order: 0,
+			is_system: 0,
+			created_at: '2026-01-01',
+			updated_at: '2026-01-01'
+		});
+
+		const event = createMockEvent({
+			user: { id: '1', isOwner: true, isAdmin: true },
+			body: {
+				name: 'FAQ',
+				fields: [],
+				settings: { showInCommandPalette: false }
+			},
+			db: mockDB
+		});
+
+		const response = await POST(event);
+		const data = await response.json();
+
+		expect(response.status).toBe(201);
+		expect(data.contentType.settings.showInCommandPalette).toBe(false);
+	});
 });
 
 describe('CMS Content Types API - PUT /api/cms/types/[id]', () => {
@@ -432,6 +516,38 @@ describe('CMS Content Types API - PUT /api/cms/types/[id]', () => {
 
 		expect(response.status).toBe(200);
 		expect(data.contentType.name).toBe('Updated FAQ');
+	});
+
+	it('should update content type command palette visibility', async () => {
+		const mockDB = createMockDB();
+		mockDB._firstResults.push({
+			id: 'type-1',
+			slug: 'faq',
+			name: 'FAQ',
+			description: 'Updated',
+			fields: '[]',
+			settings: '{"showInCommandPalette":false}',
+			icon: 'help-circle',
+			sort_order: 0,
+			is_system: 0,
+			created_at: '2026-01-01',
+			updated_at: '2026-01-01'
+		});
+
+		const event = createMockEvent({
+			user: { id: '1', isOwner: true, isAdmin: true },
+			params: { id: 'type-1' },
+			body: {
+				settings: { showInCommandPalette: false }
+			},
+			db: mockDB
+		});
+
+		const response = await PUT(event);
+		const data = await response.json();
+
+		expect(response.status).toBe(200);
+		expect(data.contentType.settings.showInCommandPalette).toBe(false);
 	});
 });
 

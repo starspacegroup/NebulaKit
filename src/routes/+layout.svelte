@@ -18,6 +18,13 @@
 		$page.url.pathname.startsWith('/admin') ||
 		$page.url.pathname.startsWith('/setup');
 
+	$: commandPaletteProps = {
+		hasAIProviders: data.hasAIProviders,
+		isAuthenticated: Boolean(data.user),
+		canAccessAdmin: Boolean(data.user?.isAdmin || data.user?.isOwner),
+		cmsCommands: data.cmsPaletteItems
+	} as Record<string, unknown>;
+
 	// Subscribe to theme changes and apply to DOM
 	if (browser) {
 		resolvedTheme.subscribe((theme) => {
@@ -54,11 +61,7 @@
 		<Footer />
 	{/if}
 
-	<CommandPalette
-		bind:show={$showCommandPalette}
-		hasAIProviders={data.hasAIProviders}
-		isAuthenticated={Boolean(data.user)}
-	/>
+	<CommandPalette {...commandPaletteProps} bind:show={$showCommandPalette} />
 </div>
 
 <style>

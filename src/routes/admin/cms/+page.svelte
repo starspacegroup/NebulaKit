@@ -6,6 +6,7 @@
   System content types (from registry) can be edited but not deleted.
 -->
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
@@ -100,6 +101,7 @@
 	let typeHasSEO = true;
 	let typeHasAuthor = true;
 	let typeIsPublic = true;
+	let typeShowInCommandPalette = true;
 	let typeFields: FieldDef[] = [];
 	let saving = false;
 	let errorMessage = '';
@@ -130,6 +132,7 @@
 		typeHasSEO = true;
 		typeHasAuthor = true;
 		typeIsPublic = true;
+		typeShowInCommandPalette = true;
 		typeFields = [];
 		errorMessage = '';
 		showDeleteConfirm = false;
@@ -149,6 +152,7 @@
 		typeHasSEO = ct.settings?.hasSEO !== false;
 		typeHasAuthor = ct.settings?.hasAuthor !== false;
 		typeIsPublic = ct.settings?.isPublic !== false;
+		typeShowInCommandPalette = ct.settings?.showInCommandPalette !== false;
 		typeFields = (ct.fields || []).map((f: any) => ({
 			name: f.name || '',
 			label: f.label || '',
@@ -252,7 +256,8 @@
 				hasSEO: typeHasSEO,
 				hasAuthor: typeHasAuthor,
 				routePrefix: typeRoutePrefix || `/${typeSlug}`,
-				isPublic: typeIsPublic
+				isPublic: typeIsPublic,
+				showInCommandPalette: typeShowInCommandPalette
 			};
 
 			const body: Record<string, any> = {
@@ -292,6 +297,8 @@
 				contentTypes = typesData.types || [];
 			}
 
+			await invalidateAll();
+
 			closeEditor();
 		} catch (err: any) {
 			errorMessage = err?.message || 'An unexpected error occurred';
@@ -323,6 +330,8 @@
 				contentTypes = typesData.types || [];
 			}
 
+			await invalidateAll();
+
 			closeEditor();
 		} catch (err: any) {
 			errorMessage = err?.message || 'An unexpected error occurred';
@@ -333,10 +342,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="CMS - Admin"
-	noindex={true}
-/>
+<SharingMeta title="CMS - Admin" noindex={true} />
 
 <div class="cms-dashboard">
 	<div class="cms-dashboard-header">
@@ -533,6 +539,10 @@
 						<label class="toggle-field">
 							<input type="checkbox" bind:checked={typeIsPublic} />
 							<span>Publicly listable</span>
+						</label>
+						<label class="toggle-field">
+							<input type="checkbox" bind:checked={typeShowInCommandPalette} />
+							<span>Show items in command palette</span>
 						</label>
 					</div>
 				</section>

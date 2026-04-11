@@ -65,6 +65,28 @@ describe('CommandPalette', () => {
 		expect(commandLabels.some((label) => label?.includes('Chat'))).toBe(false);
 	});
 
+	it('should render CMS commands passed from layout data', () => {
+		const { container } = render(CommandPalette, {
+			props: {
+				show: true,
+				cmsCommands: [
+					{
+						id: 'cms-item-1',
+						label: 'Hello World',
+						description: 'Blog Posts: First post',
+						href: '/blog/hello-world'
+					}
+				]
+			}
+		});
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Hello World'))).toBe(true);
+		expect(container.textContent).toContain('Blog Posts: First post');
+	});
+
 	it('should show sign in and sign up commands when logged out', () => {
 		const { container } = render(CommandPalette, {
 			props: { show: true, isAuthenticated: false }
@@ -88,7 +110,30 @@ describe('CommandPalette', () => {
 
 		expect(commandLabels.some((label) => label?.includes('Sign In'))).toBe(false);
 		expect(commandLabels.some((label) => label?.includes('Sign Up'))).toBe(false);
+		expect(commandLabels.some((label) => label?.includes('Profile'))).toBe(true);
 		expect(commandLabels.some((label) => label?.includes('Log Out'))).toBe(true);
+	});
+
+	it('should include admin command for admins', () => {
+		const { container } = render(CommandPalette, {
+			props: { show: true, isAuthenticated: true, canAccessAdmin: true }
+		});
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Admin'))).toBe(true);
+	});
+
+	it('should exclude admin command for non-admin users', () => {
+		const { container } = render(CommandPalette, {
+			props: { show: true, isAuthenticated: true, canAccessAdmin: false }
+		});
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Admin'))).toBe(false);
 	});
 
 	it('should filter commands based on search query', async () => {
