@@ -11,7 +11,7 @@ interface D1PreparedStatementResult<T = unknown> {
 }
 
 interface D1PreparedStatement {
-	bind(...values: unknown[]): D1PreparedStatementResult;
+	bind<T = unknown>(...values: unknown[]): D1PreparedStatementResult<T>;
 }
 
 interface D1DatabaseLike {
@@ -51,7 +51,7 @@ export async function getUserAuthState(
 			.prepare(
 				'SELECT provider, provider_account_id, created_at FROM oauth_accounts WHERE user_id = ?'
 			)
-			.bind(userId)
+			.bind<OAuthAccountConnection>(userId)
 			.all?.();
 
 		connectedAccounts = accountsResult?.results || [];

@@ -11,6 +11,11 @@ vi.mock('$app/stores', () => ({
 	})
 }));
 
+const layoutData = {
+	user: null,
+	hasAIProviders: false
+};
+
 describe('Password Auth Pages', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -28,7 +33,12 @@ describe('Password Auth Pages', () => {
 		const assignSpy = vi.spyOn(window.location, 'assign').mockImplementation(() => undefined);
 
 		render(LoginPage, {
-			props: { data: { configuredProviders: { github: false, discord: false } } }
+			props: {
+				data: {
+					...layoutData,
+					configuredProviders: { github: false, discord: false }
+				}
+			}
 		});
 
 		await fireEvent.input(screen.getByLabelText(/email/i), {
@@ -59,7 +69,12 @@ describe('Password Auth Pages', () => {
 		const assignSpy = vi.spyOn(window.location, 'assign').mockImplementation(() => undefined);
 
 		render(SignupPage, {
-			props: { data: { configuredProviders: { github: false, discord: false } } }
+			props: {
+				data: {
+					...layoutData,
+					configuredProviders: { github: false, discord: false }
+				}
+			}
 		});
 
 		await fireEvent.input(screen.getByLabelText(/^name$/i), {

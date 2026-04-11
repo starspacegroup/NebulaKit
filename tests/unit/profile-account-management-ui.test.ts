@@ -14,6 +14,10 @@ vi.mock('$app/stores', () => ({
 	})
 }));
 
+const layoutData = {
+	hasAIProviders: false
+};
+
 describe('Profile Account Management UI', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -26,6 +30,7 @@ describe('Profile Account Management UI', () => {
 		render(ProfilePage, {
 			props: {
 				data: {
+					...layoutData,
 					user: {
 						id: 'user-1',
 						login: 'user',
@@ -61,6 +66,7 @@ describe('Profile Account Management UI', () => {
 		render(ProfilePage, {
 			props: {
 				data: {
+					...layoutData,
 					user: {
 						id: 'user-1',
 						login: 'user',
@@ -114,6 +120,7 @@ describe('Profile Account Management UI', () => {
 		render(ProfilePage, {
 			props: {
 				data: {
+					...layoutData,
 					user: {
 						id: 'user-1',
 						login: 'user',

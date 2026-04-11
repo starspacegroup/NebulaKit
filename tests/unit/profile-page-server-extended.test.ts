@@ -12,7 +12,7 @@ describe('Profile Page Server - Extended Coverage', () => {
 		vi.resetModules();
 		vi.stubGlobal('crypto', {
 			...webcrypto,
-			randomUUID: () => 'test-uuid-123'
+			randomUUID: () => '123e4567-e89b-12d3-a456-426614174000'
 		} as Crypto);
 	});
 

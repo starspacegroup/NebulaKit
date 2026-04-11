@@ -2,6 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SignupPage from '../../src/routes/auth/signup/+page.svelte';
 
+const layoutData = {
+	user: null,
+	hasAIProviders: false
+};
+
 describe('Auth Signup Page UI', () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
@@ -11,6 +16,7 @@ describe('Auth Signup Page UI', () => {
 		render(SignupPage, {
 			props: {
 				data: {
+					...layoutData,
 					configuredProviders: {
 						github: true,
 						discord: false
@@ -30,6 +36,7 @@ describe('Auth Signup Page UI', () => {
 		render(SignupPage, {
 			props: {
 				data: {
+					...layoutData,
 					configuredProviders: {
 						github: false,
 						discord: false
@@ -49,6 +56,7 @@ describe('Auth Signup Page UI', () => {
 		render(SignupPage, {
 			props: {
 				data: {
+					...layoutData,
 					configuredProviders: {
 						github: true,
 						discord: false
