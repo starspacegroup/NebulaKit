@@ -596,425 +596,453 @@
 
 <!-- Features Section -->
 <section class="features">
-	<div class="features-header">
-		<h2 class="features-title">Built for the Modern Web</h2>
-		<p class="features-subtitle">
-			A production-ready template with everything you need to build fast, scalable applications
-		</p>
-	</div>
-
-	<div class="features-grid">
-		<!-- Feature 1: SvelteKit -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M34.5 13.5c0-3.5-2-6.5-5-8-3-1.5-6.5-1.5-9.5 0-3 1.5-5 4.5-5 8v13c0 3.5 2 6.5 5 8 3 1.5 6.5 1.5 9.5 0 3-1.5 5-4.5 5-8v-13z"
-							fill="var(--color-primary)"
-						/>
-						<path
-							d="M24 5c-3.5 0-6.5 2-8 5-1.5 3-1.5 6.5 0 9.5 1.5 3 4.5 5 8 5h13c3.5 0 6.5-2 8-5 1.5-3 1.5-6.5 0-9.5-1.5-3-4.5-5-8-5H24z"
-							fill="var(--color-secondary)"
-							opacity="0.8"
-						/>
-					</svg>
-				</div>
-				<h3 class="feature-title">SvelteKit Framework</h3>
-			</div>
-			<p class="feature-description">
-				Blazing fast web applications with SvelteKit's powerful routing, server-side rendering, and
-				reactive components. Zero-config TypeScript support included.
+	<div class="features-shell">
+		<div class="features-header">
+			<h2 class="features-title">Built for the Modern Web</h2>
+			<p class="features-subtitle">
+				A production-ready template with everything you need to build fast, scalable applications
 			</p>
 		</div>
 
-		<!-- Feature 2: Cloudflare Workers -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M8 20l8-8 8 8 8-8v16l-8-8-8 8-8-8V20z"
-							fill="var(--color-primary)"
-							opacity="0.2"
-						/>
-						<path
-							d="M8 12l8-8 8 8 8-8v16l-8-8-8 8-8-8V12z"
-							fill="var(--color-primary)"
-							opacity="0.4"
-						/>
-						<path d="M8 4l8-8 8 8 8-8v16l-8-8-8 8-8-8V4z" fill="var(--color-primary)" />
-					</svg>
-				</div>
-				<h3 class="feature-title">Cloudflare Workers</h3>
-			</div>
-			<p class="feature-description">
-				Deploy globally in seconds with Cloudflare's edge network. Lightning-fast responses from
-				300+ locations worldwide with D1, KV, R2, and Workers AI built-in.
-			</p>
-		</div>
-
-		<!-- Feature 3: Authentication -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<rect
-							x="8"
-							y="14"
-							width="24"
-							height="20"
-							rx="2"
-							stroke="var(--color-primary)"
-							stroke-width="2"
+		<div class="features-grid">
+			<!-- Feature 1: SvelteKit -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
 							fill="none"
-						/>
-						<path
-							d="M13 14v-4a7 7 0 0 1 14 0v4"
-							stroke="var(--color-primary)"
-							stroke-width="2"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								d="M34.5 13.5c0-3.5-2-6.5-5-8-3-1.5-6.5-1.5-9.5 0-3 1.5-5 4.5-5 8v13c0 3.5 2 6.5 5 8 3 1.5 6.5 1.5 9.5 0 3-1.5 5-4.5 5-8v-13z"
+								fill="var(--color-primary)"
+							/>
+							<path
+								d="M24 5c-3.5 0-6.5 2-8 5-1.5 3-1.5 6.5 0 9.5 1.5 3 4.5 5 8 5h13c3.5 0 6.5-2 8-5 1.5-3 1.5-6.5 0-9.5-1.5-3-4.5-5-8-5H24z"
+								fill="var(--color-secondary)"
+								opacity="0.8"
+							/>
+						</svg>
+					</div>
+					<h3 class="feature-title">SvelteKit Framework</h3>
+				</div>
+				<p class="feature-description">
+					Blazing fast web applications with SvelteKit's powerful routing, server-side rendering,
+					and reactive components. Zero-config TypeScript support included.
+				</p>
+			</div>
+
+			<!-- Feature 2: Cloudflare Workers -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
 							fill="none"
-						/>
-						<circle cx="20" cy="24" r="3" fill="var(--color-primary)" />
-						<path d="M20 27v4" stroke="var(--color-primary)" stroke-width="2" />
-					</svg>
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								d="M8 20l8-8 8 8 8-8v16l-8-8-8 8-8-8V20z"
+								fill="var(--color-primary)"
+								opacity="0.2"
+							/>
+							<path
+								d="M8 12l8-8 8 8 8-8v16l-8-8-8 8-8-8V12z"
+								fill="var(--color-primary)"
+								opacity="0.4"
+							/>
+							<path d="M8 4l8-8 8 8 8-8v16l-8-8-8 8-8-8V4z" fill="var(--color-primary)" />
+						</svg>
+					</div>
+					<h3 class="feature-title">Cloudflare Workers</h3>
 				</div>
-				<h3 class="feature-title">Secure Authentication</h3>
+				<p class="feature-description">
+					Deploy globally in seconds with Cloudflare's edge network. Lightning-fast responses from
+					300+ locations worldwide with D1, KV, R2, and Workers AI built-in.
+				</p>
 			</div>
-			<p class="feature-description">
-				Built-in authentication with session management, OAuth providers, and secure password
-				hashing. Ready for email/password, Google, GitHub, and more.
-			</p>
-		</div>
 
-		<!-- Feature 4: Database -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<ellipse cx="20" cy="10" rx="12" ry="4" fill="var(--color-primary)" opacity="0.3" />
-						<ellipse cx="20" cy="20" rx="12" ry="4" fill="var(--color-primary)" opacity="0.5" />
-						<ellipse cx="20" cy="30" rx="12" ry="4" fill="var(--color-primary)" />
-						<path d="M8 10v20M32 10v20" stroke="var(--color-primary)" stroke-width="2" />
-					</svg>
+			<!-- Feature 3: Authentication -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<rect
+								x="8"
+								y="14"
+								width="24"
+								height="20"
+								rx="2"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+								fill="none"
+							/>
+							<path
+								d="M13 14v-4a7 7 0 0 1 14 0v4"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+								fill="none"
+							/>
+							<circle cx="20" cy="24" r="3" fill="var(--color-primary)" />
+							<path d="M20 27v4" stroke="var(--color-primary)" stroke-width="2" />
+						</svg>
+					</div>
+					<h3 class="feature-title">Secure Authentication</h3>
 				</div>
-				<h3 class="feature-title">Cloudflare D1 Database</h3>
+				<p class="feature-description">
+					Built-in authentication with session management, OAuth providers, and secure password
+					hashing. Ready for email/password, Google, GitHub, and more.
+				</p>
 			</div>
-			<p class="feature-description">
-				SQLite at the edge with migrations, type-safe queries, and zero cold starts. Scale
-				effortlessly with automatic backups and point-in-time recovery.
-			</p>
-		</div>
 
-		<!-- Feature 5: AI Integration -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<circle cx="20" cy="20" r="8" stroke="var(--color-primary)" stroke-width="2" />
-						<circle cx="20" cy="20" r="3" fill="var(--color-primary)" />
-						<path
-							d="M20 4v8M20 28v8M4 20h8M28 20h8M10.3 10.3l5.7 5.7M24 24l5.7 5.7M10.3 29.7l5.7-5.7M24 16l5.7-5.7"
-							stroke="var(--color-primary)"
-							stroke-width="2"
-							stroke-linecap="round"
-						/>
-					</svg>
+			<!-- Feature 4: Database -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<ellipse cx="20" cy="10" rx="12" ry="4" fill="var(--color-primary)" opacity="0.3" />
+							<ellipse cx="20" cy="20" rx="12" ry="4" fill="var(--color-primary)" opacity="0.5" />
+							<ellipse cx="20" cy="30" rx="12" ry="4" fill="var(--color-primary)" />
+							<path d="M8 10v20M32 10v20" stroke="var(--color-primary)" stroke-width="2" />
+						</svg>
+					</div>
+					<h3 class="feature-title">Cloudflare D1 Database</h3>
 				</div>
-				<h3 class="feature-title">Workers AI Ready</h3>
+				<p class="feature-description">
+					SQLite at the edge with migrations, type-safe queries, and zero cold starts. Scale
+					effortlessly with automatic backups and point-in-time recovery.
+				</p>
 			</div>
-			<p class="feature-description">
-				Pre-configured for AI integration with Cloudflare Workers AI. Add chat, embeddings, image
-				generation, and LLM capabilities with a few lines of code.
-			</p>
-		</div>
 
-		<!-- Feature 6: Testing -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M8 20l8 8 16-16"
-							stroke="var(--color-primary)"
-							stroke-width="3"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-						<circle cx="20" cy="20" r="16" stroke="var(--color-primary)" stroke-width="2" />
-					</svg>
+			<!-- Feature 5: AI Integration -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<circle cx="20" cy="20" r="8" stroke="var(--color-primary)" stroke-width="2" />
+							<circle cx="20" cy="20" r="3" fill="var(--color-primary)" />
+							<path
+								d="M20 4v8M20 28v8M4 20h8M28 20h8M10.3 10.3l5.7 5.7M24 24l5.7 5.7M10.3 29.7l5.7-5.7M24 16l5.7-5.7"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</div>
+					<h3 class="feature-title">Workers AI Ready</h3>
 				</div>
-				<h3 class="feature-title">Test-Driven Development</h3>
+				<p class="feature-description">
+					Pre-configured for AI integration with Cloudflare Workers AI. Add chat, embeddings, image
+					generation, and LLM capabilities with a few lines of code.
+				</p>
 			</div>
-			<p class="feature-description">
-				Complete testing setup with Vitest and Playwright. Unit, integration, and E2E tests
-				configured out of the box. TDD workflow with 90%+ coverage targets.
-			</p>
-		</div>
 
-		<!-- Feature 7: Theme System -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<circle cx="20" cy="20" r="12" fill="var(--color-primary)" opacity="0.3" />
-						<path d="M20 8A12 12 0 0 1 32 20" fill="var(--color-primary)" />
-						<circle cx="20" cy="20" r="4" fill="var(--color-background)" />
-					</svg>
+			<!-- Feature 6: Testing -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								d="M8 20l8 8 16-16"
+								stroke="var(--color-primary)"
+								stroke-width="3"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+							<circle cx="20" cy="20" r="16" stroke="var(--color-primary)" stroke-width="2" />
+						</svg>
+					</div>
+					<h3 class="feature-title">Test-Driven Development</h3>
 				</div>
-				<h3 class="feature-title">Adaptive Theming</h3>
+				<p class="feature-description">
+					Complete testing setup with Vitest and Playwright. Unit, integration, and E2E tests
+					configured out of the box. TDD workflow with 90%+ coverage targets.
+				</p>
 			</div>
-			<p class="feature-description">
-				Beautiful light and dark themes with CSS custom properties. System preference detection,
-				smooth transitions, and WCAG AA contrast compliance.
-			</p>
-		</div>
 
-		<!-- Feature 8: Command Palette -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<rect
-							x="6"
-							y="10"
-							width="28"
-							height="20"
-							rx="3"
-							stroke="var(--color-primary)"
-							stroke-width="2"
-						/>
-						<path d="M12 18l4 4 4-4" stroke="var(--color-primary)" stroke-width="2" />
-						<line x1="22" y1="16" x2="28" y2="16" stroke="var(--color-primary)" stroke-width="2" />
-						<line x1="22" y1="20" x2="26" y2="20" stroke="var(--color-primary)" stroke-width="2" />
-						<line x1="22" y1="24" x2="28" y2="24" stroke="var(--color-primary)" stroke-width="2" />
-					</svg>
+			<!-- Feature 7: Theme System -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<circle cx="20" cy="20" r="12" fill="var(--color-primary)" opacity="0.3" />
+							<path d="M20 8A12 12 0 0 1 32 20" fill="var(--color-primary)" />
+							<circle cx="20" cy="20" r="4" fill="var(--color-background)" />
+						</svg>
+					</div>
+					<h3 class="feature-title">Adaptive Theming</h3>
 				</div>
-				<h3 class="feature-title">Command Palette</h3>
+				<p class="feature-description">
+					Beautiful light and dark themes with CSS custom properties. System preference detection,
+					smooth transitions, and WCAG AA contrast compliance.
+				</p>
 			</div>
-			<p class="feature-description">
-				Power-user navigation with keyboard shortcuts (⌘K). Quick access to all features, search,
-				and actions without touching the mouse.
-			</p>
-		</div>
 
-		<!-- Feature 9: Developer Experience -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M12 14l-6 6 6 6M28 14l6 6-6 6"
-							stroke="var(--color-primary)"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-						<path
-							d="M24 10l-8 20"
-							stroke="var(--color-primary)"
-							stroke-width="2"
-							stroke-linecap="round"
-						/>
-					</svg>
+			<!-- Feature 8: Command Palette -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<rect
+								x="6"
+								y="10"
+								width="28"
+								height="20"
+								rx="3"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+							/>
+							<path d="M12 18l4 4 4-4" stroke="var(--color-primary)" stroke-width="2" />
+							<line
+								x1="22"
+								y1="16"
+								x2="28"
+								y2="16"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+							/>
+							<line
+								x1="22"
+								y1="20"
+								x2="26"
+								y2="20"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+							/>
+							<line
+								x1="22"
+								y1="24"
+								x2="28"
+								y2="24"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+							/>
+						</svg>
+					</div>
+					<h3 class="feature-title">Command Palette</h3>
 				</div>
-				<h3 class="feature-title">Developer Experience</h3>
+				<p class="feature-description">
+					Power-user navigation with keyboard shortcuts (⌘K). Quick access to all features, search,
+					and actions without touching the mouse.
+				</p>
 			</div>
-			<p class="feature-description">
-				Hot module replacement, TypeScript, ESLint, Prettier, and Git hooks configured. Build, test,
-				and deploy with confidence using best practices.
-			</p>
-		</div>
 
-		<!-- Feature 10: GitHub Copilot Ready -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M20 4c-8.84 0-16 7.16-16 16 0 7.07 4.58 13.06 10.94 15.18.8.15 1.09-.35 1.09-.77 0-.38-.01-1.64-.02-2.97-4.45.97-5.39-1.89-5.39-1.89-.73-1.85-1.78-2.34-1.78-2.34-1.45-.99.11-.97.11-.97 1.61.11 2.45 1.65 2.45 1.65 1.43 2.45 3.75 1.74 4.66 1.33.15-1.04.56-1.74 1.02-2.14-3.56-.41-7.3-1.78-7.3-7.92 0-1.75.62-3.18 1.64-4.3-.16-.4-.71-2.03.16-4.23 0 0 1.34-.43 4.4 1.64 1.27-.35 2.64-.53 4-.54 1.36.01 2.73.19 4 .54 3.06-2.07 4.4-1.64 4.4-1.64.87 2.2.32 3.83.16 4.23 1.02 1.12 1.64 2.55 1.64 4.3 0 6.16-3.75 7.51-7.32 7.91.58.5 1.09 1.48 1.09 2.98 0 2.15-.02 3.89-.02 4.42 0 .43.29.93 1.1.77C31.42 33.06 36 27.07 36 20c0-8.84-7.16-16-16-16z"
-							fill="var(--color-primary)"
-						/>
-						<circle cx="28" cy="12" r="6" fill="var(--color-secondary)" />
-						<path
-							d="M28 9v6M25 12h6"
-							stroke="var(--color-background)"
-							stroke-width="1.5"
-							stroke-linecap="round"
-						/>
-					</svg>
+			<!-- Feature 9: Developer Experience -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								d="M12 14l-6 6 6 6M28 14l6 6-6 6"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+							<path
+								d="M24 10l-8 20"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</div>
+					<h3 class="feature-title">Developer Experience</h3>
 				</div>
-				<h3 class="feature-title">GitHub Copilot Ready</h3>
+				<p class="feature-description">
+					Hot module replacement, TypeScript, ESLint, Prettier, and Git hooks configured. Build,
+					test, and deploy with confidence using best practices.
+				</p>
 			</div>
-			<p class="feature-description">
-				Pre-configured with comprehensive Copilot instructions for TDD workflows, architectural
-				patterns, and best practices. Accelerate development with AI-powered assistance.
-			</p>
-		</div>
 
-		<!-- Feature 11: Real-time Features -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<circle cx="20" cy="20" r="14" stroke="var(--color-primary)" stroke-width="2" />
-						<path
-							d="M20 10v10l6 6"
-							stroke="var(--color-primary)"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-						<circle cx="32" cy="8" r="4" fill="var(--color-secondary)">
-							<animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
-						</circle>
-					</svg>
+			<!-- Feature 10: GitHub Copilot Ready -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								d="M20 4c-8.84 0-16 7.16-16 16 0 7.07 4.58 13.06 10.94 15.18.8.15 1.09-.35 1.09-.77 0-.38-.01-1.64-.02-2.97-4.45.97-5.39-1.89-5.39-1.89-.73-1.85-1.78-2.34-1.78-2.34-1.45-.99.11-.97.11-.97 1.61.11 2.45 1.65 2.45 1.65 1.43 2.45 3.75 1.74 4.66 1.33.15-1.04.56-1.74 1.02-2.14-3.56-.41-7.3-1.78-7.3-7.92 0-1.75.62-3.18 1.64-4.3-.16-.4-.71-2.03.16-4.23 0 0 1.34-.43 4.4 1.64 1.27-.35 2.64-.53 4-.54 1.36.01 2.73.19 4 .54 3.06-2.07 4.4-1.64 4.4-1.64.87 2.2.32 3.83.16 4.23 1.02 1.12 1.64 2.55 1.64 4.3 0 6.16-3.75 7.51-7.32 7.91.58.5 1.09 1.48 1.09 2.98 0 2.15-.02 3.89-.02 4.42 0 .43.29.93 1.1.77C31.42 33.06 36 27.07 36 20c0-8.84-7.16-16-16-16z"
+								fill="var(--color-primary)"
+							/>
+							<circle cx="28" cy="12" r="6" fill="var(--color-secondary)" />
+							<path
+								d="M28 9v6M25 12h6"
+								stroke="var(--color-background)"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</div>
+					<h3 class="feature-title">GitHub Copilot Ready</h3>
 				</div>
-				<h3 class="feature-title">WebSocket & Real-time</h3>
+				<p class="feature-description">
+					Pre-configured with comprehensive Copilot instructions for TDD workflows, architectural
+					patterns, and best practices. Accelerate development with AI-powered assistance.
+				</p>
 			</div>
-			<p class="feature-description">
-				Built-in support for Cloudflare Durable Objects and WebSockets. Build real-time applications
-				like chat, notifications, and live updates with ease.
-			</p>
-		</div>
 
-		<!-- Feature 12: API & Service Layer -->
-		<div class="feature-card">
-			<div class="feature-header">
-				<div class="feature-icon">
-					<svg
-						width="40"
-						height="40"
-						viewBox="0 0 40 40"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<rect
-							x="8"
-							y="8"
-							width="10"
-							height="10"
-							rx="2"
-							fill="var(--color-primary)"
-							opacity="0.3"
-						/>
-						<rect
-							x="22"
-							y="8"
-							width="10"
-							height="10"
-							rx="2"
-							fill="var(--color-primary)"
-							opacity="0.5"
-						/>
-						<rect
-							x="8"
-							y="22"
-							width="10"
-							height="10"
-							rx="2"
-							fill="var(--color-primary)"
-							opacity="0.7"
-						/>
-						<rect x="22" y="22" width="10" height="10" rx="2" fill="var(--color-primary)" />
-						<line
-							x1="18"
-							y1="13"
-							x2="22"
-							y2="13"
-							stroke="var(--color-secondary)"
-							stroke-width="2"
-						/>
-						<line
-							x1="13"
-							y1="18"
-							x2="13"
-							y2="22"
-							stroke="var(--color-secondary)"
-							stroke-width="2"
-						/>
-						<line
-							x1="27"
-							y1="18"
-							x2="27"
-							y2="22"
-							stroke="var(--color-secondary)"
-							stroke-width="2"
-						/>
-					</svg>
+			<!-- Feature 11: Real-time Features -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<circle cx="20" cy="20" r="14" stroke="var(--color-primary)" stroke-width="2" />
+							<path
+								d="M20 10v10l6 6"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+							<circle cx="32" cy="8" r="4" fill="var(--color-secondary)">
+								<animate
+									attributeName="opacity"
+									values="1;0.3;1"
+									dur="2s"
+									repeatCount="indefinite"
+								/>
+							</circle>
+						</svg>
+					</div>
+					<h3 class="feature-title">WebSocket & Real-time</h3>
 				</div>
-				<h3 class="feature-title">RESTful API Architecture</h3>
+				<p class="feature-description">
+					Built-in support for Cloudflare Durable Objects and WebSockets. Build real-time
+					applications like chat, notifications, and live updates with ease.
+				</p>
 			</div>
-			<p class="feature-description">
-				Clean API design with SvelteKit endpoints. Type-safe request/response handling, middleware
-				support, and automatic validation for robust backend services.
-			</p>
+
+			<!-- Feature 12: API & Service Layer -->
+			<div class="feature-card">
+				<div class="feature-header">
+					<div class="feature-icon">
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 40 40"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<rect
+								x="8"
+								y="8"
+								width="10"
+								height="10"
+								rx="2"
+								fill="var(--color-primary)"
+								opacity="0.3"
+							/>
+							<rect
+								x="22"
+								y="8"
+								width="10"
+								height="10"
+								rx="2"
+								fill="var(--color-primary)"
+								opacity="0.5"
+							/>
+							<rect
+								x="8"
+								y="22"
+								width="10"
+								height="10"
+								rx="2"
+								fill="var(--color-primary)"
+								opacity="0.7"
+							/>
+							<rect x="22" y="22" width="10" height="10" rx="2" fill="var(--color-primary)" />
+							<line
+								x1="18"
+								y1="13"
+								x2="22"
+								y2="13"
+								stroke="var(--color-secondary)"
+								stroke-width="2"
+							/>
+							<line
+								x1="13"
+								y1="18"
+								x2="13"
+								y2="22"
+								stroke="var(--color-secondary)"
+								stroke-width="2"
+							/>
+							<line
+								x1="27"
+								y1="18"
+								x2="27"
+								y2="22"
+								stroke="var(--color-secondary)"
+								stroke-width="2"
+							/>
+						</svg>
+					</div>
+					<h3 class="feature-title">RESTful API Architecture</h3>
+				</div>
+				<p class="feature-description">
+					Clean API design with SvelteKit endpoints. Type-safe request/response handling, middleware
+					support, and automatic validation for robust backend services.
+				</p>
+			</div>
 		</div>
 	</div>
 </section>
@@ -2033,6 +2061,16 @@
 		pointer-events: none;
 	}
 
+	.features-shell {
+		width: 100%;
+		max-width: var(--layout-feature-grid-max-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-xl);
+		box-sizing: border-box;
+		position: relative;
+		z-index: 1;
+	}
+
 	.features-header {
 		text-align: center;
 		padding-top: 4rem;
@@ -2074,11 +2112,9 @@
 		display: grid;
 		grid-template-columns: 1fr;
 		gap: var(--spacing-xl);
-		margin-bottom: var(--spacing-4xl);
-		padding: 0 2rem;
+		width: 100%;
+		margin: 0 0 var(--spacing-4xl);
 		position: relative;
-		z-index: 1;
-		max-width: 100%;
 		box-sizing: border-box;
 	}
 
@@ -2223,7 +2259,6 @@
 	@media (min-width: 769px) {
 		.features-grid {
 			grid-template-columns: repeat(2, 1fr);
-			padding: 0 3rem;
 		}
 
 		.features {
@@ -2235,14 +2270,13 @@
 	@media (min-width: 1400px) {
 		.features-grid {
 			grid-template-columns: repeat(3, 1fr);
-			padding: 0 4rem;
 		}
 	}
 
 	/* Large desktop: more padding */
 	@media (min-width: 1440px) {
-		.features-grid {
-			padding: 0 6rem;
+		.features-shell {
+			padding: 0 var(--spacing-2xl);
 		}
 	}
 

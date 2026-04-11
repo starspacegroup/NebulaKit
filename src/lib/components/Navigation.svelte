@@ -95,7 +95,7 @@
 <svelte:window on:click={handleClickOutside} on:keydown={handleWindowKeydown} />
 
 <nav class="nav" class:menu-open={mobileMenuOpen}>
-	<div class="container">
+	<div class="container nav-container">
 		<div class="nav-content">
 			<a href="/" class="logo" on:click={closeMobileMenu}>
 				<span class="logo-icon">✨</span>
@@ -372,6 +372,10 @@
 
 	.nav.menu-open {
 		z-index: 200;
+	}
+
+	.nav-container {
+		max-width: none;
 	}
 
 	.nav-content {

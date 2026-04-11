@@ -109,7 +109,7 @@
 	}
 
 	.footer-container {
-		max-width: 1200px;
+		max-width: var(--layout-chrome-max-width);
 		margin: 0 auto;
 	}
 
