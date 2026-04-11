@@ -15,7 +15,8 @@ vi.mock('$app/stores', () => ({
 }));
 
 const layoutData = {
-	hasAIProviders: false
+	hasAIProviders: false,
+	cmsPaletteItems: []
 };
 
 describe('Profile Account Management UI', () => {

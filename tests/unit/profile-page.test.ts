@@ -119,6 +119,7 @@ describe('Profile Page', () => {
 					isAdmin: false
 				},
 				hasAIProviders: false,
+				cmsPaletteItems: [],
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
@@ -151,6 +152,7 @@ describe('Profile Page', () => {
 					isOwner: false
 				},
 				hasAIProviders: false,
+				cmsPaletteItems: [],
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
@@ -178,6 +180,7 @@ describe('Profile Page', () => {
 					isOwner: false
 				},
 				hasAIProviders: false,
+				cmsPaletteItems: [],
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
@@ -207,6 +210,7 @@ describe('Profile Page', () => {
 					isAdmin: true
 				},
 				hasAIProviders: false,
+				cmsPaletteItems: [],
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
@@ -233,6 +237,7 @@ describe('Profile Page', () => {
 					isOwner: true
 				},
 				hasAIProviders: false,
+				cmsPaletteItems: [],
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
@@ -259,6 +264,7 @@ describe('Profile Page', () => {
 					isOwner: false
 				},
 				hasAIProviders: false,
+				cmsPaletteItems: [],
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
@@ -274,3 +280,4 @@ describe('Profile Page', () => {
 		});
 	});
 });
+

@@ -162,10 +162,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="Authentication Keys - Admin"
-	noindex={true}
-/>
+<SharingMeta title="Authentication Keys - Admin" noindex={true} />
 
 <div class="auth-keys-page">
 	<header class="page-header">
@@ -762,5 +759,55 @@
 		margin-top: var(--spacing-xs);
 		font-size: 0.875rem;
 		color: #ef4444;
+	}
+
+	@media (max-width: 768px) {
+		.page-header {
+			margin-bottom: var(--spacing-xl);
+		}
+
+		.page-description {
+			font-size: 1rem;
+		}
+
+		.page-actions,
+		.btn {
+			width: 100%;
+		}
+
+		.key-header,
+		.modal-footer {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.key-actions {
+			justify-content: flex-end;
+		}
+
+		.key-value {
+			min-width: 0;
+		}
+
+		.key-value span {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.empty-state {
+			padding: var(--spacing-2xl) var(--spacing-md);
+		}
+
+		.modal-overlay {
+			align-items: flex-end;
+			padding: var(--spacing-sm);
+		}
+
+		.modal {
+			width: 100%;
+			max-width: none;
+			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+		}
 	}
 </style>

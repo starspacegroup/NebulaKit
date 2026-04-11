@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -334,10 +334,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="AI Provider Keys - Admin"
-	noindex={true}
-/>
+<SharingMeta title="AI Provider Keys - Admin" noindex={true} />
 
 <div class="ai-keys-page">
 	<header class="page-header">
@@ -1597,6 +1594,61 @@
 			flex-direction: column;
 			align-items: flex-start;
 			gap: var(--spacing-sm);
+		}
+	}
+
+	@media (max-width: 768px) {
+		.page-description {
+			font-size: 1rem;
+		}
+
+		.page-actions,
+		.btn {
+			width: 100%;
+		}
+
+		.key-header {
+			flex-direction: column;
+			align-items: stretch;
+			gap: var(--spacing-md);
+		}
+
+		.key-actions {
+			flex-wrap: wrap;
+			justify-content: flex-end;
+		}
+
+		.key-value,
+		.key-value span,
+		.key-info {
+			min-width: 0;
+		}
+
+		.empty-state {
+			padding: var(--spacing-2xl) var(--spacing-md);
+		}
+
+		.modal-overlay {
+			align-items: flex-end;
+			padding: var(--spacing-sm);
+		}
+
+		.modal,
+		.modal-lg,
+		.modal-sm {
+			width: 100%;
+			max-width: none;
+			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+		}
+
+		.modal-footer,
+		.section-header-actions {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.selection-count {
+			text-align: center;
 		}
 	}
 </style>

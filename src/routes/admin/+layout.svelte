@@ -104,16 +104,18 @@
 
 <style>
 	.admin-layout {
-		display: flex;
-		min-height: 100vh;
+		--admin-sidebar-width: 17rem;
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		min-height: calc(100vh - 64px);
 		background: var(--color-background);
 	}
 
 	.admin-sidebar {
-		width: 250px;
 		background: var(--color-surface);
-		border-right: 1px solid var(--color-border);
-		padding: var(--spacing-xl);
+		border-bottom: 1px solid var(--color-border);
+		padding: var(--spacing-md);
 	}
 
 	.admin-title {
@@ -125,14 +127,20 @@
 
 	.admin-nav {
 		display: flex;
-		flex-direction: column;
+		flex-direction: row;
 		gap: var(--spacing-sm);
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scrollbar-width: thin;
+		padding-bottom: var(--spacing-xs);
 	}
 
 	.nav-item {
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-sm);
+		flex: 0 0 auto;
+		min-width: max-content;
 		padding: var(--spacing-md);
 		border-radius: var(--radius-md);
 		color: var(--color-text-secondary);
@@ -155,29 +163,51 @@
 	}
 
 	.admin-content {
-		flex: 1;
-		padding: var(--spacing-2xl);
-		max-width: 1200px;
+		min-width: 0;
+		padding: var(--spacing-lg) var(--spacing-md) var(--spacing-2xl);
 	}
 
-	@media (max-width: 768px) {
+	@media (min-width: 768px) {
 		.admin-layout {
-			flex-direction: column;
+			grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
+			align-items: start;
+		}
+
+		.admin-layout::before {
+			content: '';
+			position: absolute;
+			inset: 0 auto 0 0;
+			width: var(--admin-sidebar-width);
+			background: var(--color-surface);
+			border-right: 1px solid var(--color-border);
+			pointer-events: none;
 		}
 
 		.admin-sidebar {
-			width: 100%;
-			border-right: none;
-			border-bottom: 1px solid var(--color-border);
+			position: sticky;
+			top: calc(64px + var(--spacing-lg));
+			align-self: start;
+			max-height: calc(100dvh - 64px - (var(--spacing-lg) * 2));
+			overflow-y: auto;
+			background: transparent;
+			border-bottom: none;
+			padding: var(--spacing-xl) var(--spacing-lg);
 		}
 
 		.admin-nav {
-			flex-direction: row;
-			overflow-x: auto;
+			flex-direction: column;
+			overflow: visible;
+			padding-bottom: 0;
 		}
 
-		.nav-item span {
-			display: none;
+		.nav-item {
+			width: 100%;
+		}
+
+		.admin-content {
+			width: min(100%, 1200px);
+			padding: var(--spacing-xl) clamp(var(--spacing-lg), 3vw, var(--spacing-2xl))
+				var(--spacing-2xl);
 		}
 	}
 </style>

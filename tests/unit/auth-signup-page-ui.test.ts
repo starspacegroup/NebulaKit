@@ -4,7 +4,8 @@ import SignupPage from '../../src/routes/auth/signup/+page.svelte';
 
 const layoutData = {
 	user: null,
-	hasAIProviders: false
+	hasAIProviders: false,
+	cmsPaletteItems: []
 };
 
 describe('Auth Signup Page UI', () => {

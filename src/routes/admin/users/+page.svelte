@@ -871,4 +871,53 @@
 	.btn-primary:hover {
 		opacity: 0.9;
 	}
+
+	@media (max-width: 768px) {
+		.users-page {
+			padding: 0;
+			max-width: 100%;
+		}
+
+		.search-section,
+		.users-list {
+			padding: var(--spacing-md);
+		}
+
+		.loading-indicator {
+			position: static;
+			display: block;
+			margin-top: var(--spacing-sm);
+			padding-left: 44px;
+			transform: none;
+		}
+
+		.search-result-item,
+		.selected-user {
+			align-items: flex-start;
+		}
+
+		.selected-user {
+			flex-direction: column;
+		}
+
+		.modal-overlay {
+			align-items: flex-end;
+			padding: var(--spacing-sm);
+		}
+
+		.modal {
+			max-width: none;
+			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+		}
+
+		.modal-footer {
+			flex-direction: column-reverse;
+			align-items: stretch;
+		}
+
+		.btn {
+			width: 100%;
+			justify-content: center;
+		}
+	}
 </style>

@@ -13,7 +13,8 @@ vi.mock('$app/stores', () => ({
 
 const layoutData = {
 	user: null,
-	hasAIProviders: false
+	hasAIProviders: false,
+	cmsPaletteItems: []
 };
 
 describe('Password Auth Pages', () => {
