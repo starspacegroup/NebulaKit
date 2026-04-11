@@ -9,6 +9,10 @@
 
 NebulaKit is a production-ready SvelteKit template with everything you need to build modern web applications. It comes with Cloudflare Workers integration (D1, KV, R2, Queues, Turnstile), a complete theme system, command palette, LLM chat UI, full authentication, and polished drag-and-drop—all built in from day one.
 
+## Before Anything Else
+
+If this repository is being used as a starter template, complete [docs/INITIAL_CUSTOMIZATION.md](./docs/INITIAL_CUSTOMIZATION.md) before normal feature work. Track whether that cleanup is still pending in [INITIAL_CUSTOMIZATION_STATUS.md](./INITIAL_CUSTOMIZATION_STATUS.md).
+
 ## 🌟 Features
 
 - **🚀 Cloudflare Full Stack**: D1 database, KV storage, R2 buckets, Queues, and Turnstile built-in

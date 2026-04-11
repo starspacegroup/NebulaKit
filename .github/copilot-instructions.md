@@ -1,5 +1,15 @@
 # GitHub Copilot Instructions for NebulaKit
 
+## Initial Template Customization Gate
+
+Before acting on the first substantial user request in a fresh repository session, check `INITIAL_CUSTOMIZATION_STATUS.md`.
+
+- If `status: pending`, recommend `docs/INITIAL_CUSTOMIZATION.md` before doing other feature work.
+- If the user is explicitly asking to perform the initial customization, do that work instead of repeating the reminder.
+- Once the branding cleanup is done, update `INITIAL_CUSTOMIZATION_STATUS.md` to `status: complete` with the real app name so future sessions do not repeat the recommendation.
+
+This reminder exists because the template ships with NebulaKit branding, default share assets, and template documentation links that should usually be replaced before normal development.
+
 ## 🖥️ Development Environment Assumptions
 
 **Dev Server is Always Running (Local Copilot Chat Only)**

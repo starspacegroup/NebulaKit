@@ -16,6 +16,8 @@ Click the button above to create your own repository from the NebulaKit template
 
 NebulaKit can work **without any pre-configured environment variables**. Instead of relying on `.env` files or manually set secrets, all configuration is done through a web-based setup flow and stored securely in Cloudflare KV.
 
+Before running this setup flow in a template-derived project, complete [INITIAL_CUSTOMIZATION.md](./INITIAL_CUSTOMIZATION.md) so the app name, sharing assets, and documentation links are updated first.
+
 ## When to Use Zero-Config
 
 | Use Case                      | Recommended Approach     |

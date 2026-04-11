@@ -1,5 +1,15 @@
 # CLAUDE.md - Instructions for Claude Code and AI Assistants
 
+## Initial Template Customization Gate
+
+Before handling the first substantial request in a fresh repository session, check `INITIAL_CUSTOMIZATION_STATUS.md`.
+
+- If `status: pending`, recommend `docs/INITIAL_CUSTOMIZATION.md` before feature work.
+- If the user is asking to perform that customization, proceed with it.
+- After the branding and documentation cleanup is done, update `INITIAL_CUSTOMIZATION_STATUS.md` to `status: complete` so future sessions do not repeat the reminder.
+
+The template includes NebulaKit branding, default sharing assets, and template documentation links that should usually be replaced early.
+
 ## Temporary / Scratch Files
 
 **Always use the `.llm-outputs/` directory for any temporary local files** (test output logs, coverage dumps, debug traces, scratch notes, etc.). This folder is in `.gitignore` so nothing placed there will end up in the repository.
