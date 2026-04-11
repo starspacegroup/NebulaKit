@@ -49,7 +49,10 @@ async function resolveValidAuthorId(
 		return null;
 	}
 
-	const author = await db.prepare('SELECT id FROM users WHERE id = ?').bind(authorId).first<{ id: string }>();
+	const author = await db
+		.prepare('SELECT id FROM users WHERE id = ?')
+		.bind(authorId)
+		.first<{ id: string }>();
 	return author?.id || null;
 }
 
