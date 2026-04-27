@@ -257,7 +257,15 @@ npm run test:all</code
 			<h2>Deployment to Cloudflare Pages</h2>
 			<ol>
 				<li>Push your repository to GitHub.</li>
-				<li>In Cloudflare dashboard, open Workers and Pages and connect the repository.</li>
+				<li>
+					In Cloudflare dashboard, open
+					<a
+						href="https://dash.cloudflare.com/?to=/:account/pages/new/provider/github"
+						target="_blank"
+						rel="noopener noreferrer">Pages</a
+					>
+					and connect the repository.
+				</li>
 				<li>Use build command <code>npm run build</code>.</li>
 				<li>Use output directory <code>.svelte-kit/cloudflare</code>.</li>
 				<li>Add D1, KV, and R2 bindings to the Pages project settings.</li>
