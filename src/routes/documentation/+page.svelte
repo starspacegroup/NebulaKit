@@ -1,5 +1,77 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+
+	type PackageManager = 'bun' | 'npm';
+	type QuickStartLine =
+		| { kind: 'blank' }
+		| { kind: 'comment'; text: string }
+		| { kind: 'command'; bin: string; args: string };
+
+	let selectedPackageManager: PackageManager = 'bun';
+
+	const quickStartCommands: Record<PackageManager, string> = {
+		bun: `# Install dependencies
+bun install
+
+# Start development server
+bun run dev
+
+# Apply local D1 migrations
+bun run db:migrate:local
+
+# Build for production
+bun run build
+
+# Type-check and tests
+bun run check
+bun run test
+
+# Coverage report
+bun run test:coverage
+
+# Deploy to Cloudflare Pages
+bun run deploy`,
+		npm: `# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Apply local D1 migrations
+npm run db:migrate:local
+
+# Build for production
+npm run build
+
+# Type-check and tests
+npm run check
+npm run test
+
+# Coverage report
+npm run test:coverage
+
+# Deploy to Cloudflare Pages
+npm run deploy`
+	};
+
+	function parseQuickStartLines(commands: string): QuickStartLine[] {
+		return commands.split('\n').map((line) => {
+			const trimmed = line.trim();
+
+			if (!trimmed) {
+				return { kind: 'blank' };
+			}
+
+			if (trimmed.startsWith('#')) {
+				return { kind: 'comment', text: trimmed.slice(1).trim() };
+			}
+
+			const [bin = '', ...rest] = trimmed.split(/\s+/);
+			return { kind: 'command', bin, args: rest.join(' ') };
+		});
+	}
+
+	$: highlightedQuickStartLines = parseQuickStartLines(quickStartCommands[selectedPackageManager]);
 </script>
 
 <SharingMeta
@@ -75,29 +147,67 @@
 				Then clone your repository, run the commands below, and open http://localhost:4277.
 			</p>
 
-			<pre><code
-					># Install dependencies
-npm install
+			<p class="quickstart-recommendation">
+				Bun is the recommended default for this repo. Switch to npm commands if your environment
+				requires it.
+			</p>
 
-# Start development server
-npm run dev
+			<div class="quickstart-shell">
+				<div class="quickstart-toolbar">
+					<div class="quickstart-tags" aria-label="Quick start status">
+						<span class="quickstart-tag quickstart-tag--recommended">Recommended: Bun</span>
+						<span class="quickstart-tag">Showing: {selectedPackageManager}</span>
+					</div>
+					<div class="quickstart-switcher" role="group" aria-label="Quick start package manager">
+						<button
+							type="button"
+							class="switch-button"
+							class:active={selectedPackageManager === 'bun'}
+							aria-pressed={selectedPackageManager === 'bun'}
+							on:click={() => (selectedPackageManager = 'bun')}
+						>
+							Bun
+						</button>
+						<button
+							type="button"
+							class="switch-button"
+							class:active={selectedPackageManager === 'npm'}
+							aria-pressed={selectedPackageManager === 'npm'}
+							on:click={() => (selectedPackageManager = 'npm')}
+						>
+							npm
+						</button>
+					</div>
+				</div>
 
-# Apply local D1 migrations
-npm run db:migrate:local
-
-# Build for production
-npm run build
-
-# Type-check and tests
-npm run check
-npm run test
-
-# Coverage report
-npm run test:coverage
-
-# Deploy to Cloudflare Pages
-npm run deploy</code
-				></pre>
+				<div class="quickstart-window" data-manager={selectedPackageManager}>
+					<div class="quickstart-window-header">
+						<div class="window-controls" aria-hidden="true">
+							<span class="window-dot" />
+							<span class="window-dot" />
+							<span class="window-dot" />
+						</div>
+						<p class="quickstart-window-title">terminal {selectedPackageManager}</p>
+					</div>
+					<pre class="quickstart-code"><code
+							>{#each highlightedQuickStartLines as line}
+								{#if line.kind === 'blank'}
+									<span class="quickstart-line quickstart-line--blank" />
+								{:else if line.kind === 'comment'}
+									<span class="quickstart-line quickstart-line--comment"
+										><span class="token-comment"># {line.text}</span></span
+									>
+								{:else}
+									<span class="quickstart-line quickstart-line--command"
+										><span class="token-prompt">$</span>
+									<span class="token-bin">{line.bin}</span>{#if line.args}<span class="token-args"> {line.args}</span
+											>{/if}</span
+									>
+								{/if}
+							{/each}</code
+						></pre>
+				</div>
+			</div>
 		</section>
 
 		<section id="feature-overview" class="docs-section">
@@ -720,6 +830,201 @@ npm run test:all</code
 		color: var(--color-text-secondary);
 		font-size: 0.875rem;
 		margin-bottom: var(--spacing-lg);
+	}
+
+	.quickstart-recommendation {
+		text-align: center;
+		font-size: 0.9375rem;
+		margin-bottom: var(--spacing-md);
+	}
+
+	.quickstart-shell {
+		max-width: 980px;
+		margin: 0 auto;
+		padding: var(--spacing-md);
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--color-border);
+		background: linear-gradient(145deg, var(--color-surface) 0%, var(--color-background) 85%);
+		box-shadow: var(--shadow-md);
+	}
+
+	.quickstart-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-sm);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.quickstart-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-xs);
+	}
+
+	.quickstart-tag {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.2rem 0.5rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		border-radius: 999px;
+		border: 1px solid var(--color-border);
+		background-color: var(--color-background);
+		color: var(--color-text-secondary);
+	}
+
+	.quickstart-tag--recommended {
+		background-color: var(--color-primary);
+		border-color: var(--color-primary);
+		color: var(--color-background);
+	}
+
+	.quickstart-switcher {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		padding: var(--spacing-xs);
+		background-color: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		width: fit-content;
+		box-shadow: var(--shadow-sm);
+	}
+
+	.switch-button {
+		border: none;
+		background-color: transparent;
+		color: var(--color-text-secondary);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		border-radius: var(--radius-sm);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			background-color var(--transition-fast),
+			color var(--transition-fast);
+	}
+
+	.switch-button:hover {
+		background-color: var(--color-surface-hover);
+		color: var(--color-text);
+	}
+
+	.switch-button.active {
+		background-color: var(--color-primary);
+		color: var(--color-background);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.quickstart-window {
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		background-color: var(--color-background);
+	}
+
+	.quickstart-window-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.6rem 0.8rem;
+		border-bottom: 1px solid var(--color-border);
+		background-color: var(--color-surface);
+	}
+
+	.window-controls {
+		display: flex;
+		gap: 0.35rem;
+	}
+
+	.window-dot {
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 999px;
+		background-color: var(--color-border);
+	}
+
+	.quickstart-window-title {
+		margin: 0;
+		color: var(--color-text-secondary);
+		font-size: 0.8rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.quickstart-code {
+		margin: 0;
+		padding: var(--spacing-lg);
+		background-color: var(--color-background);
+		border-radius: 0;
+	}
+
+	.quickstart-code code {
+		display: block;
+		font-size: 0.95rem;
+		line-height: 1.7;
+		white-space: normal;
+	}
+
+	.quickstart-line {
+		display: block;
+		white-space: normal;
+	}
+
+	.quickstart-line--blank {
+		height: 1.1rem;
+	}
+
+	.quickstart-line--comment {
+		margin-top: 0.15rem;
+	}
+
+	.quickstart-line--command {
+		display: flex;
+		align-items: baseline;
+		gap: 0.4rem;
+	}
+
+	.token-comment {
+		color: var(--color-text-secondary);
+	}
+
+	.token-prompt {
+		color: var(--color-success);
+		margin-right: 0.4rem;
+	}
+
+	.token-bin {
+		color: var(--color-primary);
+		font-weight: 700;
+	}
+
+	.token-args {
+		color: var(--color-text);
+		white-space: pre;
+	}
+
+	@media (max-width: 767px) {
+		.quickstart-shell {
+			padding: var(--spacing-sm);
+		}
+
+		.quickstart-toolbar {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+
+		.quickstart-switcher {
+			width: 100%;
+		}
+
+		.switch-button {
+			flex: 1;
+			text-align: center;
+		}
 	}
 
 	@media (min-width: 768px) {

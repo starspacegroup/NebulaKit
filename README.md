@@ -33,17 +33,28 @@ Click the **"Use this template"** button above to create your own repository, or
 
 ### Local Development
 
+Recommended: Bun (faster installs and scripts in this repo).
+
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Start development server
-npm run dev
+bun run dev
 
 # Build for production
-npm run build
+bun run build
 
 # Deploy to Cloudflare Pages
+bun run deploy
+```
+
+Prefer npm instead? Use the equivalent commands:
+
+```bash
+npm install
+npm run dev
+npm run build
 npm run deploy
 ```
 

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, within } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import Page from '../../src/routes/documentation/+page.svelte';
 
@@ -38,6 +38,25 @@ describe('Documentation Page', () => {
 		).toBeInTheDocument();
 	});
 
+	it('recommends bun quick start and provides a switchable npm view', () => {
+		render(Page);
+		const quickStartSection = screen
+			.getByRole('heading', { name: /Quick Start/i })
+			.closest('section');
+
+		expect(quickStartSection).toBeTruthy();
+
+		const scoped = within(quickStartSection as HTMLElement);
+
+		expect(scoped.getByText(/bun is the recommended default for this repo/i)).toBeInTheDocument();
+		expect(scoped.getByRole('button', { name: /bun/i })).toBeInTheDocument();
+		expect(scoped.getByRole('button', { name: /npm/i })).toBeInTheDocument();
+		expect(scoped.getByText(/install dependencies/i)).toBeInTheDocument();
+		expect(scoped.getAllByText(/^bun$/i).length).toBeGreaterThan(0);
+		expect(scoped.getByText(/^install$/i)).toBeInTheDocument();
+		expect(scoped.getByText(/^run dev$/i)).toBeInTheDocument();
+	});
+
 	it('explains how to use ai assistance safely in this repository', () => {
 		render(Page);
 
@@ -57,7 +76,7 @@ describe('Documentation Page', () => {
 		render(Page);
 		expect(screen.getByRole('heading', { name: /Database Migrations/i })).toBeInTheDocument();
 		expect(screen.getByText(/never edit or delete existing migration files/i)).toBeInTheDocument();
-		expect(screen.getAllByText(/npm run db:migrate:local/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/db:migrate:local/i).length).toBeGreaterThan(0);
 	});
 
 	it('contains links to key project docs and repository', () => {
