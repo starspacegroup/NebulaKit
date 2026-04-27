@@ -20,6 +20,9 @@
 		<nav class="docs-nav" aria-label="Documentation navigation">
 			<a href="#start-here">Start Here</a>
 			<a href="#quick-start">Quick Start</a>
+			<a href="#feature-overview">Feature Overview</a>
+			<a href="#how-to-use">How To Use</a>
+			<a href="#ai-workflow">AI Workflow</a>
 			<a href="#commands">Commands</a>
 			<a href="#cloudflare-bindings">Cloudflare Bindings</a>
 			<a href="#database-migrations">Database Migrations</a>
@@ -95,6 +98,139 @@ npm run test:coverage
 # Deploy to Cloudflare Pages
 npm run deploy</code
 				></pre>
+		</section>
+
+		<section id="feature-overview" class="docs-section">
+			<h2>What You Get Out of the Box</h2>
+			<p>
+				This starter already ships with the main product surfaces wired together. The fastest way to
+				understand the repo is to think of it as a Cloudflare-first app shell with auth, theming,
+				content management, and AI entry points already in place.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Core App Shell</h3>
+					<ul>
+						<li>Keyboard-first navigation with command palette for fast route switching.</li>
+						<li>Theme system with persistent light and dark preferences.</li>
+						<li>Responsive layout, navigation, footer, and shared metadata components.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Account and Admin Flow</h3>
+					<ul>
+						<li>Setup-first authentication flow for owner configuration.</li>
+						<li>Login, signup, profile, reset, and admin routes are already scaffolded.</li>
+						<li>Cloudflare D1 and KV are used for setup state and application data.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Content and AI Surfaces</h3>
+					<ul>
+						<li>CMS-style content routes and admin tooling are included for structured content.</li>
+						<li>Chat route becomes your primary AI surface once a provider is configured.</li>
+						<li>Command palette can expose AI-related navigation when providers are available.</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<section id="how-to-use" class="docs-section">
+			<h2>How To Use the App</h2>
+			<p>
+				Use the app in this order if you want the least confusing first run. That sequence matches
+				how the repo is structured and avoids most setup-related false alarms.
+			</p>
+			<ol>
+				<li>
+					Open <code>/setup</code> first on a fresh environment and configure owner credentials.
+				</li>
+				<li>Complete <code>/setup</code> before expecting sign-in or AI features to work.</li>
+				<li>
+					Sign in through <code>/auth/login</code> or create an account through
+					<code>/auth/signup</code>.
+				</li>
+				<li>Open the command palette with Ctrl/Cmd + K to move between major routes quickly.</li>
+				<li>
+					Use <code>/chat</code> for AI interactions, <code>/profile</code> for account settings,
+					and <code>/admin</code> for operator tasks.
+				</li>
+				<li>
+					Use the theme toggle to verify light and dark presentation while you customize branding.
+				</li>
+			</ol>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Common First-Run Checks</h3>
+					<ul>
+						<li>If auth looks broken, re-check setup lock state and provider credentials first.</li>
+						<li>
+							If chat is missing from navigation, verify AI provider configuration and route access.
+						</li>
+						<li>
+							If admin tools are unavailable, confirm you are signed in as the configured owner.
+						</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Where To Extend</h3>
+					<ul>
+						<li>Modify routes under <code>src/routes</code> when changing page behavior.</li>
+						<li>Use <code>src/lib/components</code> for reusable UI and shell elements.</li>
+						<li>
+							Keep business logic in <code>src/lib/services</code> and shared helpers in
+							<code>src/lib/utils</code>.
+						</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<section id="ai-workflow" class="docs-section">
+			<h2>Working With AI in This Repo</h2>
+			<p>
+				Treat AI as a fast pair programmer, not as a source of truth. It is useful here because the
+				repo already includes app structure, tests, and strong conventions, which gives the
+				assistant real context to work against.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Good Prompts</h3>
+					<ul>
+						<li>Point the assistant at a concrete file, route, failing test, or command.</li>
+						<li>Ask it to write or update tests first when changing behavior.</li>
+						<li>
+							Ask for narrow fixes instead of broad rewrites unless you want architectural change.
+						</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Good Validation Habits</h3>
+					<ul>
+						<li>
+							Have the assistant explain which route, store, or service controls the behavior.
+						</li>
+						<li>Require executable validation after changes, not only a diff summary.</li>
+						<li>Always finish by running check, tests, and coverage.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>What AI Is Best At Here</h3>
+					<ul>
+						<li>
+							Tracing a route from UI to service layer and identifying the smallest edit surface.
+						</li>
+						<li>Adding tests around setup, auth, chat, or command palette behavior.</li>
+						<li>
+							Summarizing repo conventions such as Cloudflare bindings, migrations, and theme rules.
+						</li>
+					</ul>
+				</div>
+			</div>
+			<p>
+				If you are using an AI coding agent, keep requests concrete: mention the page or failing
+				test, state the desired behavior, and ask for the smallest validating change that solves it.
+			</p>
 		</section>
 
 		<section id="commands" class="docs-section">
