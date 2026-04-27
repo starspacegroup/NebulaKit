@@ -81,6 +81,13 @@ html {
 	-moz-osx-font-smoothing: grayscale;
 }
 
+html.theme-preload *,
+html.theme-preload *::before,
+html.theme-preload *::after {
+	transition: none !important;
+	animation: none !important;
+}
+
 body {
 	background-color: var(--color-background);
 	color: var(--color-text);

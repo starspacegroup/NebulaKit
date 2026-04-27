@@ -148,8 +148,8 @@ npm run deploy`
 			</p>
 
 			<p class="quickstart-recommendation">
-				Bun is the recommended default for this repo. Switch to npm commands if your environment
-				requires it.
+				<a href="https://bun.sh" target="_blank" rel="noopener noreferrer">Bun</a> is the recommended
+				default for this repo. Switch to npm commands if your environment requires it.
 			</p>
 
 			<div class="quickstart-shell">

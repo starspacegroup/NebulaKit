@@ -48,9 +48,10 @@ describe('Documentation Page', () => {
 
 		const scoped = within(quickStartSection as HTMLElement);
 
-		expect(scoped.getByText(/bun is the recommended default for this repo/i)).toBeInTheDocument();
+		expect(scoped.getByText(/is the recommended default for this repo/i)).toBeInTheDocument();
 		expect(scoped.getByRole('button', { name: /bun/i })).toBeInTheDocument();
 		expect(scoped.getByRole('button', { name: /npm/i })).toBeInTheDocument();
+		expect(scoped.getByRole('link', { name: /^bun$/i })).toHaveAttribute('href', 'https://bun.sh');
 		expect(scoped.getByText(/install dependencies/i)).toBeInTheDocument();
 		expect(scoped.getAllByText(/^bun$/i).length).toBeGreaterThan(0);
 		expect(scoped.getByText(/^install$/i)).toBeInTheDocument();

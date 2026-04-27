@@ -33,6 +33,10 @@
 	}
 
 	onMount(() => {
+		requestAnimationFrame(() => {
+			document.documentElement.classList.remove('theme-preload');
+		});
+
 		// Listen for keyboard shortcuts (Cmd/Ctrl + K, Cmd/Ctrl + Shift + P)
 		const handleKeydown = (e: KeyboardEvent) => {
 			const isModifierPressed = e.metaKey || e.ctrlKey;
