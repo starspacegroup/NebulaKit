@@ -2,39 +2,53 @@ import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import Page from '../../src/routes/documentation/+page.svelte';
 
-// NOTE: These tests are skipped due to element role query issues.
-// The documentation page may need proper ARIA roles to be testable.
-describe.skip('Documentation Page', () => {
-	it('should render the page title', () => {
+describe('Documentation Page', () => {
+	it('renders the primary documentation heading and intro', () => {
 		render(Page);
-		expect(screen.getByRole('heading', { name: /documentation/i })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: /NebulaKit documentation/i })).toBeInTheDocument();
+		expect(
+			screen.getByText(/single source of truth for setup, development, and deployment/i)
+		).toBeInTheDocument();
 	});
 
-	it('should have a getting started section', () => {
+	it('includes beginner-friendly start sections', () => {
 		render(Page);
-		expect(screen.getByRole('heading', { name: /getting started/i })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: /Start Here/i })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: /Quick Start/i })).toBeInTheDocument();
+		expect(
+			screen.getByRole('heading', { name: /Deployment to Cloudflare Pages/i })
+		).toBeInTheDocument();
 	});
 
-	it('should have a features section', () => {
+	it('documents migration workflow with immutable migration guidance', () => {
 		render(Page);
-		expect(screen.getByRole('heading', { name: /features/i })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: /Database Migrations/i })).toBeInTheDocument();
+		expect(screen.getByText(/never edit or delete existing migration files/i)).toBeInTheDocument();
+		expect(screen.getAllByText(/npm run db:migrate:local/i).length).toBeGreaterThan(0);
 	});
 
-	it('should have an architecture section', () => {
+	it('contains links to key project docs and repository', () => {
 		render(Page);
-		expect(screen.getByRole('heading', { name: /architecture/i })).toBeInTheDocument();
+
+		expect(screen.getByRole('link', { name: /README/i })).toHaveAttribute(
+			'href',
+			'https://github.com/starspacegroup/NebulaKit/blob/main/README.md'
+		);
+		expect(screen.getByRole('link', { name: /Contributing Guide/i })).toHaveAttribute(
+			'href',
+			'https://github.com/starspacegroup/NebulaKit/blob/main/CONTRIBUTING.md'
+		);
+		expect(screen.getByRole('link', { name: /GitHub repository/i })).toHaveAttribute(
+			'href',
+			'https://github.com/starspacegroup/NebulaKit'
+		);
 	});
 
-	it('should link to GitHub repository', () => {
+	it('renders a main landmark and section navigation', () => {
 		render(Page);
-		const githubLinks = screen.getAllByRole('link', { name: /github/i });
-		expect(githubLinks.length).toBeGreaterThan(0);
-		expect(githubLinks[0]).toHaveAttribute('href', 'https://github.com/starspacegroup/NebulaKit');
-	});
-
-	it('should have proper page structure with main element', () => {
-		render(Page);
-		const main = document.querySelector('main');
-		expect(main).toBeInTheDocument();
+		expect(document.querySelector('main')).toBeInTheDocument();
+		expect(
+			screen.getByRole('navigation', { name: /documentation navigation/i })
+		).toBeInTheDocument();
 	});
 });
