@@ -405,6 +405,124 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			expect(response.status).toBe(302);
 			expect(response.headers.get('Location')).toContain('/');
 		});
+
+		it('should attach GitHub login to an existing account with the same email', async () => {
+			const insertOAuthRun = vi.fn().mockResolvedValue({ success: true });
+			const updateUserRun = vi.fn().mockResolvedValue({ success: true });
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ access_token: 'test-token' })
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: 123456789,
+						login: 'githubuser',
+						name: 'GitHub User',
+						email: 'existing@example.com',
+						avatar_url: 'https://avatars.githubusercontent.com/u/123456789'
+					})
+			});
+
+			const mockDB = {
+				prepare: vi.fn().mockImplementation((sql: string) => {
+					if (sql.includes('oauth_accounts WHERE provider = ? AND provider_account_id = ?')) {
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue(null)
+							})
+						};
+					}
+
+					if (sql.includes('FROM users u') && sql.includes('user_login_aliases')) {
+						const matchedUser = {
+							id: 'existing-user-123',
+							email: 'existing@example.com',
+							name: 'Existing User',
+							github_login: null,
+							github_avatar_url: null,
+							is_admin: 0
+						};
+
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue(matchedUser),
+								all: vi.fn().mockResolvedValue({ results: [matchedUser] })
+							})
+						};
+					}
+
+					if (sql.includes('SELECT id, is_admin FROM users WHERE id = ?')) {
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue(null)
+							})
+						};
+					}
+
+					if (sql.includes('INSERT INTO oauth_accounts')) {
+						return {
+							bind: vi.fn((...values: unknown[]) => {
+								expect(values[1]).toBe('existing-user-123');
+								expect(values[2]).toBe('github');
+								expect(values[3]).toBe('123456789');
+
+								return {
+									run: insertOAuthRun
+								};
+							})
+						};
+					}
+
+					if (
+						sql.includes(
+							'UPDATE users SET github_login = ?, github_avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+						)
+					) {
+						return {
+							bind: vi.fn((...values: unknown[]) => {
+								expect(values[0]).toBe('githubuser');
+								expect(values[2]).toBe('existing-user-123');
+
+								return {
+									run: updateUserRun
+								};
+							})
+						};
+					}
+
+					return {
+						bind: vi.fn().mockReturnValue({
+							first: vi.fn().mockResolvedValue(null),
+							all: vi.fn().mockResolvedValue({ results: [] }),
+							run: vi.fn().mockResolvedValue({ success: true })
+						})
+					};
+				})
+			};
+
+			const mockEvent = {
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				platform: {
+					env: {
+						GITHUB_CLIENT_ID: 'client-id',
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						DB: mockDB
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
+
+			const response = await GET(mockEvent as any);
+			expect(response.status).toBe(302);
+			expect(insertOAuthRun).toHaveBeenCalledTimes(1);
+			expect(updateUserRun).toHaveBeenCalledTimes(1);
+			expect(response.headers.get('Set-Cookie')).toContain('session=');
+		});
 	});
 
 	describe('Linking mode with existing session', () => {

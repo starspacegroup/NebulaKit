@@ -892,5 +892,112 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			const response = await GET(mockEvent as any);
 			expect(response.status).toBe(302);
 		});
+
+		it('should attach Discord login to an existing account with the same email', async () => {
+			const insertOAuthRun = vi.fn().mockResolvedValue({ success: true });
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ access_token: 'test-token' })
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: '123456789',
+						username: 'discorduser',
+						global_name: 'Discord User',
+						email: 'existing@example.com',
+						avatar: 'abcdef'
+					})
+			});
+
+			const mockDB = {
+				prepare: vi.fn().mockImplementation((sql: string) => {
+					if (sql.includes('oauth_accounts WHERE provider = ? AND provider_account_id = ?')) {
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue(null)
+							})
+						};
+					}
+
+					if (sql.includes('FROM users u') && sql.includes('user_login_aliases')) {
+						const matchedUser = {
+							id: 'existing-user-123',
+							email: 'existing@example.com',
+							name: 'Existing User',
+							github_login: 'existinguser',
+							github_avatar_url: 'https://avatars.example/existing.png',
+							is_admin: 0
+						};
+
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue(matchedUser),
+								all: vi.fn().mockResolvedValue({ results: [matchedUser] })
+							})
+						};
+					}
+
+					if (sql.includes('INSERT INTO oauth_accounts')) {
+						return {
+							bind: vi.fn((...values: unknown[]) => {
+								expect(values[1]).toBe('existing-user-123');
+								expect(values[2]).toBe('discord');
+								expect(values[3]).toBe('123456789');
+
+								return {
+									run: insertOAuthRun
+								};
+							})
+						};
+					}
+
+					if (sql.includes('SELECT id, is_admin FROM users WHERE id = ?')) {
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue(null)
+							})
+						};
+					}
+
+					if (sql.includes('SELECT provider_account_id FROM oauth_accounts WHERE user_id = ?')) {
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue(null)
+							})
+						};
+					}
+
+					return {
+						bind: vi.fn().mockReturnValue({
+							first: vi.fn().mockResolvedValue(null),
+							all: vi.fn().mockResolvedValue({ results: [] }),
+							run: vi.fn().mockResolvedValue({ success: true })
+						})
+					};
+				})
+			};
+
+			const mockEvent = {
+				url: new URL('http://localhost/api/auth/discord/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				platform: {
+					env: {
+						DISCORD_CLIENT_ID: 'client-id',
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: mockDB
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/discord/callback/+server');
+
+			const response = await GET(mockEvent as any);
+			expect(response.status).toBe(302);
+			expect(insertOAuthRun).toHaveBeenCalledTimes(1);
+			expect(response.headers.get('Set-Cookie')).toContain('session=');
+		});
 	});
 });

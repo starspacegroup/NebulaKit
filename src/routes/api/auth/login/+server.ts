@@ -1,3 +1,4 @@
+import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
 import { verifyPassword } from '$lib/utils/passwords';
 import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
@@ -12,56 +13,6 @@ interface LoginUserRecord {
 	github_avatar_url: string | null;
 	is_admin: number;
 	password_hash: string | null;
-}
-
-async function resolveOwnerStatus(
-	platform: App.Platform | undefined,
-	user: LoginUserRecord
-): Promise<boolean> {
-	let ownerId = platform?.env?.GITHUB_OWNER_ID;
-	let ownerUsername: string | null = null;
-
-	if (ownerId && Number.isNaN(Number.parseInt(ownerId, 10))) {
-		ownerUsername = ownerId;
-		ownerId = undefined;
-	}
-
-	if (platform?.env?.KV) {
-		try {
-			if (!ownerId) {
-				ownerId = (await platform.env.KV.get('github_owner_id')) || undefined;
-			}
-			if (!ownerUsername) {
-				ownerUsername = await platform.env.KV.get('github_owner_username');
-			}
-		} catch {
-			// Ignore owner lookup failures.
-		}
-	}
-
-	if (ownerUsername && user.github_login?.toLowerCase() === ownerUsername.toLowerCase()) {
-		return true;
-	}
-
-	if (!ownerId || !platform?.env?.DB) {
-		return false;
-	}
-
-	if (user.id === ownerId) {
-		return true;
-	}
-
-	try {
-		const githubLink = await platform.env.DB.prepare(
-			'SELECT provider_account_id FROM oauth_accounts WHERE user_id = ? AND provider = ?'
-		)
-			.bind(user.id, 'github')
-			.first<{ provider_account_id: string }>();
-
-		return githubLink?.provider_account_id === ownerId;
-	} catch {
-		return false;
-	}
 }
 
 export const POST: RequestHandler = async ({ platform, request, url }) => {

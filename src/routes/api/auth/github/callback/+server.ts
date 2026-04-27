@@ -1,4 +1,6 @@
 import { mergeAccounts } from '$lib/services/account-merge';
+import { findUserByEmailOrAlias } from '$lib/utils/auth-identity';
+import { buildSessionCookieHeader } from '$lib/utils/session';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -267,12 +269,66 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 					}
 				}
 
-				// Check if user exists with GitHub ID
+				const matchedUser = await findUserByEmailOrAlias(platform.env.DB, githubUser.email);
 				const existingUserRecord = await platform.env.DB.prepare(
 					'SELECT id, is_admin FROM users WHERE id = ?'
 				)
 					.bind(githubUser.id.toString())
 					.first<{ id: string; is_admin: number }>();
+
+				if (matchedUser) {
+					if (existingUserRecord && existingUserRecord.id !== matchedUser.id) {
+						await mergeAccounts(platform.env.DB, existingUserRecord.id, matchedUser.id);
+					}
+
+					const existingOAuthRecord = await platform.env.DB.prepare(
+						'SELECT id FROM oauth_accounts WHERE user_id = ? AND provider = ?'
+					)
+						.bind(matchedUser.id, 'github')
+						.first<{ id: string }>();
+
+					if (!existingOAuthRecord) {
+						await platform.env.DB.prepare(
+							`INSERT INTO oauth_accounts (id, user_id, provider, provider_account_id, access_token, created_at)
+							VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+						)
+							.bind(
+								crypto.randomUUID(),
+								matchedUser.id,
+								'github',
+								githubUser.id.toString(),
+								accessToken
+							)
+							.run();
+					}
+
+					await platform.env.DB.prepare(
+						`UPDATE users SET github_login = ?, github_avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+					)
+						.bind(githubUser.login, githubUser.avatar_url, matchedUser.id)
+						.run();
+
+					const redirectUrl = matchedUser.is_admin === 1 || isOwner ? '/admin' : '/';
+					return new Response(null, {
+						status: 302,
+						headers: {
+							Location: new URL(redirectUrl, url.origin).toString(),
+							'Set-Cookie': buildSessionCookieHeader(
+								{
+									id: matchedUser.id,
+									login: githubUser.login,
+									email: matchedUser.email,
+									name: matchedUser.name || githubUser.name || githubUser.login,
+									avatarUrl: githubUser.avatar_url,
+									isOwner,
+									isAdmin: matchedUser.is_admin === 1 || isOwner,
+									githubLogin: githubUser.login
+								},
+								url
+							)
+						}
+					});
+				}
 
 				if (existingUserRecord) {
 					// Update existing user

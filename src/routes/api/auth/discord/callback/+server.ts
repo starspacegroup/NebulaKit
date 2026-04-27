@@ -1,4 +1,6 @@
 import { mergeAccounts } from '$lib/services/account-merge';
+import { findUserByEmailOrAlias, resolveOwnerStatus } from '$lib/utils/auth-identity';
+import { buildSessionCookieHeader } from '$lib/utils/session';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -188,22 +190,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 						}>();
 
 					if (linkedUser) {
-						// Check if the linked user is the owner
-						// First check if user ID directly matches (for users who signed up with GitHub)
-						let isOwner = appOwnerId ? linkedUser.id === appOwnerId : false;
-
-						// If not, check if user has a linked GitHub account that matches the owner ID
-						if (!isOwner && appOwnerId) {
-							const githubLink = await platform.env.DB.prepare(
-								'SELECT provider_account_id FROM oauth_accounts WHERE user_id = ? AND provider = ?'
-							)
-								.bind(linkedUser.id, 'github')
-								.first<{ provider_account_id: string }>();
-
-							if (githubLink && githubLink.provider_account_id === appOwnerId) {
-								isOwner = true;
-							}
-						}
+						const isOwner = await resolveOwnerStatus(platform, linkedUser);
 
 						const sessionData = {
 							id: linkedUser.id,
@@ -242,12 +229,57 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 					}
 				}
 
-				// Check if user exists with this ID
+				const matchedUser = await findUserByEmailOrAlias(platform.env.DB, discordUser.email);
 				const existingUserRecord = await platform.env.DB.prepare(
 					'SELECT id, is_admin FROM users WHERE id = ?'
 				)
 					.bind(userId)
 					.first<{ id: string; is_admin: number }>();
+
+				if (matchedUser) {
+					if (existingUserRecord && existingUserRecord.id !== matchedUser.id) {
+						await mergeAccounts(platform.env.DB, existingUserRecord.id, matchedUser.id);
+					}
+
+					const existingOAuthRecord = await platform.env.DB.prepare(
+						'SELECT id FROM oauth_accounts WHERE user_id = ? AND provider = ?'
+					)
+						.bind(matchedUser.id, 'discord')
+						.first<{ id: string }>();
+
+					if (!existingOAuthRecord) {
+						await platform.env.DB.prepare(
+							`INSERT INTO oauth_accounts (id, user_id, provider, provider_account_id, access_token, created_at)
+							VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+						)
+							.bind(crypto.randomUUID(), matchedUser.id, 'discord', discordUser.id, accessToken)
+							.run();
+					}
+
+					const isOwner = await resolveOwnerStatus(platform, matchedUser);
+					return new Response(null, {
+						status: 302,
+						headers: {
+							Location: new URL(
+								isOwner || matchedUser.is_admin === 1 ? '/admin' : '/',
+								url.origin
+							).toString(),
+							'Set-Cookie': buildSessionCookieHeader(
+								{
+									id: matchedUser.id,
+									login: matchedUser.github_login || discordUser.username,
+									email: matchedUser.email,
+									name: matchedUser.name || discordUser.global_name || discordUser.username,
+									avatarUrl: matchedUser.github_avatar_url || avatarUrl,
+									isOwner,
+									isAdmin: matchedUser.is_admin === 1 || isOwner,
+									githubLogin: matchedUser.github_login || undefined
+								},
+								url
+							)
+						}
+					});
+				}
 
 				if (existingUserRecord) {
 					// Update existing user
