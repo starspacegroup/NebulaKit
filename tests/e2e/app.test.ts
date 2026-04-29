@@ -11,6 +11,8 @@ test.describe('Homepage', () => {
 
 		// Open command palette
 		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
+		await expect(commandPaletteBtn).toBeVisible();
+		await page.waitForLoadState('networkidle');
 		await commandPaletteBtn.click();
 
 		// Wait for command palette dialog to appear
