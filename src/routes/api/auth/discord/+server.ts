@@ -23,9 +23,13 @@ export const GET: RequestHandler = async ({ platform, url }) => {
 	if (!clientId) {
 		if (isDevAuthSimulationEnabled(url, platform)) {
 			const role = url.searchParams.get('role');
+			const mode = url.searchParams.get('mode');
 			const params = new URLSearchParams({ provider: 'discord' });
 			if (role === 'admin' || role === 'superadmin') {
 				params.set('role', role);
+			}
+			if (mode === 'link') {
+				params.set('mode', 'link');
 			}
 
 			throw redirect(302, `/api/auth/dev-simulate?${params.toString()}`);

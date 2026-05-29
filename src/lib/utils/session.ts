@@ -8,6 +8,7 @@ export interface SessionUser {
 	isAdmin?: boolean;
 	githubLogin?: string;
 	isPretend?: boolean;
+	simulatedConnections?: string[];
 }
 
 interface SessionUserInput {

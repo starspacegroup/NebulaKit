@@ -145,4 +145,23 @@ describe('GitHub OAuth Initiation - Extended Coverage', () => {
 			} as unknown as Parameters<typeof GET>[0])
 		).rejects.toThrow('Redirect to /api/auth/dev-simulate?provider=github&role=superadmin');
 	});
+
+	it('should pass through mode=link when redirecting to dev simulation', async () => {
+		mockKVGet.mockResolvedValue(null);
+
+		await expect(
+			GET({
+				url: new URL('http://localhost/api/auth/github?mode=link'),
+				platform: {
+					env: {
+						GITHUB_CLIENT_ID: undefined,
+						DEV_AUTH_BYPASS: 'true',
+						KV: {
+							get: mockKVGet
+						}
+					}
+				}
+			} as unknown as Parameters<typeof GET>[0])
+		).rejects.toThrow('Redirect to /api/auth/dev-simulate?provider=github&mode=link');
+	});
 });

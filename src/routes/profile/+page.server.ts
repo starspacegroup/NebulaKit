@@ -1,9 +1,10 @@
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
+import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import { getUserAuthState, type OAuthAccountConnection } from '$lib/utils/user-auth-state';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, platform }) => {
+export const load: PageServerLoad = async ({ locals, platform, url }) => {
 	// Require authentication
 	if (!locals.user) {
 		throw redirect(302, '/auth/login');
@@ -72,11 +73,30 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		}
 	}
 
+	if (locals.user.isPretend && locals.user.simulatedConnections?.length) {
+		const knownProviders = new Set(connectedAccounts.map((account) => account.provider));
+		for (const provider of locals.user.simulatedConnections) {
+			if (!knownProviders.has(provider)) {
+				connectedAccounts = [
+					...connectedAccounts,
+					{
+						provider,
+						provider_account_id: locals.user.login,
+						created_at: new Date().toISOString()
+					}
+				];
+			}
+		}
+	}
+
+	const devAuthSimulationEnabled = isDevAuthSimulationEnabled(url, platform);
+
 	return {
 		user: locals.user,
 		connectedAccounts,
 		hasPassword,
 		loginEmails,
-		configuredProviders: await getConfiguredAuthProviders(platform)
+		configuredProviders: await getConfiguredAuthProviders(platform),
+		devAuthSimulationEnabled
 	};
 };

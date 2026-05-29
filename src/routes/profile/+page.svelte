@@ -29,6 +29,7 @@
 	$: canDisconnect = connectedAccounts.length > 1 || hasPassword;
 	$: githubProfileLogin =
 		data.user.githubLogin || (connectedProviderIds.has('github') ? data.user.login : null);
+	$: canSimulateProviders = data.user.isPretend && (data.devAuthSimulationEnabled ?? false);
 
 	// Filter providers to only show configured ones
 	$: configuredProviders = data.configuredProviders || { github: false, discord: false };
@@ -49,7 +50,9 @@
 
 	// Only show providers that are configured
 	$: providers = allProviders.filter(
-		(p) => configuredProviders[p.id as keyof typeof configuredProviders]
+		(p) =>
+			configuredProviders[p.id as keyof typeof configuredProviders] ||
+			canSimulateProviders
 	);
 
 	onMount(() => {
@@ -70,7 +73,15 @@
 
 	function connectAccount(providerId: string) {
 		// Redirect to OAuth flow - the callback will detect we're logged in and link the account
-		window.location.assign(`/api/auth/${providerId}`);
+		const params = new URLSearchParams();
+		if (data.user.isPretend) {
+			params.set('mode', 'link');
+		}
+
+		const queryString = params.toString();
+		window.location.assign(
+			queryString ? `/api/auth/${providerId}?${queryString}` : `/api/auth/${providerId}`
+		);
 	}
 
 	async function unlinkAccount(providerId: string) {

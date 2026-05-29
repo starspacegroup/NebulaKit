@@ -71,7 +71,8 @@ describe('Profile Page', () => {
 				configuredProviders: {
 					github: false,
 					discord: false
-				}
+				},
+				devAuthSimulationEnabled: false
 			});
 		});
 

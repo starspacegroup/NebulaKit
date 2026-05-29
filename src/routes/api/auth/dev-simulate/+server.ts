@@ -1,10 +1,11 @@
-import { buildSessionCookieHeader } from '$lib/utils/session';
+import { buildSessionCookieHeader, decodeSessionCookie } from '$lib/utils/session';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 type SupportedProvider = 'github' | 'discord';
 type SimulatedRole = 'user' | 'admin' | 'superadmin';
+type SimulatedMode = 'login' | 'link';
 
 function parseProvider(value: string | null): SupportedProvider | null {
 	if (value === 'github' || value === 'discord') {
@@ -20,6 +21,14 @@ function parseRole(value: string | null): SimulatedRole {
 	}
 
 	return 'user';
+}
+
+function parseMode(value: string | null): SimulatedMode {
+	if (value === 'link') {
+		return 'link';
+	}
+
+	return 'login';
 }
 
 function buildDevUser(provider: SupportedProvider, role: SimulatedRole) {
@@ -40,11 +49,12 @@ function buildDevUser(provider: SupportedProvider, role: SimulatedRole) {
 		isOwner: isSuperadmin,
 		isAdmin,
 		isPretend: true,
+		simulatedConnections: [provider],
 		githubLogin: provider === 'github' ? login : undefined
 	};
 }
 
-export const GET: RequestHandler = async ({ url, platform }) => {
+export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 	if (!isDevAuthSimulationEnabled(url, platform)) {
 		throw redirect(302, '/auth/login?error=not_configured');
 	}
@@ -52,6 +62,31 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 	const provider = parseProvider(url.searchParams.get('provider'));
 	if (!provider) {
 		throw redirect(302, '/auth/login?error=oauth_failed');
+	}
+
+	const mode = parseMode(url.searchParams.get('mode'));
+	if (mode === 'link') {
+		const existingUser = decodeSessionCookie(cookies.get('session'));
+
+		if (existingUser?.isPretend) {
+			const simulatedConnections = Array.from(
+				new Set([...(existingUser.simulatedConnections || []), provider])
+			);
+
+			return new Response(null, {
+				status: 302,
+				headers: {
+					Location: new URL(`/profile?linked=${provider}`, url.origin).toString(),
+					'Set-Cookie': buildSessionCookieHeader(
+						{
+							...existingUser,
+							simulatedConnections
+						},
+						url
+					)
+				}
+			});
+		}
 	}
 
 	const role = parseRole(url.searchParams.get('role'));

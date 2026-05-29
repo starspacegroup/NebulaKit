@@ -120,5 +120,30 @@ describe('Discord OAuth Init - Extended Branch Coverage', () => {
 				expect(err.location).toBe('/api/auth/dev-simulate?provider=discord&role=admin');
 			}
 		});
+
+		it('should pass through mode=link when redirecting to dev simulation', async () => {
+			const mockEvent = {
+				platform: {
+					env: {
+						DEV_AUTH_BYPASS: 'true',
+						DISCORD_CLIENT_ID: undefined,
+						KV: {
+							get: vi.fn().mockResolvedValue(null)
+						}
+					}
+				},
+				url: new URL('http://localhost:4277/api/auth/discord?mode=link')
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/discord/+server');
+
+			try {
+				await GET(mockEvent as any);
+				expect.fail('Should have thrown redirect');
+			} catch (err: any) {
+				expect(err.status).toBe(302);
+				expect(err.location).toBe('/api/auth/dev-simulate?provider=discord&mode=link');
+			}
+		});
 	});
 });

@@ -1,4 +1,5 @@
 import { error, json } from '@sveltejs/kit';
+import { buildSessionCookieHeader } from '$lib/utils/session';
 import type { RequestHandler } from './$types';
 
 interface OAuthAccount {
@@ -31,6 +32,21 @@ export const GET: RequestHandler = async ({ locals, platform }) => {
 			}
 		}
 
+		if (locals.user.isPretend && locals.user.simulatedConnections?.length) {
+			const knownProviders = new Set(connections.map((connection) => connection.provider));
+			for (const provider of locals.user.simulatedConnections) {
+				if (!knownProviders.has(provider)) {
+					connections.push({
+						id: `${locals.user.id}:${provider}`,
+						user_id: locals.user.id,
+						provider,
+						provider_account_id: locals.user.login,
+						created_at: new Date().toISOString()
+					});
+				}
+			}
+		}
+
 		return json({ connections });
 	} catch (err) {
 		console.error('Failed to fetch connected accounts:', err);
@@ -39,7 +55,7 @@ export const GET: RequestHandler = async ({ locals, platform }) => {
 };
 
 // DELETE - Unlink a connected account
-export const DELETE: RequestHandler = async ({ locals, platform, request }) => {
+export const DELETE: RequestHandler = async ({ locals, platform, request, url }) => {
 	// Require authentication
 	if (!locals.user) {
 		throw error(401, 'Unauthorized');
@@ -51,6 +67,26 @@ export const DELETE: RequestHandler = async ({ locals, platform, request }) => {
 
 		if (!provider) {
 			throw error(400, 'Provider is required');
+		}
+
+		if (locals.user.isPretend) {
+			const existingConnections = locals.user.simulatedConnections || [];
+			const simulatedConnections = existingConnections.filter((value) => value !== provider);
+
+			return json(
+				{ success: true, connections: simulatedConnections.map((name) => ({ provider: name })) },
+				{
+					headers: {
+						'Set-Cookie': buildSessionCookieHeader(
+							{
+								...locals.user,
+								simulatedConnections
+							},
+							url
+						)
+					}
+				}
+			);
 		}
 
 		if (!platform?.env?.DB) {

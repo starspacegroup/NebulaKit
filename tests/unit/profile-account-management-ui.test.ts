@@ -155,4 +155,32 @@ describe('Profile Account Management UI', () => {
 			expect(screen.getByText(/account merged successfully/i)).toBeInTheDocument();
 		});
 	});
+
+	it('shows connect options for pretend users in dev simulation even when providers are unconfigured', async () => {
+		const ProfilePage = (await import('../../src/routes/profile/+page.svelte')).default;
+
+		render(ProfilePage, {
+			props: {
+				data: {
+					...layoutData,
+					user: {
+						id: 'dev-user-1',
+						login: 'pretend-user',
+						email: 'pretend@example.dev',
+						name: 'Pretend User',
+						isOwner: false,
+						isAdmin: false,
+						isPretend: true
+					},
+					connectedAccounts: [],
+					configuredProviders: { github: false, discord: false },
+					devAuthSimulationEnabled: true,
+					hasPassword: false,
+					loginEmails: ['pretend@example.dev']
+				}
+			}
+		});
+
+		expect(screen.getAllByRole('button', { name: 'Connect' })).toHaveLength(2);
+	});
 });

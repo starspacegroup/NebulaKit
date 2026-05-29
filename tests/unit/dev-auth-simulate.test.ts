@@ -53,7 +53,9 @@ describe('Dev auth simulation endpoint', () => {
 		const cookieHeader = response.headers.get('Set-Cookie') || '';
 		expect(cookieHeader).toContain('session=');
 		expect(cookieHeader).toContain('HttpOnly');
-		expect(decodeSessionFromCookie(cookieHeader).isPretend).toBe(true);
+		const session = decodeSessionFromCookie(cookieHeader);
+		expect(session.isPretend).toBe(true);
+		expect(session.simulatedConnections).toEqual(['github']);
 	});
 
 	it('creates a simulated Discord session when bypass is enabled', async () => {
@@ -143,5 +145,43 @@ describe('Dev auth simulation endpoint', () => {
 				}
 			} as any)
 		).rejects.toMatchObject({ status: 302, location: '/auth/login?error=oauth_failed' });
+	});
+
+	it('links a provider onto an existing pretend session when mode=link', async () => {
+		const { GET } = await import('../../src/routes/api/auth/dev-simulate/+server');
+
+		const existingSession = {
+			id: 'dev-github-abc12345',
+			login: 'dev-github-abc12345',
+			email: 'dev@example.dev',
+			isOwner: false,
+			isAdmin: false,
+			isPretend: true,
+			simulatedConnections: ['github']
+		};
+
+		const encodedSession = btoa(JSON.stringify(existingSession))
+			.replace(/\+/g, '-')
+			.replace(/\//g, '_')
+			.replace(/=+$/, '');
+
+		const response = await GET({
+			url: new URL('http://localhost/api/auth/dev-simulate?provider=discord&mode=link'),
+			platform: {
+				env: {
+					DEV_AUTH_BYPASS: 'true'
+				}
+			},
+			cookies: {
+				get: vi.fn().mockReturnValue(encodedSession)
+			}
+		} as any);
+
+		expect(response.status).toBe(302);
+		expect(response.headers.get('Location')).toBe('http://localhost/profile?linked=discord');
+
+		const updatedSession = decodeSessionFromCookie(response.headers.get('Set-Cookie') || '');
+		expect(updatedSession.id).toBe(existingSession.id);
+		expect(updatedSession.simulatedConnections).toEqual(['github', 'discord']);
 	});
 });

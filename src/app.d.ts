@@ -9,6 +9,7 @@ declare global {
 				id: string;
 				login: string;
 				githubLogin?: string;
+				simulatedConnections?: string[];
 				email: string;
 				name?: string;
 				avatarUrl?: string;
