@@ -67,7 +67,12 @@ describe('Auth Login Page Server', () => {
 				configuredProviders: {
 					github: false,
 					discord: false
-				}
+				},
+				simulatedProviders: {
+					github: false,
+					discord: false
+				},
+				devAuthSimulationEnabled: false
 			});
 		});
 
@@ -85,7 +90,38 @@ describe('Auth Login Page Server', () => {
 				configuredProviders: {
 					github: false,
 					discord: false
+				},
+				simulatedProviders: {
+					github: false,
+					discord: false
+				},
+				devAuthSimulationEnabled: false
+			});
+		});
+
+		it('should expose simulated providers when DEV_AUTH_BYPASS is enabled', async () => {
+			const { load } = await import('../../src/routes/auth/login/+page.server');
+
+			const result = await load({
+				locals: { user: null },
+				url: new URL('http://localhost/auth/login'),
+				platform: {
+					env: {
+						DEV_AUTH_BYPASS: 'true'
+					}
 				}
+			} as any);
+
+			expect(result).toEqual({
+				configuredProviders: {
+					github: false,
+					discord: false
+				},
+				simulatedProviders: {
+					github: true,
+					discord: true
+				},
+				devAuthSimulationEnabled: true
 			});
 		});
 

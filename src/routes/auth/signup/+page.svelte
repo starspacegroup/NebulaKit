@@ -90,6 +90,7 @@
 
 		<AuthProviderButtons
 			configuredProviders={data.configuredProviders}
+			simulatedProviders={data.simulatedProviders}
 			disabled={isLoading}
 			actionLabel="Continue"
 			on:select={(event) => handleSSOSignup(event.detail.provider)}

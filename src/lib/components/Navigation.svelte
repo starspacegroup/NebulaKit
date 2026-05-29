@@ -38,6 +38,7 @@
 		avatarUrl?: string;
 		isOwner: boolean;
 		isAdmin?: boolean;
+		isPretend?: boolean;
 	} | null = null;
 
 	function toggleMobileMenu() {
@@ -103,6 +104,9 @@
 			</a>
 
 			<div class="nav-actions">
+				{#if user?.isPretend}
+					<span class="pretend-badge" aria-label="Pretend login session">PRETEND</span>
+				{/if}
 				<button
 					class="command-palette-btn"
 					on:click={onCommandPaletteClick}
@@ -228,6 +232,9 @@
 										</div>
 										<div class="user-info">
 											<div class="user-name">{user.name || user.login}</div>
+											{#if user.isPretend}
+												<span class="pretend-badge inline">PRETEND</span>
+											{/if}
 											<div class="user-email">{user.email}</div>
 										</div>
 									</div>
@@ -291,6 +298,9 @@
 												<div class="dropdown-header">
 													<div class="user-info">
 														<div class="user-name">{user.name || user.login}</div>
+														{#if user.isPretend}
+															<span class="pretend-badge inline">PRETEND</span>
+														{/if}
 														<div class="user-email">{user.email}</div>
 													</div>
 												</div>
@@ -426,6 +436,26 @@
 		position: relative;
 		inset: auto;
 		transform: none;
+	}
+
+	.pretend-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.2rem 0.5rem;
+		border-radius: var(--radius-sm);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		line-height: 1;
+		background: color-mix(in srgb, var(--color-warning) 16%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+		color: var(--color-text);
+	}
+
+	.pretend-badge.inline {
+		margin-top: var(--spacing-2xs);
+		width: fit-content;
 	}
 
 	.command-palette-btn {

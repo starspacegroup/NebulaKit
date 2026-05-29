@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import type { RequestHandler } from './$types';
 
 // GET - Redirect to GitHub OAuth
@@ -20,6 +21,16 @@ export const GET: RequestHandler = async ({ platform, url }) => {
 
 	// Check if GitHub OAuth is configured
 	if (!clientId) {
+		if (isDevAuthSimulationEnabled(url, platform)) {
+			const role = url.searchParams.get('role');
+			const params = new URLSearchParams({ provider: 'github' });
+			if (role === 'admin' || role === 'superadmin') {
+				params.set('role', role);
+			}
+
+			throw redirect(302, `/api/auth/dev-simulate?${params.toString()}`);
+		}
+
 		throw redirect(302, '/setup?error=oauth_not_configured');
 	}
 

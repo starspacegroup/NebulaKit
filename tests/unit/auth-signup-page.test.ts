@@ -63,7 +63,12 @@ describe('Auth Signup Page Server', () => {
 			configuredProviders: {
 				github: true,
 				discord: false
-			}
+			},
+			simulatedProviders: {
+				github: false,
+				discord: false
+			},
+			devAuthSimulationEnabled: false
 		});
 	});
 
@@ -94,7 +99,38 @@ describe('Auth Signup Page Server', () => {
 			configuredProviders: {
 				github: false,
 				discord: true
+			},
+			simulatedProviders: {
+				github: false,
+				discord: false
+			},
+			devAuthSimulationEnabled: false
+		});
+	});
+
+	it('should expose simulated providers when DEV_AUTH_BYPASS is enabled', async () => {
+		const { load } = await import('../../src/routes/auth/signup/+page.server');
+
+		const result = (await load({
+			locals: { user: null },
+			url: new URL('http://localhost/auth/signup'),
+			platform: {
+				env: {
+					DEV_AUTH_BYPASS: 'true'
+				}
 			}
+		} as any)) as any;
+
+		expect(result).toEqual({
+			configuredProviders: {
+				github: false,
+				discord: false
+			},
+			simulatedProviders: {
+				github: true,
+				discord: true
+			},
+			devAuthSimulationEnabled: true
 		});
 	});
 });

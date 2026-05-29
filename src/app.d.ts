@@ -14,6 +14,7 @@ declare global {
 				avatarUrl?: string;
 				isOwner: boolean;
 				isAdmin?: boolean;
+				isPretend?: boolean;
 			};
 		}
 		interface Platform {
@@ -28,6 +29,7 @@ declare global {
 				GITHUB_OWNER_ID?: string;
 				DISCORD_CLIENT_ID?: string;
 				DISCORD_CLIENT_SECRET?: string;
+				DEV_AUTH_BYPASS?: string;
 			};
 			context: {
 				waitUntil(promise: Promise<any>): void;

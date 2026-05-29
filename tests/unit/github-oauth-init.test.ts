@@ -107,4 +107,42 @@ describe('GitHub OAuth Initiation - Extended Coverage', () => {
 			GET(createMockEvent({ kvGet: mockKVGet }) as unknown as Parameters<typeof GET>[0])
 		).rejects.toThrow('Redirect to /setup?error=oauth_not_configured');
 	});
+
+	it('should redirect to dev simulation when bypass is enabled and OAuth is not configured', async () => {
+		mockKVGet.mockResolvedValue(null);
+
+		await expect(
+			GET({
+				url: new URL('http://localhost/api/auth/github'),
+				platform: {
+					env: {
+						GITHUB_CLIENT_ID: undefined,
+						DEV_AUTH_BYPASS: 'true',
+						KV: {
+							get: mockKVGet
+						}
+					}
+				}
+			} as unknown as Parameters<typeof GET>[0])
+		).rejects.toThrow('Redirect to /api/auth/dev-simulate?provider=github');
+	});
+
+	it('should pass through role when redirecting to dev simulation', async () => {
+		mockKVGet.mockResolvedValue(null);
+
+		await expect(
+			GET({
+				url: new URL('http://localhost/api/auth/github?role=superadmin'),
+				platform: {
+					env: {
+						GITHUB_CLIENT_ID: undefined,
+						DEV_AUTH_BYPASS: 'true',
+						KV: {
+							get: mockKVGet
+						}
+					}
+				}
+			} as unknown as Parameters<typeof GET>[0])
+		).rejects.toThrow('Redirect to /api/auth/dev-simulate?provider=github&role=superadmin');
+	});
 });

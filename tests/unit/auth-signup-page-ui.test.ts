@@ -70,4 +70,25 @@ describe('Auth Signup Page UI', () => {
 
 		expect(assignSpy).toHaveBeenCalledWith('/api/auth/github');
 	});
+
+	it('shows PRETEND badge when provider is simulated in development', () => {
+		render(SignupPage, {
+			props: {
+				data: {
+					...layoutData,
+					configuredProviders: {
+						github: false,
+						discord: false
+					},
+					simulatedProviders: {
+						github: true,
+						discord: false
+					}
+				}
+			}
+		});
+
+		expect(screen.getByRole('button', { name: /continue with github/i })).toBeInTheDocument();
+		expect(screen.getByText('PRETEND')).toBeInTheDocument();
+	});
 });

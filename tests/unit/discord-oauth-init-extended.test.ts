@@ -70,5 +70,55 @@ describe('Discord OAuth Init - Extended Branch Coverage', () => {
 				expect(err.location).toContain('kv-client-id');
 			}
 		});
+
+		it('should redirect to dev simulation when bypass is enabled and OAuth is not configured', async () => {
+			const mockEvent = {
+				platform: {
+					env: {
+						DEV_AUTH_BYPASS: 'true',
+						DISCORD_CLIENT_ID: undefined,
+						KV: {
+							get: vi.fn().mockResolvedValue(null)
+						}
+					}
+				},
+				url: new URL('http://localhost:4277/api/auth/discord')
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/discord/+server');
+
+			try {
+				await GET(mockEvent as any);
+				expect.fail('Should have thrown redirect');
+			} catch (err: any) {
+				expect(err.status).toBe(302);
+				expect(err.location).toBe('/api/auth/dev-simulate?provider=discord');
+			}
+		});
+
+		it('should pass through role when redirecting to dev simulation', async () => {
+			const mockEvent = {
+				platform: {
+					env: {
+						DEV_AUTH_BYPASS: 'true',
+						DISCORD_CLIENT_ID: undefined,
+						KV: {
+							get: vi.fn().mockResolvedValue(null)
+						}
+					}
+				},
+				url: new URL('http://localhost:4277/api/auth/discord?role=admin')
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/discord/+server');
+
+			try {
+				await GET(mockEvent as any);
+				expect.fail('Should have thrown redirect');
+			} catch (err: any) {
+				expect(err.status).toBe(302);
+				expect(err.location).toBe('/api/auth/dev-simulate?provider=discord&role=admin');
+			}
+		});
 	});
 });

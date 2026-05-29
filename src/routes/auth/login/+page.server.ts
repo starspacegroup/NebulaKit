@@ -1,4 +1,5 @@
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
+import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -19,7 +20,16 @@ export const load: PageServerLoad = async ({ locals, url, platform }) => {
 		throw redirect(302, '/');
 	}
 
+	const configuredProviders = await getConfiguredAuthProviders(platform);
+	const devAuthSimulationEnabled = isDevAuthSimulationEnabled(url, platform);
+	const simulatedProviders = {
+		github: devAuthSimulationEnabled && !configuredProviders.github,
+		discord: devAuthSimulationEnabled && !configuredProviders.discord
+	};
+
 	return {
-		configuredProviders: await getConfiguredAuthProviders(platform)
+		configuredProviders,
+		simulatedProviders,
+		devAuthSimulationEnabled
 	};
 };

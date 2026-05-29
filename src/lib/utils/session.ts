@@ -7,6 +7,7 @@ export interface SessionUser {
 	isOwner: boolean;
 	isAdmin?: boolean;
 	githubLogin?: string;
+	isPretend?: boolean;
 }
 
 interface SessionUserInput {

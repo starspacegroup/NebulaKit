@@ -6,11 +6,13 @@
 	import type { PageData } from './$types';
 
 	export let data: PageData;
+	type PretendRole = 'user' | 'admin' | 'superadmin';
 
 	let email = '';
 	let password = '';
 	let isLoading = false;
 	let error = '';
+	let selectedPretendRole: PretendRole = 'user';
 
 	const errorMessages: Record<string, string> = {
 		oauth_failed: 'Authentication failed. Please try again.',
@@ -58,13 +60,21 @@
 		}
 	}
 
-	function handleSSOLogin(provider: 'github' | 'discord') {
-		if (provider === 'github') {
-			window.location.assign('/api/auth/github');
-			return;
+	function isSimulatedProvider(provider: 'github' | 'discord') {
+		return Boolean(data.simulatedProviders?.[provider]);
+	}
+
+	function buildProviderAuthPath(provider: 'github' | 'discord') {
+		if (!isSimulatedProvider(provider)) {
+			return `/api/auth/${provider}`;
 		}
 
-		window.location.assign('/api/auth/discord');
+		const params = new URLSearchParams({ role: selectedPretendRole });
+		return `/api/auth/${provider}?${params.toString()}`;
+	}
+
+	function handleSSOLogin(provider: 'github' | 'discord') {
+		window.location.assign(buildProviderAuthPath(provider));
 	}
 </script>
 
@@ -72,6 +82,38 @@
 
 <div class="auth-page">
 	<div class="auth-container">
+		{#if data.devAuthSimulationEnabled}
+			<div class="pretend-role-panel" role="group" aria-label="Pretend login role selection">
+				<span class="pretend-role-label">Pretend Role</span>
+				<div class="pretend-role-toggle">
+					<button
+						type="button"
+						class:selected={selectedPretendRole === 'user'}
+						on:click={() => (selectedPretendRole = 'user')}
+						disabled={isLoading}
+					>
+						User
+					</button>
+					<button
+						type="button"
+						class:selected={selectedPretendRole === 'admin'}
+						on:click={() => (selectedPretendRole = 'admin')}
+						disabled={isLoading}
+					>
+						Admin
+					</button>
+					<button
+						type="button"
+						class:selected={selectedPretendRole === 'superadmin'}
+						on:click={() => (selectedPretendRole = 'superadmin')}
+						disabled={isLoading}
+					>
+						Superadmin
+					</button>
+				</div>
+			</div>
+		{/if}
+
 		<div class="auth-header">
 			<h1>Welcome Back</h1>
 			<p>Sign in to your account</p>
@@ -79,6 +121,7 @@
 
 		<AuthProviderButtons
 			configuredProviders={data.configuredProviders}
+			simulatedProviders={data.simulatedProviders}
 			disabled={isLoading}
 			actionLabel="Continue"
 			on:select={(event) => handleSSOLogin(event.detail.provider)}
@@ -149,6 +192,59 @@
 	.auth-header {
 		text-align: center;
 		margin-bottom: var(--spacing-xl);
+	}
+
+	.pretend-role-panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin-bottom: var(--spacing-lg);
+		padding: var(--spacing-sm);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background: var(--color-background);
+	}
+
+	.pretend-role-label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.pretend-role-toggle {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--spacing-xs);
+	}
+
+	.pretend-role-toggle button {
+		padding: var(--spacing-xs) var(--spacing-sm);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface);
+		color: var(--color-text-secondary);
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.pretend-role-toggle button:hover:not(:disabled) {
+		color: var(--color-text);
+		border-color: var(--color-primary);
+	}
+
+	.pretend-role-toggle button.selected {
+		color: var(--color-text);
+		background: var(--color-surface-hover);
+		border-color: var(--color-primary);
+	}
+
+	.pretend-role-toggle button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
 	}
 
 	.auth-header h1 {
