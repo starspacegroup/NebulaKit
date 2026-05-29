@@ -14,7 +14,9 @@ vi.mock('$app/stores', () => ({
 const layoutData = {
 	user: null,
 	hasAIProviders: false,
-	cmsPaletteItems: []
+	cmsPaletteItems: [],
+	simulatedProviders: { github: false, discord: false },
+	devAuthSimulationEnabled: false
 };
 
 describe('Password Auth Pages', () => {

@@ -5,7 +5,9 @@ import SignupPage from '../../src/routes/auth/signup/+page.svelte';
 const layoutData = {
 	user: null,
 	hasAIProviders: false,
-	cmsPaletteItems: []
+	cmsPaletteItems: [],
+	simulatedProviders: { github: false, discord: false },
+	devAuthSimulationEnabled: false
 };
 
 describe('Auth Signup Page UI', () => {
@@ -80,6 +82,7 @@ describe('Auth Signup Page UI', () => {
 						github: false,
 						discord: false
 					},
+					devAuthSimulationEnabled: true,
 					simulatedProviders: {
 						github: true,
 						discord: false

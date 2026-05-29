@@ -124,7 +124,8 @@ describe('Profile Page', () => {
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
-				configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false },
+				devAuthSimulationEnabled: false
 			};
 
 			const { container, getByText } = render(ProfilePage.default, {
@@ -157,7 +158,8 @@ describe('Profile Page', () => {
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
-				configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false },
+				devAuthSimulationEnabled: false
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -185,7 +187,8 @@ describe('Profile Page', () => {
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
-				configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false },
+				devAuthSimulationEnabled: false
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -215,7 +218,8 @@ describe('Profile Page', () => {
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
-				configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false },
+				devAuthSimulationEnabled: false
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -242,7 +246,8 @@ describe('Profile Page', () => {
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
-				configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false },
+				devAuthSimulationEnabled: false
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -269,7 +274,8 @@ describe('Profile Page', () => {
 				connectedAccounts: [],
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
-				configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false },
+				devAuthSimulationEnabled: false
 			};
 
 			const { container } = render(ProfilePage.default, {
