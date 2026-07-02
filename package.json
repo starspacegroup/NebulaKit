@@ -22,7 +22,9 @@
 		"validate:all": "npm run check && npm run test && npm run validate:contrast",
 		"db:migrate": "wrangler d1 migrations apply nebulakit-db",
 		"db:migrate:local": "wrangler d1 migrations apply nebulakit-db --local",
-		"db:migrate:list": "wrangler d1 migrations list nebulakit-db"
+		"db:migrate:list": "wrangler d1 migrations list nebulakit-db",
+		"tunnel": "node scripts/tunnel.js",
+		"dev:tunnel": "bun run dev & node scripts/tunnel.js"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.40.0",

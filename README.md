@@ -60,6 +60,38 @@ npm run deploy
 
 Visit `http://localhost:4277` to see your app!
 
+### 🚇 Local Tunneling (Cloudflare Tunnel)
+
+Share your local dev server with the outside world in one command — no config needed:
+
+```bash
+# Free public URL via trycloudflare.com (no account required)
+bun run tunnel
+# or: npm run tunnel
+
+# Run dev server + tunnel together (separate terminal not needed)
+bun run dev:tunnel
+```
+
+The tunnel URL (e.g. `https://random-words.trycloudflare.com`) is printed to the console as soon as the tunnel is up.
+
+**Custom domain** (e.g. `myapp.davis9001.dev`):
+
+1. Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com/) → Networks → Tunnels
+2. Create a tunnel, add a public hostname pointing to `http://localhost:4277`
+3. Copy the tunnel token
+
+```bash
+TUNNEL_TOKEN=<your-token> bun run tunnel
+```
+
+> **Prerequisite:** `cloudflared` must be installed.
+> - macOS: `brew install cloudflared`
+> - Linux: https://pkg.cloudflare.com/index.html
+> - Windows: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+
+The tunnel script lives at `scripts/tunnel.js` and respects a `PORT` env var if you change the dev port.
+
 ## 🧪 Testing (TDD Required!)
 
 NebulaKit follows **Test-Driven Development** with 90%+ code coverage requirements:
