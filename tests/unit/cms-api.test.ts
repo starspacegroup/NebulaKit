@@ -372,6 +372,71 @@ describe('CMS API - Content Items', () => {
 			expect(data.item.id).toBe('ci-1');
 		});
 
+		it('attaches the item tags', async () => {
+			const { GET } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
+
+			mockDB.first.mockResolvedValue({
+				id: 'ci-1',
+				content_type_id: 'ct-1',
+				slug: 'hello',
+				title: 'Hello',
+				status: 'published',
+				fields: '{}',
+				show_in_command_palette: 1,
+				created_at: '2024-01-01',
+				updated_at: '2024-01-01'
+			});
+			// getItemTags
+			mockDB.all.mockResolvedValueOnce({
+				results: [
+					{
+						id: 'tag-1',
+						content_type_id: 'ct-1',
+						name: 'JavaScript',
+						slug: 'javascript',
+						created_at: '2024-01-01'
+					}
+				]
+			});
+
+			const response = await GET({
+				platform: mockPlatform,
+				locals: mockLocals,
+				params: { type: 'blog', id: 'ci-1' }
+			} as any);
+
+			const data = await response.json();
+			expect(data.item.tags).toHaveLength(1);
+			expect(data.item.tags[0].id).toBe('tag-1');
+		});
+
+		it('still returns the item when the tag lookup fails', async () => {
+			const { GET } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
+
+			mockDB.first.mockResolvedValue({
+				id: 'ci-2',
+				content_type_id: 'ct-1',
+				slug: 'x',
+				title: 'X',
+				status: 'draft',
+				fields: '{}',
+				show_in_command_palette: 1,
+				created_at: '2024-01-01',
+				updated_at: '2024-01-01'
+			});
+			mockDB.all.mockRejectedValueOnce(new Error('tags boom'));
+
+			const response = await GET({
+				platform: mockPlatform,
+				locals: mockLocals,
+				params: { type: 'blog', id: 'ci-2' }
+			} as any);
+
+			expect(response.status).toBe(200);
+			const data = await response.json();
+			expect(data.item.id).toBe('ci-2');
+		});
+
 		it('should return 404 for non-existent item', async () => {
 			const { GET } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 

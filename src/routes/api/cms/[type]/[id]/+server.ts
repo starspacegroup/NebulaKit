@@ -10,6 +10,7 @@ import {
 	deleteContentItem,
 	getContentItem,
 	getContentTypeBySlug,
+	getItemTags,
 	updateContentItem
 } from '$lib/services/cms';
 import { error, json } from '@sveltejs/kit';
@@ -29,6 +30,14 @@ export const GET: RequestHandler = async ({ platform, locals, params }) => {
 		const item = await getContentItem(db, params.id);
 		if (!item) {
 			throw error(404, 'Content item not found');
+		}
+
+		// Attach assigned tags so editors can round-trip them. Best-effort:
+		// a tag lookup failure must not break loading the item itself.
+		try {
+			(item as typeof item & { tags?: unknown }).tags = await getItemTags(db, params.id);
+		} catch {
+			// tags are optional
 		}
 
 		return json({ item });
