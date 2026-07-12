@@ -5,6 +5,7 @@
  * POST /api/cms/[type] - Create a new item
  */
 import type { ContentItemFilters } from '$lib/cms/types';
+import { sanitizeRichtextFields } from '$lib/cms/sanitize';
 import { validateFields } from '$lib/cms/utils';
 import { createContentItem, getContentTypeBySlug, listContentItems } from '$lib/services/cms';
 import { error, json } from '@sveltejs/kit';
@@ -90,12 +91,15 @@ export const POST: RequestHandler = async ({ platform, locals, params, request }
 			throw error(400, fieldErrors.join(', '));
 		}
 
+		// Sanitize richtext fields server-side before storage (write-time defense)
+		const fields = sanitizeRichtextFields(body.fields || {}, contentType.fields);
+
 		const item = await createContentItem(db, {
 			contentTypeSlug: params.type,
 			title: body.title,
 			slug: body.slug,
 			status: body.status,
-			fields: body.fields || {},
+			fields,
 			seoTitle: body.seoTitle,
 			seoDescription: body.seoDescription,
 			seoImage: body.seoImage,

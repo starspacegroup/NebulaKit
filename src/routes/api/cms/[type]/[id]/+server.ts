@@ -5,7 +5,13 @@
  * PUT    /api/cms/[type]/[id] - Update an item
  * DELETE /api/cms/[type]/[id] - Delete an item
  */
-import { deleteContentItem, getContentItem, updateContentItem } from '$lib/services/cms';
+import { sanitizeRichtextFields } from '$lib/cms/sanitize';
+import {
+	deleteContentItem,
+	getContentItem,
+	getContentTypeBySlug,
+	updateContentItem
+} from '$lib/services/cms';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -49,11 +55,21 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request })
 	try {
 		const body = await request.json();
 
+		// Sanitize richtext fields server-side before storage (write-time defense).
+		// Unknown content types leave fields untouched — the update path validates existence.
+		let fields = body.fields;
+		if (fields) {
+			const contentType = await getContentTypeBySlug(db, params.type);
+			if (contentType) {
+				fields = sanitizeRichtextFields(fields, contentType.fields);
+			}
+		}
+
 		const item = await updateContentItem(db, params.id, {
 			title: body.title,
 			slug: body.slug,
 			status: body.status,
-			fields: body.fields,
+			fields,
 			seoTitle: body.seoTitle,
 			seoDescription: body.seoDescription,
 			seoImage: body.seoImage,

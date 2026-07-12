@@ -394,6 +394,18 @@ describe('CMS API - Content Items', () => {
 		it('should update a content item', async () => {
 			const { PUT } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
+			// getContentTypeBySlug (for richtext sanitization)
+			mockDB.first.mockResolvedValueOnce({
+				id: 'ct-1',
+				slug: 'blog',
+				name: 'Blog Posts',
+				fields: JSON.stringify([{ name: 'body', label: 'Body', type: 'richtext', required: true }]),
+				settings: '{}',
+				icon: 'article',
+				sort_order: 0,
+				created_at: '2024-01-01',
+				updated_at: '2024-01-01'
+			});
 			// updateContentItem: get existing
 			mockDB.first.mockResolvedValueOnce({
 				id: 'ci-1',

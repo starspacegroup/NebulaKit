@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import ImageField from '$lib/components/ImageField.svelte';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
@@ -707,11 +708,9 @@
 										bind:value={formFields[field.name]}
 									/>
 								{:else if field.type === 'image'}
-									<input
-										id="field-{field.name}"
-										type="url"
+									<ImageField
 										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || 'https://example.com/image.jpg'}
+										placeholder={field.placeholder || 'https://… or upload'}
 									/>
 								{:else if field.type === 'json'}
 									<textarea

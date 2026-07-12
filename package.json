@@ -56,7 +56,8 @@
 		"@tiptap/extension-link": "^2.11",
 		"@tiptap/extension-placeholder": "^2.11",
 		"@tiptap/pm": "^2.11",
-		"@tiptap/starter-kit": "^2.11"
+		"@tiptap/starter-kit": "^2.11",
+		"xss": "^1.0.15"
 	},
 	"type": "module"
 }
