@@ -3,6 +3,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	server: {
+		// Allow Cloudflare dev tunnels on the starspace.group domain to reach the
+		// Vite dev server (e.g. dev-nebulakit-<hash>.starspace.group).
+		allowedHosts: ['.starspace.group']
+	},
 	test: {
 		name: 'unit',
 		include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
