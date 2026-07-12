@@ -18,5 +18,12 @@ DISCORD_CLIENT_SECRET=your_discord_client_secret_here
 # TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
 # TURNSTILE_SITE_KEY=your_turnstile_site_key_here
 
+# Dev-only simulated ("pretend") login.
+# When set to "true", /auth/login exposes a User/Admin/Superadmin role toggle and
+# PRETEND provider buttons, letting you sign in without any OAuth configured.
+# By default simulation is enabled only on localhost; set this to reach it from a
+# dev tunnel (e.g. dev-<app>-<hash>.example.com). NEVER set this in production.
+DEV_AUTH_BYPASS=true
+
 # Note: .dev.vars is gitignored and should never be committed
 # These values are used by `wrangler dev` for local development
