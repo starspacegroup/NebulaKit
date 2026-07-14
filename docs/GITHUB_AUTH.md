@@ -120,6 +120,21 @@ GITHUB_OWNER_ID = "583231"  # Replace with your actual GitHub user ID
    - If user is the OAuth app owner → redirected to `/admin`
    - Otherwise → redirected to home page
 
+### Logout / return-to behavior — design decision (2026-07-14)
+
+The decided behavior (see `planning/DECISIONS.md` in the planning repo):
+
+- **Logout from a public page** → stay on that page (just with the session cleared).
+- **Logout from a login-required page** → go to `/auth/login`, carrying a
+  return-to reference to the page the user was on.
+- **Logging back in** → return the user to the page they were on, not `/admin`
+  or home unconditionally.
+
+**Status: not yet implemented.** `src/routes/api/auth/logout/+server.ts` currently
+redirects to `/auth/login` unconditionally, and the OAuth callback ignores any
+return-to target. When implementing: validate the return-to value as a same-origin
+relative path (no absolute/protocol-relative URLs) to avoid an open-redirect.
+
 ### Admin Access Control
 
 - **Protected Routes**: All routes under `/admin` require authentication
@@ -180,4 +195,3 @@ The implementation follows TDD principles with 100% test coverage for auth logic
 3. **Token Encryption**: Encrypt sensitive data before storage
 4. **HTTPS**: Always use HTTPS in production for secure cookies
 5. **Error Handling**: Implement proper error logging and user feedback
-
