@@ -16,13 +16,23 @@ Downstream projects surveyed (2026-07-06):
 
 ## Upstream candidates — new modules
 
-### Payments: Stripe integration (from AgapeVerse)
+### Payments: Stripe integration + PPP region pricing (from AgapeVerse)
 
 A complete, kit-shaped Stripe module: checkout, product/price/discount management from
-the admin area, and appearance matching the kit theme system.
+the admin area, appearance matching the kit theme system, and — as a **first-class
+concept, not a bolt-on — purchasing-power-parity (PPP) region pricing**. Full design in
+[`docs/PAYMENTS_AND_PPP.md`](./docs/PAYMENTS_AND_PPP.md); read it before starting this.
 
 - `src/lib/components/StripeCheckoutForm.svelte`
 - `src/lib/utils/stripe.ts`, `stripe-config.ts`, `stripe-appearance.ts`
+- **PPP region pricing:** `src/lib/utils/region-pricing.ts` (country→currency map,
+  zero-decimal/whole-unit formatting, geo via `cf-ipcountry`, per-currency amount
+  table), `scripts/setup-region-prices.ts` (add-only writer of Stripe
+  `currency_options`; refuses live keys without `--live`), `src/lib/utils/fx.ts`
+  (admin-preview USD reference). Key architecture: PPP rides on `currency_options` of
+  **existing** prices — no new price IDs, no migration, entitlement/webhook logic
+  untouched. The AgapeVerse amount table is HeartPoints-specific; generalize it into
+  app-defined price roles (see the design doc).
 - Admin UI: `src/routes/admin/stripe/` (products, discounts) and
   `src/routes/api/admin/stripe-*` (config, bootstrap, products, prices, coupons,
   promotion-codes, options)
