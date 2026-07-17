@@ -6,7 +6,16 @@ export default defineConfig({
 	server: {
 		// Allow Cloudflare dev tunnels on the starspace.group domain to reach the
 		// Vite dev server (e.g. dev-nebulakit-<hash>.starspace.group).
-		allowedHosts: ['.starspace.group']
+		allowedHosts: ['.starspace.group'],
+		// Never let dev assets be cached. Vite dev serves generated modules
+		// (e.g. .svelte-kit/generated/client/nodes/*.js) from query-less URLs; when
+		// this dev server is reached through a Cloudflare-proxied tunnel, Cloudflare
+		// otherwise stamps a browser-cache TTL on them. After routes change (which
+		// renumbers those node modules), a browser holding stale copies renders the
+		// wrong page. `no-store` keeps dev module URLs from ever being cached.
+		headers: {
+			'Cache-Control': 'no-store'
+		}
 	},
 	test: {
 		name: 'unit',
