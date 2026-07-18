@@ -13,6 +13,7 @@ Do this before feature work, bug fixes, or content entry. The repository still c
 
 - [ ] Replace visible app branding.
 - [ ] Replace Open Graph, Twitter, and favicon assets.
+- [ ] Generate the full web-app icon set (apple-touch-icon, manifest icons, light/dark favicons) — see below. A tab favicon alone is not enough; phone home-screen tiles need it.
 - [ ] Remove or replace template documentation routes and links.
 - [ ] Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) to `status: complete`.
 
@@ -36,6 +37,15 @@ Do this before feature work, bug fixes, or content entry. The repository still c
 - [src/app.html](../src/app.html)
 - [src/routes/+page.svelte](../src/routes/+page.svelte)
 - [src/lib/components/SharingMeta.svelte](../src/lib/components/SharingMeta.svelte)
+
+**Web-app icon set (required — a tab favicon alone is not enough).** Home-screen tiles and PWA installs ignore `<link rel="icon">`; they read `apple-touch-icon` and the web manifest. Without them, phones render a generated letter-monogram tile instead of the logo. From the site logo, generate and wire up:
+
+- `static/apple-touch-icon.png` (180×180) — **solid background** (transparent → black on iOS); match `theme-color`.
+- `static/icon-192.png`, `static/icon-512.png`, and `static/site.webmanifest` (`name`/`short_name`, `display: standalone`, `theme_color`/`background_color`).
+- Light + dark tab favicons (`static/favicon-dark.png` / `static/favicon-light.png`) selected via `<link rel="icon" media="(prefers-color-scheme: …)">`, with a no-media default (default to dark).
+- In `src/app.html`: `<link rel="apple-touch-icon">`, `<link rel="manifest">`, `<meta name="apple-mobile-web-app-title">`.
+
+Tiles and installed-app icons are static and cannot follow `prefers-color-scheme` — only the tab favicon switches. Reference implementation: davis9001.dev-sveltekit `src/app.html` + `static/`. See AGENTS.md §6.
 
 ### Template Documentation Removal Or Replacement
 
