@@ -12,5 +12,11 @@ GITHUB_OWNER_ID=your_github_user_id_here
 DISCORD_CLIENT_ID=your_discord_client_id_here
 DISCORD_CLIENT_SECRET=your_discord_client_secret_here
 
+# Cloudflare Turnstile (optional — bot protection for the public contact form)
+# Get these from https://dash.cloudflare.com/?to=/:account/turnstile
+# Leave both unset to run the contact form without a captcha (form still works).
+# TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
+# TURNSTILE_SITE_KEY=your_turnstile_site_key_here
+
 # Note: .dev.vars is gitignored and should never be committed
 # These values are used by `wrangler dev` for local development

@@ -55,11 +55,15 @@ describe('Admin Layout Server Load', () => {
 			};
 
 			const { load } = await import('../../src/routes/admin/+layout.server');
-			const result = await load({
-				locals: { user: mockUser }
-			} as any);
+			const result = (await load({
+				locals: { user: mockUser },
+				cookies: { get: () => '1' }
+			} as any)) as { user: typeof mockUser; canRevealPii: boolean; piiRevealed: boolean };
 
-			expect((result as { user: typeof mockUser }).user).toEqual(mockUser);
+			expect(result.user).toEqual(mockUser);
+			// Owner may reveal, and the '1' cookie means it's currently revealed.
+			expect(result.canRevealPii).toBe(true);
+			expect(result.piiRevealed).toBe(true);
 		});
 	});
 });

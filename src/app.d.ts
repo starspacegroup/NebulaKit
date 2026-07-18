@@ -24,7 +24,8 @@ declare global {
 				KV: KVNamespace;
 				BUCKET: R2Bucket;
 				QUEUE: Queue;
-				TURNSTILE_SECRET_KEY: string;
+				TURNSTILE_SECRET_KEY?: string;
+				TURNSTILE_SITE_KEY?: string;
 				GITHUB_CLIENT_ID?: string;
 				GITHUB_CLIENT_SECRET?: string;
 				GITHUB_OWNER_ID?: string;

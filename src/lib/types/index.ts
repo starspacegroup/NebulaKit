@@ -32,6 +32,17 @@ export interface OAuthAccount {
 	expiresAt?: Date;
 }
 
+export interface ContactFormSubmission {
+	id: string;
+	slug: string;
+	name: string;
+	email: string;
+	message: string;
+	isResolved: boolean;
+	/** ISO timestamp string as stored by SQLite (`CURRENT_TIMESTAMP`). */
+	createdAt: string;
+}
+
 export type ThemeMode = 'light' | 'dark';
 
 export interface Command {

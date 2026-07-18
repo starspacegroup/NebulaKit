@@ -1,13 +1,42 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { invalidateAll } from '$app/navigation';
+	import { setContext } from 'svelte';
+	import { writable } from 'svelte/store';
+	import PiiPrivacyToggle from '$lib/components/admin/PiiPrivacyToggle.svelte';
+	import type { LayoutData } from './$types';
+
+	export let data: LayoutData;
 
 	const navItems = [
 		{ path: '/admin', label: 'Dashboard', icon: 'home' },
 		{ path: '/admin/users', label: 'Users', icon: 'users' },
 		{ path: '/admin/auth-keys', label: 'Auth Keys', icon: 'key' },
 		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
-		{ path: '/admin/cms', label: 'CMS', icon: 'document' }
+		{ path: '/admin/cms', label: 'CMS', icon: 'document' },
+		{ path: '/admin/contact-form-submissions', label: 'Contact Forms', icon: 'mail' }
 	];
+
+	// PII reveal state shared with admin views via context. The store tracks the
+	// server-provided value; toggling posts to the reveal endpoint and reloads so
+	// server-masked pages re-render with the new state.
+	const piiRevealed = writable(data.piiRevealed);
+	$: piiRevealed.set(data.piiRevealed);
+
+	async function toggleReveal() {
+		const next = !data.piiRevealed;
+		piiRevealed.set(next);
+		await fetch('/api/admin/pii-reveal', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ reveal: next })
+		});
+		await invalidateAll();
+	}
+
+	setContext('piiRevealed', piiRevealed);
+	setContext('canRevealPii', data.canRevealPii);
+	setContext('toggleReveal', toggleReveal);
 </script>
 
 <div class="admin-layout">
@@ -91,10 +120,24 @@
 							<line x1="16" y1="17" x2="8" y2="17" />
 							<polyline points="10 9 9 9 8 9" />
 						</svg>
+					{:else if item.icon === 'mail'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+							<polyline points="22,6 12,13 2,6" />
+						</svg>
 					{/if}
 					<span>{item.label}</span>
 				</a>
 			{/each}
+			<PiiPrivacyToggle />
 		</nav>
 	</aside>
 	<main class="admin-content">
