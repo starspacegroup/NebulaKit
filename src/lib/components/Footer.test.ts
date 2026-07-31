@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import Footer from './Footer.svelte';
+import { site, repoUrl } from '$lib/site.config';
 
 describe('Footer', () => {
 	it('should render the footer element', () => {
@@ -9,14 +10,14 @@ describe('Footer', () => {
 		expect(footer).toBeInTheDocument();
 	});
 
-	it('should display the NebulaKit brand', () => {
+	it('should display the app brand', () => {
 		render(Footer);
-		expect(screen.getByText('NebulaKit')).toBeInTheDocument();
+		expect(screen.getByText(site.name)).toBeInTheDocument();
 	});
 
 	it('should display the tagline', () => {
 		render(Footer);
-		expect(screen.getByText(/cosmic-grade sveltekit starter/i)).toBeInTheDocument();
+		expect(screen.getByText(site.tagline)).toBeInTheDocument();
 	});
 
 	it('should have navigation links section', () => {
@@ -71,7 +72,7 @@ describe('Footer', () => {
 		const resourcesLink = githubLinks.find((link) =>
 			link.textContent?.toLowerCase().includes('github')
 		);
-		expect(resourcesLink).toHaveAttribute('href', 'https://github.com/starspacegroup/NebulaKit');
+		expect(resourcesLink).toHaveAttribute('href', repoUrl);
 	});
 
 	it('should contain privacy policy link', () => {
@@ -92,12 +93,12 @@ describe('Footer', () => {
 		expect(screen.getByText(new RegExp(`© ${currentYear}`, 'i'))).toBeInTheDocument();
 	});
 
-	it('should display created by *Space link', () => {
+	it('should display the author attribution link', () => {
 		render(Footer);
-		const spaceLink = screen.getByRole('link', { name: /\*space/i });
-		expect(spaceLink).toHaveAttribute('href', 'https://starspace.group');
-		expect(spaceLink).toHaveAttribute('target', '_blank');
-		expect(spaceLink).toHaveAttribute('rel', 'noopener noreferrer');
+		const authorLink = screen.getByRole('link', { name: site.author });
+		expect(authorLink).toHaveAttribute('href', site.authorUrl);
+		expect(authorLink).toHaveAttribute('target', '_blank');
+		expect(authorLink).toHaveAttribute('rel', 'noopener noreferrer');
 	});
 
 	it('should have proper accessibility structure with navigation landmark', () => {

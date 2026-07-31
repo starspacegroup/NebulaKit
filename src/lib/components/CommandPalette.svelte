@@ -3,6 +3,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
+	import { site } from '$lib/site.config';
 	import {
 		resolvedTheme,
 		systemTheme,
@@ -109,7 +110,7 @@
 		{
 			id: 'documentation',
 			label: 'Documentation',
-			description: 'View NebulaKit documentation',
+			description: `View ${site.name} documentation`,
 			action: () => goto('/documentation'),
 			icon: '📚'
 		},

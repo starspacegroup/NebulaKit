@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { site, repoUrl } from '$lib/site.config';
+
 	const currentYear = new Date().getFullYear();
 </script>
 
@@ -9,10 +11,10 @@
 			<div class="footer-brand">
 				<a href="/" class="footer-logo">
 					<span class="logo-icon">✨</span>
-					<span class="logo-text">NebulaKit</span>
+					<span class="logo-text">{site.name}</span>
 				</a>
 				<p class="footer-tagline">
-					A cosmic-grade SvelteKit starter powered by Cloudflare Workers.
+					{site.tagline}
 				</p>
 				<div class="footer-badge">
 					<svg
@@ -50,13 +52,7 @@
 							<a href="/documentation">Documentation</a>
 						</li>
 						<li>
-							<a
-								href="https://github.com/starspacegroup/NebulaKit"
-								target="_blank"
-								rel="noopener noreferrer"
-							>
-								GitHub
-							</a>
+							<a href={repoUrl} target="_blank" rel="noopener noreferrer"> GitHub </a>
 						</li>
 					</ul>
 				</div>
@@ -74,17 +70,15 @@
 		<!-- Bottom Bar -->
 		<div class="footer-bottom">
 			<p class="footer-copyright">
-				© {currentYear} NebulaKit. Created by
-				<a
-					href="https://starspace.group"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="starspace-link">*Space</a
+				© {currentYear}
+				{site.name}. Created by
+				<a href={site.authorUrl} target="_blank" rel="noopener noreferrer" class="starspace-link"
+					>{site.author}</a
 				>.
 			</p>
 			<div class="footer-social">
 				<a
-					href="https://github.com/starspacegroup/NebulaKit"
+					href={repoUrl}
 					target="_blank"
 					rel="noopener noreferrer"
 					aria-label="GitHub Repository"

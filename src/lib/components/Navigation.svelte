@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { onDestroy, onMount } from 'svelte';
+	import { site } from '$lib/site.config';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 
@@ -100,7 +101,7 @@
 		<div class="nav-content">
 			<a href="/" class="logo" on:click={closeMobileMenu}>
 				<span class="logo-icon">✨</span>
-				<span class="logo-text">NebulaKit</span>
+				<span class="logo-text">{site.name}</span>
 			</a>
 
 			<div class="nav-actions">
@@ -186,7 +187,7 @@
 					<div class="mobile-menu-header">
 						<a href="/" class="logo mobile-menu-logo" on:click={closeMobileMenu}>
 							<span class="logo-icon">✨</span>
-							<span class="logo-text">NebulaKit</span>
+							<span class="logo-text">{site.name}</span>
 						</a>
 						<button
 							type="button"

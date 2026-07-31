@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { site } from '$lib/site.config';
 
 	/** Page title (displayed in browser tab and social shares) */
 	export let title: string;
@@ -20,7 +21,7 @@
 	/** Open Graph content type */
 	export let type: 'website' | 'article' | 'profile' = 'website';
 	/** Site name shown in OG tags and title suffix */
-	export let siteName: string = 'NebulaKit';
+	export let siteName: string = site.name;
 	/** Locale for OG tags */
 	export let locale: string = 'en_US';
 	/** Twitter card type */
@@ -84,7 +85,7 @@
 	{#if url}
 		<meta property="og:url" content={url} />
 	{/if}
-	<meta property="og:site_name" content={siteName || 'NebulaKit'} />
+	<meta property="og:site_name" content={siteName || site.name} />
 	<meta property="og:locale" content={locale} />
 
 	<!-- Twitter Card -->

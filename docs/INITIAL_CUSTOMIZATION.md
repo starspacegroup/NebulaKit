@@ -1,12 +1,17 @@
 # Initial Template Customization
 
+> **Start with the ordered set path in [CUSTOMIZE.md](../CUSTOMIZE.md).** It runs the
+> mechanical rename for you (`bun run customize`) and sequences the semantic steps.
+> This file is the deep reference for the branding/asset details that path points to
+> — especially the web-app icon set below.
+
 Do this before feature work, bug fixes, or content entry. The repository still contains NebulaKit template branding and template documentation. If you skip this step, the app, metadata, and assistant guidance will keep pointing back to the template.
 
 ## Goals
 
 - Rename the app from NebulaKit to your actual product name.
 - Replace the default social sharing and favicon assets.
-- Remove or replace NebulaKit-specific documentation surfaces so users do not see template docs in your product.
+- Replace NebulaKit-specific documentation content so users do not see template docs in your product — the `/documentation` route stays, its content becomes yours.
 - Mark the work as complete in [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md).
 
 ## Required Checklist
@@ -14,7 +19,7 @@ Do this before feature work, bug fixes, or content entry. The repository still c
 - [ ] Replace visible app branding.
 - [ ] Replace Open Graph, Twitter, and favicon assets.
 - [ ] Generate the full web-app icon set (apple-touch-icon, manifest icons, light/dark favicons) — see below. A tab favicon alone is not enough; phone home-screen tiles need it.
-- [ ] Remove or replace template documentation routes and links.
+- [ ] Rewrite the `/documentation` route and its links for your product (replace the content; keep the route).
 - [ ] Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) to `status: complete`.
 
 ## High-Value Files To Review
@@ -58,16 +63,17 @@ Tiles and installed-app icons are static and cannot follow `prefers-color-scheme
 
 ## Recommended Workflow
 
-1. Pick the final product name and preferred short tagline.
-2. Search for template branding with `rg -n "NebulaKit|starspacegroup/NebulaKit|/documentation|og-image|favicon" .`.
-3. Replace visible branding in the UI, metadata, docs, legal text, and links.
-4. Replace the social image and favicon assets with your own files.
-5. Remove the `/documentation` route and any navigation or command palette entries that point to template docs, or replace them with your own product docs.
-6. Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) when complete.
+1. Pick the final product name, slug, dev port, and short tagline.
+2. Run `bun run customize` (or `--dry` first). This rewrites [src/lib/site.config.ts](../src/lib/site.config.ts) and search-and-replaces the old name/slug/port/repo/URL across the UI, tests, docs, and `wrangler.toml`. See [CUSTOMIZE.md](../CUSTOMIZE.md).
+3. Point `wrangler.toml` at your own Cloudflare resources (the script renames them but can't create them — see CUSTOMIZE.md Step 2).
+4. Replace the social image and favicon assets with your own files (see the icon-set section above).
+5. Rewrite the `/documentation` route for your app, and curate the command palette with `bun run palette:scan`. **Replace its content — do not delete the route.** From here on it must track every user-visible feature you add; see [DOCUMENTATION_PAGE.md](./DOCUMENTATION_PAGE.md) and AGENTS.md §7.
+6. Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) to `status: complete` when done.
 
 ## Definition Of Done
 
 - No user-facing page still presents itself as NebulaKit unless that is your actual app name.
 - Social shares use your own image, alt text, and metadata.
 - Users cannot navigate to NebulaKit template documentation from the product UI.
+- `/documentation` still exists, describes your app's real features, and is linked from the footer and command palette.
 - [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) says `status: complete`.
