@@ -1,3 +1,9 @@
+import { buildLinkHeader } from '$lib/agent-discovery';
+import {
+	isConvertibleHtml,
+	prefersMarkdown,
+	toMarkdownResponse
+} from '$lib/server/markdown-negotiation';
 import { decodeSessionCookie } from '$lib/utils/session';
 import {
 	browserBucket,
@@ -159,5 +165,41 @@ export const usageHandler: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
+/**
+ * Agent discovery (docs/AGENT_READINESS.md): advertise the machine-readable
+ * entry points on every HTML response via RFC 8288 `Link` headers, and serve
+ * Markdown to agents that ask for it with `Accept: text/markdown`.
+ *
+ * Runs OUTSIDE the stats handlers in the sequence so `pageViewsHandler` still
+ * sees the original `text/html` response and keeps counting agent reads as page
+ * views — an agent fetching a page is a real view, and hiding it would quietly
+ * under-report traffic.
+ *
+ * `Vary: Accept` goes on the HTML branch too, not just the Markdown one:
+ * without it a shared cache can hand a stored HTML body to an agent that asked
+ * for Markdown, or the reverse.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const agentDiscoveryHandler: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+
+	if (!isConvertibleHtml(response)) return response;
+
+	response.headers.set('Link', buildLinkHeader());
+	response.headers.set('Vary', 'Accept');
+
+	if (!prefersMarkdown(event.request.headers.get('accept'))) return response;
+
+	try {
+		return await toMarkdownResponse(response);
+	} catch (error) {
+		// A conversion failure must never cost the caller the page — fall back to
+		// the HTML we already have.
+		console.error('markdown negotiation: conversion failed', error);
+		return response;
+	}
+};
+
 // Combine all hooks
-export const handle = sequence(usageHandler, authHandler, pageViewsHandler);
+export const handle = sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler);

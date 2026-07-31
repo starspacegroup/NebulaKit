@@ -98,6 +98,34 @@ Tiles and installed-app icons are **static** — they cannot switch on `prefers-
 
 **Reference:** [docs/DOCUMENTATION_PAGE.md](docs/DOCUMENTATION_PAGE.md) — section map, scaffold for recreating the route, and the per-feature checklist.
 
+### 8. Agent Discovery Surfaces Are A Contract
+
+**Failure mode:** A site ships with no `/robots.txt` (or an invalid one with no `User-agent` line), no sitemap, and nothing machine-readable — so crawlers and AI agents can't find or correctly use it. Or worse: discovery files that advertise endpoints which don't exist, sending agents into failure loops that look like outages.
+
+**Rule:** This template publishes a working agent-discovery layer. **Keep it accurate; never delete it.**
+
+| Surface                                                   | Route                                                                                                         |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/robots.txt` — crawl rules, AI crawlers, Content Signals | [src/routes/robots.txt/](src/routes/robots.txt/+server.ts)                                                    |
+| `/sitemap.xml` — static pages + published CMS content     | [src/routes/sitemap.xml/](src/routes/sitemap.xml/+server.ts)                                                  |
+| `/.well-known/api-catalog` (RFC 9727)                     | [src/routes/\[x+2e\]well-known/api-catalog/](src/routes/[x+2e]well-known/api-catalog/+server.ts)              |
+| `/.well-known/agent-skills/index.json`                    | [src/routes/\[x+2e\]well-known/agent-skills/](src/routes/[x+2e]well-known/agent-skills/index.json/+server.ts) |
+| `/auth.md` — how agents authenticate                      | [src/routes/auth.md/](src/routes/auth.md/+server.ts)                                                          |
+| `Accept: text/markdown` + `Link` headers                  | [src/hooks.server.ts](src/hooks.server.ts)                                                                    |
+| WebMCP browser tools                                      | [src/lib/webmcp.ts](src/lib/webmcp.ts)                                                                        |
+
+**The honesty rule:** only publish discovery metadata for capabilities that actually exist. This template deliberately ships **no** `oauth-authorization-server`, `oauth-protected-resource`, or MCP server card, because it is an OAuth _client_ with no MCP server — advertising them would point agents at endpoints that 404. Add them **when, and only when,** you build the real thing.
+
+**When this breaks:**
+
+- **New public page added** → Add it to `SITEMAP_ROUTES` in [src/lib/agent-discovery.ts](src/lib/agent-discovery.ts), or to `SITEMAP_EXCLUDED_ROUTES` with a reason. `tests/unit/agent-readiness.test.ts` fails until you do — that's intentional, not a flaky test.
+- **API added, removed, or its auth changed** → Update the API catalog and any skill that documents it, in the same change.
+- **Skill wording edited** → Nothing to do; digests are computed from the rendered bytes at request time.
+- **Crawl or AI-training policy needs to change** → Edit `CONTENT_SIGNAL` / `CRAWLER_DISALLOW` in `src/lib/agent-discovery.ts`. Every robots.txt group picks it up. The shipped default is fully permissive (`ai-train=yes`) — **review this before launching a site with proprietary content.**
+- **Tempted to rename `[x+2e]well-known`** → Don't. `[x+2e]` is SvelteKit's hex escape for `.`; a literal `.well-known/` directory routes fine but drops out of TypeScript's wildcard includes, so those files silently stop being type-checked.
+
+**Reference:** [docs/AGENT_READINESS.md](docs/AGENT_READINESS.md) — full surface map, the DNS records that must be added by hand, and how to verify.
+
 ---
 
 ## Architecture Notes

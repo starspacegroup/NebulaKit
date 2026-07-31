@@ -4,8 +4,10 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import Navigation from '$lib/components/Navigation.svelte';
+	import { goto } from '$app/navigation';
 	import { showCommandPalette, toggleCommandPalette } from '$lib/stores/commandPalette';
-	import { resolvedTheme } from '$lib/stores/theme';
+	import { resolvedTheme, themePreference } from '$lib/stores/theme';
+	import { registerWebMcpTools } from '$lib/webmcp';
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import type { PageData } from './$types';
@@ -35,6 +37,17 @@
 	onMount(() => {
 		requestAnimationFrame(() => {
 			document.documentElement.classList.remove('theme-preload');
+		});
+
+		// WebMCP (docs/AGENT_READINESS.md): offer this site's read/navigate actions
+		// to an in-browser AI agent. No-ops on browsers without the API, which is
+		// currently almost all of them.
+		registerWebMcpTools({
+			origin: $page.url.origin,
+			// Read lazily so an agent calling the tool later sees current data.
+			items: () => data.cmsPaletteItems ?? [],
+			navigate: (path) => goto(path),
+			setTheme: (theme) => themePreference.set(theme)
 		});
 
 		// Listen for keyboard shortcuts (Cmd/Ctrl + K, Cmd/Ctrl + Shift + P)

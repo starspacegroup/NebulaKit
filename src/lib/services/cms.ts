@@ -717,3 +717,53 @@ export async function deleteContentTypeFromDB(
 
 	return { success: true };
 }
+
+/** One published, publicly-reachable CMS URL, flattened for sitemap.xml. */
+export interface SitemapContentRow {
+	/** Content type slug — the first path segment (`/blog/...`). */
+	typeSlug: string;
+	/** Item slug — the second path segment (`/blog/hello-world`). */
+	itemSlug: string;
+	/** Best available last-modified timestamp, or null if the row has none. */
+	lastmod: string | null;
+}
+
+/**
+ * Every published content item as a `{typeSlug, itemSlug, lastmod}` row, for
+ * sitemap.xml.
+ *
+ * One JOIN rather than a query per content type: a sitemap is regenerated on
+ * every crawler hit, and fanning out across N types would put N round-trips on
+ * a request that has no user waiting behind it but still bills D1 reads.
+ *
+ * Only `status = 'published'` is returned — the public `[contentType]` routes
+ * filter the same way, so drafts and archived items never leak into the index.
+ *
+ * @param limit Hard cap on rows. The sitemap protocol allows 50,000 URLs per
+ *   file; the default leaves generous headroom under that ceiling while keeping
+ *   the response small enough to build in a Worker without streaming.
+ */
+export async function listPublishedContentForSitemap(
+	db: D1Database,
+	limit = 10000
+): Promise<SitemapContentRow[]> {
+	const result = await db
+		.prepare(
+			`SELECT t.slug AS type_slug,
+			        i.slug AS item_slug,
+			        COALESCE(i.updated_at, i.published_at, i.created_at) AS lastmod
+			 FROM content_items i
+			 JOIN content_types t ON t.id = i.content_type_id
+			 WHERE i.status = 'published'
+			 ORDER BY lastmod DESC
+			 LIMIT ?`
+		)
+		.bind(limit)
+		.all<{ type_slug: string; item_slug: string; lastmod: string | null }>();
+
+	return (result.results || []).map((row) => ({
+		typeSlug: row.type_slug,
+		itemSlug: row.item_slug,
+		lastmod: row.lastmod
+	}));
+}
