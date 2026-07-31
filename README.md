@@ -21,6 +21,7 @@ If this repository is being used as a starter template, complete [docs/INITIAL_C
 - **💬 LLM Chat UI**: Ready-to-use chat interface for AI integration
 - **🔐 Full Authentication**: Email/password + SSO (Google, GitHub) with account linking
 - **📱 Mobile-First**: Responsive layouts optimized for all devices
+- **🤖 Agent Ready**: robots.txt with AI crawler rules, dynamic sitemap, `.well-known` discovery, Markdown content negotiation, and WebMCP tools — all working out of the box
 - **🎯 Drag & Drop**: Polished DnD with cross-column and mobile support
 - **⚡ TypeScript**: Full type safety with Cloudflare Workers types
 - **🎨 UI Components**: Beautiful, accessible components out of the box
@@ -62,33 +63,42 @@ Visit `http://localhost:4277` to see your app!
 
 ### 🚇 Local Tunneling (Cloudflare Tunnel)
 
-Share your local dev server with the outside world in one command — no config needed:
+Share your local dev server with the outside world — no account needed for the free mode:
 
 ```bash
-# Free public URL via trycloudflare.com (no account required)
+# Free public URL via trycloudflare.com (zero config, zero account)
 bun run tunnel
 # or: npm run tunnel
 
-# Run dev server + tunnel together (separate terminal not needed)
+# Run dev server + tunnel together in one command
 bun run dev:tunnel
 ```
 
 The tunnel URL (e.g. `https://random-words.trycloudflare.com`) is printed to the console as soon as the tunnel is up.
 
-**Custom domain** (e.g. `myapp.davis9001.dev`):
+**Custom domain** (e.g. `myapp.yourdomain.com`):
 
 1. Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com/) → Networks → Tunnels
 2. Create a tunnel, add a public hostname pointing to `http://localhost:4277`
 3. Copy the tunnel token
+4. Add your domain to `vite.config.ts` → `server.allowedHosts` (e.g. `'.yourdomain.com'`)
 
 ```bash
 TUNNEL_TOKEN=<your-token> bun run tunnel
 ```
 
 > **Prerequisite:** `cloudflared` must be installed.
+>
 > - macOS: `brew install cloudflared`
 > - Linux: https://pkg.cloudflare.com/index.html
 > - Windows: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+
+**What's pre-wired for tunnel use** (in `vite.config.ts`):
+
+- `allowedHosts` includes `trycloudflare.com` — no Vite 403 rejections on free tunnels
+- HMR is **off by default** — WebSocket connections through cloudflared are unreliable and cause page hangs; set `VITE_HMR=true` to re-enable for purely local dev
+- `staleDepsFix` plugin strips stale `?v=` hashes so Vite never returns 504s on first load through a tunnel
+- `optimizeDeps.include` pre-bundles Svelte at startup so the first tunneled page load doesn't trigger a slow on-demand optimization
 
 The tunnel script lives at `scripts/tunnel.js` and respects a `PORT` env var if you change the dev port.
 
@@ -121,6 +131,9 @@ npm run test:all
 - [Features](./FEATURES.md) - Detailed feature documentation and usage examples
 - [Contributing Guide](./CONTRIBUTING.md) - Development workflow and testing standards
 - [Theme System Guide](./docs/THEME_SYSTEM.md) - Comprehensive theming and accessibility guide
+- [Admin Stats](./docs/ADMIN_STATS.md) - First-party cookie-free analytics and the Cloudflare plan-limit meter
+- [Agent Readiness](./docs/AGENT_READINESS.md) - Discovery surfaces for AI agents and crawlers, the content-usage policy to review before launch, and the DNS records to add by hand
+- [In-App Documentation Rule](./docs/DOCUMENTATION_PAGE.md) - Keeping the `/documentation` route in sync with shipped features
 - [GitHub Copilot Instructions](.github/copilot-instructions.md) - AI-assisted development guidelines
 
 ## 🏗️ Project Structure

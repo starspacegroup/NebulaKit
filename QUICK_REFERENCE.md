@@ -16,6 +16,12 @@ npm run test:coverage    # Coverage report (must be ≥90%)
 npm run test:e2e         # End-to-end tests
 npm run test:all         # Run all tests
 
+# Tunneling (expose local dev server publicly via cloudflared)
+bun run tunnel           # Free quick tunnel (trycloudflare.com, no account needed)
+bun run dev:tunnel       # Dev server + tunnel in one command
+                         # TUNNEL_TOKEN=<token> bun run tunnel  # custom domain
+                         # VITE_HMR=true bun run dev  # re-enable HMR for local-only work
+
 # Deployment
 npm run deploy           # Deploy to Cloudflare Pages
 ```
@@ -62,6 +68,7 @@ tests/
 ## 🎯 Coding Standards
 
 ### Naming Conventions
+
 - **Components**: `UserProfile.svelte` (PascalCase)
 - **Files**: `user-service.ts` (kebab-case)
 - **Functions**: `getUserData()` (camelCase)
@@ -69,38 +76,34 @@ tests/
 - **Types**: `User`, `ApiResponse` (PascalCase)
 
 ### TypeScript
+
 ```typescript
 // ✅ Good - Explicit types
 export function getUser(id: string): Promise<User> {
-  return db.query('SELECT * FROM users WHERE id = ?', [id]);
+	return db.query('SELECT * FROM users WHERE id = ?', [id]);
 }
 
 // ❌ Bad - Using 'any'
 export function getUser(id: any): any {
-  return db.query(`SELECT * FROM users WHERE id = ${id}`);
+	return db.query(`SELECT * FROM users WHERE id = ${id}`);
 }
 ```
 
 ### Database (D1)
+
 ```typescript
 // ✅ Good - Parameterized queries
-await platform.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-  .bind(userId)
-  .first();
+await platform.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
 
 // ❌ Bad - SQL injection risk
-await platform.env.DB.prepare(`SELECT * FROM users WHERE id = ${userId}`)
-  .first();
+await platform.env.DB.prepare(`SELECT * FROM users WHERE id = ${userId}`).first();
 ```
 
 ## 🔧 Cloudflare Services
 
 ```typescript
 // D1 Database
-const result = await platform.env.DB
-  .prepare('SELECT * FROM table WHERE id = ?')
-  .bind(id)
-  .first();
+const result = await platform.env.DB.prepare('SELECT * FROM table WHERE id = ?').bind(id).first();
 
 // KV Storage
 await platform.env.KV.put('key', 'value');
@@ -118,52 +121,55 @@ await platform.env.QUEUE.send({ message: 'data' });
 
 ```svelte
 <style>
-  /* ✅ Use CSS variables */
-  .button {
-    background: var(--color-primary);
-    color: var(--text-primary);
-  }
+	/* ✅ Use CSS variables */
+	.button {
+		background: var(--color-primary);
+		color: var(--text-primary);
+	}
 
-  /* ❌ Don't hardcode colors */
-  .button {
-    background: #0066cc;
-    color: white;
-  }
+	/* ❌ Don't hardcode colors */
+	.button {
+		background: #0066cc;
+		color: white;
+	}
 </style>
 ```
 
 ## 🧪 Test Examples
 
 ### Unit Test
+
 ```typescript
 import { describe, it, expect } from 'vitest';
 
 describe('formatDate', () => {
-  it('should format ISO date string', () => {
-    expect(formatDate('2024-01-15')).toBe('January 15, 2024');
-  });
+	it('should format ISO date string', () => {
+		expect(formatDate('2024-01-15')).toBe('January 15, 2024');
+	});
 });
 ```
 
 ### Component Test
+
 ```typescript
 import { render, screen } from '@testing-library/svelte';
 import Button from './Button.svelte';
 
 it('should render button with text', () => {
-  render(Button, { props: { label: 'Click me' } });
-  expect(screen.getByText('Click me')).toBeInTheDocument();
+	render(Button, { props: { label: 'Click me' } });
+	expect(screen.getByText('Click me')).toBeInTheDocument();
 });
 ```
 
 ### E2E Test
+
 ```typescript
 import { test, expect } from '@playwright/test';
 
 test('should navigate to page', async ({ page }) => {
-  await page.goto('/');
-  await page.click('a[href="/about"]');
-  await expect(page).toHaveURL('/about');
+	await page.goto('/');
+	await page.click('a[href="/about"]');
+	await expect(page).toHaveURL('/about');
 });
 ```
 
@@ -236,11 +242,11 @@ npm run test:e2e:ui
 ---
 
 **Golden Rules**:
+
 1. ✅ Tests first, always
 2. ✅ 90%+ coverage, no exceptions
 3. ✅ Build over buy
 4. ✅ Cloudflare first
 5. ✅ Type safety everywhere
 
-*Happy coding! 🚀*
-
+_Happy coding! 🚀_
