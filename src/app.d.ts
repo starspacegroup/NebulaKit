@@ -1,6 +1,12 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
-import type { D1Database, KVNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
+import type {
+	D1Database,
+	IncomingRequestCfProperties,
+	KVNamespace,
+	Queue,
+	R2Bucket
+} from '@cloudflare/workers-types';
 
 declare global {
 	namespace App {
@@ -15,6 +21,7 @@ declare global {
 				avatarUrl?: string;
 				isOwner: boolean;
 				isAdmin?: boolean;
+				canViewStats?: boolean;
 				isPretend?: boolean;
 			};
 		}
@@ -32,7 +39,12 @@ declare global {
 				DISCORD_CLIENT_ID?: string;
 				DISCORD_CLIENT_SECRET?: string;
 				DEV_AUTH_BYPASS?: string;
+				/** Shared bearer secret for /api/cron/* scheduler endpoints. */
+				CRON_SECRET?: string;
 			};
+			/** Cloudflare request metadata. `cf.country` is the edge-provided ISO
+			 *  3166-1 alpha-2 code used by page-view stats — undefined locally. */
+			cf?: IncomingRequestCfProperties;
 			context: {
 				waitUntil(promise: Promise<any>): void;
 			};

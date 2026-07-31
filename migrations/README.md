@@ -78,6 +78,9 @@ Migrations that have already run are **skipped automatically** - they will never
 
 ## Current Migrations
 
-| File | Description |
-|------|-------------|
-| `0001_initial_schema.sql` | Base tables: users, sessions, oauth_accounts, chat_messages, indexes |
+| File                           | Description                                                                         |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| `0001_initial_schema.sql`      | Base tables: users, sessions, oauth_accounts, chat_messages, indexes                |
+| `0007_page_view_stats.sql`     | Page-view aggregate counters: daily, hourly, referrer, country, audience dimensions |
+| `0008_platform_usage.sql`      | Daily billable-request counters for the Cloudflare plan-limit meter                 |
+| `0009_user_can_view_stats.sql` | `users.can_view_stats` — per-admin grant for the Stats section                      |

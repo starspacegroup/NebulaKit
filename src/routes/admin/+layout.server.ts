@@ -5,6 +5,7 @@ import {
 	isPiiRevealed,
 	PII_REVEAL_COOKIE
 } from '$lib/server/pii-mask';
+import { canViewStats as computeCanViewStats } from '$lib/server/stats-guard';
 
 export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 	// Check if user is authenticated
@@ -24,6 +25,9 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 	return {
 		user: locals.user,
 		canRevealPii,
-		piiRevealed
+		piiRevealed,
+		// Drives the Stats nav entry. The route enforces this itself too — this
+		// only keeps a link the admin can't open out of the sidebar.
+		canViewStats: computeCanViewStats(locals.user)
 	};
 };

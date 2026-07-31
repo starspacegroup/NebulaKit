@@ -25,5 +25,10 @@ DISCORD_CLIENT_SECRET=your_discord_client_secret_here
 # dev tunnel (e.g. dev-<app>-<hash>.example.com). NEVER set this in production.
 DEV_AUTH_BYPASS=true
 
+# Shared bearer secret for /api/cron/* scheduler endpoints (currently the
+# page-view stats retention prune — see docs/ADMIN_STATS.md). Any scheduler POSTs
+# with `Authorization: Bearer <this>`. Unset means those endpoints answer 503.
+# CRON_SECRET=your_long_random_secret_here
+
 # Note: .dev.vars is gitignored and should never be committed
 # These values are used by `wrangler dev` for local development

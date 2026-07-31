@@ -1,0 +1,11 @@
+-- Per-admin "stats" permission (docs/ADMIN_STATS.md).
+--
+-- The owner always sees the admin Stats section. A plain admin needs this flag
+-- granted (by the owner, in user management) to view /admin/stats. The premise
+-- is that "can administer" and "can see the traffic and the money" are different
+-- grants worth separating.
+--
+-- Defaults to 0 so existing admins do not silently gain access on upgrade. This
+-- only ever NARROWS access — a non-admin cannot reach /admin at all (layout
+-- guard), so the stats guard never widens anything.
+ALTER TABLE users ADD COLUMN can_view_stats INTEGER DEFAULT 0;

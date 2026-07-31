@@ -15,6 +15,17 @@
 	--color-success: #28a745;
 	--color-warning: #ffc107;
 
+	/* Chart series (admin stats). A fixed categorical order — a series keeps its
+	   hue regardless of rank, so filtering never repaints the survivors. Both
+	   modes are stepped independently against their own surface and validated for
+	   colorblind separation (deutan/protan/tritan ΔE), lightness band, chroma and
+	   contrast; they are not a light/dark flip of each other. Re-validate before
+	   changing a value. */
+	--chart-views: #1d6fd0;
+	--chart-users: #0f9488;
+	--chart-content: #9d174d;
+	--chart-usage: #b45309;
+
 	/* Spacing */
 	--spacing-xs: 0.25rem;
 	--spacing-sm: 0.5rem;
@@ -62,6 +73,13 @@
 	--color-error: #ef4444;
 	--color-success: #10b981;
 	--color-warning: #f59e0b;
+
+	/* Chart series — stepped for the dark surface, not derived from the light
+	   values. See the note in :root. */
+	--chart-views: #3b82f6;
+	--chart-users: #10a396;
+	--chart-content: #b01e5c;
+	--chart-usage: #d97706;
 }
 
 /* Reset and base styles */
