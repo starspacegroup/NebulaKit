@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { site } from '$lib/site.config';
 
 	type PackageManager = 'bun' | 'npm';
 	type QuickStartLine =
@@ -99,6 +100,8 @@ npm run deploy`
 			<a href="#cloudflare-bindings">Cloudflare Bindings</a>
 			<a href="#database-migrations">Database Migrations</a>
 			<a href="#auth-and-setup">Auth and Setup</a>
+			<a href="#admin-analytics">Admin Analytics</a>
+			<a href="#agent-readiness">Agent Readiness</a>
 			<a href="#testing">Testing</a>
 			<a href="#project-structure">Structure</a>
 			<a href="#deployment">Deployment</a>
@@ -240,6 +243,20 @@ npm run deploy`
 						<li>CMS-style content routes and admin tooling are included for structured content.</li>
 						<li>Chat route becomes your primary AI surface once a provider is configured.</li>
 						<li>Command palette can expose AI-related navigation when providers are available.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Analytics and Operations</h3>
+					<ul>
+						<li>
+							First-party, cookie-free analytics at <code>/admin/stats</code> — traffic, audience, and
+							growth, with no third-party script.
+						</li>
+						<li>
+							A Cloudflare plan-limit meter that projects whether today's traffic will exhaust your
+							request allowance.
+						</li>
+						<li>Per-admin permission so operators can see stats without owner access.</li>
 					</ul>
 				</div>
 			</div>
@@ -443,6 +460,80 @@ npm run db:migrate:list</code
 			</div>
 		</section>
 
+		<section id="admin-analytics" class="docs-section">
+			<h2>Admin Analytics</h2>
+			<p>
+				<code>/admin/stats</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day
+				window, views by route, referrers, countries, an audience breakdown, and user and content growth
+				over time. It is first-party — there is no third-party script, no account, and no API key to provision.
+			</p>
+			<p>
+				Everything collected is a daily aggregate counter in D1. There are
+				<strong>no cookies, no identifiers, and no IP addresses</strong> anywhere in the feature. The
+				User-Agent is read to classify the request and then discarded, so only coarse buckets (operating
+				system, browser, device, language, viewport) are ever stored, and country comes from the Cloudflare
+				edge rather than from an IP lookup. Because nothing per-visitor is retained, this needs no consent
+				banner.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Turning It On</h3>
+					<ol>
+						<li>
+							Apply migrations <code>0007</code> through <code>0009</code> with
+							<code>db:migrate:local</code> (or <code>db:migrate</code> for remote).
+						</li>
+						<li>
+							Collection starts on the next request. Traffic and audience panels fill in as visits
+							arrive.
+						</li>
+						<li>
+							Country stays <code>(unknown)</code> in local development — it is supplied by the Cloudflare
+							edge.
+						</li>
+					</ol>
+				</div>
+				<div class="callout-card">
+					<h3>Granting Access</h3>
+					<p>
+						The owner always sees Stats. Any other admin needs the <code>can_view_stats</code> flag, which
+						defaults to off so existing admins do not gain access on upgrade:
+					</p>
+					<pre><code>UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';</code
+						></pre>
+					<p>
+						The permission is re-read from the database on every request, so revoking it takes
+						effect without waiting for a sign-out.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Retention</h3>
+					<p>
+						The counter tables grow one row per day per dimension unless pruned. Set
+						<code>CRON_SECRET</code> and have any scheduler POST to the retention endpoint; rows older
+						than 400 days are removed.
+					</p>
+					<pre><code
+							>curl -X POST https://your-app/api/cron/prune-view-stats \
+  -H "Authorization: Bearer $CRON_SECRET"</code
+						></pre>
+				</div>
+				<div class="callout-card">
+					<h3>Platform Usage Meter</h3>
+					<p>
+						The same page tracks <em>billable</em> Function invocations — a larger set than page
+						views, since bots, <code>/api/*</code> calls, 404s, and non-GET requests all count against
+						your plan. It projects whether today will exhaust the free 100,000-request daily allowance
+						before the UTC reset.
+					</p>
+					<p>
+						Treat it as an early warning and a floor, not a bill: the Cloudflare dashboard remains
+						authoritative.
+					</p>
+				</div>
+			</div>
+		</section>
+
 		<section id="testing" class="docs-section">
 			<h2>Testing and Quality Gates</h2>
 			<p>
@@ -544,6 +635,71 @@ npm run test:all</code
 					state.
 				</li>
 			</ul>
+		</section>
+
+		<section id="agent-readiness" class="docs-section">
+			<h2>Agent Readiness</h2>
+			<p>
+				This site publishes a machine-readable discovery layer so search crawlers and AI agents can
+				find it, read it efficiently, and understand how to interact with it. Everything below is
+				live and needs no configuration.
+			</p>
+			<ul>
+				<li>
+					<a href="/robots.txt">/robots.txt</a> — crawl rules, explicit entries for AI crawlers (GPTBot,
+					ClaudeBot, PerplexityBot and others), and Content Signals declaring how the content may be used.
+				</li>
+				<li>
+					<a href="/sitemap.xml">/sitemap.xml</a> — every public page plus all published CMS content,
+					regenerated on request so newly published items appear immediately.
+				</li>
+				<li>
+					<a href="/.well-known/api-catalog">/.well-known/api-catalog</a> — an RFC 9727 catalog of this
+					deployment's APIs.
+				</li>
+				<li>
+					<a href="/.well-known/agent-skills/index.json">/.well-known/agent-skills/index.json</a>
+					— short guides teaching an agent how to read content and contact the site, each with a SHA-256
+					digest.
+				</li>
+				<li>
+					<a href="/auth.md">/auth.md</a> — how agents authenticate (and what is not offered).
+				</li>
+				<li>
+					<a href="/api/health">/api/health</a> — service health, used as the catalog's status link.
+				</li>
+			</ul>
+
+			<h3>Reading pages as Markdown</h3>
+			<p>
+				Any page can be fetched as Markdown instead of HTML by sending an
+				<code>Accept: text/markdown</code> header. Browsers are unaffected — HTML remains the
+				default. Responses include an <code>x-markdown-tokens</code> estimate so an agent can budget context
+				before reading.
+			</p>
+			<pre><code>curl -H 'Accept: text/markdown' {site.url}/</code></pre>
+
+			<h3>In-browser tools (WebMCP)</h3>
+			<p>
+				When opened by a WebMCP-capable agent, this site registers tools for searching content,
+				listing pages, reading a page as Markdown, navigating, and switching theme. They are
+				read-and-navigate only, restricted to this site's own origin, and run with the visitor's
+				existing permissions.
+			</p>
+
+			<h3>Content usage policy</h3>
+			<p>
+				The shipped default is fully permissive — <code>search=yes, ai-input=yes, ai-train=yes</code
+				>
+				— which suits an open template. If you build a site with proprietary content, change
+				<code>CONTENT_SIGNAL</code> in <code>src/lib/agent-discovery.ts</code> before launching; every
+				robots.txt group picks the change up automatically.
+			</p>
+			<p>
+				DNS-based discovery (DNS-AID) is the one piece that must be added by hand, since DNS records
+				live with your provider rather than in this repo. See
+				<code>docs/AGENT_READINESS.md</code> for the exact records and the DNSSEC requirement.
+			</p>
 		</section>
 
 		<section id="references" class="docs-section">

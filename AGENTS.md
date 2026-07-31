@@ -82,6 +82,22 @@ Required, generated from the site's logo:
 
 Tiles and installed-app icons are **static** — they cannot switch on `prefers-color-scheme`; only the tab favicon can. Pick one default (dark) for the static assets. See [docs/INITIAL_CUSTOMIZATION.md](docs/INITIAL_CUSTOMIZATION.md) → Share Metadata And Icons for the checklist.
 
+### 7. `/documentation` Must Match The Shipped App
+
+**Failure mode:** A feature ships, `/documentation` still describes the previous app (or the NebulaKit template). Users follow instructions for a product that no longer exists, and the next AI session reads the stale page as truth.
+
+**Rule:** [src/routes/documentation/+page.svelte](src/routes/documentation/+page.svelte) is this app's user-facing documentation, not template filler. Any change that adds, removes, or alters a **user-visible** feature — route, page, auth/setup step, command, integration, binding, env var, keyboard shortcut, admin capability — must update that page **in the same change**. Never defer it to a follow-up task.
+
+**When this breaks:**
+
+- New feature added → Update the matching section, add the nav anchor if it's a new section, and extend [tests/unit/documentation-page.test.ts](tests/unit/documentation-page.test.ts) to assert the new content (tests first — see §1).
+- Feature removed or renamed → Delete or rewrite its docs in the same change. Stale instructions are a defect, not debt.
+- `/documentation` route missing (deleted during customization) → Recreate it, with links from [src/lib/components/Footer.svelte](src/lib/components/Footer.svelte) and the command palette. "We removed the template docs" is not an exemption; replace, never drop.
+- Docs page still says "NebulaKit" after customization → Rebrand it; see §5.
+- Internal-only refactor with no user-visible change → No doc update needed. State that explicitly in the commit/PR rather than staying silent.
+
+**Reference:** [docs/DOCUMENTATION_PAGE.md](docs/DOCUMENTATION_PAGE.md) — section map, scaffold for recreating the route, and the per-feature checklist.
+
 ---
 
 ## Architecture Notes

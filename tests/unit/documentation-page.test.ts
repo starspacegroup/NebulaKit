@@ -73,6 +73,41 @@ describe('Documentation Page', () => {
 		).toBeInTheDocument();
 	});
 
+	it('documents the admin analytics surface and its privacy stance', () => {
+		render(Page);
+
+		const statsSection = screen
+			.getByRole('heading', { name: /Admin Analytics/i })
+			.closest('section');
+		expect(statsSection).toBeTruthy();
+
+		const scoped = within(statsSection as HTMLElement);
+
+		expect(scoped.getAllByText(/\/admin\/stats/i).length).toBeGreaterThan(0);
+		// The privacy posture is the reason this ships instead of a GA tag, so it
+		// has to be stated on the page users actually read.
+		expect(
+			scoped.getByText(/no cookies, no identifiers, and no IP addresses/i)
+		).toBeInTheDocument();
+		expect(scoped.getAllByText(/can_view_stats/i).length).toBeGreaterThan(0);
+		expect(scoped.getAllByText(/CRON_SECRET/i).length).toBeGreaterThan(0);
+	});
+
+	it('lists analytics among the out-of-the-box capabilities', () => {
+		render(Page);
+
+		// The bullet wraps the route in <code>, so match on the element's whole
+		// text rather than a single text node.
+		expect(
+			screen.getByText((_content, element) => {
+				if (element?.tagName !== 'LI') return false;
+				return /first-party, cookie-free analytics at\s*\/admin\/stats/i.test(
+					element.textContent ?? ''
+				);
+			})
+		).toBeInTheDocument();
+	});
+
 	it('documents migration workflow with immutable migration guidance', () => {
 		render(Page);
 		expect(screen.getByRole('heading', { name: /Database Migrations/i })).toBeInTheDocument();
@@ -103,5 +138,66 @@ describe('Documentation Page', () => {
 		expect(
 			screen.getByRole('navigation', { name: /documentation navigation/i })
 		).toBeInTheDocument();
+	});
+
+	// AGENTS.md §8 — the agent-discovery surfaces are user-visible features, so
+	// /documentation has to describe them and keep describing them.
+	describe('agent readiness section', () => {
+		it('documents the section and links every published discovery surface', () => {
+			render(Page);
+
+			expect(screen.getByRole('heading', { name: /Agent Readiness/i })).toBeInTheDocument();
+
+			const surfaces: Array<[RegExp, string]> = [
+				[/\/robots\.txt/, '/robots.txt'],
+				[/\/sitemap\.xml/, '/sitemap.xml'],
+				[/api-catalog/, '/.well-known/api-catalog'],
+				[/agent-skills/, '/.well-known/agent-skills/index.json'],
+				[/auth\.md/, '/auth.md'],
+				[/api\/health/, '/api/health']
+			];
+
+			for (const [name, href] of surfaces) {
+				expect(screen.getByRole('link', { name })).toHaveAttribute('href', href);
+			}
+		});
+
+		it('explains markdown negotiation', () => {
+			render(Page);
+			expect(
+				screen.getByRole('heading', { name: /Reading pages as Markdown/i })
+			).toBeInTheDocument();
+			expect(screen.getAllByText(/Accept: text\/markdown/i).length).toBeGreaterThan(0);
+			expect(screen.getAllByText(/x-markdown-tokens/i).length).toBeGreaterThan(0);
+		});
+
+		it('explains the WebMCP tools and their limits', () => {
+			render(Page);
+			expect(screen.getByRole('heading', { name: /In-browser tools/i })).toBeInTheDocument();
+			expect(screen.getByText(/read-and-navigate only/i)).toBeInTheDocument();
+		});
+
+		it('warns that the shipped content policy allows AI training', () => {
+			// A downstream site with proprietary content must be told to change this
+			// before launch; burying it would be a defect.
+			render(Page);
+			expect(screen.getByRole('heading', { name: /Content usage policy/i })).toBeInTheDocument();
+			expect(screen.getAllByText(/ai-train=yes/i).length).toBeGreaterThan(0);
+			expect(screen.getAllByText(/CONTENT_SIGNAL/i).length).toBeGreaterThan(0);
+		});
+
+		it('flags DNS-AID as the step that must be done by hand', () => {
+			render(Page);
+			expect(screen.getByText(/DNS-based discovery \(DNS-AID\)/i)).toBeInTheDocument();
+		});
+
+		it('is reachable from the section navigation', () => {
+			render(Page);
+			const nav = screen.getByRole('navigation', { name: /documentation navigation/i });
+			expect(within(nav).getByRole('link', { name: /Agent Readiness/i })).toHaveAttribute(
+				'href',
+				'#agent-readiness'
+			);
+		});
 	});
 });
