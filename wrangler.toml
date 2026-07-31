@@ -2,22 +2,35 @@ name = "nebulakit"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
-# D1 Database
-# Create with: wrangler d1 create nebulakit-db
-# Then replace the database_id below with the actual ID
+# ─────────────────────────────────────────────────────────────────────────────
+# RESOURCE IDS ARE PLACEHOLDERS. Run `bun run setup:cf` (or create them by hand)
+# and paste YOUR ids below.
+#
+# Do NOT paste an id from another project. Cloudflare binds D1 and KV by **id**,
+# not by name — `database_name` is a label wrangler never verifies. A wrong
+# *name* is loud (`d1 migrations apply <name>` fails fast); a wrong *id* binds
+# cleanly to somebody else's database and looks perfectly healthy.
+#
+# This template used to ship real ids. Six derived projects inherited them and
+# all read/wrote one D1 + one KV — including shared OAuth secrets and a GitHub
+# PAT. Hence placeholders that fail loudly. See docs/CLOUDFLARE_SETUP.md.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# D1 Database — create with: wrangler d1 create <your-project>-db
 [[d1_databases]]
 binding = "DB"
-database_name = "nebulakit-db"
-database_id = "bd776be3-9823-4763-abb1-c18b40931456"
+database_name = "REPLACE_ME-db"
+database_id = "REPLACE_ME_RUN_SETUP_CF"
 migrations_dir = "./migrations"
 
-# KV Namespace
-# Create with: wrangler kv:namespace create "KV"
-# For local dev preview: wrangler kv:namespace create "KV" --preview
+# KV Namespace — create with:
+#   wrangler kv namespace create "KV"
+#   wrangler kv namespace create "KV" --preview
+# preview_id MUST differ from id, or `wrangler dev` writes straight into prod.
 [[kv_namespaces]]
 binding = "KV"
-id = "12a6576334dd4e16bf1e08d5cc1fac4a"
-preview_id = "e9b0a93432b1406786dc7b9b334da90d"
+id = "REPLACE_ME_RUN_SETUP_CF"
+preview_id = "REPLACE_ME_RUN_SETUP_CF_PREVIEW"
 # R2 Bucket
 # Create with: wrangler r2 bucket create nebulakit-files
 [[r2_buckets]]

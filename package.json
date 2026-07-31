@@ -4,6 +4,8 @@
 	"private": true,
 	"scripts": {
 		"prepare": "svelte-kit sync",
+		"check:bindings": "node scripts/check-bindings.mjs",
+		"setup:cf": "node scripts/setup-cf.mjs",
 		"dev": "vite dev --host 0.0.0.0 --port 4277",
 		"build": "vite build",
 		"preview": "vite preview --host 0.0.0.0 --port 4277",
@@ -20,11 +22,15 @@
 		"test:all": "npm run test && npm run test:e2e",
 		"validate:contrast": "node scripts/validate-theme-contrast.cjs",
 		"validate:all": "npm run check && npm run test && npm run validate:contrast",
-		"db:migrate": "wrangler d1 migrations apply nebulakit-db",
-		"db:migrate:local": "wrangler d1 migrations apply nebulakit-db --local",
-		"db:migrate:list": "wrangler d1 migrations list nebulakit-db",
+		"db:migrate": "node scripts/db-migrate.mjs apply",
+		"db:migrate:local": "node scripts/db-migrate.mjs apply --local",
+		"db:migrate:list": "node scripts/db-migrate.mjs list",
 		"tunnel": "node scripts/tunnel.js",
-		"dev:tunnel": "bun run dev & node scripts/tunnel.js"
+		"dev:tunnel": "bun run dev & node scripts/tunnel.js",
+		"predev": "node scripts/check-bindings.mjs",
+		"prebuild": "node scripts/check-bindings.mjs",
+		"predb:migrate": "node scripts/check-bindings.mjs",
+		"predb:migrate:list": "node scripts/check-bindings.mjs"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.40.0",

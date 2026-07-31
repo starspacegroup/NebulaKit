@@ -39,15 +39,32 @@ cd NebulaKit
 1. Install dependencies:
 
 ```bash
-npm install
+bun install
 ```
 
-2. Configure Cloudflare bindings:
-   - Copy `wrangler.toml` and update with your Cloudflare resource IDs
-   - Create D1 database: `wrangler d1 create nebulakit-db`
-   - Create KV namespace: `wrangler kv:namespace create "KV"`
-   - Create R2 bucket: `wrangler r2 bucket create nebulakit-files`
-   - Set up Turnstile at https://dash.cloudflare.com/
+2. Create **this project's own** Cloudflare resources:
+
+```bash
+npx wrangler login
+bun run setup:cf
+```
+
+That creates a D1 database, a KV namespace and its preview namespace, and
+writes their ids into `wrangler.toml`. Never paste ids from another project —
+Cloudflare binds D1 and KV by **id**, not by name, so a copied id attaches your
+app to somebody else's data and every query succeeds. The template ships
+`REPLACE_ME_*` placeholders and a guard that fails the build until they are
+real. See [docs/CLOUDFLARE_SETUP.md](docs/CLOUDFLARE_SETUP.md).
+
+3. Apply the database migrations:
+
+```bash
+bun run db:migrate
+```
+
+4. Optional extras:
+   - R2 bucket, if you use file storage: `npx wrangler r2 bucket create <project>-files`
+   - Turnstile, at https://dash.cloudflare.com/
 
 ## Development
 
