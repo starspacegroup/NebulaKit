@@ -10,6 +10,15 @@ export default defineConfig({
 		environment: 'happy-dom',
 		globals: true,
 		setupFiles: ['./tests/setup.ts'],
+		// Restore anything vi.stubGlobal() replaced once a test finishes.
+		//
+		// Several suites stub `crypto` with a bare `{ randomUUID }` to make IDs
+		// deterministic. Without this flag that object outlives the test — and
+		// because the pool is single-threaded (below), it leaks into every later
+		// FILE too, so unrelated code calling `crypto.subtle` blows up depending on
+		// which tests ran first. Symptom: a suite that passes alone and fails in a
+		// full run.
+		unstubGlobals: true,
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'json', 'html', 'lcov'],
