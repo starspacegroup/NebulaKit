@@ -21,8 +21,18 @@ import { dirname, join } from 'node:path';
 
 // Optional path arg so the same guard can vet any derived project's config:
 //   node scripts/check-bindings.mjs ../../other-project/wrangler.toml
+//
+// --warn reports the same problems but exits 0. Use it for commands that cannot
+// reach a remote resource (the dev server), where an unconfigured clone is a
+// legitimate state: a fresh "Use this template" checkout must be able to run
+// `bun run dev` and the e2e suite before anyone has a Cloudflare account. Any
+// command that WRITES to, or reads from, a real remote resource keeps the hard
+// failure — that is the whole point of the guard.
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const CONFIG = process.argv[2] ? process.argv[2] : join(root, 'wrangler.toml');
+const argv = process.argv.slice(2);
+const WARN_ONLY = argv.includes('--warn');
+const pathArg = argv.find((a) => !a.startsWith('--'));
+const CONFIG = pathArg ? pathArg : join(root, 'wrangler.toml');
 
 // Ids that leaked through the template. Never legitimate in a derived project.
 const QUARANTINED = new Map([
@@ -87,9 +97,14 @@ if (seen.database_id && seen.preview_database_id && seen.database_id === seen.pr
 }
 
 if (problems.length) {
-	console.error('\n  ✗ Cloudflare bindings are not safe to use:\n');
-	for (const p of problems) console.error(`    - ${p}`);
-	console.error(`
+	const heading = WARN_ONLY
+		? '\n  ! Cloudflare bindings are not configured yet:\n'
+		: '\n  ✗ Cloudflare bindings are not safe to use:\n';
+	const report = WARN_ONLY ? console.warn : console.error;
+
+	report(heading);
+	for (const p of problems) report(`    - ${p}`);
+	report(`
   Fix:
     wrangler d1 create <project>-db
     wrangler kv namespace create "KV"
@@ -98,7 +113,12 @@ if (problems.length) {
   Paste the returned ids into wrangler.toml. One set per project — never
   reuse another project's ids. See docs/CLOUDFLARE_SETUP.md.
 `);
-	process.exit(1);
-}
 
-console.log('check-bindings: ok — no placeholder, shared, or aliased ids.');
+	if (!WARN_ONLY) process.exit(1);
+
+	// Local-only command: nothing here can reach a real remote resource, so carry
+	// on. Anything that can will fail hard on the same problems.
+	report('  Continuing — this command only touches local state.\n');
+} else {
+	console.log('check-bindings: ok — no placeholder, shared, or aliased ids.');
+}

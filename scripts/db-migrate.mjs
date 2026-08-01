@@ -32,13 +32,20 @@ if (!['apply', 'list'].includes(action)) {
 	process.exit(1);
 }
 
-// The binding guard is the authority on whether these ids are safe to touch.
-// Run it here rather than relying on npm's pre* hooks — bun does not run them,
-// and this is the one command that WRITES to whatever it is pointed at.
-const check = spawnSync('node', [join(root, 'scripts', 'check-bindings.mjs')], {
-	cwd: root,
-	stdio: 'inherit'
-});
+// `--local` applies migrations to the miniflare SQLite file under .wrangler/ and
+// never contacts Cloudflare, so placeholder ids are harmless there — and must
+// stay harmless, or a fresh clone of this template can't run its own e2e suite
+// until someone provisions an account. Remote runs keep the hard guard: that
+// path is the one that writes to whatever the ids point at.
+const LOCAL = rest.includes('--local');
+
+// Run the guard here rather than relying on npm's pre* hooks — bun does not run
+// them, so the hooks alone would leave `bun run db:migrate` unprotected.
+const check = spawnSync(
+	'node',
+	[join(root, 'scripts', 'check-bindings.mjs'), ...(LOCAL ? ['--warn'] : [])],
+	{ cwd: root, stdio: 'inherit' }
+);
 if (check.status !== 0) process.exit(check.status ?? 1);
 
 let toml;
@@ -53,7 +60,7 @@ try {
 const match = toml.match(/^\s*database_name\s*=\s*"([^"]+)"/m);
 const name = match?.[1];
 
-if (!name || /REPLACE_ME/.test(name)) {
+if (!name || (/REPLACE_ME/.test(name) && !LOCAL)) {
 	console.error(`
   ✗ wrangler.toml has no real database_name yet${name ? ` (found "${name}")` : ''}.
 

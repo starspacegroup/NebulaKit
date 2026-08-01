@@ -29,10 +29,8 @@
 		"db:migrate:list": "node scripts/db-migrate.mjs list",
 		"tunnel": "node scripts/tunnel.js",
 		"dev:tunnel": "bun run dev & node scripts/tunnel.js",
-		"predev": "node scripts/check-bindings.mjs",
-		"prebuild": "node scripts/check-bindings.mjs",
-		"predb:migrate": "node scripts/check-bindings.mjs",
-		"predb:migrate:list": "node scripts/check-bindings.mjs"
+		"predev": "node scripts/check-bindings.mjs --warn",
+		"prebuild": "node scripts/check-bindings.mjs"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.40.0",
