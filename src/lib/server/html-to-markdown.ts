@@ -127,11 +127,16 @@ const ENTITIES: Record<string, string> = {
 
 /** Decode HTML character references in a text run. */
 export function decodeEntities(text: string): string {
-	return text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, (match, ref: string) => {
+	return text.replace(/&(#[xX]?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, (match, ref: string) => {
 		if (ref.startsWith('#')) {
 			const codePoint =
 				ref[1] === 'x' || ref[1] === 'X' ? parseInt(ref.slice(2), 16) : parseInt(ref.slice(1), 10);
-			return Number.isFinite(codePoint) && codePoint > 0 ? String.fromCodePoint(codePoint) : match;
+			// The upper bound matters: String.fromCodePoint throws above U+10FFFF,
+			// which would turn one malformed reference in a page into a failed
+			// markdown response for the whole document.
+			return Number.isFinite(codePoint) && codePoint > 0 && codePoint <= 0x10ffff
+				? String.fromCodePoint(codePoint)
+				: match;
 		}
 		return ENTITIES[ref] ?? match;
 	});

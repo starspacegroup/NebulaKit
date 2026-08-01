@@ -226,3 +226,149 @@ describe('token estimation', () => {
 		expect(estimateTokens('a'.repeat(401))).toBe(101);
 	});
 });
+
+describe('entity edge cases', () => {
+	it('accepts an uppercase hex marker', () => {
+		expect(decodeEntities('&#X42;')).toBe('B');
+	});
+
+	it('leaves a reference to code point zero alone rather than emitting NUL', () => {
+		expect(decodeEntities('&#0;')).toBe('&#0;');
+	});
+
+	it('leaves an out-of-range code point alone instead of throwing', () => {
+		// String.fromCodePoint throws above U+10FFFF; unguarded, one bad reference
+		// in a page would fail the whole markdown response.
+		expect(decodeEntities('&#x110000;')).toBe('&#x110000;');
+		expect(() => htmlToMarkdown(page('<p>&#x110000;</p>'))).not.toThrow();
+	});
+
+	it('decodes entities inside attribute values', () => {
+		expect(htmlToMarkdown(page('<a href="/a?x=1&amp;y=2">go</a>'))).toContain('(/a?x=1&y=2)');
+	});
+});
+
+describe('attribute parsing edge cases', () => {
+	it('reads a single-quoted value', () => {
+		expect(htmlToMarkdown(page("<a href='/single'>go</a>"))).toContain('(/single)');
+	});
+
+	it('treats a valueless attribute as empty rather than dropping the element', () => {
+		expect(htmlToMarkdown(page('<img src="/a.png" alt>'))).toContain('![](/a.png)');
+	});
+
+	it('drops an image with no source', () => {
+		expect(htmlToMarkdown(page('<p>before<img alt="x">after</p>'))).not.toContain('![x]');
+	});
+});
+
+describe('malformed markup', () => {
+	it('swallows an unterminated raw-text element to the end of input', () => {
+		const out = htmlToMarkdown('<html><body><main><p>a</p><script>var x = "</main>";');
+		expect(out).toContain('a');
+		expect(out).not.toContain('var x');
+	});
+
+	it('renders the whole tree when there is no <main> or <body>', () => {
+		expect(htmlToMarkdown('<h1>Bare</h1><p>text</p>')).toBe('# Bare\n\ntext');
+	});
+
+	it('keeps a stray <li> that never had a list around it', () => {
+		expect(htmlToMarkdown(page('<li>orphan</li>'))).toContain('orphan');
+	});
+
+	it('ignores a <br> sitting between blocks', () => {
+		expect(htmlToMarkdown(page('<p>a</p><br><p>b</p>'))).toBe('a\n\nb');
+	});
+});
+
+describe('empty blocks are dropped, not rendered as syntax', () => {
+	it.each([
+		['an empty blockquote', '<blockquote>   </blockquote>', '>'],
+		['a whitespace-only code block', '<pre><code>   </code></pre>', '```'],
+		['a table with no rows', '<table><tbody></tbody></table>', '|'],
+		['a list of empty items', '<ul><li></li><li>  </li></ul>', '-']
+	])('drops %s', (_label, fragment, marker) => {
+		expect(htmlToMarkdown(page(`<p>keep</p>${fragment}`))).toBe('keep');
+		expect(htmlToMarkdown(page(fragment))).not.toContain(marker);
+	});
+});
+
+describe('link edge cases', () => {
+	it('uses the destination as the text when the anchor has no words', () => {
+		expect(htmlToMarkdown(page('<a href="/docs"></a>'))).toBe('[/docs](/docs)');
+	});
+
+	it('renders nothing for an anchor with neither text nor destination', () => {
+		expect(htmlToMarkdown(page('<p>a<a></a>b</p>'))).toBe('ab');
+	});
+});
+
+describe('list edge cases', () => {
+	it('falls back to 1 when the start attribute is not a number', () => {
+		expect(htmlToMarkdown(page('<ol start="abc"><li>a</li><li>b</li></ol>'))).toBe('1. a\n2. b');
+	});
+
+	it('skips empty items without breaking the numbering of the rest', () => {
+		expect(htmlToMarkdown(page('<ol><li>a</li><li></li><li>c</li></ol>'))).toContain('1. a');
+	});
+});
+
+describe('table edge cases', () => {
+	it('finds rows nested inside thead and tbody', () => {
+		const html = page(
+			'<table><thead><tr><th>H</th></tr></thead><tbody><tr><td>C</td></tr></tbody></table>'
+		);
+		expect(htmlToMarkdown(html)).toContain('| H |');
+		expect(htmlToMarkdown(html)).toContain('| C |');
+	});
+
+	it('ignores the whitespace between rows that a formatter leaves behind', () => {
+		const out = htmlToMarkdown(
+			page('<table>\n  <tr><td>a</td></tr>\n  <tr><td>b</td></tr>\n</table>')
+		);
+		expect(out).toContain('| a |');
+		expect(out).toContain('| b |');
+	});
+
+	it('pads short rows so the pipe table stays rectangular', () => {
+		const out = htmlToMarkdown(
+			page('<table><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table>')
+		);
+		const widths = out
+			.split('\n')
+			.filter((line) => line.startsWith('|'))
+			.map((line) => line.split('|').length);
+		expect(new Set(widths).size).toBe(1);
+	});
+});
+
+describe('code block edge cases', () => {
+	it('handles a <pre> with no <code> child', () => {
+		expect(htmlToMarkdown(page('<pre>plain\n  block</pre>'))).toBe('```\nplain\n  block\n```');
+	});
+
+	it('reads the language from the <pre> when the <code> has no class', () => {
+		expect(htmlToMarkdown(page('<pre class="language-rust"><code>fn main() {}</code></pre>'))).toBe(
+			'```rust\nfn main() {}\n```'
+		);
+	});
+});
+
+describe('dedentCode', () => {
+	it('leaves code that has no common indentation alone', () => {
+		expect(dedentCode('a\nb')).toBe('a\nb');
+	});
+
+	it('collapses runs of blank lines to a single blank line', () => {
+		expect(dedentCode('a\n\n\n\nb')).toBe('a\n\nb');
+	});
+
+	it('trims the leading whitespace of a line shallower than the common indent', () => {
+		expect(dedentCode('    deep\n  shallow')).toBe('  deep\nshallow');
+	});
+
+	it('returns an empty string for whitespace-only input', () => {
+		expect(dedentCode('   \n\t\n')).toBe('');
+	});
+});
