@@ -43,7 +43,8 @@ Live at **`/admin/stats`**, gated on the per-admin `can_view_stats` grant.
    ```
 
    Retention is 400 days — roughly 13 months, so year-over-year comparisons still
-   have last year to compare against.
+   have last year to compare against. The prune covers all six counter tables,
+   including `platform_usage_daily`; nothing else deletes from any of them.
 
 That's it. Collection starts on the next request; no client-side script, no
 account, no API key.

@@ -336,7 +336,7 @@
 				<header class="chart-head">
 					<span class="chart-title">Page views</span>
 					<span class="chart-sub">
-						{totalViews.toLocaleString()} views · {signedInViews.toLocaleString()} signed-in ·
+						{totalViews.toLocaleString()} views · {signedInViews.toLocaleString()} signed-in views ·
 						{#if hourly}last 24 hours (UTC){:else}last {trafficWindow} days{/if}
 					</span>
 				</header>
@@ -363,7 +363,10 @@
 						<PagedRows items={traffic.byPath} noun="pages" let:shown>
 							<table class="stat-table">
 								<thead>
-									<tr><th>Route</th><th class="num">Views</th><th class="num">Signed-in</th></tr>
+									<tr
+										><th>Route</th><th class="num">Views</th><th class="num">Signed-in views</th
+										></tr
+									>
 								</thead>
 								<tbody>
 									{#each shown as row (row.pathKey)}

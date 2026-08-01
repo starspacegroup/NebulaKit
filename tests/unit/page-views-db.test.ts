@@ -327,13 +327,16 @@ describe('page-view queries', () => {
 
 		const batch = ctl.batches[0];
 		// A table missing here would grow forever, so the list is asserted whole.
-		expect(batch).toHaveLength(5);
+		// platform_usage_daily was missing until 2026-08-01 — this assertion passed
+		// the whole time because it only ever described what the code already did.
+		expect(batch).toHaveLength(6);
 		expect(batch.map((s) => s.query.match(/FROM (\w+)/)?.[1])).toEqual([
 			'page_view_daily',
 			'page_view_hourly',
 			'referrer_daily',
 			'country_view_daily',
-			'view_dimension_daily'
+			'view_dimension_daily',
+			'platform_usage_daily'
 		]);
 		for (const stmt of batch) expect(stmt.binds).toEqual(['2025-06-01']);
 	});

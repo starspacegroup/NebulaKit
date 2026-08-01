@@ -361,13 +361,20 @@ export async function recordViewportSample(
 		.run();
 }
 
-/** Delete counter rows older than the retention window (cron-driven). */
+/**
+ * Delete counter rows older than the retention window (cron-driven).
+ *
+ * Covers every daily counter table, including `platform_usage_daily` — that one
+ * is only a row a day, but nothing else deletes it, so leaving it out meant it
+ * grew for the life of the deployment.
+ */
 export async function pruneViewStats(db: D1Database, beforeDay: string): Promise<void> {
 	await db.batch([
 		db.prepare('DELETE FROM page_view_daily WHERE day < ?').bind(beforeDay),
 		db.prepare('DELETE FROM page_view_hourly WHERE day < ?').bind(beforeDay),
 		db.prepare('DELETE FROM referrer_daily WHERE day < ?').bind(beforeDay),
 		db.prepare('DELETE FROM country_view_daily WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM view_dimension_daily WHERE day < ?').bind(beforeDay)
+		db.prepare('DELETE FROM view_dimension_daily WHERE day < ?').bind(beforeDay),
+		db.prepare('DELETE FROM platform_usage_daily WHERE day < ?').bind(beforeDay)
 	]);
 }
