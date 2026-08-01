@@ -108,11 +108,14 @@ export default defineConfig({
 				// Hooks are tested implicitly through integration tests
 				'src/hooks.server.ts'
 			],
+			// AGENTS.md §1 calls 95% a hard floor. These were left at 90, so the
+			// documented rule was never the enforced one and coverage drifted to
+			// 94.28% without anything failing. Keep these and AGENTS.md in step.
 			thresholds: {
-				lines: 90,
-				functions: 90,
-				branches: 90,
-				statements: 90
+				lines: 95,
+				functions: 95,
+				branches: 95,
+				statements: 95
 			}
 		},
 		poolOptions: {
