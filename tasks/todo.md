@@ -61,8 +61,8 @@ Stash-integration evidence recorded on 2026-08-08:
   Chromium tests, `bun run validate:contrast` passed both themes, and `bun run build:ci` completed
   with the expected placeholder-binding warning.
 - Touched-file Prettier and `git diff --check HEAD` passed. During verification, another process
-  advanced local `main` from `e24f2ce` to unpushed commits `924a5ac` and `9058278`; no push, stash
-  drop, reset, or assistant-created commit was performed in this resolution session.
+  advanced local `main` from `e24f2ce` through multiple unpushed commits; no push, stash drop, reset,
+  or assistant-created commit was performed in this resolution session.
 
 - [ ] Review the complete path-scoped diff, commit it on the feature branch, push, open a draft PR,
       resolve source-related hosted checks, squash-merge into `main`, and verify remote state.
