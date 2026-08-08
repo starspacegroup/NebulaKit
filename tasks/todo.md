@@ -111,6 +111,15 @@ Delivery evidence recorded on 2026-08-08 (second session):
 - **Still open, needs an owner decision.** `migrations/0006_contact_form_submissions.sql` keeps its
   "Ported from AgapeVerse" comment. Migration files are immutable under the Release Rules, and that
   rule outranks a cosmetic scrub, so this needs a deliberate remedy rather than an edit.
+- Correction to the P1 item "Finish the independent-product conversion across code, Markdown, route
+  copy, scripts, and comments; remove obsolete customization artifacts and broken links." It was
+  marked complete but was not: `README.md` still carried one starter-template line (fixed in
+  `93a4624`), and `ROADMAP.md` called the product "the kit" 17 times and referenced
+  `docs/ZERO_ENV_SETUP.md`, which `924a5ac` deleted when it retired the customization workflow. Both
+  fixed in `7cd85e6`. The item is accurate as of that commit; it was not when first checked off.
+- A review of this branch found seven guidance defects in the second-session doc commits, all
+  verified against source and fixed in `8d14eeb`. The notable one: CLAUDE.md had documented the
+  `0010_` collision as permanent, which is what surfaced that it is still fixable before merge.
 - **Time-sensitive, decide before merge.** The `0010_` collision is not yet permanent. Only
   `0010_content_item_timestamp_proof.sql` is on `origin/main`; `0010_oauth_transactions.sql` and
   `0011_minimize_oauth_tokens.sql` are branch-only and have never been applied to a remote D1, so
