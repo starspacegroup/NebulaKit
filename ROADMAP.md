@@ -7,7 +7,7 @@ implementation starts from a known shape rather than a blank file.
 
 Downstream projects surveyed (2026-07-06):
 
-| Project                               | Divergence from kit                                             |
+| Project                               | Divergence from NebulaKit                                       |
 | ------------------------------------- | --------------------------------------------------------------- |
 | Nabu                                  | Large — media/AI-generation platform                            |
 | Payments/credits downstream app       | Large — consumer app with Stripe checkout and a credits ledger  |
@@ -18,8 +18,8 @@ Downstream projects surveyed (2026-07-06):
 
 ### Payments: Stripe integration + PPP region pricing (from the payments/credits app)
 
-A complete, kit-shaped Stripe module: checkout, product/price/discount management from
-the admin area, appearance matching the kit theme system, and — as a **first-class
+A complete, NebulaKit-shaped Stripe module: checkout, product/price/discount management from
+the admin area, appearance matching NebulaKit's theme system, and — as a **first-class
 concept, not a bolt-on — purchasing-power-parity (PPP) region pricing**. Full design in
 [`docs/PAYMENTS_AND_PPP.md`](./docs/PAYMENTS_AND_PPP.md); read it before starting this.
 
@@ -36,8 +36,8 @@ concept, not a bolt-on — purchasing-power-parity (PPP) region pricing**. Full 
 - Admin UI: `src/routes/admin/stripe/` (products, discounts) and
   `src/routes/api/admin/stripe-*` (config, bootstrap, products, prices, coupons,
   promotion-codes, options)
-- The `stripe-bootstrap` endpoint (idempotent first-time product/price setup) fits the
-  kit's zero-env-setup philosophy (`docs/ZERO_ENV_SETUP.md`).
+- The `stripe-bootstrap` endpoint (idempotent first-time product/price setup) matches how
+  the rest of NebulaKit provisions itself: run a script, not a hand-edited env file.
 
 ### Credits / points ledger (from the payments/credits app)
 
@@ -52,7 +52,7 @@ cron, and an admin transactions view. Upstream as a generic **credits** module.
 
 ### Media library on R2 (from Nabu)
 
-Upload, gallery, detail modal, and a file archive service over the kit's existing R2
+Upload, gallery, detail modal, and a file archive service over NebulaKit's existing R2
 binding — the missing "user uploads" story.
 
 - `src/lib/components/MediaUpload.svelte`, `MediaGallery.svelte`, `ImageDetailModal.svelte`,
@@ -63,7 +63,7 @@ binding — the missing "user uploads" story.
 ### CMS v2: WYSIWYG richtext + Svelte component embeds (from the CMS-heavy downstream site)
 
 > **Status: ✅ shipped (2026-07-12), with improvements.** The TipTap WYSIWYG,
-> Svelte embed system, and R2 media pipeline are all in the kit and tested.
+> Svelte embed system, and R2 media pipeline are all in NebulaKit and tested.
 > Beyond a straight port, the embed system gained **typed props** (schema-driven
 > auto-generated editor form, no raw-JSON editing), **one-step registration**
 > (drop a folder under `src/lib/cms/embeds/<name>/` — auto-discovered via
@@ -74,10 +74,10 @@ binding — the missing "user uploads" story.
 > [docs/CMS_EMBEDS.md](./docs/CMS_EMBEDS.md). **Remaining:** the opt-in
 > markdown-blog-import recipe (item 4 below) is not yet ported.
 
-**Goal: the kit's CMS grows up.** That site took the registry-driven CMS and made
+**Goal: NebulaKit's CMS grows up.** That site took the registry-driven CMS and made
 authoring actually pleasant — a real WYSIWYG editor, live Svelte components embedded
 inside richtext content, and an R2 image pipeline wired into the editor. Bring the
-whole system into the kit, and improve it where the downstream version cut corners.
+whole system into NebulaKit, and improve it where the downstream version cut corners.
 This is the flagship CMS upgrade; land it before the smaller CMS backports below.
 
 What downstream built (three changes: TipTap WYSIWYG, Svelte embed system, R2 media
@@ -105,8 +105,8 @@ pipeline):
      nothing rather than breaking the page
    - Reference embeds: the Dirac physics visualizations (`src/lib/cms/embeds/dirac/`)
      prove the pattern with canvas animation + interactivity
-3. **R2 media pipeline** — image upload from inside the editor, served from the
-   kit's R2 binding (`src/lib/cms/upload.ts` + media routes). Overlaps the
+3. **R2 media pipeline** — image upload from inside the editor, served from
+   NebulaKit's R2 binding (`src/lib/cms/upload.ts` + media routes). Overlaps the
    "Media library on R2 (from Nabu)" entry above — reconcile into ONE media
    module that both the CMS editor and the archive/gallery consume.
 4. **Blog-as-CMS pattern** — markdown blog imported into the CMS
@@ -114,7 +114,7 @@ pipeline):
    Ship as an opt-in import script + a documented "retire your markdown blog"
    recipe.
 
-Make it better in the kit ("maybe even better"):
+Make it better in NebulaKit ("maybe even better"):
 
 - **Typed embed props.** Downstream edits props as raw JSON. Give `EmbedDefinition`
   a props schema (zod or JSON Schema) and auto-generate the props form in the
@@ -128,18 +128,18 @@ Make it better in the kit ("maybe even better"):
   sandboxed iframe) inside the editor for visual-critical embeds.
 - **SSR the embeds where possible** so embedded components paint with the page
   instead of popping in on hydrate.
-- **Theme-token aware.** Reference embeds should consume the kit's theme system
+- **Theme-token aware.** Reference embeds should consume NebulaKit's theme system
   (design tokens) rather than hardcoded colors, so they look native in any app.
 - **Revision history tie-in.** Pairs with the "revision-history pattern" entry
   below — richtext + embeds are exactly the fields you want revert for.
 - **Reconcile with the payments/credits app's `escapeHtml` XSS hardening** (see
-  Backports) so the kit ships one coherent sanitize story: escape on render,
+  Backports) so NebulaKit ships one coherent sanitize story: escape on render,
   sanitize on write, allowlisted embed placeholders.
 
 ### AI generation provider framework (from Nabu)
 
 Pluggable text/image/video generation behind a provider registry, with job status and
-progress. Extends the kit's existing LLM chat + admin ai-keys pages.
+progress. Extends NebulaKit's existing LLM chat + admin ai-keys pages.
 
 - `src/lib/services/ai-text-generation.ts`, `ai-media-generation.ts`,
   `video-provider.ts`, `video-registry.ts`
@@ -159,7 +159,7 @@ progress. Extends the kit's existing LLM chat + admin ai-keys pages.
 ### Admin: PII privacy mode (from the payments/credits app)
 
 Masks personal data in admin views by default, with an explicit reveal action —
-a good default for any kit app with an admin area.
+a good default for any NebulaKit app with an admin area.
 
 - `src/lib/components/admin/ObfuscatedText.svelte`, `ObfuscatedAvatar.svelte`,
   `PiiPrivacyToggle.svelte`
@@ -179,7 +179,7 @@ Log in as a user for support/debugging, with an explicit stop/exit.
 ### System prompts admin (from the payments/credits app)
 
 Manage LLM system prompts from the admin area with a test-generate loop — natural
-companion to the kit's chat UI.
+companion to NebulaKit's chat UI.
 
 - `src/lib/utils/db/system-prompts.ts`, `src/routes/admin/system-prompts/`,
   `src/routes/api/admin/system-prompts/` (+ `test-generate`)
@@ -208,7 +208,7 @@ LinkedIn as reference implementations.
 ### Cron endpoint pattern (from the payments/credits app)
 
 `src/routes/api/cron/` convention wired to Cloudflare cron triggers in `wrangler.toml`,
-with a shared auth guard. Document + scaffold in the kit.
+with a shared auth guard. Document + scaffold in NebulaKit.
 
 ## Upstream candidates — smaller components & utils
 
@@ -228,28 +228,28 @@ with a shared auth guard. Document + scaffold in the kit.
   `src/lib/utils/discord.ts`) — tiny ops notifier for signups/purchases/errors.
 - **display-name.ts** (the payments/credits app) — safe public display-name derivation.
 - **oauth-state.ts** (the payments/credits app) — signed OAuth `state` handling; review
-  against the kit's current auth flow and upstream the hardening.
+  against NebulaKit's current auth flow and upstream the hardening.
 
-## Backports — fixes made downstream to kit files
+## Backports — fixes made downstream to NebulaKit files
 
 - **account-merge: configurable table list** (Nabu `src/lib/services/account-merge.ts`) —
   downstream apps add tables keyed by `user_id`; Nabu introduced
-  `USER_ID_TRANSFER_TABLES` (+ an admin-status check). Kit should make the transfer
+  `USER_ID_TRANSFER_TABLES` (+ an admin-status check). NebulaKit should make the transfer
   table list a documented extension point instead of a hardcoded set.
 - **theme store: defensive localStorage access** (the payments/credits app's
   `src/lib/stores/theme.ts`) — guards for SSR/disabled-storage environments before
   touching `localStorage` / `matchMedia`.
 - **cms XSS hardening** (the payments/credits app's `src/lib/cms/utils.ts`) —
-  `escapeHtml` for rendered content; reconcile with the kit's newer
+  `escapeHtml` for rendered content; reconcile with NebulaKit's newer
   `showInCommandPalette` normalization (changes went both directions).
-- **Simulated-SSO "PRETEND" providers** (kit `AuthProviderButtons.svelte`,
+- **Simulated-SSO "PRETEND" providers** (NebulaKit `AuthProviderButtons.svelte`,
   `utils/session.ts`) — a near-stock deployment stripped this dev-only affordance.
-  Decide: keep behind a dev flag or remove from the kit; it shouldn't require
+  Decide: keep behind a dev flag or remove from NebulaKit; it shouldn't require
   downstream deletion.
 
 ## Process note
 
 Two downstream deployments remain near-stock, so template drift is manageable today.
-When modules above land in the kit, sync them into those two first — they're effectively
+When modules above land in NebulaKit, sync them into those two first — they're effectively
 free upgrades there, while Nabu and the payments/credits app will need per-file
 reconciliation.
