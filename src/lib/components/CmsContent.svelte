@@ -1,36 +1,29 @@
 <!--
-  Renders stored CMS richtext, mounting Svelte embeds where the editor left
-  placeholders.
+  CmsContent — public renderer for CMS richtext HTML.
 
-  Content is stored as HTML with atom placeholders:
-
-    <div data-svelte-embed="name" data-props="{&quot;key&quot;:1}"></div>
-
-  A plain {@html} of that string emits the empty <div> and the component never
-  mounts, so every richtext surface must render through this component instead.
-  parseContentSegments splits the stored HTML into plain runs and embed
-  segments; each embed resolves through the component registry.
-
-  An embed whose component is not registered renders nothing. The registry
-  ships empty, so "not registered" is the template's default state rather than
-  an error worth surfacing to a visitor.
+  Splits stored HTML into segments: plain chunks are injected with {@html}
+  (content is sanitized server-side at write time), and Svelte embed
+  placeholders mount their live components from the embed registry.
 -->
 <script lang="ts">
 	import { parseContentSegments } from '$lib/cms/embed';
 	import { getEmbedComponent } from '$lib/cms/embeds';
 
+	// Typed to accept null/undefined because callers pass raw CMS field values,
+	// which are nullable. The `html || ''` below already handles them at runtime.
 	export let html: string | null | undefined = '';
 
-	$: segments = parseContentSegments(html ?? '');
+	$: segments = parseContentSegments(html || '');
 </script>
 
-{#each segments as segment}
+{#each segments as segment, i (i)}
 	{#if segment.type === 'html'}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- sanitized at write time -->
 		{@html segment.html}
-	{:else if segment.type === 'embed'}
-		{@const Embed = getEmbedComponent(segment.name)}
-		{#if Embed}
-			<svelte:component this={Embed} {...segment.props} />
+	{:else}
+		{@const component = getEmbedComponent(segment.name)}
+		{#if component}
+			<svelte:component this={component} {...segment.props} />
 		{/if}
 	{/if}
 {/each}

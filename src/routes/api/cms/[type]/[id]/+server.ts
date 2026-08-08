@@ -5,6 +5,7 @@
  * PUT    /api/cms/[type]/[id] - Update an item
  * DELETE /api/cms/[type]/[id] - Delete an item
  */
+import { sanitizeRichtextFields } from '$lib/cms/sanitize';
 import { LockedContentError } from '$lib/cms/types';
 import { getContentTypeRoutePrefix } from '$lib/cms/utils';
 import { runTimestampProofJob } from '$lib/content-proof/proof-job';
@@ -12,6 +13,7 @@ import {
 	deleteContentItem,
 	getContentItem,
 	getContentTypeBySlug,
+	getItemTags,
 	updateContentItem
 } from '$lib/services/cms';
 import { requireAdmin } from '$lib/server/auth-guard';
@@ -30,6 +32,14 @@ export const GET: RequestHandler = async ({ platform, locals, params }) => {
 		const item = await getContentItem(db, params.id);
 		if (!item) {
 			throw error(404, 'Content item not found');
+		}
+
+		// Attach assigned tags so editors can round-trip them. Best-effort:
+		// a tag lookup failure must not break loading the item itself.
+		try {
+			(item as typeof item & { tags?: unknown }).tags = await getItemTags(db, params.id);
+		} catch {
+			// tags are optional
 		}
 
 		return json({ item });
@@ -68,6 +78,14 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 
 		const body = await request.json();
 
+		// Sanitize richtext fields server-side before storage (write-time defense).
+		// contentType is already resolved above (the handler 404s without it), so this
+		// reuses it rather than issuing a second identical query.
+		let fields = body.fields;
+		if (fields) {
+			fields = sanitizeRichtextFields(fields, contentType.fields);
+		}
+
 		const item = await updateContentItem(
 			db,
 			params.id,
@@ -75,7 +93,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 				title: body.title,
 				slug: body.slug,
 				status: body.status,
-				fields: body.fields,
+				fields,
 				seoTitle: body.seoTitle,
 				seoDescription: body.seoDescription,
 				seoImage: body.seoImage,

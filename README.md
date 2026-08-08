@@ -13,6 +13,8 @@ NebulaKit is a production-ready SvelteKit template with everything you need to b
 
 If this repository is being used as a starter template, complete [docs/INITIAL_CUSTOMIZATION.md](./docs/INITIAL_CUSTOMIZATION.md) before normal feature work. Track whether that cleanup is still pending in [INITIAL_CUSTOMIZATION_STATUS.md](./INITIAL_CUSTOMIZATION_STATUS.md).
 
+Planned additions to the kit — including features to upstream from downstream NebulaKit projects — are tracked in [ROADMAP.md](./ROADMAP.md).
+
 ## 🌟 Features
 
 - **🚀 Cloudflare Full Stack**: D1 database, KV storage, R2 buckets, Queues, and Turnstile built-in

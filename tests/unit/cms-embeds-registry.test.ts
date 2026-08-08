@@ -4,17 +4,28 @@ import { embedManifest, getEmbedDefinition } from '../../src/lib/cms/embeds/mani
 import { EMBED_NAME_PATTERN } from '../../src/lib/cms/embed';
 
 describe('embed registry', () => {
-	it('ships empty, so a new project inherits no embeds it did not ask for', () => {
-		expect(embedManifest).toEqual([]);
+	// The registry ships the `callout` embed from the CMS v2 work. The
+	// "ships empty" assertion this replaced belonged to main's line, where the
+	// registry deliberately shipped nothing; the v2 implementation was chosen.
+	it('ships the callout embed from the registry', () => {
+		expect(embedManifest.map((e) => e.name)).toContain('callout');
 	});
 
 	it('returns undefined for a name that is not registered', () => {
-		expect(getEmbedDefinition('callout')).toBeUndefined();
+		expect(getEmbedDefinition('definitely-not-registered')).toBeUndefined();
+	});
+
+	it('resolves a registered embed to its definition', () => {
+		expect(getEmbedDefinition('callout')).toBeDefined();
 	});
 
 	it('returns null rather than undefined for an unregistered component', () => {
 		// CmsContent branches on null; undefined would slip through a `=== null` check.
-		expect(getEmbedComponent('callout')).toBeNull();
+		expect(getEmbedComponent('definitely-not-registered')).toBeNull();
+	});
+
+	it('resolves a registered embed to a component', () => {
+		expect(getEmbedComponent('callout')).toBeTruthy();
 	});
 
 	it('does not resolve inherited Object properties as components', () => {

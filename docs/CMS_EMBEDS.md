@@ -1,140 +1,121 @@
 # CMS Svelte Embeds
 
-Live Svelte components inside CMS richtext. An author drops an embed into the
-editor; the page renders the real component, with props, not a snapshot of its
-markup.
-
-The registry ships **empty** — the kit gives you the mechanism, not someone
-else's widgets.
-
----
-
-## How an embed is stored
-
-Embeds live in the stored HTML as atom placeholder blocks:
+NebulaKit's CMS lets authors drop **live, interactive Svelte components** into
+richtext content. Embeds are stored inside the HTML as inert placeholders, so
+content stays plain, sanitizable HTML in D1:
 
 ```html
-<div data-svelte-embed="callout" data-props='{"tone":"warning"}'></div>
+<div data-svelte-embed="callout" data-props='{"variant":"info"}'></div>
 ```
 
-The name is restricted to `[a-z0-9-]+`. Props are JSON, entity-escaped so they
-survive inside a double-quoted attribute. `src/lib/cms/embed.ts` is the single
-codec for that format — building placeholders and parsing them back — and it is
-pure string logic, so it runs in Workers, Vitest, and the browser alike.
+The public renderer (`CmsContent.svelte`) parses those placeholders and mounts
+the real components; the editor (`RichTextEditor.svelte`) shows them as
+non-editable cards with a **Props** button. Everything else in the richtext is
+sanitized on write (`sanitizeRichtextFields`), and the sanitizer allow-lists the
+placeholder shape.
 
-Malformed props degrade to `{}` rather than throwing. A half-broken attribute
-should cost you the props, not the page.
+A brand-neutral **Callout** embed ships as a working reference. Use it as a
+template for your own.
 
----
+## Adding an embed (one step)
 
-## The three parts
+Create one folder under `src/lib/cms/embeds/<name>/`. It's auto-discovered — no
+central list to edit.
 
-| Part          | File                                   | Job                                          |
-| ------------- | -------------------------------------- | -------------------------------------------- |
-| Manifest      | `src/lib/cms/embeds/manifest.ts`       | Metadata: name, label, description, defaults |
-| Component map | `src/lib/cms/embeds/index.ts`          | Maps a name to its Svelte component          |
-| Renderer      | `src/lib/components/CmsContent.svelte` | Turns stored HTML into live components       |
+```
+src/lib/cms/embeds/
+  <name>/
+    definition.ts     # metadata + typed props schema (no .svelte import)
+    <Name>.svelte      # the component that renders in published content
+```
 
-The manifest is deliberately free of `.svelte` imports. That is what lets the
-editor extension, tests, and any import script read embed metadata from
-anywhere — including a Workers context that cannot compile a component.
+- `<name>` (the folder name) is the embed id, stored in `data-svelte-embed`. It
+  must be kebab-case (`^[a-z0-9-]+$`) and match `definition.name`.
+- Exactly one `.svelte` component per folder; it's mapped to the embed by folder
+  name.
 
----
+### 1. `definition.ts`
 
-## Adding an embed
+```ts
+import { defineEmbed } from '../props-schema';
 
-1. **Build the component.** Its exported props are the embed's props.
+export const definition = defineEmbed({
+	name: 'callout',
+	label: 'Callout',
+	description: 'A highlighted note box.',
+	props: [
+		{
+			key: 'variant',
+			label: 'Variant',
+			type: 'select',
+			default: 'info',
+			options: [
+				{ label: 'Info', value: 'info' },
+				{ label: 'Warning', value: 'warning' }
+			]
+		},
+		{ key: 'title', label: 'Title', type: 'string', default: 'Note' }
+	]
+});
+```
 
-   ```svelte
-   <!-- src/lib/components/embeds/Callout.svelte -->
-   <script lang="ts">
-   	export let tone: 'info' | 'warning' = 'info';
-   	export let title = '';
-   </script>
+`defineEmbed` fills `defaultProps` from the schema automatically, so a new embed
+is a single declaration.
 
-   <aside class="callout callout--{tone}">
-   	{#if title}<strong>{title}</strong>{/if}
-   	<slot />
-   </aside>
-   ```
+### 2. `<Name>.svelte`
 
-2. **Declare it in the manifest.** `defaultProps` is what the editor inserts.
-
-   ```ts
-   export const embedManifest: EmbedDefinition[] = [
-   	{
-   		name: 'callout',
-   		label: 'Callout',
-   		description: 'A highlighted aside',
-   		defaultProps: { tone: 'info', title: '' }
-   	}
-   ];
-   ```
-
-3. **Register the component.**
-
-   ```ts
-   import Callout from '$lib/components/embeds/Callout.svelte';
-
-   const embedComponents: Record<string, ComponentType<SvelteComponent>> = {
-   	callout: Callout
-   };
-   ```
-
-That is the whole registration. No container is edited to add an embed — the
-same property the CMS embed system and the component library both rely on.
-
-The two entries must stay in step: a manifest entry with no component is
-insertable in the editor and invisible on the page.
-`tests/unit/cms-embeds-registry.test.ts` asserts exactly that, so a half-added
-embed fails the suite rather than shipping.
-
----
-
-## Rendering
-
-**Every richtext surface must render through `CmsContent`, never a bare
-`{@html}`.** A plain `{@html}` emits the placeholder `<div>` verbatim and the
-component never mounts — the embed silently disappears, which is how this went
-unnoticed before.
+Read the props as component exports and style with the kit's theme tokens so the
+embed looks native in any app (light or dark). Avoid `onMount`-only rendering so
+the embed paints during SSR.
 
 ```svelte
 <script lang="ts">
-	import CmsContent from '$lib/components/CmsContent.svelte';
+	export let variant: 'info' | 'warning' = 'info';
+	export let title = '';
 </script>
 
-<div class="cms-content">
-	<CmsContent html={String(item.fields.body ?? '')} />
-</div>
+<aside class="callout callout-{variant}">
+	<strong>{title}</strong>
+</aside>
 ```
 
-`CmsContent` splits the stored HTML into plain runs and embed segments,
-injecting the former with `{@html}` and mounting the latter through the
-registry.
+That's it — the embed now appears in the editor's **Insert embed** picker, gets
+an auto-generated props form, renders live on published pages, and survives
+write-time sanitization.
 
-An embed whose component is not registered **renders nothing**. Since the
-registry ships empty, unregistered is the default state of a fresh template
-rather than an error worth showing a visitor. The surrounding content still
-renders.
+## Typed props
 
----
+Each prop field in the schema (`src/lib/cms/embeds/props-schema.ts`) has a
+`type`:
 
-## Editing
+| `type`    | Editor control | Coercion                                   |
+| --------- | -------------- | ------------------------------------------ |
+| `string`  | text input     | `String(value)`; missing → default         |
+| `number`  | number input   | `Number(value)`; non-finite → default      |
+| `boolean` | checkbox       | truthy of `true` / `'true'` / `'on'` / `1` |
+| `select`  | dropdown       | must be one of `options`, else → default   |
 
-`src/lib/cms/richtext-embed-extension.ts` is the TipTap node. It reads
-`getEmbedDefinition(name)` for the label shown in the editor, so an embed with a
-manifest entry appears in the insert menu automatically.
+The editor renders the form from the schema (no hand-editing JSON), and
+`coerceProps` / `validateProps` guarantee stored props match their declared
+types. Embeds with **no** `props` schema fall back to the raw-JSON props editor.
 
----
+## How it fits together
 
-## Security note
+| File                               | Role                                                         |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `cms/embed.ts`                     | Placeholder codec + `parseContentSegments` (pure, no DOM)    |
+| `cms/embeds/props-schema.ts`       | Prop types, coercion/validation, `defineEmbed`               |
+| `cms/embeds/manifest.ts`           | Auto-discovers `definition.ts` files → `embedManifest`       |
+| `cms/embeds/index.ts`              | Auto-discovers `.svelte` files → `getEmbedComponent` (eager) |
+| `cms/richtext-embed-extension.ts`  | TipTap atom node (editor card + props button)                |
+| `components/RichTextEditor.svelte` | Editor: insert picker + auto props form                      |
+| `components/CmsContent.svelte`     | Public renderer: mounts embeds, `{@html}` for the rest       |
+| `cms/sanitize.ts`                  | Write-path HTML sanitizer (allow-lists the placeholder)      |
 
-`CmsContent` renders the non-embed parts of stored content with `{@html}`, and
-**the kit currently ships no HTML sanitizer on the write path**. Richtext is
-therefore stored and rendered as authored.
+## Security notes
 
-That is acceptable only while richtext authoring is restricted to trusted admins,
-which is the template's default. Before you widen authoring to a less-trusted
-role, add write-path sanitization — and make sure whatever allowlist you choose
-preserves `data-svelte-embed` and `data-props`, or you will strip every embed on
-save.
+- Richtext is sanitized **on write** (`sanitizeRichtextFields`, POST + PUT) with
+  `xss`, and rendered with `{@html}` on read. Writes are owner/admin-gated.
+- Unknown embed names render as nothing rather than breaking the page.
+- The sanitizer's SVG subset is presentational only — no `script`,
+  `foreignObject`, `use`, or `href`/`data:` URLs.

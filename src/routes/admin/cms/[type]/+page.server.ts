@@ -44,7 +44,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 	if (itemsRes.ok) {
 		const itemsData = await itemsRes.json();
 		items = itemsData.items || [];
-		totalItems = itemsData.totalItems || 0;
+		totalItems = itemsData.total || 0;
 		totalPages = itemsData.totalPages || 1;
 		currentPage = itemsData.page || 1;
 	}
