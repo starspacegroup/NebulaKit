@@ -1,4 +1,5 @@
 import { requireOwner } from '$lib/server/auth-guard';
+import { deleteSession } from '$lib/utils/db';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -38,7 +39,15 @@ export const POST: RequestHandler = async ({ platform, cookies, locals }) => {
 			}
 		}
 
-		// Clear the session cookie to force re-login
+		// Revoke the session row, then clear the cookie, to force re-login.
+		const sessionId = cookies.get('session');
+		if (sessionId && platform.env.DB) {
+			try {
+				await deleteSession(platform.env.DB, sessionId);
+			} catch {
+				// ignore — clearing the cookie still ends this session for the client
+			}
+		}
 		cookies.delete('session', { path: '/' });
 
 		console.log('✓ Setup configuration reset complete');

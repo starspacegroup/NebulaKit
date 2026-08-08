@@ -104,7 +104,12 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 		it('should include simulated connections for pretend users', async () => {
 			const mockEvent = {
 				locals: {
-					user: { id: 'dev-1', login: 'dev-user', isPretend: true, simulatedConnections: ['discord'] }
+					user: {
+						id: 'dev-1',
+						login: 'dev-user',
+						isPretend: true,
+						simulatedConnections: ['discord']
+					}
 				},
 				platform: {
 					env: {}
@@ -334,7 +339,24 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 			expect(data.success).toBe(true);
 		});
 
-		it('should unlink simulated connections for pretend users without DB', async () => {
+		it('should unlink simulated connections for pretend users, re-issuing a server session', async () => {
+			// The updated pretend identity is stored server-side now, so the endpoint
+			// needs the database — the cookie only carries the new opaque id.
+			const inserted: Record<string, string> = {};
+			const db = {
+				prepare: (sql: string) => ({
+					bind: (...args: unknown[]) => ({
+						run: async () => {
+							if (/^INSERT INTO sessions/i.test(sql)) {
+								inserted.id = args[0] as string;
+								inserted.data = args[3] as string;
+							}
+							return { success: true };
+						}
+					})
+				})
+			};
+
 			const mockEvent = {
 				locals: {
 					user: {
@@ -348,7 +370,7 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 					}
 				},
 				platform: {
-					env: {}
+					env: { DB: db }
 				},
 				url: new URL('http://localhost/api/auth/connections'),
 				request: {
@@ -362,7 +384,9 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 
 			expect(data.success).toBe(true);
 			expect(data.connections).toEqual([{ provider: 'github' }]);
-			expect(response.headers.get('Set-Cookie')).toContain('session=');
+			expect(response.headers.get('Set-Cookie')).toContain(`session=${inserted.id}`);
+			// The trusted payload — not the cookie — reflects the removed connection.
+			expect(JSON.parse(inserted.data).simulatedConnections).toEqual(['github']);
 		});
 
 		it('should return 500 when delete operation fails', async () => {

@@ -4,7 +4,7 @@ import {
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
-import { decodeSessionCookie } from '$lib/utils/session';
+import { getAuthSession } from '$lib/utils/db';
 import {
 	browserBucket,
 	deviceBucket,
@@ -21,47 +21,30 @@ import { sequence } from '@sveltejs/kit/hooks';
 
 // Auth handling hook
 const authHandler: Handle = async ({ event, resolve }) => {
-	// Get session cookie
+	// The cookie is an OPAQUE session id, not the user object. The trusted payload
+	// lives server-side in sessions.data (see createAuthSession) and is read back
+	// here on every request, so isOwner/isAdmin cannot be forged by editing the
+	// cookie. A cookie that resolves to no session leaves the request
+	// unauthenticated — fail closed.
 	const sessionId = event.cookies.get('session');
 
 	if (sessionId) {
-		const sessionData = decodeSessionCookie(sessionId);
-
-		if (sessionData) {
-			// Refresh admin flags from the database (optional - don't fail auth if
-			// DB unavailable). Reading them per-request rather than trusting the
-			// cookie means granting or revoking access takes effect immediately.
-			if (event.platform?.env?.DB) {
-				const db = event.platform.env.DB;
-				let userRecord: { is_admin: number; can_view_stats?: number } | null = null;
-				try {
-					userRecord = await db
-						.prepare('SELECT is_admin, can_view_stats FROM users WHERE id = ?')
-						.bind(sessionData.id)
-						.first<{ is_admin: number; can_view_stats: number }>();
-				} catch {
-					// `can_view_stats` arrives in migration 0009. On a database that
-					// hasn't run it yet the combined SELECT fails, which must not cost
-					// us the is_admin refresh — fall back to the narrower query.
-					try {
-						userRecord = await db
-							.prepare('SELECT is_admin FROM users WHERE id = ?')
-							.bind(sessionData.id)
-							.first<{ is_admin: number }>();
-					} catch {
-						// Database error - continue with session data from cookie
-					}
-				}
-
-				if (userRecord) {
-					sessionData.isAdmin = userRecord.is_admin === 1;
-					sessionData.canViewStats = userRecord.can_view_stats === 1;
-				}
+		const db = event.platform?.env?.DB;
+		let user = null;
+		if (db) {
+			try {
+				user = await getAuthSession(db, sessionId);
+			} catch {
+				// A database error means we cannot authenticate this request — treat
+				// it as unauthenticated rather than trusting the cookie.
+				user = null;
 			}
+		}
 
-			event.locals.user = sessionData;
+		if (user) {
+			event.locals.user = user;
 		} else {
-			// Invalid session, clear cookie
+			// Unknown, expired, or unverifiable session — clear the stale cookie.
 			event.cookies.delete('session', { path: '/' });
 		}
 	}

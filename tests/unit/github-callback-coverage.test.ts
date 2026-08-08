@@ -15,6 +15,20 @@ function makeOAuthCookies(sessionValue: unknown = null) {
 	};
 }
 
+// A permissive session-capable DB. A successful login now stores its payload
+// server-side (createAuthSession) before issuing the opaque-id cookie, so tests
+// exercising the success path need the store; without it the handler fails closed.
+function makeSessionDb() {
+	return {
+		prepare: vi.fn().mockReturnValue({
+			bind: vi.fn().mockReturnValue({
+				first: vi.fn().mockResolvedValue(null),
+				all: vi.fn().mockResolvedValue({ results: [] }),
+				run: vi.fn().mockResolvedValue({ success: true })
+			})
+		})
+	};
+}
 
 // Mock console to avoid noise
 vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -87,11 +101,14 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -109,11 +126,14 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -131,7 +151,9 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 		it('should redirect with not_configured when no OAuth config found', async () => {
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {}
@@ -159,12 +181,15 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
-						GITHUB_CLIENT_SECRET: 'client-secret'
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -187,12 +212,15 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
-						GITHUB_CLIENT_SECRET: 'client-secret'
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -222,12 +250,15 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
-						GITHUB_CLIENT_SECRET: 'client-secret'
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -268,14 +299,17 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
 						GITHUB_CLIENT_SECRET: 'client-secret',
 						GITHUB_OWNER_ID: 'owneruser', // username, not numeric
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -316,13 +350,16 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
 						GITHUB_CLIENT_SECRET: 'client-secret',
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -363,13 +400,16 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
 						GITHUB_CLIENT_SECRET: 'client-secret',
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -403,13 +443,16 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
 						GITHUB_CLIENT_SECRET: 'client-secret',
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -520,7 +563,9 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -560,12 +605,15 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies('invalid-base64!!!'),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
-						GITHUB_CLIENT_SECRET: 'client-secret'
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -629,7 +677,9 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(existingSession),
 				platform: {
 					env: {
@@ -694,7 +744,9 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -774,7 +826,9 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -845,7 +899,9 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -895,13 +951,16 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
 						GITHUB_CLIENT_SECRET: 'client-secret',
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -933,12 +992,15 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('https://example.com/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'https://example.com/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
-						GITHUB_CLIENT_SECRET: 'client-secret'
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -952,7 +1014,46 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 	});
 
 	describe('Database error handling', () => {
-		it('should continue auth even if DB fails', async () => {
+		it('redirects when no session store is configured at all', async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ access_token: 'test-token' })
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: 123456789,
+						login: 'testuser',
+						name: 'Test User',
+						email: 'test@github.com',
+						avatar_url: 'https://avatars.githubusercontent.com/u/123456789'
+					})
+			});
+
+			// No DB binding at all — the new-user path cannot store a session, so it
+			// redirects to login rather than issuing one. Covers the fail-closed guard.
+			const mockEvent = {
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
+				cookies: makeOAuthCookies(null),
+				platform: {
+					env: {
+						GITHUB_CLIENT_ID: 'client-id',
+						GITHUB_CLIENT_SECRET: 'client-secret'
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
+			await expect(GET(mockEvent as any)).rejects.toMatchObject({
+				status: 302,
+				location: '/auth/login?error=oauth_failed'
+			});
+		});
+
+		it('fails closed when the session store is unavailable', async () => {
 			mockFetch.mockResolvedValueOnce({
 				ok: true,
 				json: () => Promise.resolve({ access_token: 'test-token' })
@@ -976,7 +1077,9 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -989,9 +1092,10 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			// Should not throw, should continue with auth
-			const response = await GET(mockEvent as any);
-			expect(response.status).toBe(302);
+			// The session payload lives server-side now, so a DB that cannot store it
+			// must NOT yield an authenticated session. The old code trusted a
+			// client-authored cookie here — the exact auth bypass this replaces.
+			await expect(GET(mockEvent as any)).rejects.toBeTruthy();
 		});
 	});
 });

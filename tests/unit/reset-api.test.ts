@@ -11,7 +11,6 @@ const OWNER_LOCALS = {
 	}
 };
 
-
 /**
  * Tests for Reset API
  * TDD: Testing the reset configuration endpoint
@@ -41,6 +40,7 @@ describe('Reset API', () => {
 			const { POST } = await import('../../src/routes/api/reset/+server');
 
 			const mockCookies = {
+				get: vi.fn().mockReturnValue(undefined),
 				delete: vi.fn()
 			};
 
@@ -58,6 +58,7 @@ describe('Reset API', () => {
 
 			const mockGet = vi.fn().mockResolvedValue('true');
 			const mockCookies = {
+				get: vi.fn().mockReturnValue(undefined),
 				delete: vi.fn()
 			};
 
@@ -89,7 +90,7 @@ describe('Reset API', () => {
 						}
 					}
 				},
-				cookies: { delete: mockCookiesDelete }
+				cookies: { get: vi.fn().mockReturnValue(undefined), delete: mockCookiesDelete }
 			} as any);
 
 			const data = await response.json();
@@ -128,7 +129,7 @@ describe('Reset API', () => {
 						}
 					}
 				},
-				cookies: { delete: mockCookiesDelete }
+				cookies: { get: vi.fn().mockReturnValue(undefined), delete: mockCookiesDelete }
 			} as any);
 
 			const data = await response.json();
@@ -141,6 +142,7 @@ describe('Reset API', () => {
 
 			const mockGet = vi.fn().mockRejectedValue(new Error('Unexpected error'));
 			const mockCookies = {
+				get: vi.fn().mockReturnValue(undefined),
 				delete: vi.fn()
 			};
 
@@ -160,6 +162,7 @@ describe('Reset API', () => {
 			httpError.status = 404;
 			const mockGet = vi.fn().mockRejectedValue(httpError);
 			const mockCookies = {
+				get: vi.fn().mockReturnValue(undefined),
 				delete: vi.fn()
 			};
 

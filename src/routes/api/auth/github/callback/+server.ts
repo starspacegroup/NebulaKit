@@ -1,5 +1,6 @@
 import { mergeAccounts } from '$lib/services/account-merge';
 import { findUserByEmailOrAlias } from '$lib/utils/auth-identity';
+import { createAuthSession } from '$lib/utils/db';
 import { buildSessionCookieHeader } from '$lib/utils/session';
 import { consumeOAuthState } from '$lib/server/oauth-state';
 import { isRedirect, redirect } from '@sveltejs/kit';
@@ -249,10 +250,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 							isAdmin: linkedUser.is_admin === 1
 						};
 
-						const sessionCookie = btoa(JSON.stringify(sessionData))
-							.replace(/\+/g, '-')
-							.replace(/\//g, '_')
-							.replace(/=+$/, '');
+						const sessionCookie = await createAuthSession(platform.env.DB, sessionData);
 
 						const isSecure = url.protocol === 'https:';
 						const cookieParts = [
@@ -318,23 +316,21 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 						.run();
 
 					const redirectUrl = matchedUser.is_admin === 1 || isOwner ? '/admin' : '/';
+					const matchedSessionId = await createAuthSession(platform.env.DB, {
+						id: matchedUser.id,
+						login: githubUser.login,
+						email: matchedUser.email,
+						name: matchedUser.name || githubUser.name || githubUser.login,
+						avatarUrl: githubUser.avatar_url,
+						isOwner,
+						isAdmin: matchedUser.is_admin === 1 || isOwner,
+						githubLogin: githubUser.login
+					});
 					return new Response(null, {
 						status: 302,
 						headers: {
 							Location: new URL(redirectUrl, url.origin).toString(),
-							'Set-Cookie': buildSessionCookieHeader(
-								{
-									id: matchedUser.id,
-									login: githubUser.login,
-									email: matchedUser.email,
-									name: matchedUser.name || githubUser.name || githubUser.login,
-									avatarUrl: githubUser.avatar_url,
-									isOwner,
-									isAdmin: matchedUser.is_admin === 1 || isOwner,
-									githubLogin: githubUser.login
-								},
-								url
-							)
+							'Set-Cookie': buildSessionCookieHeader(matchedSessionId, url)
 						}
 					});
 				}
@@ -418,7 +414,13 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 			}
 		}
 
-		// Create session
+		// Create session. The payload must be stored server-side, so a login that
+		// cannot reach the database fails rather than handing out a cookie the
+		// hooks would reject anyway.
+		if (!platform?.env?.DB) {
+			throw redirect(302, '/auth/login?error=oauth_failed');
+		}
+
 		const sessionData = {
 			id: githubUser.id.toString(),
 			login: githubUser.login,
@@ -429,12 +431,8 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 			isAdmin
 		};
 
-		// Store session in cookie using URL-safe base64 encoding
-		// Replace +, /, = with URL-safe characters to avoid cookie parsing issues
-		const sessionCookie = btoa(JSON.stringify(sessionData))
-			.replace(/\+/g, '-')
-			.replace(/\//g, '_')
-			.replace(/=+$/, '');
+		// Store the trusted payload server-side; the cookie carries only the id.
+		const sessionCookie = await createAuthSession(platform.env.DB, sessionData);
 
 		// Track first admin login to lock setup page
 		if (isOwner && platform?.env?.KV) {

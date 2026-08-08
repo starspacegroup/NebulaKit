@@ -25,22 +25,6 @@ interface SessionUserInput {
 	isAdmin?: boolean;
 }
 
-function toBase64Url(value: string): string {
-	return btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function fromBase64Url(value: string): string {
-	let normalized = value;
-	if (normalized.includes('-') || normalized.includes('_')) {
-		normalized = normalized.replace(/-/g, '+').replace(/_/g, '/');
-	}
-	while (normalized.length % 4) {
-		normalized += '=';
-	}
-
-	return atob(normalized);
-}
-
 export function deriveLoginIdentifier(email: string, githubLogin?: string | null): string {
 	if (githubLogin) {
 		return githubLogin;
@@ -69,25 +53,21 @@ export function createSessionUser(input: SessionUserInput): SessionUser {
 	};
 }
 
-export function encodeSession(user: SessionUser): string {
-	return toBase64Url(JSON.stringify(user));
-}
-
-export function decodeSessionCookie(sessionCookie?: string): SessionUser | null {
-	if (!sessionCookie) {
-		return null;
-	}
-
-	try {
-		return JSON.parse(fromBase64Url(sessionCookie)) as SessionUser;
-	} catch {
-		return null;
-	}
-}
-
-export function buildSessionCookieHeader(user: SessionUser, url: URL): string {
+/**
+ * Build the Set-Cookie header for a session.
+ *
+ * The value is an OPAQUE session id (from createAuthSession), never the user
+ * object. The trusted payload lives server-side in sessions.data, so a client
+ * that edits this cookie only names a different (non-existent) session and is
+ * refused — isOwner/isAdmin can no longer be forged in the cookie.
+ *
+ * The cookie used to carry base64(JSON(user)); `encodeSession`/`decodeSessionCookie`
+ * were removed with that scheme. Do not reintroduce a cookie the hooks trust
+ * without a server-side lookup.
+ */
+export function buildSessionCookieHeader(sessionId: string, url: URL): string {
 	const cookieParts = [
-		`session=${encodeSession(user)}`,
+		`session=${sessionId}`,
 		'Path=/',
 		'HttpOnly',
 		'SameSite=Lax',

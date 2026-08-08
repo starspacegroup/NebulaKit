@@ -1,5 +1,6 @@
 import { mergeAccounts } from '$lib/services/account-merge';
 import { findUserByEmailOrAlias, resolveOwnerStatus } from '$lib/utils/auth-identity';
+import { createAuthSession } from '$lib/utils/db';
 import { buildSessionCookieHeader } from '$lib/utils/session';
 import { consumeOAuthState } from '$lib/server/oauth-state';
 import { isRedirect, redirect } from '@sveltejs/kit';
@@ -211,10 +212,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 							isAdmin: linkedUser.is_admin === 1 || isOwner
 						};
 
-						const sessionCookie = btoa(JSON.stringify(sessionData))
-							.replace(/\+/g, '-')
-							.replace(/\//g, '_')
-							.replace(/=+$/, '');
+						const sessionCookie = await createAuthSession(platform.env.DB, sessionData);
 
 						const isSecure = url.protocol === 'https:';
 						const cookieParts = [
@@ -266,6 +264,16 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 					}
 
 					const isOwner = await resolveOwnerStatus(platform, matchedUser);
+					const matchedSessionId = await createAuthSession(platform.env.DB, {
+						id: matchedUser.id,
+						login: matchedUser.github_login || discordUser.username,
+						email: matchedUser.email,
+						name: matchedUser.name || discordUser.global_name || discordUser.username,
+						avatarUrl: matchedUser.github_avatar_url || avatarUrl,
+						isOwner,
+						isAdmin: matchedUser.is_admin === 1 || isOwner,
+						githubLogin: matchedUser.github_login || undefined
+					});
 					return new Response(null, {
 						status: 302,
 						headers: {
@@ -273,19 +281,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 								isOwner || matchedUser.is_admin === 1 ? '/admin' : '/',
 								url.origin
 							).toString(),
-							'Set-Cookie': buildSessionCookieHeader(
-								{
-									id: matchedUser.id,
-									login: matchedUser.github_login || discordUser.username,
-									email: matchedUser.email,
-									name: matchedUser.name || discordUser.global_name || discordUser.username,
-									avatarUrl: matchedUser.github_avatar_url || avatarUrl,
-									isOwner,
-									isAdmin: matchedUser.is_admin === 1 || isOwner,
-									githubLogin: matchedUser.github_login || undefined
-								},
-								url
-							)
+							'Set-Cookie': buildSessionCookieHeader(matchedSessionId, url)
 						}
 					});
 				}
@@ -347,7 +343,12 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 			}
 		}
 
-		// Create session
+		// Create session. Fail closed if the store is unreachable rather than
+		// issuing a cookie the hooks would reject.
+		if (!platform?.env?.DB) {
+			throw redirect(302, '/auth/login?error=oauth_failed');
+		}
+
 		const sessionData = {
 			id: userId,
 			login: discordUser.username,
@@ -358,11 +359,8 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 			isAdmin
 		};
 
-		// Store session in cookie using URL-safe base64 encoding
-		const sessionCookie = btoa(JSON.stringify(sessionData))
-			.replace(/\+/g, '-')
-			.replace(/\//g, '_')
-			.replace(/=+$/, '');
+		// Store the trusted payload server-side; the cookie carries only the id.
+		const sessionCookie = await createAuthSession(platform.env.DB, sessionData);
 
 		// Redirect to home
 		const redirectUrl = '/';

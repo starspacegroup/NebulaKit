@@ -15,6 +15,20 @@ function makeOAuthCookies(sessionValue: unknown = null) {
 	};
 }
 
+// A permissive session-capable DB. A successful login now stores its payload
+// server-side (createAuthSession) before issuing the opaque-id cookie, so tests
+// exercising the success path need the store; without it the handler fails closed.
+function makeSessionDb() {
+	return {
+		prepare: vi.fn().mockReturnValue({
+			bind: vi.fn().mockReturnValue({
+				first: vi.fn().mockResolvedValue(null),
+				all: vi.fn().mockResolvedValue({ results: [] }),
+				run: vi.fn().mockResolvedValue({ success: true })
+			})
+		})
+	};
+}
 
 // Mock console to avoid noise
 vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -87,11 +101,14 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -109,11 +126,14 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -132,7 +152,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 
 		it('should redirect with not_configured when no OAuth config found', async () => {
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {}
@@ -160,12 +182,15 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
-						DISCORD_CLIENT_SECRET: 'client-secret'
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -188,12 +213,15 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
-						DISCORD_CLIENT_SECRET: 'client-secret'
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -223,12 +251,15 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
-						DISCORD_CLIENT_SECRET: 'client-secret'
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -265,12 +296,15 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
-						DISCORD_CLIENT_SECRET: 'client-secret'
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -310,13 +344,16 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
 						DISCORD_CLIENT_SECRET: 'client-secret',
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -355,13 +392,16 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
 						DISCORD_CLIENT_SECRET: 'client-secret',
-						KV: mockKV
+						KV: mockKV,
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -393,12 +433,15 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies('invalid-base64!!!'),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
-						DISCORD_CLIENT_SECRET: 'client-secret'
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -455,7 +498,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(existingSession),
 				platform: {
 					env: {
@@ -493,12 +538,15 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('https://example.com/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'https://example.com/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						DISCORD_CLIENT_ID: 'client-id',
-						DISCORD_CLIENT_SECRET: 'client-secret'
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: makeSessionDb()
 					}
 				}
 			};
@@ -564,7 +612,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -635,7 +685,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -714,7 +766,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -786,7 +840,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -805,7 +861,7 @@ describe('Discord Callback Server - Extended Coverage', () => {
 	});
 
 	describe('Database error handling', () => {
-		it('should continue auth even if DB fails', async () => {
+		it('fails closed when the session store is unavailable', async () => {
 			mockFetch.mockResolvedValueOnce({
 				ok: true,
 				json: () => Promise.resolve({ access_token: 'test-token' })
@@ -829,7 +885,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
@@ -842,9 +900,10 @@ describe('Discord Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/discord/callback/+server');
 
-			// Should not throw, should continue with auth
-			const response = await GET(mockEvent as any);
-			expect(response.status).toBe(302);
+			// The session payload lives server-side now, so a DB that cannot store it
+			// must NOT yield an authenticated session — the old code trusted a
+			// client-authored cookie here, which was the auth bypass this replaces.
+			await expect(GET(mockEvent as any)).rejects.toBeTruthy();
 		});
 	});
 
@@ -892,7 +951,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(existingSession),
 				platform: {
 					env: {
@@ -997,7 +1058,9 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'),
+				url: new URL(
+					'http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state'
+				),
 				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
