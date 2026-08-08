@@ -101,12 +101,30 @@ Delivery evidence recorded on 2026-08-08 (second session):
   than who owns them. Nabu keeps its name as a first-party sibling already cross-linked from
   AGENTS.md. The PPP worked example keeps its placeholder figures, which carry the doc's
   PPP-is-not-FX point and disclose no real pricing.
-- Residual disclosure, out of scope for that decision and pre-existing on public `origin/main`:
-  attribution comments in `migrations/0006_contact_form_submissions.sql`, `src/lib/server/pii-mask.ts`,
-  and `src/lib/utils/contact-validation.ts`; a row in `docs/CLOUDFLARE_SETUP.md`; and the owner's own
-  GitHub handle and domain as fixtures in four test files. The migration comment cannot simply be
-  edited — migrations are immutable under the Release Rules — so it needs a deliberate remedy rather
-  than a scrub. Left for the owner.
+- Residual disclosure closed in `8937376`, except where a rule forbids it. The attribution comments
+  in `src/lib/server/pii-mask.ts` and `src/lib/utils/contact-validation.ts` now credit a downstream
+  app without naming it, and the shared-database incident table in `docs/CLOUDFLARE_SETUP.md`
+  identifies the six affected projects by role; the forensics are unchanged. First-party names
+  (NebulaKit, Guides) stay, being already cross-linked from AGENTS.md.
+- `.remember/` was untracked but not ignored, so `git add -A` could have committed session
+  transcripts containing the identifiers being removed. Added to `.gitignore` in `8937376`.
+- **Still open, needs an owner decision.** `migrations/0006_contact_form_submissions.sql` keeps its
+  "Ported from AgapeVerse" comment. Migration files are immutable under the Release Rules, and that
+  rule outranks a cosmetic scrub, so this needs a deliberate remedy rather than an edit.
+- **Still open, deliberately not actioned.** 33 tracked files carry pre-existing Prettier drift,
+  including `.prettierrc` itself. Not swept: it would add 33 unrelated files to a 223-file PR
+  awaiting merge, and the stated verification gate is touched-file Prettier, not repo-wide. The
+  prior "touched-file Prettier passed" entries remain accurate as written.
+- The owner's own GitHub handle and domain remain as fixtures in four test files. Lower risk than
+  third-party names and left alone.
+
+Full-gate evidence recorded on 2026-08-08 (second session), after the doc and scrub commits:
+
+- `bun run test:coverage` passed: 97.86% statements, 95.13% branches, 97.96% functions, 98.42%
+  lines — all above the 95 floor, with branches the narrowest margin at 0.13 points.
+- `bun run check` reported 0 errors and 0 warnings across 1,634 files.
+- Not re-run this session, so still resting on the prior entries above: E2E, contrast validation,
+  local D1 migration, and `build:ci`. No change here touched routes, themes, schema, or bindings.
 
 ## Explicitly outside this worktree
 
