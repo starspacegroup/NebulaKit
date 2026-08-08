@@ -1,4 +1,5 @@
 import { requireOwner } from '$lib/server/auth-guards';
+import { deleteSession } from '$lib/utils/db';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -36,7 +37,15 @@ export const POST: RequestHandler = async ({ platform, cookies, locals }) => {
 		await Promise.all(keysToDelete.map((key) => platform.env.KV.delete(key)));
 		await platform.env.DB.prepare('DELETE FROM sessions').run();
 
-		// Clear the session cookie to force re-login
+		// Revoke the session row, then clear the cookie, to force re-login.
+		const sessionId = cookies.get('session');
+		if (sessionId && platform.env.DB) {
+			try {
+				await deleteSession(platform.env.DB, sessionId);
+			} catch {
+				// ignore — clearing the cookie still ends this session for the client
+			}
+		}
 		cookies.delete('session', { path: '/' });
 
 		return json({

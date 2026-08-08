@@ -41,8 +41,7 @@ describe('OAuth state security', () => {
 	});
 
 	it('rejects malformed, expired, and future-dated signed state payloads', async () => {
-		const { verifyOAuthState } = await import('../../src/lib/utils/oauth-state');
-		const { signValue } = await import('../../src/lib/utils/session');
+		const { signValue, verifyOAuthState } = await import('../../src/lib/utils/oauth-state');
 		const state = 'browser-state';
 		const now = Date.now();
 		const invalidPayloads = [
@@ -399,7 +398,6 @@ describe('OAuth state security', () => {
 		'binds %s link state to the current opaque session',
 		async (provider) => {
 			const { GET } = await importOAuthInitiation(provider);
-			const { signValue } = await import('../../src/lib/utils/session');
 			const db = database();
 			const set = vi.fn();
 			const url = new URL(`https://example.com/api/auth/${provider}?mode=link`);
@@ -409,7 +407,9 @@ describe('OAuth state security', () => {
 				GITHUB_CLIENT_ID: provider === 'github' ? 'client-id' : undefined,
 				DISCORD_CLIENT_ID: provider === 'discord' ? 'client-id' : undefined
 			};
-			const sessionCookie = await signValue({ token: 'current-session-token' }, 'session-secret');
+			// The merged scheme's cookie is the opaque token itself; the initiation
+			// route validates it against the sessions table before binding.
+			const sessionCookie = 'current-session-token';
 
 			await expect(
 				GET({
@@ -466,11 +466,10 @@ describe('OAuth state security', () => {
 	);
 
 	it.each(['github', 'discord'] as const)(
-		'accepts valid %s state and issues a signed session',
+		'accepts valid %s state and issues a server-side opaque session',
 		async (provider) => {
 			const { createOAuthTransaction, oauthStateCookieName } =
 				await import('../../src/lib/utils/oauth-state');
-			const { decodeDatabaseSessionCookie } = await import('../../src/lib/utils/session');
 			const db = database();
 			const issued = await createOAuthTransaction(
 				db as never,
@@ -533,13 +532,17 @@ describe('OAuth state security', () => {
 			const cookieValue = response.headers.get('Set-Cookie')?.match(/^session=([^;]+)/)?.[1];
 
 			expect(response.status).toBe(302);
-			expect(cookieValue).toContain('.');
+			// Opaque scheme: the cookie is a bare base64url token (no payload, no
+			// signature dot) and the trusted payload was written server-side.
+			expect(cookieValue).toMatch(/^[A-Za-z0-9_-]+$/);
+			expect(cookieValue).not.toContain('.');
 			const oauthInsert = db.bindings.find(({ sql }) => sql.includes('INSERT INTO oauth_accounts'));
 			expect(oauthInsert?.values).toHaveLength(4);
 			expect(oauthInsert?.values).not.toContain('provider-token');
-			await expect(decodeDatabaseSessionCookie(cookieValue, 'session-secret')).resolves.toMatch(
-				/^[A-Za-z0-9_-]+$/
-			);
+			const sessionInsert = db.bindings.find(({ sql }) => sql.includes('INSERT INTO sessions'));
+			expect(sessionInsert?.sql).toContain('data');
+			// The stored id must be a DIGEST of the cookie token, never the token.
+			expect(sessionInsert?.values).not.toContain(cookieValue);
 		}
 	);
 });
@@ -553,7 +556,9 @@ function database() {
 				bindings.push({ sql, values });
 				return {
 					first: vi.fn().mockResolvedValue(
-						sql.includes('oauth_transactions')
+						sql.includes('FROM sessions')
+							? { id: 'session-digest', user_id: 'user-1', expires_at: '2099-01-01T00:00:00.000Z' }
+							: sql.includes('oauth_transactions')
 							? { intent: 'login', user_id: null, session_id: null }
 							: sql.includes('SELECT id, email, name, github_login')
 								? {

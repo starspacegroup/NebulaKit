@@ -247,7 +247,7 @@ describe('Database Utilities', () => {
 
 			expect(result).toEqual(mockSession);
 			expect(mockDb.prepare).toHaveBeenCalledWith(
-				'SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")'
+				"SELECT * FROM sessions WHERE id = ? AND datetime(expires_at) > datetime('now')"
 			);
 		});
 
@@ -331,7 +331,7 @@ describe('Database Utilities', () => {
 			await cleanupExpiredSessions(mockDb as any);
 
 			expect(mockDb.prepare).toHaveBeenCalledWith(
-				'DELETE FROM sessions WHERE expires_at < datetime("now")'
+				"DELETE FROM sessions WHERE datetime(expires_at) < datetime('now')"
 			);
 			expect(mockRun).toHaveBeenCalled();
 		});

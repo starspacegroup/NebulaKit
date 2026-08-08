@@ -173,12 +173,23 @@ describe('Discord OAuth Init - Extended Branch Coverage', () => {
 		});
 
 		it('binds link state to the authenticated database session', async () => {
-			const { signValue } = await import('../../src/lib/utils/session');
 			const event = configuredLinkEvent();
 			event.locals = { user: { id: 'user-1' } };
-			event.cookies.get.mockReturnValue(
-				await signValue({ token: 'opaque-session-token' }, 'test-session-secret')
-			);
+			// Opaque scheme: the cookie is the raw token, and the route validates
+			// it against the sessions table before binding the transaction to it.
+			event.cookies.get.mockReturnValue('opaque-session-token');
+			(event.platform.env as Record<string, unknown>).DB = {
+				prepare: vi.fn((sql: string) => ({
+					bind: vi.fn(() => ({
+						run: vi.fn().mockResolvedValue({ success: true }),
+						first: vi.fn(async () =>
+							sql.includes('FROM sessions')
+								? { id: 'digest', user_id: 'user-1', expires_at: '2099-01-01T00:00:00.000Z' }
+								: null
+						)
+					}))
+				}))
+			};
 			const { GET } = await import('../../src/routes/api/auth/discord/+server');
 
 			await expect(GET(event as any)).rejects.toMatchObject({

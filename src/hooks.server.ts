@@ -5,13 +5,9 @@ import {
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
-import { findValidSession } from '$lib/utils/db';
+import { getAuthSession } from '$lib/utils/db';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
-import {
-	createSessionUser,
-	decodeDatabaseSessionCookie,
-	decodeSessionCookie
-} from '$lib/utils/session';
+import { createSessionUser } from '$lib/utils/session';
 import {
 	browserBucket,
 	deviceBucket,
@@ -26,41 +22,41 @@ import { recordRequest } from '$lib/utils/usage';
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
-// Auth handling hook
+// Auth handling hook.
+//
+// Merge resolution record (opaque-sessions x main): the COOKIE MECHANISM is
+// the opaque-sessions design — the cookie carries an opaque random token,
+// the trusted payload lives server-side in sessions.data, and a forged cookie
+// names no session and fails closed. What survives from main's competing
+// scheme is its PER-REQUEST PRIVILEGE REFRESH: identity comes from the stored
+// session, but is_admin / can_view_stats / owner status are re-read from the
+// users table on every request, so granting or revoking access takes effect
+// without a re-login. Dev-simulated identities are honored only under
+// isDevAuthSimulationEnabled, exactly as on main — a pretend payload in a
+// production database must not authenticate anyone.
 export function authHandler(input: {
 	event: any;
 	resolve: (event: any) => Response | Promise<Response>;
 }): Promise<Response>;
 export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Promise<Response> {
-	// Get session cookie
-	const sessionCookie = event.cookies.get('session');
+	const sessionToken = event.cookies.get('session');
 
-	if (sessionCookie) {
+	if (sessionToken) {
 		try {
-			// Self-contained identities are reserved for the explicitly enabled
-			// local development simulator. Production identity always comes from D1.
-			if (isDevAuthSimulationEnabled(event.url, event.platform)) {
-				const pretendUser = await decodeSessionCookie(
-					sessionCookie,
-					event.platform?.env?.SESSION_SECRET
-				);
-				if (pretendUser?.isPretend) {
-					event.locals.user = pretendUser;
+			const db = event.platform?.env?.DB;
+			if (!db) throw new Error('Session database unavailable');
+
+			const stored = await getAuthSession(db, sessionToken);
+			if (!stored) throw new Error('Session is missing, expired, or revoked');
+
+			if (stored.isPretend) {
+				// Self-contained simulated identities are reserved for the
+				// explicitly enabled local development simulator.
+				if (!isDevAuthSimulationEnabled(event.url, event.platform)) {
+					throw new Error('Simulated session outside the dev simulator');
 				}
-			}
-
-			if (!event.locals.user) {
-				const db = event.platform?.env?.DB;
-				if (!db) throw new Error('Session database unavailable');
-				const sessionToken = await decodeDatabaseSessionCookie(
-					sessionCookie,
-					event.platform?.env?.SESSION_SECRET
-				);
-				if (!sessionToken) throw new Error('Session cookie is unsigned or malformed');
-
-				const session = await findValidSession(db, sessionToken);
-				if (!session) throw new Error('Session is missing, expired, or revoked');
-
+				event.locals.user = stored;
+			} else {
 				type AuthUserRecord = {
 					id: string;
 					email: string;
@@ -78,7 +74,7 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 							        is_admin, can_view_stats
 							 FROM users WHERE id = ?`
 						)
-						.bind(session.user_id)
+						.bind(stored.id)
 						.first<AuthUserRecord>();
 				} catch {
 					// Migration 0009 added can_view_stats; retain compatibility with
@@ -88,7 +84,7 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 							`SELECT id, email, name, github_login, github_avatar_url, is_admin
 							 FROM users WHERE id = ?`
 						)
-						.bind(session.user_id)
+						.bind(stored.id)
 						.first<AuthUserRecord>();
 				}
 
@@ -104,6 +100,7 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 				};
 			}
 		} catch {
+			// Unknown, expired, or unverifiable session — clear the stale cookie.
 			delete event.locals.user;
 			event.cookies.delete('session', { path: '/' });
 		}

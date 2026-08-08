@@ -1,6 +1,91 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { hashSessionToken } from './db';
-import { signValue, verifySignedValue } from './session';
+
+// ── HMAC state-cookie signing ────────────────────────────────────────────────
+// These lived in session.ts while the SESSION cookie was itself HMAC-signed.
+// The opaque-sessions merge removed that scheme (the session cookie is now an
+// opaque token verified against the DB), but the OAuth STATE cookie still
+// rightly carries a signed payload — signing is this module's concern now.
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+const DEV_FALLBACK_SECRET = 'nebulakit-dev-insecure-session-secret';
+
+export function resolveSessionSecret(secret: string | undefined | null): string | null {
+	if (secret) return secret;
+	if (import.meta.env.DEV) return DEV_FALLBACK_SECRET;
+	return null;
+}
+
+function bytesToBase64UrlSig(value: ArrayBuffer | Uint8Array): string {
+	const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+	let binary = '';
+	for (const byte of bytes) {
+		binary += String.fromCharCode(byte);
+	}
+	return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlToBytes(value: string): ArrayBuffer {
+	let normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+	while (normalized.length % 4) normalized += '=';
+	const binary = atob(normalized);
+	const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+	return bytes.buffer;
+}
+
+async function importSigningKey(secret: string): Promise<CryptoKey> {
+	return crypto.subtle.importKey(
+		'raw',
+		encoder.encode(secret),
+		{ name: 'HMAC', hash: 'SHA-256' },
+		false,
+		['sign', 'verify']
+	);
+}
+
+export async function signValue(value: unknown, secret?: string | null): Promise<string> {
+	const resolvedSecret = resolveSessionSecret(secret);
+	if (!resolvedSecret) {
+		throw new Error('SESSION_SECRET is not configured; refusing to issue an unsigned cookie');
+	}
+
+	const payload = bytesToBase64UrlSig(encoder.encode(JSON.stringify(value)));
+	const signature = await crypto.subtle.sign(
+		'HMAC',
+		await importSigningKey(resolvedSecret),
+		encoder.encode(payload)
+	);
+	return `${payload}.${bytesToBase64UrlSig(signature)}`;
+}
+
+export async function verifySignedValue<T>(
+	value: string | undefined | null,
+	secret?: string | null
+): Promise<T | null> {
+	const resolvedSecret = resolveSessionSecret(secret);
+	if (!value || !resolvedSecret) return null;
+
+	const parts = value.split('.');
+	if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+	const [payload, signature] = parts;
+
+	try {
+		const signatureBytes = base64UrlToBytes(signature);
+		if (bytesToBase64UrlSig(signatureBytes) !== signature) return null;
+		const valid = await crypto.subtle.verify(
+			'HMAC',
+			await importSigningKey(resolvedSecret),
+			signatureBytes,
+			encoder.encode(payload)
+		);
+		if (!valid) return null;
+		return JSON.parse(decoder.decode(base64UrlToBytes(payload))) as T;
+	} catch {
+		return null;
+	}
+}
+
 
 export type OAuthProvider = 'github' | 'discord';
 export type OAuthIntent = 'login' | 'link';

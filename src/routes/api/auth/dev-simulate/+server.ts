@@ -1,4 +1,5 @@
-import { buildSessionCookieHeader, decodeSessionCookie } from '$lib/utils/session';
+import { createAuthSession, getAuthSession } from '$lib/utils/db';
+import { buildSessionCookieHeader } from '$lib/utils/session';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -58,6 +59,13 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 		throw redirect(302, '/auth/login?error=not_configured');
 	}
 
+	// The simulator still mints a real server-side session (its payload is trusted
+	// exactly like a real login's), so it needs the database like any other login.
+	const db = platform?.env?.DB;
+	if (!db) {
+		throw redirect(302, '/auth/login?error=not_configured');
+	}
+
 	const provider = parseProvider(url.searchParams.get('provider'));
 	if (!provider) {
 		throw redirect(302, '/auth/login?error=oauth_failed');
@@ -65,28 +73,23 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 
 	const mode = parseMode(url.searchParams.get('mode'));
 	if (mode === 'link') {
-		const existingUser = await decodeSessionCookie(
-			cookies.get('session'),
-			platform?.env?.SESSION_SECRET
-		);
+		const existingUser = await getAuthSession(db, cookies.get('session') ?? '');
 
 		if (existingUser?.isPretend) {
 			const simulatedConnections = Array.from(
 				new Set([...(existingUser.simulatedConnections || []), provider])
 			);
 
+			const linkedSessionId = await createAuthSession(db, {
+				...existingUser,
+				simulatedConnections
+			});
+
 			return new Response(null, {
 				status: 302,
 				headers: {
 					Location: new URL(`/profile?linked=${provider}`, url.origin).toString(),
-					'Set-Cookie': await buildSessionCookieHeader(
-						{
-							...existingUser,
-							simulatedConnections
-						},
-						url,
-						platform?.env?.SESSION_SECRET
-					)
+					'Set-Cookie': buildSessionCookieHeader(linkedSessionId, url)
 				}
 			});
 		}
@@ -96,11 +99,13 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 	const sessionUser = buildDevUser(provider, role);
 	const redirectTarget = role === 'admin' || role === 'superadmin' ? '/admin' : '/';
 
+	const sessionId = await createAuthSession(db, sessionUser);
+
 	return new Response(null, {
 		status: 302,
 		headers: {
 			Location: new URL(redirectTarget, url.origin).toString(),
-			'Set-Cookie': await buildSessionCookieHeader(sessionUser, url, platform?.env?.SESSION_SECRET)
+			'Set-Cookie': buildSessionCookieHeader(sessionId, url)
 		}
 	});
 };

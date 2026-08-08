@@ -6,7 +6,7 @@ import {
 	verifyOAuthState,
 	verifyOAuthTransaction
 } from '$lib/utils/oauth-state';
-import { decodeDatabaseSessionCookie } from '$lib/utils/session';
+import { findValidSession } from '$lib/utils/db';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -29,10 +29,12 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals }) =>
 		);
 	}
 
-	const currentSessionToken = await decodeDatabaseSessionCookie(
-		cookies.get('session'),
-		platform.env.SESSION_SECRET
-	);
+	// The session cookie is an opaque token under the merged scheme; validate it
+	// against the sessions table before treating the caller as logged in — a
+	// stale or forged cookie must not count as a live session for the link flow.
+	const rawSessionToken = cookies.get('session');
+	const currentSessionToken =
+		rawSessionToken && (await findValidSession(db, rawSessionToken)) ? rawSessionToken : null;
 	const pendingTransaction = await verifyOAuthTransaction(
 		db,
 		'discord',

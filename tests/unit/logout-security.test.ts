@@ -30,12 +30,10 @@ describe('logout session revocation', () => {
 });
 
 async function logoutEvent(run: ReturnType<typeof vi.fn>) {
-	const { signValue } = await import('../../src/lib/utils/session');
 	return {
 		cookies: {
-			get: vi
-				.fn()
-				.mockReturnValue(await signValue({ token: 'opaque-session-token' }, 'test-session-secret')),
+			// The merged scheme's cookie IS the opaque token — no signing wrapper.
+			get: vi.fn().mockReturnValue('opaque-session-token'),
 			delete: vi.fn()
 		},
 		platform: {

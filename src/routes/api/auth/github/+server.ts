@@ -6,7 +6,7 @@ import {
 	oauthStateCookieName,
 	oauthStateCookieOptions
 } from '$lib/utils/oauth-state';
-import { decodeDatabaseSessionCookie } from '$lib/utils/session';
+import { findValidSession } from '$lib/utils/db';
 import type { RequestHandler } from './$types';
 
 // GET - Redirect to GitHub OAuth
@@ -38,9 +38,11 @@ export const GET: RequestHandler = async ({ platform, url, cookies, locals }) =>
 	}
 	const db = platform?.env?.DB;
 	if (!db) throw error(503, 'OAuth state storage is unavailable');
-	const boundSessionToken = linking
-		? await decodeDatabaseSessionCookie(cookies.get('session'), platform?.env?.SESSION_SECRET)
-		: undefined;
+	// Opaque scheme: the raw cookie is the session token; bind the transaction
+	// only to a session that is live in the DB right now.
+	const rawSessionToken = linking ? cookies.get('session') : undefined;
+	const boundSessionToken =
+		rawSessionToken && (await findValidSession(db, rawSessionToken)) ? rawSessionToken : undefined;
 	if (linking && !boundSessionToken) {
 		throw redirect(302, '/auth/login?error=authentication_required');
 	}

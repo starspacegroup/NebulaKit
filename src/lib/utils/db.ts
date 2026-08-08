@@ -2,6 +2,7 @@
  * Database utility functions for D1
  */
 import type { D1Database } from '@cloudflare/workers-types';
+import type { SessionUser } from './session';
 
 export interface User {
 	id: string;
@@ -115,14 +116,110 @@ export async function replaceSession(
 }
 
 /**
+ * Create an authenticated session and return its opaque token for the cookie.
+ *
+ * The design is the opaque-sessions branch's: the cookie never carries the
+ * user payload, which lives in `sessions.data` server-side and is read back
+ * on every request (see getAuthSession), so isOwner/isAdmin cannot be forged
+ * by editing the cookie. Two hardenings grafted from main's competing scheme
+ * (deliberate improvement, called out in the merge record, not silent drift):
+ *  - the token is 256-bit `createSessionToken()` output rather than a UUID
+ *    (122 random bits), and
+ *  - the DB row's id is `hashSessionToken(token)`, never the token itself, so
+ *    a leaked sessions table exposes no value a cookie could present.
+ */
+export async function createAuthSession(
+	db: D1Database,
+	user: SessionUser,
+	expiresInDays: number = 7
+): Promise<string> {
+	const token = createSessionToken();
+	const id = await hashSessionToken(token);
+	const expiresAt = new Date();
+	expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+	await db
+		.prepare('INSERT INTO sessions (id, user_id, expires_at, data) VALUES (?, ?, ?, ?)')
+		.bind(id, user.id, expiresAt.toISOString(), JSON.stringify(user))
+		.run();
+
+	return token;
+}
+
+/**
+ * Create a fresh auth session and revoke a previous token as one D1
+ * transaction — the opaque-scheme sibling of replaceSession, used when a
+ * logged-in user re-authenticates (OAuth link flows) so the superseded cookie
+ * cannot be replayed.
+ */
+export async function replaceAuthSession(
+	db: D1Database,
+	user: SessionUser,
+	previousToken: string,
+	expiresInDays: number = 7
+): Promise<string> {
+	const token = createSessionToken();
+	const [id, previousId] = await Promise.all([
+		hashSessionToken(token),
+		hashSessionToken(previousToken)
+	]);
+	const expiresAt = new Date();
+	expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+	await db.batch([
+		db
+			.prepare('INSERT INTO sessions (id, user_id, expires_at, data) VALUES (?, ?, ?, ?)')
+			.bind(id, user.id, expiresAt.toISOString(), JSON.stringify(user)),
+		db.prepare('DELETE FROM sessions WHERE id = ?').bind(previousId)
+	]);
+
+	return token;
+}
+
+/**
+ * Resolve a session cookie to its stored user payload, or null if the session
+ * is unknown, expired, or predates this scheme (no stored payload). A forged
+ * cookie resolves to null because it names no real session — fail closed.
+ * The cookie presents the raw token; rows are keyed by its hash.
+ */
+export async function getAuthSession(
+	db: D1Database,
+	sessionToken: string
+): Promise<SessionUser | null> {
+	const sessionId = await hashSessionToken(sessionToken);
+	// datetime(expires_at) normalizes the stored ISO string ("...T...Z") before
+	// comparing: a raw string compare against datetime('now') ("... ...") sorts
+	// 'T' after ' ', so a same-day expiry read as still-valid for up to a day.
+	const row = await db
+		.prepare("SELECT data FROM sessions WHERE id = ? AND datetime(expires_at) > datetime('now')")
+		.bind(sessionId)
+		.first<{ data: string | null }>();
+
+	if (!row?.data) return null;
+	try {
+		return JSON.parse(row.data) as SessionUser;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Find session by ID and check if it's valid
  */
+// Union of both parents' hardening: HEAD hashes the presented token before
+// lookup (ids at rest are SHA-256 digests, so a leaked DB exposes no live
+// cookie values); the opaque-sessions branch normalizes expires_at with
+// datetime() (a raw string compare sorts 'T' after ' ' and reads a same-day
+// expiry as valid for up to a day). Taking either side alone would drop the
+// other's fix.
 export async function findValidSession(
 	db: D1Database,
 	sessionToken: string
 ): Promise<Session | null> {
 	const sessionId = await hashSessionToken(sessionToken);
-	const stmt = db.prepare('SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")');
+	const stmt = db.prepare(
+		"SELECT * FROM sessions WHERE id = ? AND datetime(expires_at) > datetime('now')"
+	);
 	return await stmt.bind(sessionId).first<Session>();
 }
 
@@ -139,6 +236,6 @@ export async function deleteSession(db: D1Database, sessionToken: string): Promi
  * Clean up expired sessions
  */
 export async function cleanupExpiredSessions(db: D1Database): Promise<void> {
-	const stmt = db.prepare('DELETE FROM sessions WHERE expires_at < datetime("now")');
+	const stmt = db.prepare("DELETE FROM sessions WHERE datetime(expires_at) < datetime('now')");
 	await stmt.run();
 }

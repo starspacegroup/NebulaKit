@@ -151,6 +151,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue({ id: 'existing-user' })
 								})
 							})
@@ -234,6 +235,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockImplementation(() => ({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -305,6 +307,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue({
 										id: 'user-1',
 										email: 'primary@example.com',
@@ -339,6 +342,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockReturnValue({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -375,6 +379,7 @@ describe('Password Auth APIs', () => {
 		const passwordHash = await hashPassword('StrongPass123!');
 		const prepare = vi.fn().mockReturnValue({
 			bind: vi.fn().mockReturnValue({
+				run: vi.fn().mockResolvedValue({ success: true }),
 				first: vi.fn().mockResolvedValue({
 					id: '123',
 					email: 'primary@example.com',
@@ -399,7 +404,8 @@ describe('Password Auth APIs', () => {
 		const payload = await response.json();
 
 		expect(payload.redirectTo).toBe('/admin');
-		expect(prepare).toHaveBeenCalledTimes(1);
+		// One prepare for the user lookup, one for the server-side session INSERT.
+		expect(prepare).toHaveBeenCalledTimes(2);
 	});
 
 	it('logs in as owner when the numeric owner id matches the linked github account', async () => {
@@ -409,6 +415,7 @@ describe('Password Auth APIs', () => {
 		const passwordHash = await hashPassword('StrongPass123!');
 		const prepare = vi.fn().mockImplementation((sql: string) => ({
 			bind: vi.fn().mockReturnValue({
+				run: vi.fn().mockResolvedValue({ success: true }),
 				first: vi.fn().mockResolvedValue(
 					sql.includes('FROM users u')
 						? {
@@ -451,6 +458,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockReturnValue({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -492,6 +500,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockReturnValue({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -532,6 +541,7 @@ describe('Password Auth APIs', () => {
 		const passwordHash = await hashPassword('StrongPass123!');
 		const prepare = vi.fn().mockImplementation((sql: string) => ({
 			bind: vi.fn().mockReturnValue({
+				run: vi.fn().mockResolvedValue({ success: true }),
 				first: sql.includes('FROM users u')
 					? vi.fn().mockResolvedValue({
 							id: 'user-1',
@@ -573,6 +583,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockImplementation((sql: string) => ({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue(
 										sql.includes('FROM users u')
 											? {
@@ -764,6 +775,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockImplementation((sql: string) => ({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue(
 									sql.includes('FROM users u')
 										? {
@@ -818,6 +830,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue({
 										id: 'target-user',
 										email: 'target@example.com',
@@ -854,6 +867,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue(null)
 								})
 							})

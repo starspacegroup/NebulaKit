@@ -46,7 +46,7 @@ describe('authentication security route policy', () => {
 		const run = vi.fn().mockResolvedValue(undefined);
 		const base = {
 			platform: { env: { KV: kv, DB: { prepare: vi.fn(() => ({ run })) } } },
-			cookies: { delete: vi.fn() }
+			cookies: { get: vi.fn().mockReturnValue(undefined), delete: vi.fn() }
 		};
 
 		await expect(POST({ ...base, locals: {} } as never)).rejects.toMatchObject({ status: 401 });

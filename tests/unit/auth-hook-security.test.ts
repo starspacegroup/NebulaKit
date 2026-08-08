@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 
-type SessionRow = { id: string; user_id: string; expires_at: string } | null;
+/**
+ * The auth hook under the merged session scheme (opaque-sessions x main):
+ * the cookie carries an opaque random token; getAuthSession() hashes it and
+ * reads the trusted payload from sessions.data; identity and CURRENT roles are
+ * then refreshed from the users table on every request. These tests pin the
+ * fail-closed properties: forged cookies, revoked sessions, deleted users,
+ * database failures, and dev-simulated identities outside the simulator all
+ * leave the request unauthenticated and clear the cookie.
+ */
+
+type SessionRow = { data: string | null } | null;
 type UserRow = {
 	id: string;
 	email: string;
@@ -10,6 +20,10 @@ type UserRow = {
 	is_admin: number;
 	can_view_stats?: number;
 } | null;
+
+function sessionDataRow(payload: Record<string, unknown>): SessionRow {
+	return { data: JSON.stringify(payload) };
+}
 
 function database(session: SessionRow, user: UserRow, failure?: Error) {
 	return {
@@ -63,10 +77,11 @@ describe('server-authenticated session hook', () => {
 	});
 
 	it('rejects a forged owner-shaped base64 JSON cookie', async () => {
+		// The pre-opaque scheme's cookie format. It hashes to no stored session,
+		// so it authenticates nothing no matter what it claims to contain.
 		const forged = btoa(
 			JSON.stringify({
 				id: 'owner-id',
-				login: 'attacker',
 				email: 'attacker@example.com',
 				isOwner: true,
 				isAdmin: true
@@ -80,47 +95,47 @@ describe('server-authenticated session hook', () => {
 		expect(event.cookies.delete).toHaveBeenCalledWith('session', { path: '/' });
 	});
 
-	it('accepts self-contained identity only for an explicitly enabled pretend session', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
-		const db = database(null, null);
-		const event = eventFor(
-			await signValue(
-				{
-					id: 'pretend-user',
-					login: 'pretend',
-					email: 'pretend@example.dev',
-					isOwner: false,
-					isAdmin: true,
-					isPretend: true
-				},
-				'test-session-secret'
-			),
-			db
+	it('accepts a stored pretend identity only inside the enabled dev simulator', async () => {
+		// The simulator stores a real session row whose payload is marked
+		// isPretend. Unlike real users it is served from the stored payload (no
+		// users-table row exists for it), but ONLY when simulation is enabled on
+		// a local host.
+		const db = database(
+			sessionDataRow({
+				id: 'pretend-user',
+				login: 'pretend',
+				email: 'pretend@example.dev',
+				isOwner: false,
+				isAdmin: true,
+				isPretend: true
+			}),
+			null
 		);
+		const event = eventFor('pretend-session-token', db);
 		(event.platform.env as Record<string, unknown>).DEV_AUTH_BYPASS = 'true';
+		event.url = new URL('http://localhost/admin');
 
 		await runAuth(event);
 
 		expect(event.locals).toMatchObject({ user: { id: 'pretend-user', isPretend: true } });
-		expect(db.prepare).not.toHaveBeenCalled();
 		expect(event.cookies.delete).not.toHaveBeenCalled();
 	});
 
-	it('rejects a self-contained non-pretend identity even when simulation is enabled', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
-		const event = eventFor(
-			await signValue(
-				{
-					id: 'browser-user',
-					login: 'browser',
-					email: 'browser@example.dev',
-					isOwner: true,
-					isPretend: false
-				},
-				'test-session-secret'
-			),
-			database(null, null)
+	it('rejects a stored pretend identity outside a local dev host even with the bypass set', async () => {
+		// The opaque-sessions branch's hardening: a stray DEV_AUTH_BYPASS on a
+		// deployed environment must not let a pretend session authenticate.
+		const db = database(
+			sessionDataRow({
+				id: 'pretend-user',
+				login: 'pretend',
+				email: 'pretend@example.dev',
+				isOwner: true,
+				isAdmin: true,
+				isPretend: true
+			}),
+			null
 		);
+		const event = eventFor('pretend-session-token', db); // nebulakit.example
 		(event.platform.env as Record<string, unknown>).DEV_AUTH_BYPASS = 'true';
 
 		await runAuth(event);
@@ -129,16 +144,20 @@ describe('server-authenticated session hook', () => {
 		expect(event.cookies.delete).toHaveBeenCalledWith('session', { path: '/' });
 	});
 
-	it('loads identity and current roles from D1 for an opaque session id', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
+	it('loads identity and current roles from D1 for an opaque session token', async () => {
+		// Roles come from the users table at request time, NOT from the stored
+		// payload — the payload below claims no privileges, the users row grants
+		// them, and the users row must win (grant/revoke without re-login).
 		const event = eventFor(
-			await signValue({ token: 'session-opaque-123' }, 'test-session-secret'),
+			'opaque-session-token-123',
 			database(
-				{
-					id: 'session-opaque-123',
-					user_id: 'user-1',
-					expires_at: '2099-01-01T00:00:00.000Z'
-				},
+				sessionDataRow({
+					id: 'user-1',
+					login: 'stale-login',
+					email: 'stale@example.com',
+					isOwner: false,
+					isAdmin: false
+				}),
 				{
 					id: 'user-1',
 					email: 'owner@example.com',
@@ -167,9 +186,8 @@ describe('server-authenticated session hook', () => {
 	});
 
 	it('fails closed when D1 session lookup fails', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
 		const event = eventFor(
-			await signValue({ token: 'session-opaque-123' }, 'test-session-secret'),
+			'opaque-session-token-123',
 			database(null, null, new Error('D1 unavailable'))
 		);
 
@@ -179,65 +197,6 @@ describe('server-authenticated session hook', () => {
 		expect(event.cookies.delete).toHaveBeenCalledWith('session', { path: '/' });
 	});
 
-	it('accepts a signed pretend identity only when the dev bypass is enabled', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
-		const event = eventFor(
-			await signValue(
-				{
-					id: 'pretend-1',
-					login: 'pretend',
-					email: 'pretend@example.dev',
-					isOwner: false,
-					isAdmin: false,
-					isPretend: true
-				},
-				'test-session-secret'
-			),
-			database(null, null)
-		);
-		(event.platform.env as Record<string, unknown>).DEV_AUTH_BYPASS = 'true';
-		event.url = new URL('http://localhost/admin');
-
-		await runAuth(event);
-		expect(event.locals).toMatchObject({ user: { id: 'pretend-1', isPretend: true } });
-		expect(event.cookies.delete).not.toHaveBeenCalled();
-	});
-
-	it('uses the pre-can_view_stats user query as a migration fallback', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
-		const session = {
-			id: 'session-opaque-123',
-			user_id: 'user-1',
-			expires_at: '2099-01-01T00:00:00.000Z'
-		};
-		const user = {
-			id: 'user-1',
-			email: 'user@example.com',
-			name: 'User',
-			github_login: 'user',
-			github_avatar_url: null,
-			is_admin: 0
-		};
-		const db = {
-			prepare: vi.fn((sql: string) => ({
-				bind: vi.fn(() => ({
-					first: vi.fn(async () => {
-						if (sql.includes('FROM sessions')) return session;
-						if (sql.includes('can_view_stats')) throw new Error('column missing');
-						return user;
-					})
-				}))
-			}))
-		};
-		const event = eventFor(
-			await signValue({ token: 'session-opaque-123' }, 'test-session-secret'),
-			db as ReturnType<typeof database>
-		);
-
-		await runAuth(event);
-		expect(event.locals).toMatchObject({ user: { id: 'user-1', canViewStats: false } });
-	});
-
 	it('does not touch cookies when no session cookie is present', async () => {
 		const event = eventFor('', database(null, null));
 
@@ -245,12 +204,9 @@ describe('server-authenticated session hook', () => {
 		expect(event.cookies.delete).not.toHaveBeenCalled();
 	});
 
-	it('clears a validly signed cookie after its session is revoked', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
-		const event = eventFor(
-			await signValue({ token: 'revoked-session' }, 'test-session-secret'),
-			database(null, null)
-		);
+	it('clears the cookie after its session is revoked server-side', async () => {
+		// Logout deletes the row; a copied cookie then resolves to nothing.
+		const event = eventFor('revoked-session-token', database(null, null));
 
 		await runAuth(event);
 		expect(event.locals).not.toHaveProperty('user');
@@ -258,15 +214,16 @@ describe('server-authenticated session hook', () => {
 	});
 
 	it('fails closed when a valid session references a deleted user', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
 		const event = eventFor(
-			await signValue({ token: 'session-opaque-123' }, 'test-session-secret'),
+			'opaque-session-token-123',
 			database(
-				{
-					id: 'stored-session-digest',
-					user_id: 'deleted-user',
-					expires_at: '2099-01-01T00:00:00.000Z'
-				},
+				sessionDataRow({
+					id: 'deleted-user',
+					login: 'gone',
+					email: 'gone@example.com',
+					isOwner: false,
+					isAdmin: false
+				}),
 				null
 			)
 		);
@@ -278,12 +235,13 @@ describe('server-authenticated session hook', () => {
 	});
 
 	it('falls back to the pre-stats user query for an unmigrated local database', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
-		const session = {
-			id: 'stored-session-digest',
-			user_id: 'legacy-user',
-			expires_at: '2099-01-01T00:00:00.000Z'
-		};
+		const session = sessionDataRow({
+			id: 'legacy-user',
+			login: 'legacy',
+			email: 'legacy@example.com',
+			isOwner: false,
+			isAdmin: false
+		});
 		const legacyUser = {
 			id: 'legacy-user',
 			email: 'legacy@example.com',
@@ -304,7 +262,7 @@ describe('server-authenticated session hook', () => {
 			}))
 		};
 		const event = eventFor(
-			await signValue({ token: 'session-opaque-123' }, 'test-session-secret'),
+			'opaque-session-token-123',
 			db as ReturnType<typeof database>,
 			'legacy-user'
 		);
@@ -314,6 +272,7 @@ describe('server-authenticated session hook', () => {
 		expect(event.locals).toMatchObject({
 			user: { id: 'legacy-user', isOwner: true, isAdmin: true, canViewStats: false }
 		});
+		// getAuthSession + can_view_stats query (throws) + fallback query.
 		expect(db.prepare).toHaveBeenCalledTimes(3);
 	});
 });

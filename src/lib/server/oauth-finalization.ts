@@ -1,6 +1,6 @@
-import { createSession, replaceSession } from '$lib/utils/db';
+import { createAuthSession, replaceAuthSession } from '$lib/utils/db';
 import { resolveOwnerStatus, type AuthIdentityRecord } from '$lib/utils/auth-identity';
-import { buildDatabaseSessionCookieHeader } from '$lib/utils/session';
+import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
 import type { D1Database } from '@cloudflare/workers-types';
 import type { OAuthProvider } from '$lib/utils/oauth-state';
 
@@ -13,6 +13,13 @@ interface FinalizeOAuthLoginOptions {
 	linkedProvider?: OAuthProvider;
 }
 
+/**
+ * Merge resolution record: this finalization used to mint main's HMAC-signed
+ * DB session. It now issues the opaque-sessions scheme instead — the cookie
+ * carries an opaque token, the trusted payload lives in sessions.data, and a
+ * link-flow re-auth revokes the previous token in the same D1 batch
+ * (replaceAuthSession), preserving main's no-replay property.
+ */
 export async function finalizeOAuthLogin({
 	db,
 	platform,
@@ -30,9 +37,14 @@ export async function finalizeOAuthLogin({
 	if (!user) throw new Error('OAuth user disappeared before session finalization');
 
 	const isOwner = await resolveOwnerStatus(platform, user);
-	const session = currentSessionToken
-		? await replaceSession(db, user.id, currentSessionToken, 7)
-		: await createSession(db, user.id, 7);
+	const sessionUser = createSessionUser({
+		...user,
+		isOwner,
+		isAdmin: user.is_admin === 1 || isOwner
+	});
+	const sessionToken = currentSessionToken
+		? await replaceAuthSession(db, sessionUser, currentSessionToken, 7)
+		: await createAuthSession(db, sessionUser, 7);
 	if (isOwner && platform.env.KV) {
 		const marker = await platform.env.KV.get('admin_first_login_completed');
 		if (!marker) await platform.env.KV.put('admin_first_login_completed', 'true');
@@ -48,11 +60,7 @@ export async function finalizeOAuthLogin({
 		status: 302,
 		headers: {
 			Location: new URL(destination, url.origin).toString(),
-			'Set-Cookie': await buildDatabaseSessionCookieHeader(
-				session.token,
-				url,
-				platform.env.SESSION_SECRET
-			)
+			'Set-Cookie': buildSessionCookieHeader(sessionToken, url)
 		}
 	});
 }

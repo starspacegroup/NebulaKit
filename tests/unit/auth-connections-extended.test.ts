@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { hashSessionToken } from '../../src/lib/utils/db';
 
 describe('Auth Connections API - Extended Branch Coverage', () => {
 	beforeEach(() => {
@@ -384,7 +385,24 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 			expect(data.success).toBe(true);
 		});
 
-		it('should unlink simulated connections for pretend users without DB', async () => {
+		it('should unlink simulated connections for pretend users, re-issuing a server session', async () => {
+			// The updated pretend identity is stored server-side now, so the endpoint
+			// needs the database — the cookie only carries the new opaque id.
+			const inserted: Record<string, string> = {};
+			const db = {
+				prepare: (sql: string) => ({
+					bind: (...args: unknown[]) => ({
+						run: async () => {
+							if (/^INSERT INTO sessions/i.test(sql)) {
+								inserted.id = args[0] as string;
+								inserted.data = args[3] as string;
+							}
+							return { success: true };
+						}
+					})
+				})
+			};
+
 			const mockEvent = {
 				locals: {
 					user: {
@@ -398,7 +416,7 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 					}
 				},
 				platform: {
-					env: {}
+					env: { DB: db }
 				},
 				url: new URL('http://localhost/api/auth/connections'),
 				request: {
@@ -412,10 +430,25 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 
 			expect(data.success).toBe(true);
 			expect(data.connections).toEqual([{ provider: 'github' }]);
-			expect(response.headers.get('Set-Cookie')).toContain('session=');
+			// Hash-at-rest: the cookie carries the raw token; the row id is its
+			// SHA-256 digest — the raw cookie value never appears in the DB.
+			const cookieToken = response.headers
+				.get('Set-Cookie')
+				?.match(/^session=([^;]+)/)?.[1] as string;
+			expect(await hashSessionToken(cookieToken)).toBe(inserted.id);
+			// The trusted payload — not the cookie — reflects the removed connection.
+			expect(JSON.parse(inserted.data).simulatedConnections).toEqual(['github']);
 		});
 
 		it('unlinks safely when a pretend user has no simulated connection list', async () => {
+			// The pretend path now re-issues a real server-side session, so it
+			// needs the database like every other login (a separate test pins the
+			// 500 when no DB is available).
+			const db = {
+				prepare: vi.fn(() => ({
+					bind: vi.fn(() => ({ run: vi.fn().mockResolvedValue({ success: true }) }))
+				}))
+			};
 			const { DELETE } = await import('../../src/routes/api/auth/connections/+server');
 			const response = await DELETE({
 				locals: {
@@ -426,7 +459,7 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 						isPretend: true
 					}
 				},
-				platform: { env: {} },
+				platform: { env: { DB: db } },
 				url: new URL('http://localhost/api/auth/connections'),
 				request: { json: vi.fn().mockResolvedValue({ provider: 'github' }) }
 			} as any);

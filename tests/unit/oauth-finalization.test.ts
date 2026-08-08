@@ -6,18 +6,8 @@ vi.mock('$lib/utils/db', async () => {
 		await vi.importActual<typeof import('../../src/lib/utils/db')>('../../src/lib/utils/db');
 	return {
 		...actual,
-		createSession: vi.fn(async (_db: unknown, userId: string) => ({
-			id: 'session-digest',
-			token: `token-for-${userId}`,
-			user_id: userId,
-			expires_at: new Date('2099-01-01')
-		})),
-		replaceSession: vi.fn(async (_db: unknown, userId: string) => ({
-			id: 'session-digest',
-			token: `token-for-${userId}`,
-			user_id: userId,
-			expires_at: new Date('2099-01-01')
-		}))
+		createAuthSession: vi.fn(async (_db: unknown, user: { id: string }) => `token-for-${user.id}`),
+		replaceAuthSession: vi.fn(async (_db: unknown, user: { id: string }) => `token-for-${user.id}`)
 	};
 });
 
@@ -76,7 +66,7 @@ describe('OAuth login finalization', () => {
 	it('uses the link-success redirect and replaces the initiating session', async () => {
 		const user = identity({ is_admin: 1 });
 		const db = userDatabase(user);
-		const { replaceSession } = await import('../../src/lib/utils/db');
+		const { replaceAuthSession } = await import('../../src/lib/utils/db');
 		const { finalizeOAuthLogin } = await import('../../src/lib/server/oauth-finalization');
 		const response = await finalizeOAuthLogin({
 			db: db as never,
@@ -90,7 +80,12 @@ describe('OAuth login finalization', () => {
 		});
 
 		expect(response.headers.get('Location')).toBe('https://example.com/profile?linked=discord');
-		expect(replaceSession).toHaveBeenCalledWith(db, user.id, 'old-token', 7);
+		expect(replaceAuthSession).toHaveBeenCalledWith(
+			db,
+			expect.objectContaining({ id: user.id }),
+			'old-token',
+			7
+		);
 	});
 });
 

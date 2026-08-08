@@ -110,7 +110,7 @@ describe('reset and setup takeover protection', () => {
 		const event = (locals: object) => ({
 			locals,
 			platform: { env: { KV: { get: vi.fn().mockResolvedValue(null), delete: vi.fn() } } },
-			cookies: { delete: vi.fn() }
+			cookies: { get: vi.fn().mockReturnValue(undefined), delete: vi.fn() }
 		});
 
 		await expect(POST(event({}) as never)).rejects.toMatchObject({ status: 401 });
@@ -132,7 +132,7 @@ describe('reset and setup takeover protection', () => {
 					DB: { prepare }
 				}
 			},
-			cookies: { delete: vi.fn() }
+			cookies: { get: vi.fn().mockReturnValue(undefined), delete: vi.fn() }
 		} as never);
 
 		expect(response.status).toBe(200);

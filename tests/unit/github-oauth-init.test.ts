@@ -189,13 +189,24 @@ describe('GitHub OAuth Initiation - Extended Coverage', () => {
 	});
 
 	it('binds link state to the authenticated database session', async () => {
-		const { signValue } = await import('../../src/lib/utils/session');
 		const event = createMockEvent({ envClientId: 'env-client-id' });
 		event.url = new URL('http://localhost/api/auth/github?mode=link');
 		event.locals = { user: { id: 'user-1' } };
-		event.cookies.get.mockReturnValue(
-			await signValue({ token: 'opaque-session-token' }, 'test-session-secret')
-		);
+		// Opaque scheme: the cookie is the raw token, and the route validates it
+		// against the sessions table before binding the transaction to it.
+		event.cookies.get.mockReturnValue('opaque-session-token');
+		(event.platform!.env as Record<string, unknown>).DB = {
+			prepare: vi.fn((sql: string) => ({
+				bind: vi.fn(() => ({
+					run: vi.fn().mockResolvedValue({ success: true }),
+					first: vi.fn(async () =>
+						sql.includes('FROM sessions')
+							? { id: 'digest', user_id: 'user-1', expires_at: '2099-01-01T00:00:00.000Z' }
+							: null
+					)
+				}))
+			}))
+		};
 
 		await expect(GET(event as unknown as Parameters<typeof GET>[0])).rejects.toThrow(
 			'Redirect to https://github.com/login/oauth/authorize'
