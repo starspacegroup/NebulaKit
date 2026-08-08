@@ -92,12 +92,21 @@ Delivery evidence recorded on 2026-08-08 (second session):
 - Squash-merging collapses authorship: 6 of the 16 commits are authored by David Monaghan
   <monaghan.david@gmail.com> (the `cms-v2-embeds` lineage). The squash message needs a
   `Co-Authored-By:` trailer for them.
-- Open disclosure decision: `ROADMAP.md` and `docs/PAYMENTS_AND_PPP.md` publish absolute local
-  filesystem paths and names for private/third-party downstream projects (AgapeVerse, Atlas,
-  Arizona, davis9001.dev), plus downstream commit shas and pricing strategy. Verified: both
-  `starspacegroup/NebulaKit` and `donaldfilimon/NebulaKit` report `private: false`, so this content
-  is readable at the pushed fork branch today. Whether to scrub it is the owner's call — it names
-  third parties' projects. Not actioned pending that decision.
+- Disclosure decision resolved and actioned in `620f6e2`. `ROADMAP.md` and
+  `docs/PAYMENTS_AND_PPP.md` had published absolute local filesystem paths, the names of four
+  private or third-party downstream projects, three downstream commit shas, and one third party's
+  subscription pricing floor. Both `starspacegroup/NebulaKit` and `donaldfilimon/NebulaKit` report
+  `private: false`, so that content was readable at the pushed fork branch. The owner chose to
+  scrub paths and third-party names; downstream sources are now identified by what they are rather
+  than who owns them. Nabu keeps its name as a first-party sibling already cross-linked from
+  AGENTS.md. The PPP worked example keeps its placeholder figures, which carry the doc's
+  PPP-is-not-FX point and disclose no real pricing.
+- Residual disclosure, out of scope for that decision and pre-existing on public `origin/main`:
+  attribution comments in `migrations/0006_contact_form_submissions.sql`, `src/lib/server/pii-mask.ts`,
+  and `src/lib/utils/contact-validation.ts`; a row in `docs/CLOUDFLARE_SETUP.md`; and the owner's own
+  GitHub handle and domain as fixtures in four test files. The migration comment cannot simply be
+  edited — migrations are immutable under the Release Rules — so it needs a deliberate remedy rather
+  than a scrub. Left for the owner.
 
 ## Explicitly outside this worktree
 
