@@ -48,6 +48,22 @@ External evidence recorded on 2026-08-08:
 - HawkScan could not run because neither the `hawk` runtime nor Docker is installed on this host.
   No HawkScan API key or hosted scan result was available, so DAST remains missing evidence rather
   than a security pass.
+
+Stash-integration evidence recorded on 2026-08-08:
+
+- All 34 stash-apply conflicts were resolved without remaining conflict markers. CMS-v2 editor,
+  embed, proof, and route contracts were retained while the quality-pass auth and security
+  boundaries were integrated.
+- `bun run check` passed with zero errors and warnings. Focused auth/CMS verification passed, and
+  `bun run test:coverage` passed with 2,149 tests passing and 22 skipped: 97.88% statements, 95.18%
+  branches, 98.00% functions, and 98.44% lines.
+- `bun run db:migrate:local` reported no pending local migrations. `bun run test:e2e` passed all 8
+  Chromium tests, `bun run validate:contrast` passed both themes, and `bun run build:ci` completed
+  with the expected placeholder-binding warning.
+- Touched-file Prettier and `git diff --check HEAD` passed. During verification, another process
+  advanced local `main` from `e24f2ce` to unpushed commits `924a5ac` and `9058278`; no push, stash
+  drop, reset, or assistant-created commit was performed in this resolution session.
+
 - [ ] Review the complete path-scoped diff, commit it on the feature branch, push, open a draft PR,
       resolve source-related hosted checks, squash-merge into `main`, and verify remote state.
 
