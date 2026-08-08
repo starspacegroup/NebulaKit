@@ -135,7 +135,11 @@ describe('SvelteEmbed TipTap extension', () => {
 		expect(dom.querySelector('strong')?.textContent).toBe('Callout');
 		expect(dom.querySelector('.rte-embed-desc')).toBeTruthy();
 
-		const [propsButton, removeButton] = Array.from(dom.querySelectorAll('button'));
+		// `dom` comes back from an untyped TipTap node view, so Array.from widens the
+		// elements to unknown — assert the element type rather than leaving them so.
+		const [propsButton, removeButton] = Array.from(
+			dom.querySelectorAll('button')
+		) as HTMLButtonElement[];
 		propsButton.click();
 		expect(onEditProps).toHaveBeenCalledWith('callout', expect.any(Function), expect.any(Function));
 		setProps?.({ variant: 'warning' });
