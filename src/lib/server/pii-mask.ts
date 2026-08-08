@@ -1,5 +1,5 @@
 /**
- * PII masking for admin views (ported from AgapeVerse).
+ * PII masking for admin views (ported from a downstream app).
  *
  * Personal data (names, emails, ids, avatars) is masked in admin views BY
  * DEFAULT so incidental screen-sharing/screenshots don't leak user PII. An

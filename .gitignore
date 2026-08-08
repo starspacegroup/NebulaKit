@@ -19,6 +19,11 @@ wrangler.toml.local
 .llm-outputs/
 *.log
 
+# Agent session memory. Untracked but previously not ignored, so a `git add -A`
+# could publish transcript scratch. vite.config.ts already excludes it from
+# coverage; this keeps it out of commits too.
+.remember/
+
 # Testing
 coverage/
 .nyc_output/

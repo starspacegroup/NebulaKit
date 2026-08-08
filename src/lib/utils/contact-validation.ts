@@ -3,7 +3,7 @@
  *
  * Both entry points — the public page action (`/contact`) and the public API
  * endpoint (`POST /api/contact-form-submissions`) — run this so the two can
- * never drift apart (in the AgapeVerse original the API skipped validation).
+ * never drift apart (in the downstream original the API skipped validation).
  * Pure and dependency-free so it's trivially unit-testable.
  */
 

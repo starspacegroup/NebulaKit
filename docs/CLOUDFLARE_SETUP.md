@@ -15,14 +15,14 @@ A wrong _id_ is silent.
 An earlier NebulaKit release shipped **real** ids. Six sibling products inherited
 the same `database_id`, the same KV `id`, and the same KV `preview_id`:
 
-| project             | what it thought it had | what it actually bound |
-| ------------------- | ---------------------- | ---------------------- |
-| NebulaKit           | `nebulakit-db`         | `nebulakit-db`         |
-| Guides              | `guides-db`            | `nebulakit-db`         |
-| Atlas               | `nebulakit-db`         | `nebulakit-db`         |
-| arizona-nebulakit   | `nebulakit-db`         | `nebulakit-db`         |
-| convey.land/app     | `convey-land-db`       | `nebulakit-db`         |
-| convey.land/app-new | `convey-land-db`       | `nebulakit-db`         |
+| project            | what it thought it had | what it actually bound |
+| ------------------ | ---------------------- | ---------------------- |
+| NebulaKit          | `nebulakit-db`         | `nebulakit-db`         |
+| Guides             | `guides-db`            | `nebulakit-db`         |
+| derived app A      | `nebulakit-db`         | `nebulakit-db`         |
+| derived app B      | `nebulakit-db`         | `nebulakit-db`         |
+| derived app C      | its own db             | `nebulakit-db`         |
+| derived app C (v2) | its own db             | `nebulakit-db`         |
 
 The result: one D1 with 28 tables and four projects' migrations interleaved in a
 single `d1_migrations` table, numbering collided (two `0004`s, two `0005`s…).
