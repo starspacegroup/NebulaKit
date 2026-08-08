@@ -48,6 +48,9 @@ export interface CommandPaletteContentItem {
 	label: string;
 	description: string;
 	href: string;
+	/** Content type display name, so callers can badge or group without
+	 *  re-parsing it out of `description`. */
+	contentTypeName: string;
 }
 
 async function resolveValidAuthorId(
@@ -593,7 +596,8 @@ export async function getCommandPaletteContentItems(
 			id: `cms-${row.item_id}`,
 			label: row.item_title,
 			description: `${row.content_type_name}${descriptionSuffix}`,
-			href: `${routePrefix}/${row.item_slug}`
+			href: `${routePrefix}/${row.item_slug}`,
+			contentTypeName: row.content_type_name
 		};
 	});
 }

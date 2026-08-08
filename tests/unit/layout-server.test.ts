@@ -119,7 +119,8 @@ describe('Layout Server Load', () => {
 					id: 'cms-item-1',
 					label: 'Hello World',
 					href: '/blog/hello-world',
-					description: 'Blog Posts: First post'
+					description: 'Blog Posts: First post',
+					contentTypeName: 'Blog Posts'
 				}
 			]);
 		});
