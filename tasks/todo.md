@@ -128,12 +128,20 @@ Delivery evidence recorded on 2026-08-08 (second session):
   the old names. The sequence is now `0001_`–`0012_`, next is `0013_`. Doc references updated in
   `migrations/README.md`, `CLAUDE.md`, and here. Reported on the PR as
   [issuecomment-5225548231](https://github.com/starspacegroup/NebulaKit/pull/6#issuecomment-5225548231).
-- **Still open, deliberately not actioned.** 33 tracked files carry pre-existing Prettier drift,
-  including `.prettierrc` itself. Not swept: it would add 33 unrelated files to a 223-file PR
-  awaiting merge, and the stated verification gate is touched-file Prettier, not repo-wide. One
-  exception was corrected: `src/lib/utils/contact-validation.ts` is a file this branch edits, so the
-  "unrelated" rationale never covered it. Prettier has now been applied to it, which collapses a
-  type union it had been reformatting. Every file this session touched is Prettier-clean.
+- **Resolved.** The Prettier drift is swept in `106c3ce`. 32 files carried it, including
+  `.prettierrc` itself; `bunx prettier --check .` now passes across the whole repository for the
+  first time. Formatting only, no hand edits. 12 `.svelte` files were included, so the sweep was
+  verified past the formatter: `check` clean, coverage above floor, e2e 8/8, contrast both themes,
+  `build:ci` compiled.
+- **Resolved.** `isSuperAdmin` is honoured again by `requireAdmin` and `requireOwner` (`e0e509c`).
+  `93bf6aa` had dropped the predicate when it consolidated `auth-guard.ts` into `auth-guards.ts`,
+  deleting the covering test in the same commit without recording a reason, while `stats-guard.ts`
+  kept honouring the flag — so a superadmin passed the stats guards and was refused by every admin
+  API. The flag is now declared on `App.Locals` rather than only structurally in `stats-guard.ts`,
+  and the restored test asserts the two files agree so they cannot silently diverge again. NebulaKit
+  never sets the flag; the contract exists for downstream apps, which is what the deleted docstring
+  said. Surfaced by the PR review at score 75 — below that workflow's reporting threshold, correctly,
+  since in-repo impact is nil, but real and inherited by the siblings sharing this code.
 - **Still open, needs one owner decision.** `davis9001` is classified inconsistently. `ROADMAP.md`
   anonymized it as a third-party downstream project, while an earlier entry here called it the
   owner's own handle and left it alone; those cannot both be right, and this ledger should not have
@@ -149,9 +157,22 @@ Full-gate evidence recorded on 2026-08-08 (second session), after the doc and sc
   lines — all above the 95 floor, with branches the narrowest margin at 0.13 points.
 - `bun run check` reported 0 errors and 0 warnings across 1,634 files.
 - `bun run validate:contrast` passed both themes against WCAG AA, and `bun run test:e2e` passed 8/8
-  Chromium tests in 41.6s after `db:migrate:local` reported no pending migrations.
-- Still resting on the prior entries above, and not re-run: `build:ci`. Unchanged in substance —
-  nothing this session touched routes, themes, schema, or bindings.
+  Chromium tests after `db:migrate:local`.
+- `bun run build:ci` compiled with the expected placeholder-binding warning. Every local gate has now
+  been run against the current tree; none rest on earlier entries.
+
+Merge attempt recorded on 2026-08-08 (third session):
+
+- The branch is merged into **local** `main` (fast-forward, now `106c3ce`) and pushed to
+  `fork/cursor/nebulakit-quality-pass-20260808`, which is PR #6's head.
+- Publishing to `origin/main` is **impossible from this account**, confirmed empirically rather than
+  inferred: `git push --dry-run origin main` returns
+  `remote: Permission to starspacegroup/NebulaKit.git denied to donaldfilimon` / HTTP 403. Local
+  `main` is 29 commits ahead of `origin/main` and cannot be published. Squash-merging PR #6 needs the
+  same write permission, so it is blocked on a maintainer of `starspacegroup/NebulaKit`, as is
+  approving the parked workflow run that leaves the PR `unstable` with zero checks.
+- No direct push to `origin/main` was attempted beyond the dry run. Even with permission it would
+  bypass the PR the ledger specifies, and would publish 29 commits to a public default branch.
 
 ## Explicitly outside this worktree
 
