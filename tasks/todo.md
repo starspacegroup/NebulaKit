@@ -182,6 +182,42 @@ Merge attempt recorded on 2026-08-08 (third session):
 
 ## Explicitly outside this worktree
 
-- [ ] After NebulaKit is merged, audit whether the same inherited fixes apply to Guides, nabu, and
-      sortalizer in separate repository branches. Do not stage sibling-repository files here.
+- [~] After NebulaKit is merged, audit whether the same inherited fixes apply to Guides, nabu, and
+  sortalizer in separate repository branches. Do not stage sibling-repository files here.
 - [ ] Record any remaining design decision or external blocker without claiming completion.
+
+Sibling audit, read-only pass recorded on 2026-08-08 (fourth session):
+
+- The audit's read-only half does not depend on the merge gate, so it was run; propagation of any fix
+  still waits on PR #6 landing. No sibling-repository file was staged, edited, or committed.
+- **4 of the 7 P0 items were compared** across Guides, nabu, and sortalizer. Not yet audited:
+  sanitize-before-`{@html}`, one-time OAuth state consumption, and the coverage-inclusion item.
+- `isSuperAdmin` (the `e0e509c` fix): **does not apply.** The identifier does not appear anywhere in
+  Guides, nabu, or sortalizer `src/`. It exists only in NebulaKit (`app.d.ts`, `auth-guards.ts`,
+  `stats-guard.ts`), so the guard-divergence it fixed cannot occur in the siblings.
+- Admin-users PII masking: **already present** in Guides and sortalizer — both use `requireAdmin`
+  plus `isPiiRevealed`/`maskEmail`/`maskGeneric`, matching NebulaKit. **nabu is not exposed and needs
+  no port:** it has no `pii-mask.ts` but gates all three admin-users endpoints on `requireOwner`,
+  which is strictly stronger than NebulaKit's `requireAdmin`-plus-mask (nabu's own `auth-guards.ts`
+  defines `requireAdmin` as owner-or-admin and `requireOwner` as owner-only). The residual difference
+  is that NebulaKit masks by default even for the owner until an explicit reveal cookie is set; that
+  is a hardening delta, not a leak.
+- Destructive reset and authentication-key administration: **owner-gated in all four repositories.**
+  No gap.
+- **Open finding — Guides only.** `Guides/src/routes/api/admin/users/[id]/+server.ts` guards PATCH
+  and DELETE with an inline `if (!locals.user.isOwner && !locals.user.isAdmin)`, so **any admin can
+  promote an arbitrary user to admin or delete users.** NebulaKit restricted both handlers to
+  `requireOwner` in `924a5ac` ("Retire the template workflow; harden auth and the OAuth write path"),
+  and nabu and sortalizer both use `requireOwner` there. Guides is the only outlier and never
+  received the change — the sole commit touching that file is `4aefa9c`, unrelated. Verified not a
+  false positive: `Guides/src/hooks.server.ts` adds no route guard (it only populates `locals.user`,
+  with `isAdmin: is_admin === 1 || isOwner`), and no `+layout.server.ts` covers `src/routes/api`. The
+  only limits are the self-modification check and the KV `setup:complete` owner-email check, so a
+  non-owner admin can still escalate any other account.
+- The sibling `search/` and `[id]/` endpoints in Guides and sortalizer use inline
+  authenticate-then-authorize blocks rather than the shared `auth-guards` helpers. Behaviour was read
+  and matches `requireAdmin` in every case checked, so this is a divergence risk rather than a
+  defect — the same class of drift that `93bf6aa` caused in NebulaKit.
+- Guides is checked out on `cursor/guides-main-security-20260808` with a clean tree, but that branch
+  is **empty**: `git log main..HEAD` and `git diff --stat main...HEAD` both return nothing. It does
+  not already carry this fix.
