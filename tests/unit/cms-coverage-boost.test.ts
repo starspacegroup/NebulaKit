@@ -815,6 +815,8 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 			const mockDB = createMockDB();
 			// updateContentItem: get existing
 			mockDB._firstQueue.push(mockContentItemRow);
+			// updateContentItem: content type lookup for publish-lock evaluation
+			mockDB._firstQueue.push({ fields: '[]', settings: '{}' });
 			// updateContentItem: update returning
 			mockDB._firstQueue.push({ ...mockContentItemRow, title: 'Updated' });
 
@@ -1816,6 +1818,8 @@ describe('CMS Service - Additional Coverage', () => {
 			const mockDB = createMockDB();
 			// get existing (draft)
 			mockDB._firstQueue.push({ ...mockContentItemRow, status: 'draft', published_at: null });
+			// content type lookup for publish-lock evaluation
+			mockDB._firstQueue.push({ fields: '[]', settings: '{}' });
 			// update returning
 			mockDB._firstQueue.push({ ...mockContentItemRow, status: 'published' });
 
@@ -1830,6 +1834,8 @@ describe('CMS Service - Additional Coverage', () => {
 			const mockDB = createMockDB();
 			// get existing
 			mockDB._firstQueue.push(mockContentItemRow);
+			// content type lookup for publish-lock evaluation
+			mockDB._firstQueue.push({ fields: '[]', settings: '{}' });
 			// update returning
 			mockDB._firstQueue.push(mockContentItemRow);
 

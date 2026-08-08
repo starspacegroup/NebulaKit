@@ -452,6 +452,8 @@ describe('CMS Service', () => {
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
 			});
+			// updateContentItem now reads the content type to evaluate publish locks
+			mockDB.first.mockResolvedValueOnce({ fields: '[]', settings: '{}' });
 			// Second call: update result
 			mockDB.first.mockResolvedValueOnce({
 				id: 'ci-1',

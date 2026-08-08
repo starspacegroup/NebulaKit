@@ -7,7 +7,9 @@
  */
 
 import { contentTypeRegistry } from '$lib/cms/registry';
+import { LockedContentError } from '$lib/cms/types';
 import type {
+	ContentFieldDefinition,
 	ContentItem,
 	ContentItemFilters,
 	ContentItemParsed,
@@ -15,13 +17,20 @@ import type {
 	ContentTagParsed,
 	ContentType,
 	ContentTypeParsed,
+	ContentTypeSettings,
 	CreateContentItemInput,
 	CreateContentTypeInput,
 	PaginatedResult,
 	UpdateContentItemInput,
 	UpdateContentTypeInput
 } from '$lib/cms/types';
-import { generateSlug, parseContentItem, parseContentTag, parseContentType } from '$lib/cms/utils';
+import {
+	generateSlug,
+	getLockedFieldViolations,
+	parseContentItem,
+	parseContentTag,
+	parseContentType
+} from '$lib/cms/utils';
 import type { D1Database } from '@cloudflare/workers-types';
 
 interface CommandPaletteContentRow {
@@ -363,6 +372,40 @@ export async function updateContentItem(
 		return null;
 	}
 
+	const contentTypeRow = await db
+		.prepare('SELECT fields, settings FROM content_types WHERE id = ?')
+		.bind(existing.content_type_id)
+		.first<{ fields: string; settings: string }>();
+	const definitions = contentTypeRow
+		? (JSON.parse(contentTypeRow.fields) as ContentFieldDefinition[])
+		: [];
+	const settings = contentTypeRow
+		? (JSON.parse(contentTypeRow.settings) as ContentTypeSettings)
+		: {};
+	const existingFieldsObj = JSON.parse(existing.fields) as Record<string, unknown>;
+
+	// Locked fields are only enforced once the item has ever been published —
+	// keyed on published_at (has it EVER been published), not current status,
+	// since an unpublish→edit→republish cycle must not be able to launder them.
+	if (existing.published_at !== null) {
+		if (input.fields) {
+			const violations = getLockedFieldViolations(definitions, existingFieldsObj, input.fields);
+			if (violations.length > 0) {
+				throw new LockedContentError(
+					`Cannot edit locked field(s) after publishing: ${violations.join(', ')}`
+				);
+			}
+		}
+		if (settings.lockTitleAndSlugAfterPublish) {
+			if (input.title !== undefined && input.title !== existing.title) {
+				throw new LockedContentError('Cannot edit the title after publishing');
+			}
+			if (input.slug !== undefined && input.slug !== existing.slug) {
+				throw new LockedContentError('Cannot edit the slug after publishing');
+			}
+		}
+	}
+
 	const title = input.title ?? existing.title;
 	const slug = input.slug ?? existing.slug;
 	const status = input.status ?? existing.status;
@@ -378,9 +421,12 @@ export async function updateContentItem(
 				: 0
 			: (existing.show_in_command_palette ?? 1);
 
-	// Set published_at when first publishing
+	// Set published_at only the first time this item is ever published — keyed
+	// on published_at being null so far, not current status. Keying on status
+	// meant an unpublish→republish cycle reset the first-publish date, which
+	// also reopened every lock above.
 	let publishedAt = existing.published_at;
-	if (status === 'published' && existing.status !== 'published') {
+	if (status === 'published' && existing.published_at === null) {
 		publishedAt = new Date().toISOString();
 	}
 

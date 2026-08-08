@@ -20,7 +20,8 @@ export type ContentFieldType =
 	| 'url'
 	| 'email'
 	| 'json'
-	| 'color';
+	| 'color'
+	| 'tasklist';
 
 /** Validation rules for a content field */
 export interface ContentFieldValidation {
@@ -54,6 +55,8 @@ export interface ContentFieldDefinition {
 	helpText?: string;
 	/** Display order (lower = first) */
 	sortOrder?: number;
+	/** Once the item has ever been published, this field can no longer be changed */
+	lockedAfterPublish?: boolean;
 	/** Group name for visual grouping in forms */
 	group?: string;
 }
@@ -80,6 +83,10 @@ export interface ContentTypeSettings {
 	isPublic?: boolean;
 	/** Whether items of this type can appear in the command palette (default: true) */
 	showInCommandPalette?: boolean;
+	/** Once the item has ever been published, title/slug can no longer be changed */
+	lockTitleAndSlugAfterPublish?: boolean;
+	/** Archived items of this type still render publicly (grouped as "Archive") instead of 404ing */
+	publicArchiveVisible?: boolean;
 	/** Template to use for rendering items (default: 'default') */
 	listTemplate?: string;
 	/** Template to use for rendering single items (default: 'default') */
@@ -261,4 +268,12 @@ export interface UpdateContentTypeInput {
 	icon?: string;
 	fields?: ContentFieldDefinition[];
 	settings?: ContentTypeSettings;
+}
+
+/** Thrown when an update would change a field locked after first publish */
+export class LockedContentError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'LockedContentError';
+	}
 }

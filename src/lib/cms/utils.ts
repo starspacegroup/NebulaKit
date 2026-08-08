@@ -79,6 +79,28 @@ export function parseContentItem(row: ContentItem): ContentItemParsed {
 }
 
 /**
+ * Field labels whose values would change despite being marked
+ * `lockedAfterPublish`. Callers enforce this only once an item has EVER been
+ * published (keyed on published_at, not current status) so that an
+ * unpublish → edit → republish cycle cannot launder a locked value.
+ */
+export function getLockedFieldViolations(
+	definitions: ContentFieldDefinition[],
+	existingFields: Record<string, unknown>,
+	incomingFields: Record<string, unknown>
+): string[] {
+	const violations: string[] = [];
+	for (const def of definitions) {
+		if (!def.lockedAfterPublish) continue;
+		if (!(def.name in incomingFields)) continue;
+		if (JSON.stringify(existingFields[def.name]) !== JSON.stringify(incomingFields[def.name])) {
+			violations.push(def.label);
+		}
+	}
+	return violations;
+}
+
+/**
  * Parse a content tag from D1 row format to runtime format.
  */
 export function parseContentTag(row: ContentTag): ContentTagParsed {

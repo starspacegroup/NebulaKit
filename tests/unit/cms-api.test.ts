@@ -410,6 +410,8 @@ describe('CMS API - Content Items', () => {
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
 			});
+			// content type lookup for publish-lock evaluation
+			mockDB.first.mockResolvedValueOnce({ fields: '[]', settings: '{}' });
 			// updateContentItem: update result
 			mockDB.first.mockResolvedValueOnce({
 				id: 'ci-1',

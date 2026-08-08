@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import TaskListField from '$lib/components/TaskListField.svelte';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
@@ -74,6 +75,8 @@
 					defaults[field.name] = [];
 				} else if (field.type === 'number') {
 					defaults[field.name] = null;
+				} else if (field.type === 'tasklist') {
+					defaults[field.name] = [];
 				} else {
 					defaults[field.name] = '';
 				}
@@ -721,6 +724,8 @@
 										rows="5"
 										class="json-field"
 									></textarea>
+								{:else if field.type === 'tasklist'}
+									<TaskListField bind:value={formFields[field.name]} />
 								{:else}
 									<input
 										id="field-{field.name}"
