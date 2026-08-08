@@ -15,7 +15,10 @@ describe('OAuth account reconciliation', () => {
 	});
 
 	it('returns an existing canonical account without mutating it', async () => {
-		const db = database({ linkedAccount: { user_id: 'canonical-user' }, users: ['canonical-user'] });
+		const db = database({
+			linkedAccount: { user_id: 'canonical-user' },
+			users: ['canonical-user']
+		});
 		const createUser = vi.fn();
 		const updateUser = vi.fn();
 
@@ -75,10 +78,7 @@ describe('OAuth account reconciliation', () => {
 	});
 });
 
-function database(options: {
-	linkedAccount?: { user_id: string } | null;
-	users?: string[];
-}) {
+function database(options: { linkedAccount?: { user_id: string } | null; users?: string[] }) {
 	const oauthInsert = vi.fn().mockResolvedValue({ success: true });
 	return {
 		oauthInsert,

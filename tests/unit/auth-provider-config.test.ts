@@ -3,9 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 describe('authentication provider configuration', () => {
 	it('resolves environment credentials without reading KV', async () => {
 		const kv = { get: vi.fn() };
-		const { getAuthProviderCredentials } = await import(
-			'../../src/lib/utils/auth-provider-config'
-		);
+		const { getAuthProviderCredentials } = await import('../../src/lib/utils/auth-provider-config');
 
 		await expect(
 			getAuthProviderCredentials(
@@ -24,13 +22,11 @@ describe('authentication provider configuration', () => {
 
 	it('fills missing credentials from the provider KV record', async () => {
 		const kv = {
-			get: vi.fn().mockResolvedValue(
-				JSON.stringify({ clientId: 'stored-id', clientSecret: 'stored-secret' })
-			)
+			get: vi
+				.fn()
+				.mockResolvedValue(JSON.stringify({ clientId: 'stored-id', clientSecret: 'stored-secret' }))
 		};
-		const { getAuthProviderCredentials } = await import(
-			'../../src/lib/utils/auth-provider-config'
-		);
+		const { getAuthProviderCredentials } = await import('../../src/lib/utils/auth-provider-config');
 
 		await expect(
 			getAuthProviderCredentials({ env: { KV: kv } } as never, 'discord')
@@ -40,9 +36,8 @@ describe('authentication provider configuration', () => {
 
 	it('fails closed for malformed KV data and validates provider names', async () => {
 		const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-		const { getAuthProviderCredentials, isAuthProvider } = await import(
-			'../../src/lib/utils/auth-provider-config'
-		);
+		const { getAuthProviderCredentials, isAuthProvider } =
+			await import('../../src/lib/utils/auth-provider-config');
 		const platform = {
 			env: { KV: { get: vi.fn().mockResolvedValue('{invalid') } }
 		} as never;

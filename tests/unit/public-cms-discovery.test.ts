@@ -35,13 +35,13 @@ describe('public CMS discovery', () => {
 		const items = await getCommandPaletteContentItems(db);
 		expect(queries[0]).toContain("json_extract(ct.settings, '$.isPublic')");
 		expect(items).toEqual([
-		{
-			id: 'cms-public-item',
-			label: 'Hello',
-			description: 'Articles',
-			href: '/articles/hello',
-			contentTypeName: 'Articles'
-		}
+			{
+				id: 'cms-public-item',
+				label: 'Hello',
+				description: 'Articles',
+				href: '/articles/hello',
+				contentTypeName: 'Articles'
+			}
 		]);
 	});
 
