@@ -64,8 +64,39 @@ Stash-integration evidence recorded on 2026-08-08:
   advanced local `main` from `e24f2ce` through multiple unpushed commits; no push, stash drop, reset,
   or assistant-created commit was performed in this resolution session.
 
-- [ ] Review the complete path-scoped diff, commit it on the feature branch, push, open a draft PR,
-      resolve source-related hosted checks, squash-merge into `main`, and verify remote state.
+- [~] Review the complete path-scoped diff, commit it on the feature branch, push, open a draft PR,
+  resolve source-related hosted checks, squash-merge into `main`, and verify remote state.
+
+Delivery evidence recorded on 2026-08-08 (second session):
+
+- Diff reviewed for publication safety across three independent audits: credential sweep, merge
+  provenance, and hosted-check diagnosis. Doc corrections committed as `93a4624` and pushed to
+  `fork/cursor/nebulakit-quality-pass-20260808`. Draft PR
+  [#6](https://github.com/starspacegroup/NebulaKit/pull/6) already existed; its head now matches
+  local `HEAD` (16 commits, 223 files). Remote state verified.
+- Credential sweep: no live secret is introduced by `origin/main...HEAD`. The real D1/KV ids that
+  appear in six intermediate `cms-v2-embeds` commits are the historically leaked ones already
+  reachable from `origin/main` and already denylisted as `QUARANTINED` in `scripts/check-bindings.mjs`;
+  publishing this branch changes their exposure by zero. They remain a pre-existing rotation item,
+  not a branch fix. Branch tip `wrangler.toml` is placeholder-only.
+- **Blocked, not passing — hosted checks.** Workflow run `31245359440` for PR #6 concluded
+  `action_required` with zero jobs, so no check run was ever created; that is why the PR reads
+  `UNSTABLE` while `gh pr checks` reports none. Cause is the fork-PR approval gate: the PR head is
+  `donaldfilimon/NebulaKit` and `author_association` is `NONE`. Ruled out by direct query: workflow
+  missing on base, trigger/branch filters, draft suppression, and Actions being disabled.
+- **Blocked, not passing — squash-merge.** `gh api repos/starspacegroup/NebulaKit` returns
+  `permissions: {admin: false, maintain: false, push: false, triage: false, pull: true}` for
+  `donaldfilimon`. Approving the parked run, merging PR #6, and pushing local `main` (15 commits
+  ahead of `origin/main`) all require write access this account does not hold. A maintainer of
+  `starspacegroup/NebulaKit` must approve the run and perform the merge.
+- Squash-merging collapses authorship: 6 of the 16 commits are authored by David Monaghan
+  <monaghan.david@gmail.com> (the `cms-v2-embeds` lineage). The squash message needs a
+  `Co-Authored-By:` trailer for them.
+- Open disclosure decision: `ROADMAP.md` and `docs/PAYMENTS_AND_PPP.md` publish absolute local
+  filesystem paths and names for private/third-party downstream projects (AgapeVerse, Atlas,
+  Arizona, davis9001.dev), plus downstream commit shas and pricing strategy. Both
+  `starspacegroup/NebulaKit` and the fork are public, so this content is already publicly readable
+  via PR #6 — scrubbing is damage limitation, not prevention. Not actioned pending the owner's call.
 
 ## Explicitly outside this worktree
 
