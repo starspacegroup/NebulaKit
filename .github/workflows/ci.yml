@@ -75,7 +75,16 @@ jobs:
           path: playwright-report/
           retention-days: 30
 
-  # Build & Deploy handled by Cloudflare Pages Git integration
-  # See: https://dash.cloudflare.com → Pages → NebulaKit
+  # No deploy step. Automatic Cloudflare Pages deploys are DISABLED for this repo
+  # (Pages → NebulaKit → deployments_enabled = false), because NebulaKit is the
+  # template: wrangler.toml ships placeholder resource ids on purpose, so the
+  # `prebuild` binding guard fails every build by design. See 60f594e and
+  # docs/CLOUDFLARE_SETUP.md. Derived projects paste their own ids and deploy
+  # normally — the guidance in SETUP.md still applies to them, not to this repo.
+  #
+  # nebulakit.pages.dev / nebulakit.starspace.group still serve the last green
+  # deploy (2d5c6f7, 2026-07-18) and will stay frozen there until deploys are
+  # re-enabled.
+  #
   # NOTE: bun.lock is the sole lockfile; package-lock.json was removed so the two
-  # can no longer drift. The Pages build must install with bun to match.
+  # can no longer drift. The Pages build command installs with bun to match.
