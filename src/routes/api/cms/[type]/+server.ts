@@ -8,11 +8,7 @@ import type { ContentItemFilters } from '$lib/cms/types';
 import { sanitizeRichtextFields } from '$lib/cms/sanitize';
 import { getContentTypeRoutePrefix, validateFields } from '$lib/cms/utils';
 import { runTimestampProofJob } from '$lib/content-proof/proof-job';
-import {
-	createContentItem,
-	getContentTypeBySlug,
-	listContentItems
-} from '$lib/services/cms';
+import { createContentItem, getContentTypeBySlug, listContentItems } from '$lib/services/cms';
 import { requireAdmin } from '$lib/server/auth-guards';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';

@@ -5,7 +5,9 @@ import SharingMeta from './SharingMeta.svelte';
 describe('SharingMeta', () => {
 	beforeEach(() => {
 		// Clear any existing meta tags from previous tests
-		document.head.querySelectorAll('meta, title, link[rel="canonical"]').forEach((el) => el.remove());
+		document.head
+			.querySelectorAll('meta, title, link[rel="canonical"]')
+			.forEach((el) => el.remove());
 	});
 
 	it('should render title with site name suffix', () => {
@@ -257,7 +259,9 @@ describe('SharingMeta', () => {
 		render(SharingMeta, {
 			props: { title: 'Test', publishedTime: '2026-01-15T00:00:00Z', author: 'Jane' }
 		});
-		expect(document.querySelector('meta[property="article:published_time"]')).not.toBeInTheDocument();
+		expect(
+			document.querySelector('meta[property="article:published_time"]')
+		).not.toBeInTheDocument();
 		expect(document.querySelector('meta[property="article:author"]')).not.toBeInTheDocument();
 	});
 
@@ -301,26 +305,66 @@ describe('SharingMeta', () => {
 		});
 
 		expect(document.querySelector('title')?.textContent).toBe('Full Test - TestSite');
-		expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe('Full description');
-		expect(document.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe('Full Test');
-		expect(document.querySelector('meta[property="og:description"]')?.getAttribute('content')).toBe('Full description');
-		expect(document.querySelector('meta[property="og:type"]')?.getAttribute('content')).toBe('article');
-		expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content')).toBe('https://example.com/full.png');
-		expect(document.querySelector('meta[property="og:image:alt"]')?.getAttribute('content')).toBe('Full image alt');
-		expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe('https://example.com/full');
-		expect(document.querySelector('meta[property="og:site_name"]')?.getAttribute('content')).toBe('TestSite');
-		expect(document.querySelector('meta[property="og:locale"]')?.getAttribute('content')).toBe('de_DE');
-		expect(document.querySelector('meta[name="twitter:card"]')?.getAttribute('content')).toBe('summary');
-		expect(document.querySelector('meta[name="twitter:title"]')?.getAttribute('content')).toBe('Full Test');
-		expect(document.querySelector('meta[name="twitter:description"]')?.getAttribute('content')).toBe('Full description');
-		expect(document.querySelector('meta[name="twitter:image"]')?.getAttribute('content')).toBe('https://example.com/full.png');
-		expect(document.querySelector('meta[name="twitter:image:alt"]')?.getAttribute('content')).toBe('Full image alt');
-		expect(document.querySelector('meta[name="twitter:site"]')?.getAttribute('content')).toBe('@testsite');
-		expect(document.querySelector('meta[name="twitter:creator"]')?.getAttribute('content')).toBe('@creator');
-		expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('https://example.com/full');
-		expect(document.querySelector('meta[property="article:published_time"]')?.getAttribute('content')).toBe('2026-01-01T00:00:00Z');
-		expect(document.querySelector('meta[property="article:modified_time"]')?.getAttribute('content')).toBe('2026-03-01T00:00:00Z');
-		expect(document.querySelector('meta[property="article:author"]')?.getAttribute('content')).toBe('Test Author');
+		expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+			'Full description'
+		);
+		expect(document.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
+			'Full Test'
+		);
+		expect(document.querySelector('meta[property="og:description"]')?.getAttribute('content')).toBe(
+			'Full description'
+		);
+		expect(document.querySelector('meta[property="og:type"]')?.getAttribute('content')).toBe(
+			'article'
+		);
+		expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content')).toBe(
+			'https://example.com/full.png'
+		);
+		expect(document.querySelector('meta[property="og:image:alt"]')?.getAttribute('content')).toBe(
+			'Full image alt'
+		);
+		expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(
+			'https://example.com/full'
+		);
+		expect(document.querySelector('meta[property="og:site_name"]')?.getAttribute('content')).toBe(
+			'TestSite'
+		);
+		expect(document.querySelector('meta[property="og:locale"]')?.getAttribute('content')).toBe(
+			'de_DE'
+		);
+		expect(document.querySelector('meta[name="twitter:card"]')?.getAttribute('content')).toBe(
+			'summary'
+		);
+		expect(document.querySelector('meta[name="twitter:title"]')?.getAttribute('content')).toBe(
+			'Full Test'
+		);
+		expect(
+			document.querySelector('meta[name="twitter:description"]')?.getAttribute('content')
+		).toBe('Full description');
+		expect(document.querySelector('meta[name="twitter:image"]')?.getAttribute('content')).toBe(
+			'https://example.com/full.png'
+		);
+		expect(document.querySelector('meta[name="twitter:image:alt"]')?.getAttribute('content')).toBe(
+			'Full image alt'
+		);
+		expect(document.querySelector('meta[name="twitter:site"]')?.getAttribute('content')).toBe(
+			'@testsite'
+		);
+		expect(document.querySelector('meta[name="twitter:creator"]')?.getAttribute('content')).toBe(
+			'@creator'
+		);
+		expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+			'https://example.com/full'
+		);
+		expect(
+			document.querySelector('meta[property="article:published_time"]')?.getAttribute('content')
+		).toBe('2026-01-01T00:00:00Z');
+		expect(
+			document.querySelector('meta[property="article:modified_time"]')?.getAttribute('content')
+		).toBe('2026-03-01T00:00:00Z');
+		expect(document.querySelector('meta[property="article:author"]')?.getAttribute('content')).toBe(
+			'Test Author'
+		);
 		expect(document.querySelector('meta[name="robots"]')).not.toBeInTheDocument();
 	});
 });

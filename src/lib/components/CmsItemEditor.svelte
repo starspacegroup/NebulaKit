@@ -234,8 +234,7 @@
 									id="field-{field.name}"
 									bind:value={formFields[field.name]}
 									placeholder={field.placeholder || ''}
-									rows="4"
-								></textarea>
+									rows="4"></textarea>
 							{:else if field.type === 'richtext'}
 								<RichTextEditor
 									bind:value={formFields[field.name]}
@@ -289,8 +288,7 @@
 									bind:value={formFields[field.name]}
 									placeholder={'{"key": "value"}'}
 									rows="5"
-									class="json-field"
-								></textarea>
+									class="json-field"></textarea>
 							{:else}
 								<input
 									id="field-{field.name}"
@@ -385,8 +383,7 @@
 									id="seo-description"
 									bind:value={formSeoDescription}
 									placeholder="Brief description for search results"
-									rows="3"
-								></textarea>
+									rows="3"></textarea>
 							</div>
 							<div class="form-group">
 								<label for="seo-image">SEO Image URL</label>

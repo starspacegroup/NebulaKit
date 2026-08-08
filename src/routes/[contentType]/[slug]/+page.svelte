@@ -123,7 +123,7 @@
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-										{item.fields[fieldDef.name]}
+									{item.fields[fieldDef.name]}
 								</a>
 							{:else if fieldDef.type === 'boolean'}
 								<p>

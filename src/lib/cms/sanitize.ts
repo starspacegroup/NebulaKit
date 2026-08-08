@@ -188,15 +188,7 @@ function isSafeEmbedValue(value: unknown, depth = 0): boolean {
 const filter = new FilterXSS({
 	whiteList: ALLOWED_TAGS,
 	stripIgnoreTag: true,
-	stripIgnoreTagBody: [
-		'iframe',
-		'math',
-		'noscript',
-		'object',
-		'script',
-		'style',
-		'template'
-	],
+	stripIgnoreTagBody: ['iframe', 'math', 'noscript', 'object', 'script', 'style', 'template'],
 	onTagAttr(tag, name, value) {
 		if (tag === 'div' && name === 'data-svelte-embed') {
 			return EMBED_NAME_PATTERN.test(value)
@@ -209,7 +201,12 @@ const filter = new FilterXSS({
 			try {
 				const decoded = decodeAttrEntities(value);
 				const parsed = JSON.parse(decoded);
-				if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && isSafeEmbedValue(parsed)) {
+				if (
+					parsed &&
+					typeof parsed === 'object' &&
+					!Array.isArray(parsed) &&
+					isSafeEmbedValue(parsed)
+				) {
 					const serialized = JSON.stringify(parsed);
 					if (serialized.length <= MAX_EMBED_PROPS_BYTES) {
 						return `data-props="${encodeAttrEntities(serialized)}"`;

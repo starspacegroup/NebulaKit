@@ -40,10 +40,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="Reset Configuration"
-	noindex={true}
-/>
+<SharingMeta title="Reset Configuration" noindex={true} />
 
 <div class="container">
 	<div class="reset-card">

@@ -4,10 +4,7 @@
 	const lastUpdated = 'January 1, 2026';
 </script>
 
-<SharingMeta
-	title="Privacy Policy"
-	description="Privacy Policy for NebulaKit"
-/>
+<SharingMeta title="Privacy Policy" description="Privacy Policy for NebulaKit" />
 
 <main class="legal-page">
 	<div class="legal-container">

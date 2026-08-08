@@ -926,11 +926,10 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 			const { DELETE } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 			const mockDB = createMockDB();
 			mockDB._runResult = { meta: { changes: 1 } };
-			mockDB._firstQueue.push(
-				mockContentTypeRow,
-				mockContentItemRow,
-				{ published_at: null, settings: '{}' }
-			);
+			mockDB._firstQueue.push(mockContentTypeRow, mockContentItemRow, {
+				published_at: null,
+				settings: '{}'
+			});
 
 			const response = await DELETE(
 				createMockEvent({
@@ -948,11 +947,10 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 		it('should handle internal errors in DELETE', async () => {
 			const { DELETE } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 			const mockDB = createMockDB();
-			mockDB._firstQueue.push(
-				mockContentTypeRow,
-				mockContentItemRow,
-				{ published_at: null, settings: '{}' }
-			);
+			mockDB._firstQueue.push(mockContentTypeRow, mockContentItemRow, {
+				published_at: null,
+				settings: '{}'
+			});
 			mockDB.run.mockRejectedValueOnce(new Error('DB fail'));
 
 			try {

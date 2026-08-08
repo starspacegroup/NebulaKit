@@ -52,7 +52,15 @@
 						aria-label="Remove task"
 						title="Remove"
 					>
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							aria-hidden="true"
+						>
 							<line x1="18" y1="6" x2="6" y2="18" />
 							<line x1="6" y1="6" x2="18" y2="18" />
 						</svg>
@@ -73,7 +81,15 @@
 			class="task-input"
 		/>
 		<button type="button" class="task-add-btn" on:click={addTask}>
-			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+			<svg
+				width="14"
+				height="14"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.5"
+				aria-hidden="true"
+			>
 				<line x1="12" y1="5" x2="12" y2="19" />
 				<line x1="5" y1="12" x2="19" y2="12" />
 			</svg>
@@ -149,7 +165,9 @@
 		border-radius: var(--radius-sm);
 		cursor: pointer;
 		flex-shrink: 0;
-		transition: color 0.15s, background 0.15s;
+		transition:
+			color 0.15s,
+			background 0.15s;
 	}
 
 	.task-remove:hover {

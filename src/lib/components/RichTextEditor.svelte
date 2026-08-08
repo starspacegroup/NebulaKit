@@ -467,8 +467,7 @@
 			bind:value
 			rows="14"
 			aria-label="HTML source"
-			spellcheck="false"
-		></textarea>
+			spellcheck="false"></textarea>
 	{/if}
 </div>
 
@@ -547,8 +546,7 @@
 					bind:value={propsJson}
 					rows="8"
 					aria-label="Embed props JSON"
-					spellcheck="false"
-				></textarea>
+					spellcheck="false"></textarea>
 			{/if}
 			{#if propsError}
 				<p class="rte-props-error" role="alert">{propsError}</p>

@@ -22,11 +22,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="AI Chat"
-	description="Chat with AI powered by NebulaKit"
-	noindex={true}
-/>
+<SharingMeta title="AI Chat" description="Chat with AI powered by NebulaKit" noindex={true} />
 
 <div class="chat-page-container">
 	<ChatSidebar isOpen={isSidebarOpen} />

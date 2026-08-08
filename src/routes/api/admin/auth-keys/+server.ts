@@ -45,8 +45,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		if (!data.name || !data.provider || !data.clientId || !data.clientSecret) {
 			throw error(400, 'Missing required fields');
 		}
-		if (!isAuthProvider(data.provider))
-			throw error(400, 'Unsupported authentication provider');
+		if (!isAuthProvider(data.provider)) throw error(400, 'Unsupported authentication provider');
 
 		// Generate unique ID
 		const id = crypto.randomUUID();

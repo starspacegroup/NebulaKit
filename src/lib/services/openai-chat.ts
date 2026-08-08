@@ -49,7 +49,9 @@ const CHAT_MODEL_IDS = new Set<string>(CHAT_MODELS.map(({ id }) => id));
 
 export function getConfiguredChatModels(key: AIKey): string[] {
 	const models = key.models || (key.model ? [key.model] : []);
-	return models.filter((model): model is string => typeof model === 'string' && CHAT_MODEL_IDS.has(model));
+	return models.filter(
+		(model): model is string => typeof model === 'string' && CHAT_MODEL_IDS.has(model)
+	);
 }
 
 export function selectDefaultChatModel(models: string[]): string | undefined {

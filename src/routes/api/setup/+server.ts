@@ -30,13 +30,14 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		const kv = platform?.env?.KV;
 		if (!kv) throw error(500, 'KV storage not available');
 
-		const [existingConfig, existingOwnerId, existingOwnerUsername, setupLocked] =
-			await Promise.all([
+		const [existingConfig, existingOwnerId, existingOwnerUsername, setupLocked] = await Promise.all(
+			[
 				kv.get('auth_config:github'),
 				kv.get('github_owner_id'),
 				kv.get('github_owner_username'),
 				kv.get('admin_first_login_completed')
-			]);
+			]
+		);
 
 		// An owner must explicitly reset all setup state before this endpoint can
 		// assign ownership again. Partial or unreadable setup state fails closed.
