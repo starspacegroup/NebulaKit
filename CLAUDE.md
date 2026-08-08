@@ -35,6 +35,18 @@ Setup / maintenance scripts (`scripts/`): `setup:cf` (create the Cloudflare D1/K
 
 `vite.config.ts` sets vitest `thresholds` of **95** for lines, functions, branches, and statements — so `test:coverage`, and therefore CI's coverage step, fails below 95 on all four. This matches AGENTS.md §1. There is deliberately no second gate: CI used to carry a `jq` step nominally checking 90% that read a `coverage-summary.json` nothing generated, so it always passed. Don't reintroduce a number outside the thresholds block — that split is what let the docs drift to 90 while the real floor was 95.
 
+### What CI actually runs
+
+`.github/workflows/ci.yml`, on push and PR to `main`/`develop`, with Bun pinned to `1.3.14`:
+
+- **`test`** — `bun run check` → `bun run validate:contrast` → `bun run build:ci` → `bun run test:coverage` → codecov upload (`fail_ci_if_error: false`, so an upload failure does not fail that step; whether a codecov status blocks a PR is branch-protection state, not something this file settles).
+- **`e2e`** — `bunx playwright install --with-deps`, then `bun run test:e2e`. E2E is meant to gate in CI, not only locally.
+- **No deploy job.** Cloudflare Pages auto-deploy is disabled for this repository, because the placeholder ids in `wrangler.toml` make a production build fail by design (see `docs/CLOUDFLARE_SETUP.md`).
+
+This describes the workflow's _intended_ gates. Per AGENTS.md's Verification rule, don't report them as passing without observing a run: as of 2026-08-08 the workflow has never executed on `starspacegroup/NebulaKit` — the fork-PR approval gate parked it at `action_required` with zero jobs (`tasks/goals.md`). Local evidence is the only evidence this branch has.
+
+`bun run validate:all` is **not** the CI gate. It runs `test`, not `test:coverage`, so the 95% floor never fires under it, and it skips `build:ci` and E2E entirely. To reproduce CI locally, run the four `test`-job commands in order and then `bun run test:e2e`.
+
 ## Architecture
 
 SvelteKit 2 + **Svelte 5** (`^5.56.8`) + TypeScript run on Cloudflare Pages (`@sveltejs/adapter-cloudflare`). Existing components largely use Svelte's legacy-compatible `export let`, `$:`, and store syntax; match the surrounding file unless a deliberate migration is in scope. Bindings come in through `event.platform.env`: `DB` (D1), `KV`, and `BUCKET` (R2). There is no ORM; database access uses parameterized D1 statements (`src/lib/utils/db.ts`).
@@ -55,9 +67,19 @@ Each handler is exported individually because `sequence()` needs Kit's request s
 
 **CMS is registry-driven.** Content types are declared in `src/lib/cms/registry.ts`, synced to D1 on first access, and the routes generate themselves: `src/routes/[contentType]/`, `[contentType]/[slug]/`, and `admin/cms/[type]/`. Adding a type means adding a definition object, not adding routes. Embeds are split on purpose: `src/lib/cms/embeds/manifest.ts` carries metadata with **zero `.svelte` imports** so Workers, Vitest, and browser code can all load it; `embeds/index.ts` holds the actual components.
 
+**Timestamp proofs are a CMS opt-in whose hash must stay reproducible.** A content type sets `settings.enableTimestampProof` (`src/lib/cms/types.ts`), and on **first publish only** — `item.publishedAt` in `api/cms/[type]/+server.ts`, `!existing.publishedAt && item.publishedAt` in `api/cms/[type]/[id]/+server.ts` — the route hands `runTimestampProofJob` to `platform?.context?.waitUntil()`. The job (`src/lib/content-proof/proof-job.ts`) computes a SHA-256 over the sorted-key JSON of title/slug/body/date-window (`content-proof/hash.ts`), requests an RFC 3161 token (`timestamp/rfc3161.ts`), triggers a Wayback capture (`timestamp/wayback.ts`), and records the outcome in the `timestamp_proof_*` / `wayback_*` columns added by `0010_`. Three properties are load-bearing:
+
+- The hash is computed once and **never** recomputed. A third party can only re-derive it because `lockedAfterPublish` (per field, enforced in `src/lib/cms/utils.ts`) and `lockTitleAndSlugAfterPublish` (`src/lib/services/cms.ts`) genuinely freeze those fields after publish. Weaken either lock and every existing proof silently stops verifying — nothing fails at write time.
+- The job never throws. It runs detached from a response that already went back to the client, so it records the failure instead of propagating it.
+- `waitUntil` is optional-chained, so an environment without it skips the job entirely. That is what `api/cms/[type]/[id]/timestamp-retry/` exists to repair, alongside `wayback-check/`.
+
+There is no `docs/` note for this subsystem; the source comments and `tests/unit/content-proof-*.test.ts` / `rfc3161.test.ts` / `wayback.test.ts` are the specification.
+
 **Auth is hand-rolled — there is no auth library in the request path.** The browser receives a signed opaque session token (`src/lib/utils/session.ts`), while its digest and expiry live in D1. Per-provider OAuth route pairs under `src/routes/api/auth/{github,discord}/` persist and atomically consume one-time state transactions; email/password lives at `login`, `signup`, and `password`. Identity and admin flags are re-read from D1 on every request in `authHandler`, so revocation and role changes take effect without a re-login. Provider availability is resolved from `platform.env` or KV `auth_config:<provider>`; account linking lives in `src/lib/services/account-merge.ts`. Authorization checks belong in `src/lib/server/auth-guards.ts` and are reused from there rather than re-derived per route — server loads and API handlers each guard themselves, because hiding UI is not authorization. `@auth/core` and `@auth/sveltekit` were declared dependencies that nothing imported — removed. Don't re-add them without actually wiring Auth.js in.
 
 **Agent discovery** (robots.txt, sitemap, `.well-known/`, `auth.md`, Markdown content negotiation, WebMCP) — see AGENTS.md §8, which is the full contract including the honesty rule about not advertising endpoints that don't exist. `tests/unit/agent-readiness.test.ts` fails when a new public route isn't registered in `src/lib/agent-discovery.ts`; that failure is intentional.
+
+**Chat and AI keys** are spread across `src/lib/services/openai-chat.ts` (streaming text plus realtime voice, and the model allow-lists), `src/routes/api/chat/`, `src/routes/admin/ai-keys/`, `src/lib/utils/cost.ts`, and `src/lib/stores/chatHistory.ts`; behavior is specified in `UNIFIED_CHAT_INTERFACE.md` and `VOICE_CHAT_IMPLEMENTATION.md`.
 
 **`wrangler.toml` ships placeholder resource ids that fail loudly by design.** `bun run dev` warns, `bun run build` fails, and remote migration/deploy paths fail until the ids are safe. `bun run build:ci` is the local-only exception: it warns and compiles without contacting Cloudflare. A previous version shipped real ids and six sibling products inherited one D1 and one KV, including shared OAuth secrets. Run `bun run setup:cf` rather than pasting ids from a sibling project.
 
