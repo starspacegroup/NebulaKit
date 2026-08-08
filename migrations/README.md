@@ -77,16 +77,17 @@ Migrations that have already run are **skipped automatically** - they will never
 
 ## Current Migrations
 
-| File                                  | Description                                                                         |
-| ------------------------------------- | ----------------------------------------------------------------------------------- |
-| `0001_initial_schema.sql`             | Base tables: users, sessions, oauth_accounts, chat_messages, indexes                |
-| `0002_cms_tables.sql`                 | CMS content types, items, tags, relationships, and indexes                          |
-| `0003_content_type_management.sql`    | System/user-managed content-type distinction                                        |
-| `0004_user_login_aliases.sql`         | Login aliases and lookup indexes                                                    |
-| `0005_command_palette_visibility.sql` | Per-content-item command-palette visibility                                         |
-| `0006_contact_form_submissions.sql`   | Contact submission inbox and resolution state                                       |
-| `0007_page_view_stats.sql`            | Page-view aggregate counters: daily, hourly, referrer, country, audience dimensions |
-| `0008_platform_usage.sql`             | Daily billable-request counters for the Cloudflare plan-limit meter                 |
-| `0009_user_can_view_stats.sql`        | `users.can_view_stats` — per-admin grant for the Stats section                      |
-| `0010_oauth_transactions.sql`         | One-time, expiring OAuth login/link transactions with session binding               |
-| `0011_minimize_oauth_tokens.sql`      | Remove legacy provider credentials; retain identity links only                      |
+| File                                    | Description                                                                         |
+| --------------------------------------- | ----------------------------------------------------------------------------------- |
+| `0001_initial_schema.sql`               | Base tables: users, sessions, oauth_accounts, chat_messages, indexes                |
+| `0002_cms_tables.sql`                   | CMS content types, items, tags, relationships, and indexes                          |
+| `0003_content_type_management.sql`      | System/user-managed content-type distinction                                        |
+| `0004_user_login_aliases.sql`           | Login aliases and lookup indexes                                                    |
+| `0005_command_palette_visibility.sql`   | Per-content-item command-palette visibility                                         |
+| `0006_contact_form_submissions.sql`     | Contact submission inbox and resolution state                                       |
+| `0007_page_view_stats.sql`              | Page-view aggregate counters: daily, hourly, referrer, country, audience dimensions |
+| `0008_platform_usage.sql`               | Daily billable-request counters for the Cloudflare plan-limit meter                 |
+| `0009_user_can_view_stats.sql`          | `users.can_view_stats` — per-admin grant for the Stats section                      |
+| `0010_content_item_timestamp_proof.sql` | RFC 3161 timestamp proofs and Wayback snapshots for CMS content items               |
+| `0010_oauth_transactions.sql`           | One-time, expiring OAuth login/link transactions with session binding               |
+| `0011_minimize_oauth_tokens.sql`        | Remove legacy provider credentials; retain identity links only                      |

@@ -2,7 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**[AGENTS.md](AGENTS.md) is the canonical rules file** — coverage floor, migration immutability, CSS variables, scratch files, product identity, icon set, `/documentation` sync, and agent-discovery surfaces. Read it first; it is sized to fit the 200-line memory budget. This file holds the commands, architecture, and Claude-specific context that AGENTS.md deliberately leaves out, and cross-references its rules by section number rather than restating them.
+**[AGENTS.md](AGENTS.md) is the canonical rules file** — coverage floor, migration immutability, CSS variables, scratch files, product identity, icon set, `/documentation` sync, and agent-discovery surfaces. Read it first; it is sized to fit the 200-line memory budget. This file holds the commands, architecture, and Claude-specific context that AGENTS.md deliberately leaves out, and cross-references its rules by section number rather than restating them. `§N` means the **Nth bullet of AGENTS.md's "Release Rules" list**, in order — `vite.config.ts` uses the same convention in a comment, so renumbering that list desyncs three files.
+
+AGENTS.md also opens by requiring `tasks/goals.md` and `tasks/todo.md` be read before editing, alongside `git status --short --branch`. Both files are checked in and carry the current work ledger; uncommitted changes in the tree are user-owned and must never be discarded, rewritten, or staged implicitly.
 
 ## Commands
 
@@ -53,17 +55,44 @@ Each handler is exported individually because `sequence()` needs Kit's request s
 
 **CMS is registry-driven.** Content types are declared in `src/lib/cms/registry.ts`, synced to D1 on first access, and the routes generate themselves: `src/routes/[contentType]/`, `[contentType]/[slug]/`, and `admin/cms/[type]/`. Adding a type means adding a definition object, not adding routes. Embeds are split on purpose: `src/lib/cms/embeds/manifest.ts` carries metadata with **zero `.svelte` imports** so Workers, Vitest, and browser code can all load it; `embeds/index.ts` holds the actual components.
 
-**Auth is hand-rolled — there is no auth library in the request path.** The browser receives a signed opaque session token (`src/lib/utils/session.ts`), while its digest and expiry live in D1. Per-provider OAuth route pairs under `src/routes/api/auth/{github,discord}/` persist and atomically consume one-time state transactions; email/password lives at `login`, `signup`, and `password`. Identity and admin flags are re-read from D1 on every request in `authHandler`, so revocation and role changes take effect without a re-login. Provider availability is resolved from `platform.env` or KV `auth_config:<provider>`; account linking lives in `src/lib/services/account-merge.ts`. `@auth/core` and `@auth/sveltekit` were declared dependencies that nothing imported — removed. Don't re-add them without actually wiring Auth.js in.
+**Auth is hand-rolled — there is no auth library in the request path.** The browser receives a signed opaque session token (`src/lib/utils/session.ts`), while its digest and expiry live in D1. Per-provider OAuth route pairs under `src/routes/api/auth/{github,discord}/` persist and atomically consume one-time state transactions; email/password lives at `login`, `signup`, and `password`. Identity and admin flags are re-read from D1 on every request in `authHandler`, so revocation and role changes take effect without a re-login. Provider availability is resolved from `platform.env` or KV `auth_config:<provider>`; account linking lives in `src/lib/services/account-merge.ts`. Authorization checks belong in `src/lib/server/auth-guards.ts` and are reused from there rather than re-derived per route — server loads and API handlers each guard themselves, because hiding UI is not authorization. `@auth/core` and `@auth/sveltekit` were declared dependencies that nothing imported — removed. Don't re-add them without actually wiring Auth.js in.
 
 **Agent discovery** (robots.txt, sitemap, `.well-known/`, `auth.md`, Markdown content negotiation, WebMCP) — see AGENTS.md §8, which is the full contract including the honesty rule about not advertising endpoints that don't exist. `tests/unit/agent-readiness.test.ts` fails when a new public route isn't registered in `src/lib/agent-discovery.ts`; that failure is intentional.
 
 **`wrangler.toml` ships placeholder resource ids that fail loudly by design.** `bun run dev` warns, `bun run build` fails, and remote migration/deploy paths fail until the ids are safe. `bun run build:ci` is the local-only exception: it warns and compiles without contacting Cloudflare. A previous version shipped real ids and six sibling products inherited one D1 and one KV, including shared OAuth secrets. Run `bun run setup:cf` rather than pasting ids from a sibling project.
 
+### Migrations: the sequence has a collision
+
+`migrations/` is D1-native — wrangler sorts `.sql` files lexicographically by filename and records applied ones in `d1_migrations`, so a filename already on `main` is already applied and is immutable (AGENTS.md §2, `migrations/README.md`).
+
+Two committed files share the `0010_` prefix: `0010_content_item_timestamp_proof.sql` (from the CMS timestamp-proof work) and `0010_oauth_transactions.sql`. Ordering between them is decided by the **filename** sort, not the number — `content_item…` runs first. Relatedly, `migrations/README.md`'s "Current Migrations" table is missing the `content_item_timestamp_proof` row, so that inventory under-reports what is on disk; add the row when you next touch the file. (The next sequence number is `0012_`, since `0011_minimize_oauth_tokens.sql` exists.)
+
+`scripts/db-migrate.mjs` reads `database_name` out of `wrangler.toml` and refuses to run against a placeholder, deliberately: shared-database migrations are how one D1 once accumulated four projects' interleaved tables.
+
+### Reference docs
+
+`docs/` holds the long-form design notes that source comments cite by path — `hooks.server.ts` itself points at two of them. Read the relevant one before changing a subsystem:
+
+| Subsystem                                              | Doc                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------- |
+| Page-view stats, admin stats surface                   | `ADMIN_STATS.md`                                            |
+| Agent discovery, Markdown negotiation, WebMCP          | `AGENT_READINESS.md`                                        |
+| D1/KV/R2 provisioning, the shared-resource incident    | `CLOUDFLARE_SETUP.md`                                       |
+| CMS embed registry and manifest split                  | `CMS_EMBEDS.md`                                             |
+| Command palette + per-item visibility                  | `COMMAND_PALETTE.md`                                        |
+| `/documentation` route (kept in sync per AGENTS.md §7) | `DOCUMENTATION_PAGE.md`                                     |
+| GitHub OAuth pair                                      | `GITHUB_AUTH.md`                                            |
+| Local dev, `.dev.vars`                                 | `LOCAL_SETUP.md`                                            |
+| Payments / purchasing-power pricing                    | `PAYMENTS_AND_PPP.md`                                       |
+| TDD expectations behind the coverage gate              | `TDD_WORKFLOW.md`                                           |
+| Theme tokens, contrast validation (AGENTS.md §3)       | `THEME_SYSTEM.md`, `THEME_IMPLEMENTATION_SUMMARY.md`        |
+| Chat / voice surfaces                                  | `UNIFIED_CHAT_INTERFACE.md`, `VOICE_CHAT_IMPLEMENTATION.md` |
+
 ### Test topology
 
 - Two homes: colocated `src/**/*.test.ts` and the bulk in `tests/unit/`. Both are in the vitest `include`. E2E is `tests/e2e/` (Playwright, excluded from vitest).
 - Coverage **excludes** `**/*.svelte`, `src/routes/**/+page.ts`, `src/lib/site.config.ts`, `scripts/`, and `.remember/` tool scratch data. Authorization hooks are measured directly. The 95% floor therefore applies to product `.ts` logic; component tests exist and run, but do not count toward it.
-- `poolOptions.threads.singleThread: true` and `unstubGlobals: true`. The latter is not optional: several suites stub `crypto` with a bare `{ randomUUID }`, and on a single-threaded pool that object leaks into every later _file_ without it. Symptom is a suite that passes alone and fails in a full run.
+- `pool: 'threads'` with `fileParallelism: false` (test files run one at a time, not concurrently), plus `unstubGlobals: true`. The last one is not optional: several suites stub `crypto` with a bare `{ randomUUID }`, and because files share a worker serially that object leaks into every later _file_ without it. Symptom is a suite that passes alone and fails in a full run.
 
 ## Claude-specific
 

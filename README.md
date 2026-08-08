@@ -29,7 +29,7 @@ KV, and R2 bindings.
 NebulaKit does **not** advertise an OAuth authorization server or an MCP server. Its discovery
 metadata lists only routes implemented by this repository.
 
-Planned additions to the kit — including features to upstream from downstream NebulaKit projects — are tracked in [ROADMAP.md](./ROADMAP.md).
+Planned additions — including capabilities already proven in NebulaKit-derived projects — are tracked in [ROADMAP.md](./ROADMAP.md).
 
 ## Requirements
 
