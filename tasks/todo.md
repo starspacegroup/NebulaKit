@@ -94,9 +94,10 @@ Delivery evidence recorded on 2026-08-08 (second session):
   `Co-Authored-By:` trailer for them.
 - Open disclosure decision: `ROADMAP.md` and `docs/PAYMENTS_AND_PPP.md` publish absolute local
   filesystem paths and names for private/third-party downstream projects (AgapeVerse, Atlas,
-  Arizona, davis9001.dev), plus downstream commit shas and pricing strategy. Both
-  `starspacegroup/NebulaKit` and the fork are public, so this content is already publicly readable
-  via PR #6 — scrubbing is damage limitation, not prevention. Not actioned pending the owner's call.
+  Arizona, davis9001.dev), plus downstream commit shas and pricing strategy. Verified: both
+  `starspacegroup/NebulaKit` and `donaldfilimon/NebulaKit` report `private: false`, so this content
+  is readable at the pushed fork branch today. Whether to scrub it is the owner's call — it names
+  third parties' projects. Not actioned pending that decision.
 
 ## Explicitly outside this worktree
 
