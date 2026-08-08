@@ -42,6 +42,8 @@ describe('GitHub OAuth Initiation - Extended Coverage', () => {
 	) => {
 		return {
 			url: new URL('http://localhost/api/auth/github'),
+			// The init route stashes the OAuth `state` here for the callback to verify.
+			cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
 			platform:
 				overrides.platform !== null
 					? {

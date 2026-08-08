@@ -1,8 +1,12 @@
-import { error, json } from '@sveltejs/kit';
+import { requireAdmin } from '$lib/server/auth-guard';
+import { OAUTH_PROVIDERS, isSupportedOAuthProvider } from '$lib/server/oauth-config';
+import { error, isHttpError, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 // GET - List all auth keys
-export const GET: RequestHandler = async ({ platform }) => {
+export const GET: RequestHandler = async ({ platform, locals }) => {
+	requireAdmin(locals);
+
 	try {
 		const keys: any[] = [];
 
@@ -55,13 +59,21 @@ export const GET: RequestHandler = async ({ platform }) => {
 };
 
 // POST - Create new auth key
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, locals }) => {
+	requireAdmin(locals);
+
 	try {
 		const data = await request.json();
 
 		// Validate required fields
 		if (!data.name || !data.clientId || !data.clientSecret) {
 			throw error(400, 'Missing required fields');
+		}
+
+		// The provider becomes part of the KV key below, so it cannot be free
+		// text — otherwise a caller chooses which `auth_config:*` entry to write.
+		if (!isSupportedOAuthProvider(data.provider)) {
+			throw error(400, `Provider must be one of: ${OAUTH_PROVIDERS.join(', ')}`);
 		}
 
 		// Generate unique ID
@@ -93,7 +105,11 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 
 		return json({ success: true, key: newKey });
 	} catch (err) {
-		if (err instanceof Error && 'status' in err) {
+		// SvelteKit's HttpError is not an instance of Error, so the old
+		// `err instanceof Error && 'status' in err` test never matched and every
+		// deliberate 4xx raised inside this try was reported to the caller as a
+		// 500 instead.
+		if (isHttpError(err)) {
 			throw err;
 		}
 		console.error('Failed to create auth key:', err);

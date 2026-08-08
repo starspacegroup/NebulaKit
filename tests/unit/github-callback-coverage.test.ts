@@ -1,5 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// The OAuth routes now round-trip a `state` value through an HttpOnly cookie:
+// the init route sets it, the callback requires it back. Tests therefore need
+// a cookie jar whose state lookups answer, and callback URLs carrying a
+// matching `state` param.
+const TEST_OAUTH_STATE = 'test-oauth-state';
+function makeOAuthCookies(sessionValue: unknown = null) {
+	return {
+		get: vi.fn((name: string) =>
+			name.startsWith('oauth_state_') ? TEST_OAUTH_STATE : sessionValue
+		),
+		set: vi.fn(),
+		delete: vi.fn()
+	};
+}
+
+
 // Mock console to avoid noise
 vi.spyOn(console, 'log').mockImplementation(() => {});
 vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -21,7 +37,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 		it('should redirect to login with error when no code provided', async () => {
 			const mockEvent = {
 				url: new URL('http://localhost/api/auth/github/callback'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				cookies: makeOAuthCookies(null),
 				platform: {}
 			};
 
@@ -71,8 +87,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						KV: mockKV
@@ -93,8 +109,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						KV: mockKV
@@ -115,8 +131,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 		it('should redirect with not_configured when no OAuth config found', async () => {
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {}
 				}
@@ -143,8 +159,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -171,8 +187,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -206,8 +222,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -252,8 +268,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -300,8 +316,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -347,8 +363,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -387,8 +403,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -504,8 +520,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -544,8 +560,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue('invalid-base64!!!'), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies('invalid-base64!!!'),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -613,8 +629,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(existingSession), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(existingSession),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -678,8 +694,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -758,8 +774,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -829,8 +845,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -879,8 +895,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -917,8 +933,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('https://example.com/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('https://example.com/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -960,8 +976,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
-				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				cookies: makeOAuthCookies(null),
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',

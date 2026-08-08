@@ -217,6 +217,10 @@ describe('API Setup - generic error branches', () => {
 
 // ─── 5. Admin Auth Keys - Discord parse error (L47) + outer catch (L52-53) + POST non-status (L97-98) ─
 
+const AUTH_KEYS_ADMIN = {
+	user: { id: '72961', login: 'davis9001', email: 'o@example.com', isOwner: true, isAdmin: true }
+};
+
 describe('Admin Auth Keys - uncovered catch branches', () => {
 	beforeEach(() => {
 		vi.resetModules();
@@ -235,6 +239,7 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 		};
 
 		const response = await GET({
+			locals: AUTH_KEYS_ADMIN,
 			platform: { env: { KV: mockKV } }
 		} as any);
 
@@ -261,6 +266,7 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 		};
 
 		const response = await GET({
+			locals: AUTH_KEYS_ADMIN,
 			platform: { env: { KV: mockKV } }
 		} as any);
 
@@ -282,6 +288,7 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 
 		try {
 			await POST({
+				locals: AUTH_KEYS_ADMIN,
 				request: {
 					json: async () => ({
 						name: 'Test Key',
@@ -652,7 +659,7 @@ describe('CMS [type] GET - listPageSize fallback', () => {
 		};
 
 		const response = await GET({
-			locals: { user: { id: '1' } },
+			locals: { user: { id: '1', isOwner: false, isAdmin: true } },
 			platform: { env: { DB: mockDB } },
 			params: { type: 'blog' },
 			url: new URL('http://localhost/api/cms/blog')

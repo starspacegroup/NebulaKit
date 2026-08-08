@@ -41,15 +41,36 @@ export const GET: RequestHandler = async ({ platform }) => {
 // POST - Save initial GitHub OAuth configuration
 export const POST: RequestHandler = async ({ request, platform }) => {
 	try {
+		// This endpoint sets site ownership, so it is unauthenticated by
+		// necessity — it runs before an owner exists. Everything below is
+		// therefore fail-closed: any doubt about whether setup is still open
+		// must resolve to "no".
+		if (!platform?.env?.KV) {
+			// Without KV the lock cannot be read, and an unreadable lock used to
+			// mean "proceed".
+			throw error(500, 'KV storage not available');
+		}
+
 		// Check if setup is locked (admin has already logged in)
-		if (platform?.env?.KV) {
-			const setupLocked = await platform.env.KV.get('admin_first_login_completed');
-			if (setupLocked) {
-				throw error(
-					403,
-					'Setup is locked. The admin user has already logged in. Setup can only be performed once.'
-				);
-			}
+		const setupLocked = await platform.env.KV.get('admin_first_login_completed');
+		if (setupLocked) {
+			throw error(
+				403,
+				'Setup is locked. The admin user has already logged in. Setup can only be performed once.'
+			);
+		}
+
+		// Second, independent lock: if an owner is already recorded, setup is
+		// over regardless of the first-login flag. Otherwise losing that single
+		// flag is enough to let an anonymous caller re-own the site. Clearing
+		// both is what the owner-gated /api/reset is for.
+		const existingOwnerId = await platform.env.KV.get('github_owner_id');
+		const existingOwnerUsername = await platform.env.KV.get('github_owner_username');
+		if (existingOwnerId || existingOwnerUsername) {
+			throw error(
+				403,
+				'Setup is locked. An owner is already configured for this site. Use the reset endpoint as the owner to start over.'
+			);
 		}
 
 		const data = await request.json();
@@ -141,41 +162,23 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			throw error(500, 'Failed to verify GitHub username');
 		}
 
-		// Store in Cloudflare KV if available
-		if (platform?.env?.KV) {
-			await platform.env.KV.put(`auth_config:${provider}`, JSON.stringify(authConfig));
-			console.log('✓ Saved auth config to KV:', { id, provider, clientId: data.clientId });
+		// KV presence was asserted at the top of this handler — the old
+		// "KV unavailable" fallback branch was unreachable from here and
+		// echoed the submitted client secret into the logs on its way out.
+		await platform.env.KV.put(`auth_config:${provider}`, JSON.stringify(authConfig));
+		console.log('✓ Saved auth config to KV:', { id, provider, clientId: data.clientId });
 
-			// Store admin owner ID
-			await platform.env.KV.put('github_owner_id', adminGithubId);
-			await platform.env.KV.put('github_owner_username', adminGithubUsername);
-			console.log(`✓ Saved admin owner to KV: ${adminGithubUsername} (ID: ${adminGithubId})`);
+		// Store admin owner ID
+		await platform.env.KV.put('github_owner_id', adminGithubId);
+		await platform.env.KV.put('github_owner_username', adminGithubUsername);
+		console.log(`✓ Saved admin owner to KV: ${adminGithubUsername} (ID: ${adminGithubId})`);
 
-			return json({
-				success: true,
-				message: `Configuration saved! Admin user set to @${adminGithubUsername}. You can now log in.`,
-				adminUsername: adminGithubUsername,
-				adminId: adminGithubId
-			});
-		} else {
-			console.warn('⚠️  KV not available. Setup KV namespace for local dev:');
-			console.warn('   wrangler kv:namespace create "KV" --preview');
-			console.warn('   Then update wrangler.toml with the preview_id');
-			console.warn('');
-			console.warn('Or use .dev.vars file:');
-			console.warn('   GITHUB_CLIENT_ID=' + data.clientId);
-			console.warn('   GITHUB_CLIENT_SECRET=' + data.clientSecret);
-			console.warn('   GITHUB_OWNER_ID=' + adminGithubId);
-			console.warn(`   # Admin user: @${adminGithubUsername} (ID: ${adminGithubId})`);
-
-			return json({
-				success: true,
-				message:
-					'Credentials received! Set up KV or add to .dev.vars (check console for instructions)',
-				adminUsername: adminGithubUsername,
-				adminId: adminGithubId
-			});
-		}
+		return json({
+			success: true,
+			message: `Configuration saved! Admin user set to @${adminGithubUsername}. You can now log in.`,
+			adminUsername: adminGithubUsername,
+			adminId: adminGithubId
+		});
 	} catch (err) {
 		if (err instanceof Error && 'status' in err) {
 			throw err;

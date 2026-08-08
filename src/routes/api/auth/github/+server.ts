@@ -1,9 +1,10 @@
+import { issueOAuthState } from '$lib/server/oauth-state';
 import { redirect } from '@sveltejs/kit';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import type { RequestHandler } from './$types';
 
 // GET - Redirect to GitHub OAuth
-export const GET: RequestHandler = async ({ platform, url }) => {
+export const GET: RequestHandler = async ({ platform, url, cookies }) => {
 	let clientId = platform?.env?.GITHUB_CLIENT_ID;
 
 	// Try to fetch from KV if environment variable not set
@@ -38,11 +39,8 @@ export const GET: RequestHandler = async ({ platform, url }) => {
 		throw redirect(302, '/setup?error=oauth_not_configured');
 	}
 
-	// Generate state for CSRF protection
-	const state = crypto.randomUUID();
-
-	// Store state in cookie for validation in callback
-	// In production, store in session/KV with expiry
+	// CSRF protection: the callback compares this against the cookie below.
+	const state = issueOAuthState(cookies, 'github', url.protocol === 'https:');
 
 	const params = new URLSearchParams({
 		client_id: clientId,

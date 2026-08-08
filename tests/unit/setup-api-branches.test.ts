@@ -163,9 +163,11 @@ describe('Setup API - Extended Branch Coverage', () => {
 				clientSecret: 'old-secret',
 				createdAt: '2024-01-01'
 			});
-			mockKVGet
-				.mockResolvedValueOnce(null) // setup not locked
-				.mockResolvedValueOnce(existingConfig); // existing config
+			// Key-based rather than call-ordered: setup now also checks for an
+			// already-recorded owner before accepting a re-run.
+			mockKVGet.mockImplementation((key: string) =>
+				Promise.resolve(key === 'auth_config:github' ? existingConfig : null)
+			);
 
 			const response = await POST(
 				createMockEvent({
@@ -225,16 +227,16 @@ describe('Setup API - Extended Branch Coverage', () => {
 			expect(data.adminId).toBe('12345');
 		});
 
-		it('should return instructions when KV is not available', async () => {
+		it('should refuse when KV is not available', async () => {
+			// Setup claims ownership of the site and cannot be authenticated, so
+			// an unreadable lock has to mean "refuse". This previously reported
+			// success and echoed the submitted client secret into the logs.
 			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-			const response = await POST(
-				createMockEvent({ platform: null }) as unknown as Parameters<typeof POST>[0]
-			);
-			const data = await response.json();
+			await expect(
+				POST(createMockEvent({ platform: null }) as unknown as Parameters<typeof POST>[0])
+			).rejects.toMatchObject({ status: 500 });
 
-			expect(data.success).toBe(true);
-			expect(data.message).toContain('Set up KV');
 			consoleSpy.mockRestore();
 		});
 

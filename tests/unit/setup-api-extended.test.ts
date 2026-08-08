@@ -261,7 +261,9 @@ describe('Setup API', () => {
 			).rejects.toThrow();
 		});
 
-		it('should work without KV (development mode)', async () => {
+		it('should refuse without KV rather than claim success', async () => {
+			// Without KV the setup lock cannot be read, and an unreadable lock
+			// used to mean "proceed" — on the endpoint that sets site ownership.
 			globalThis.fetch = vi.fn().mockResolvedValue({
 				ok: true,
 				json: vi.fn().mockResolvedValue({
@@ -271,20 +273,19 @@ describe('Setup API', () => {
 			});
 
 			const { POST } = await import('../../src/routes/api/setup/+server');
-			const response = await POST({
-				request: {
-					json: vi.fn().mockResolvedValue({
-						clientId: 'test-client',
-						clientSecret: 'test-secret',
-						adminGithubUsername: 'testuser'
-					})
-				},
-				platform: {}
-			} as any);
 
-			const result = await response.json();
-			expect(result.success).toBe(true);
-			expect(result.message).toContain('KV');
+			await expect(
+				POST({
+					request: {
+						json: vi.fn().mockResolvedValue({
+							clientId: 'test-client',
+							clientSecret: 'test-secret',
+							adminGithubUsername: 'testuser'
+						})
+					},
+					platform: {}
+				} as any)
+			).rejects.toMatchObject({ status: 500 });
 		});
 
 		it('should allow updating admin without credentials when config exists', async () => {
@@ -299,10 +300,13 @@ describe('Setup API', () => {
 			const mockPlatform = {
 				env: {
 					KV: {
-						get: vi
-							.fn()
-							.mockResolvedValueOnce(null) // setup not locked
-							.mockResolvedValueOnce(JSON.stringify(existingConfig)), // existing config
+						// Key-based rather than call-ordered: setup now also checks for
+						// an already-recorded owner before accepting a re-run.
+						get: vi.fn((key: string) =>
+							Promise.resolve(
+								key === 'auth_config:github' ? JSON.stringify(existingConfig) : null
+							)
+						),
 						put: mockPut
 					}
 				}

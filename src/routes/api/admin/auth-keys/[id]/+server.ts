@@ -1,73 +1,85 @@
+import { requireAdmin } from '$lib/server/auth-guard';
+import { authConfigKey, findProviderByKeyId } from '$lib/server/oauth-config';
 import { error, json } from '@sveltejs/kit';
+import type { KVNamespace } from '@cloudflare/workers-types';
 import type { RequestHandler } from './$types';
 
+/**
+ * The GitHub OAuth config is written by the setup flow and is what login
+ * depends on, so it stays read-only here regardless of caller.
+ */
+async function assertNotSetupKey(kv: KVNamespace, id: string, action: string): Promise<void> {
+	const stored = await kv.get(authConfigKey('github'));
+	if (!stored) return;
+
+	let config: { id?: string };
+	try {
+		config = JSON.parse(stored);
+	} catch (err) {
+		// A malformed config must not be a way past the guard.
+		console.error('Failed to parse GitHub auth config:', err);
+		throw error(500, 'Stored GitHub authentication config is unreadable');
+	}
+
+	if (config?.id === id) {
+		throw error(
+			403,
+			`Cannot ${action} setup authentication key. This key was configured during initial setup.`
+		);
+	}
+}
+
 // PUT - Update auth key
-export const PUT: RequestHandler = async ({ params, request, platform }) => {
+export const PUT: RequestHandler = async ({ params, request, platform, locals }) => {
+	requireAdmin(locals);
+
 	try {
 		const { id } = params;
 		const data = await request.json();
 
-		// Prevent editing of GitHub OAuth setup key
-		if (platform?.env?.KV) {
-			try {
-				const authConfigStr = await platform.env.KV.get('auth_config:github');
-				if (authConfigStr) {
-					const authConfig = JSON.parse(authConfigStr);
-					if (authConfig.id === id) {
-						throw error(
-							403,
-							'Cannot edit setup authentication key. This key was configured during initial setup and cannot be modified here.'
-						);
-					}
-				}
-			} catch (err: unknown) {
-				// If it's an HttpError (has status property), re-throw it
-				if (err && typeof err === 'object' && 'status' in err) {
-					throw err;
-				}
-				// Otherwise, log and continue (allow edit if check fails)
-				console.error('Failed to check setup key status:', err);
-			}
-		}
-
-		// Validate required fields
 		if (!data.name || !data.clientId) {
 			throw error(400, 'Missing required fields');
 		}
 
-		const updatedKey = {
+		const kv = platform?.env?.KV;
+		if (!kv) {
+			throw error(500, 'KV storage not available');
+		}
+
+		await assertNotSetupKey(kv, id, 'edit');
+
+		// Resolve the target from what is stored, not from `data.provider` —
+		// trusting the body let a caller aim the write at a different config
+		// than the one the guard above just checked.
+		const target = await findProviderByKeyId(kv, id);
+		if (!target) {
+			throw error(404, 'Authentication key not found');
+		}
+
+		const authConfig = {
+			...target.config,
 			id,
-			name: data.name,
-			provider: data.provider,
-			type: data.type,
+			provider: target.provider,
 			clientId: data.clientId,
+			// Only update clientSecret if provided
+			...(data.clientSecret && { clientSecret: data.clientSecret }),
 			updatedAt: new Date().toISOString()
 		};
 
-		// Update auth config in KV for OAuth providers
-		if (platform?.env?.KV && data.provider) {
-			try {
-				// Get existing config to preserve createdAt and potentially clientSecret
-				const existingStr = await platform.env.KV.get(`auth_config:${data.provider}`);
-				const existing = existingStr ? JSON.parse(existingStr) : {};
+		await kv.put(authConfigKey(target.provider), JSON.stringify(authConfig));
+		console.log(`✓ Updated ${target.provider} OAuth config in KV`);
 
-				const authConfig = {
-					...existing,
-					id,
-					provider: data.provider,
-					clientId: data.clientId,
-					// Only update clientSecret if provided
-					...(data.clientSecret && { clientSecret: data.clientSecret }),
-					updatedAt: new Date().toISOString()
-				};
-				await platform.env.KV.put(`auth_config:${data.provider}`, JSON.stringify(authConfig));
-				console.log(`✓ Updated ${data.provider} OAuth config in KV`);
-			} catch (kvErr) {
-				console.error('Failed to update auth config in KV:', kvErr);
+		return json({
+			success: true,
+			key: {
+				id,
+				name: data.name,
+				provider: target.provider,
+				type: data.type,
+				clientId: data.clientId,
+				updatedAt: authConfig.updatedAt
 			}
-		}
-
-		return json({ success: true, key: updatedKey });
+		});
 	} catch (err: unknown) {
 		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
@@ -78,52 +90,26 @@ export const PUT: RequestHandler = async ({ params, request, platform }) => {
 };
 
 // DELETE - Delete auth key
-export const DELETE: RequestHandler = async ({ params, platform }) => {
+export const DELETE: RequestHandler = async ({ params, platform, locals }) => {
+	requireAdmin(locals);
+
 	try {
 		const { id } = params;
 
-		// Prevent deletion of GitHub OAuth setup key
-		if (platform?.env?.KV) {
-			try {
-				const authConfigStr = await platform.env.KV.get('auth_config:github');
-				if (authConfigStr) {
-					const authConfig = JSON.parse(authConfigStr);
-					if (authConfig.id === id) {
-						throw error(
-							403,
-							'Cannot delete setup authentication key. This key was configured during initial setup and is required for authentication.'
-						);
-					}
-				}
-			} catch (err: unknown) {
-				// If it's an HttpError (has status property), re-throw it
-				if (err && typeof err === 'object' && 'status' in err) {
-					throw err;
-				}
-				// Otherwise, log and continue (allow deletion if check fails)
-				console.error('Failed to check setup key status:', err);
-			}
+		const kv = platform?.env?.KV;
+		if (!kv) {
+			throw error(500, 'KV storage not available');
 		}
 
-		// Delete auth config from KV
-		// Find which provider this key belongs to and delete it
-		if (platform?.env?.KV) {
-			for (const provider of ['github', 'discord', 'google', 'microsoft']) {
-				try {
-					const configStr = await platform.env.KV.get(`auth_config:${provider}`);
-					if (configStr) {
-						const config = JSON.parse(configStr);
-						if (config.id === id) {
-							await platform.env.KV.delete(`auth_config:${provider}`);
-							console.log(`✓ Deleted ${provider} OAuth config from KV`);
-							break;
-						}
-					}
-				} catch (kvErr) {
-					console.error(`Failed to check/delete ${provider} config:`, kvErr);
-				}
-			}
+		await assertNotSetupKey(kv, id, 'delete');
+
+		const target = await findProviderByKeyId(kv, id);
+		if (!target) {
+			throw error(404, 'Authentication key not found');
 		}
+
+		await kv.delete(authConfigKey(target.provider));
+		console.log(`✓ Deleted ${target.provider} OAuth config from KV`);
 
 		return json({ success: true });
 	} catch (err: unknown) {

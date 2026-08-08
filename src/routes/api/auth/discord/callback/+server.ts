@@ -1,6 +1,7 @@
 import { mergeAccounts } from '$lib/services/account-merge';
 import { findUserByEmailOrAlias, resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { buildSessionCookieHeader } from '$lib/utils/session';
+import { consumeOAuthState } from '$lib/server/oauth-state';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -11,6 +12,14 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 
 	if (!code) {
 		throw redirect(302, '/auth/login?error=no_code');
+	}
+
+	// Reject callbacks we did not initiate. Without this an attacker can feed a
+	// victim a callback URL carrying the attacker's code and bind the victim's
+	// session — or, in linking mode, the victim's account — to the attacker's
+	// identity.
+	if (!consumeOAuthState(cookies, 'discord', state)) {
+		throw redirect(302, '/auth/login?error=invalid_state');
 	}
 
 	try {

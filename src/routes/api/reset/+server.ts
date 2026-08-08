@@ -1,14 +1,21 @@
+import { requireOwner } from '$lib/server/auth-guard';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 // POST - Reset setup configuration
-export const POST: RequestHandler = async ({ platform, cookies }) => {
+export const POST: RequestHandler = async ({ platform, cookies, locals }) => {
+	// This wipes the owner identity and the setup lock, which together are the
+	// only things standing between an anonymous caller and re-owning the site
+	// via /api/setup. It was previously guarded solely by the KV flag below —
+	// a data value, not an authorization check.
+	requireOwner(locals);
+
 	try {
 		if (!platform?.env?.KV) {
 			throw error(500, 'KV storage not available');
 		}
 
-		// Check if reset route is disabled via admin settings
+		// Kept as defence in depth: the owner can still bolt this shut entirely.
 		const resetDisabled = await platform.env.KV.get('reset_route_disabled');
 		if (resetDisabled === 'true') {
 			throw error(403, 'Reset route has been disabled by the administrator');

@@ -7,13 +7,12 @@
 import type { ContentItemFilters } from '$lib/cms/types';
 import { validateFields } from '$lib/cms/utils';
 import { createContentItem, getContentTypeBySlug, listContentItems } from '$lib/services/cms';
+import { requireAdmin } from '$lib/server/auth-guard';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ platform, locals, params, url }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
+	requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {
