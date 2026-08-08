@@ -21,6 +21,10 @@ declare global {
 				avatarUrl?: string;
 				isOwner: boolean;
 				isAdmin?: boolean;
+				/** Extension point for downstream apps that add a tier ABOVE owner.
+				 *  NebulaKit never sets it; both `auth-guards.ts` and `stats-guard.ts`
+				 *  honour it, and they must agree — see the note in `auth-guards.ts`. */
+				isSuperAdmin?: boolean;
 				canViewStats?: boolean;
 				isPretend?: boolean;
 			};
