@@ -25,6 +25,39 @@ export interface AIKey {
 	voiceModel?: string;
 }
 
+export const CHAT_MODELS = [
+	{ id: 'gpt-4o', displayName: 'GPT-4o' },
+	{ id: 'gpt-4o-2024-11-20', displayName: 'GPT-4o (Nov 2024)' },
+	{ id: 'gpt-4o-2024-08-06', displayName: 'GPT-4o (Aug 2024)' },
+	{ id: 'gpt-4o-mini', displayName: 'GPT-4o mini' },
+	{ id: 'o3', displayName: 'o3' },
+	{ id: 'o3-mini', displayName: 'o3 mini' },
+	{ id: 'o4-mini', displayName: 'o4 mini' },
+	{ id: 'o1', displayName: 'o1' },
+	{ id: 'o1-2024-12-17', displayName: 'o1 (Dec 2024)' },
+	{ id: 'o1-preview', displayName: 'o1 Preview' },
+	{ id: 'o1-mini', displayName: 'o1 mini' },
+	{ id: 'o1-mini-2024-09-12', displayName: 'o1 mini (Sep 2024)' },
+	{ id: 'gpt-4-turbo', displayName: 'GPT-4 Turbo' },
+	{ id: 'gpt-4-turbo-2024-04-09', displayName: 'GPT-4 Turbo (Apr 2024)' },
+	{ id: 'gpt-4', displayName: 'GPT-4' },
+	{ id: 'gpt-3.5-turbo', displayName: 'GPT-3.5 Turbo' },
+	{ id: 'gpt-3.5-turbo-0125', displayName: 'GPT-3.5 Turbo (Jan 2025)' }
+] as const;
+
+const CHAT_MODEL_IDS = new Set<string>(CHAT_MODELS.map(({ id }) => id));
+
+export function getConfiguredChatModels(key: AIKey): string[] {
+	const models = key.models || (key.model ? [key.model] : []);
+	return models.filter((model): model is string => typeof model === 'string' && CHAT_MODEL_IDS.has(model));
+}
+
+export function selectDefaultChatModel(models: string[]): string | undefined {
+	if (models.includes('gpt-4o-mini')) return 'gpt-4o-mini';
+	if (models.includes('gpt-4o')) return 'gpt-4o';
+	return models[0];
+}
+
 export interface RealtimeSessionResponse {
 	token: string;
 }
@@ -41,32 +74,38 @@ export interface StreamChunk {
 }
 
 /**
- * Get the first enabled OpenAI API key from KV storage
+ * Get the first enabled OpenAI API key from KV storage, optionally restricted
+ * to a configured text model.
  */
-export async function getEnabledOpenAIKey(platform: App.Platform): Promise<AIKey | null> {
+export async function getEnabledOpenAIKey(
+	platform: App.Platform,
+	model?: string
+): Promise<AIKey | null> {
+	if (model && !CHAT_MODEL_IDS.has(model)) return null;
+	const keys = await getEnabledOpenAIKeys(platform);
+	return keys.find((key) => !model || getConfiguredChatModels(key).includes(model)) ?? null;
+}
+
+export async function getEnabledOpenAIKeys(platform: App.Platform): Promise<AIKey[]> {
 	try {
 		const keysList = await platform.env.KV.get('ai_keys_list');
-		if (!keysList) {
-			return null;
-		}
+		if (!keysList) return [];
 
-		const keyIds = JSON.parse(keysList);
+		const keyIds = JSON.parse(keysList) as string[];
+		const keys: AIKey[] = [];
 
 		for (const keyId of keyIds) {
 			const keyData = await platform.env.KV.get(`ai_key:${keyId}`);
 			if (keyData) {
 				const key = JSON.parse(keyData) as AIKey;
-				// Only return OpenAI keys that are enabled
-				if (key.provider === 'openai' && key.enabled !== false) {
-					return key;
-				}
+				if (key.provider === 'openai' && key.enabled !== false) keys.push(key);
 			}
 		}
 
-		return null;
+		return keys;
 	} catch (err) {
 		console.error('Failed to get OpenAI key:', err);
-		return null;
+		return [];
 	}
 }
 
@@ -161,8 +200,6 @@ export async function createRealtimeSession(
 	apiKey: string,
 	model: string = 'gpt-4o-realtime-preview-2024-12-17'
 ): Promise<RealtimeSessionResponse> {
-	console.log('Creating realtime session for model:', model);
-
 	const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
 		method: 'POST',
 		headers: {
@@ -182,17 +219,11 @@ export async function createRealtimeSession(
 	}
 
 	const data = await response.json();
-	console.log('Realtime session API response keys:', Object.keys(data));
-	console.log('Full response data:', JSON.stringify(data, null, 2));
 
 	if (!data.client_secret?.value) {
-		console.error('Invalid response from realtime sessions API:', data);
+		console.error('Invalid response from realtime sessions API: missing client_secret');
 		throw new Error('Invalid response: missing client_secret');
 	}
-
-	console.log('Successfully got client_secret, length:', data.client_secret.value.length);
-	console.log('Session ID:', data.id);
-	console.log('Expires at:', data.client_secret.expires_at);
 
 	return {
 		token: data.client_secret.value

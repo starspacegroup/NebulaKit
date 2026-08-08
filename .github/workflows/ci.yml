@@ -31,17 +31,27 @@ jobs:
       - name: Type check
         run: bun run check
 
+      - name: Validate theme contrast
+        run: bun run validate:contrast
+
+      # The repository intentionally commits placeholder Cloudflare ids. A
+      # production build rejects them, while this local-only CI build reports
+      # them and compiles without contacting Cloudflare.
+      - name: Build application
+        run: bun run build:ci
+
+      # The coverage gate lives in vite.config.ts: vitest `thresholds` fail this
+      # step below 95% on lines, functions, branches AND statements (AGENTS.md §1).
+      #
+      # A second jq-based step used to follow, nominally gating lines at 90%. It
+      # read coverage/coverage-summary.json, which nothing produces — the reporters
+      # are text/json/html/lcov, and the summary needs `json-summary`. `cat` failed,
+      # the pipe masked its status, jq exited 0 on empty stdin, and `(( ))` on an
+      # empty expression is false, so the step logged an error and always passed.
+      # Removed rather than repaired: it was redundant with the thresholds above
+      # even when working, and a weaker number in CI invited the drift it caused.
       - name: Run unit tests with coverage
         run: bun run test:coverage
-
-      - name: Check coverage threshold (90%)
-        run: |
-          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
-          echo "Coverage: $COVERAGE%"
-          if (( $(echo "$COVERAGE < 90" | bc -l) )); then
-            echo "Coverage is below 90%!"
-            exit 1
-          fi
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5

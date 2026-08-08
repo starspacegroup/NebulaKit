@@ -1,6 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import { svelteTesting } from '@testing-library/svelte/vite';
 import { defineConfig } from 'vitest/config';
-import { site } from './src/lib/site.config';
+import { site } from './src/lib/site.config.ts';
 
 /**
  * Vite plugin that fixes stale dep hash 504s when serving through cloudflared.
@@ -33,7 +34,7 @@ function staleDepsFix() {
 }
 
 export default defineConfig({
-	plugins: [staleDepsFix(), sveltekit()],
+	plugins: [staleDepsFix(), sveltekit(), svelteTesting()],
 	// Preview (vite preview) reuses the dev port so local URLs stay stable.
 	preview: {
 		port: site.devPort,
@@ -45,8 +46,6 @@ export default defineConfig({
 		// Allow any subdomain of the project's custom domain (set TUNNEL_HOSTNAME in .env)
 		// plus the free trycloudflare.com hostnames and localhost.
 		// Leading "." matches any subdomain, so per-dev tunnels work without editing this.
-		// CUSTOMIZE: replace '.example.com' with your project's tunnel domain, or remove it
-		// if you only ever use the free trycloudflare.com quick tunnels.
 		allowedHosts: ['.trycloudflare.com', '.starspace.group', 'localhost'],
 		// Disable HMR when running through a tunnel — WebSocket connections over cloudflared
 		// are unreliable and cause the page to hang. Set VITE_HMR=true to re-enable for
@@ -90,6 +89,7 @@ export default defineConfig({
 			reporter: ['text', 'json', 'html', 'lcov'],
 			exclude: [
 				'node_modules/',
+				'.remember/',
 				'tests/',
 				'*.config.{js,ts}',
 				'**/*.d.ts',
@@ -104,9 +104,7 @@ export default defineConfig({
 				// These are tested via E2E tests for user interaction flows
 				'**/*.svelte',
 				// Page route type files that just define load types
-				'src/routes/**/+page.ts',
-				// Hooks are tested implicitly through integration tests
-				'src/hooks.server.ts'
+				'src/routes/**/+page.ts'
 			],
 			// AGENTS.md §1 calls 95% a hard floor. These were left at 90, so the
 			// documented rule was never the enforced one and coverage drifted to
@@ -118,11 +116,8 @@ export default defineConfig({
 				statements: 95
 			}
 		},
-		poolOptions: {
-			threads: {
-				singleThread: true
-			}
-		},
+		pool: 'threads',
+		fileParallelism: false,
 		teardownTimeout: 5000
 	}
 });

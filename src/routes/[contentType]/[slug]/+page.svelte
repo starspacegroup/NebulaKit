@@ -8,6 +8,7 @@
 	import type { PageData } from './$types';
 	import CmsContent from '$lib/components/CmsContent.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { sanitizeCmsUrl } from '$lib/cms/sanitize';
 
 	export let data: PageData;
 
@@ -25,7 +26,7 @@
 	}
 
 	function getRoutePrefix(): string {
-		return contentType.settings.routePrefix || `/${contentType.slug}`;
+		return `/${contentType.slug}`;
 	}
 </script>
 
@@ -68,9 +69,9 @@
 				{/if}
 			</header>
 
-			{#if item.fields.featured_image}
+			{#if sanitizeCmsUrl(String(item.fields.featured_image ?? ''), true)}
 				<div class="cms-blog-article-hero">
-					<img src={String(item.fields.featured_image)} alt={item.title} />
+					<img src={sanitizeCmsUrl(String(item.fields.featured_image), true)} alt={item.title} />
 				</div>
 			{/if}
 
@@ -111,14 +112,19 @@
 								<div class="cms-content">
 									<CmsContent html={String(item.fields[fieldDef.name] ?? '')} />
 								</div>
-							{:else if fieldDef.type === 'image' || fieldDef.type === 'url'}
-								{#if fieldDef.type === 'image'}
-									<img src={String(item.fields[fieldDef.name])} alt={fieldDef.label} />
-								{:else}
-									<a href={String(item.fields[fieldDef.name])} target="_blank" rel="noopener">
+							{:else if fieldDef.type === 'image' && sanitizeCmsUrl(String(item.fields[fieldDef.name]), true)}
+								<img
+									src={sanitizeCmsUrl(String(item.fields[fieldDef.name]), true)}
+									alt={fieldDef.label}
+								/>
+							{:else if fieldDef.type === 'url' && sanitizeCmsUrl(String(item.fields[fieldDef.name]))}
+								<a
+									href={sanitizeCmsUrl(String(item.fields[fieldDef.name]))}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
 										{item.fields[fieldDef.name]}
-									</a>
-								{/if}
+								</a>
 							{:else if fieldDef.type === 'boolean'}
 								<p>
 									<strong>{fieldDef.label}:</strong>

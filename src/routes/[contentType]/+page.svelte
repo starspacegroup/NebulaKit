@@ -7,6 +7,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { sanitizeCmsUrl } from '$lib/cms/sanitize';
 
 	export let data: PageData;
 
@@ -25,14 +26,11 @@
 	}
 
 	function getRoutePrefix(): string {
-		return contentType.settings.routePrefix || `/${contentType.slug}`;
+		return `/${contentType.slug}`;
 	}
 </script>
 
-<SharingMeta
-	title={contentType.name}
-	description={contentType.description || ''}
-/>
+<SharingMeta title={contentType.name} description={contentType.description || ''} />
 
 <div class="cms-list-page">
 	<header class="cms-list-header">
@@ -52,9 +50,13 @@
 			<div class="cms-blog-grid">
 				{#each items as item}
 					<article class="cms-blog-card">
-						{#if item.fields.featured_image}
+						{#if sanitizeCmsUrl(String(item.fields.featured_image ?? ''), true)}
 							<div class="cms-blog-card-image">
-								<img src={String(item.fields.featured_image)} alt={item.title} loading="lazy" />
+								<img
+									src={sanitizeCmsUrl(String(item.fields.featured_image), true)}
+									alt={item.title}
+									loading="lazy"
+								/>
 							</div>
 						{/if}
 						<div class="cms-blog-card-content">

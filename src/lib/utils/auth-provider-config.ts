@@ -1,58 +1,62 @@
+import type { OAuthProvider } from './oauth-state';
+
 export interface AuthProviderConfig {
 	github: boolean;
 	discord: boolean;
 }
 
-async function isProviderConfigured(
+export interface AuthProviderCredentials {
+	clientId?: string;
+	clientSecret?: string;
+}
+
+export const AUTH_PROVIDERS = ['github', 'discord'] as const satisfies readonly OAuthProvider[];
+
+export function isAuthProvider(value: unknown): value is OAuthProvider {
+	return value === 'github' || value === 'discord';
+}
+
+export async function getAuthProviderCredentials(
 	platform: App.Platform | undefined,
-	provider: keyof AuthProviderConfig
-): Promise<boolean> {
-	if (provider === 'github') {
-		if (platform?.env?.GITHUB_CLIENT_ID && platform?.env?.GITHUB_CLIENT_SECRET) {
-			return true;
-		}
-
-		if (platform?.env?.KV) {
-			try {
-				const stored = await platform.env.KV.get('auth_config:github');
-				if (stored) {
-					const config = JSON.parse(stored);
-					return !!(config.clientId && config.clientSecret);
+	provider: OAuthProvider
+): Promise<AuthProviderCredentials> {
+	const credentials: AuthProviderCredentials =
+		provider === 'github'
+			? {
+					clientId: platform?.env?.GITHUB_CLIENT_ID,
+					clientSecret: platform?.env?.GITHUB_CLIENT_SECRET
 				}
-			} catch {
-				// Ignore KV errors and fall through to false.
+			: {
+					clientId: platform?.env?.DISCORD_CLIENT_ID,
+					clientSecret: platform?.env?.DISCORD_CLIENT_SECRET
+				};
+
+	if ((!credentials.clientId || !credentials.clientSecret) && platform?.env?.KV) {
+		try {
+			const stored = await platform.env.KV.get(`auth_config:${provider}`);
+			if (stored) {
+				const config = JSON.parse(stored) as AuthProviderCredentials;
+				credentials.clientId ||= config.clientId;
+				credentials.clientSecret ||= config.clientSecret;
 			}
+		} catch (error) {
+			console.error('Failed to fetch from KV:', error);
 		}
 	}
 
-	if (provider === 'discord') {
-		if (platform?.env?.DISCORD_CLIENT_ID && platform?.env?.DISCORD_CLIENT_SECRET) {
-			return true;
-		}
-
-		if (platform?.env?.KV) {
-			try {
-				const stored = await platform.env.KV.get('auth_config:discord');
-				if (stored) {
-					const config = JSON.parse(stored);
-					return !!(config.clientId && config.clientSecret);
-				}
-			} catch {
-				// Ignore KV errors and fall through to false.
-			}
-		}
-	}
-
-	return false;
+	return credentials;
 }
 
 export async function getConfiguredAuthProviders(
 	platform: App.Platform | undefined
 ): Promise<AuthProviderConfig> {
-	const [github, discord] = await Promise.all([
-		isProviderConfigured(platform, 'github'),
-		isProviderConfigured(platform, 'discord')
+	const [githubCredentials, discordCredentials] = await Promise.all([
+		getAuthProviderCredentials(platform, 'github'),
+		getAuthProviderCredentials(platform, 'discord')
 	]);
 
-	return { github, discord };
+	return {
+		github: !!(githubCredentials.clientId && githubCredentials.clientSecret),
+		discord: !!(discordCredentials.clientId && discordCredentials.clientSecret)
+	};
 }

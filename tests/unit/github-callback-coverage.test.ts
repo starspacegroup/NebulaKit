@@ -1,20 +1,52 @@
+import { webcrypto } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The OAuth routes now round-trip a `state` value through an HttpOnly cookie:
-// the init route sets it, the callback requires it back. Tests therefore need
-// a cookie jar whose state lookups answer, and callback URLs carrying a
-// matching `state` param.
-const TEST_OAUTH_STATE = 'test-oauth-state';
-function makeOAuthCookies(sessionValue: unknown = null) {
+vi.mock('$lib/utils/oauth-state', async () => {
+	const actual = await vi.importActual<typeof import('../../src/lib/utils/oauth-state')>(
+		'../../src/lib/utils/oauth-state'
+	);
 	return {
-		get: vi.fn((name: string) =>
-			name.startsWith('oauth_state_') ? TEST_OAUTH_STATE : sessionValue
-		),
-		set: vi.fn(),
-		delete: vi.fn()
+		...actual,
+		consumeOAuthState: vi.fn(async (provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		})),
+		verifyOAuthTransaction: vi.fn(async (_db: unknown, provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		})),
+		consumeOAuthTransaction: vi.fn(async (_db: unknown, provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		}))
 	};
-}
+});
 
+vi.mock('$lib/utils/db', async () => {
+	const actual =
+		await vi.importActual<typeof import('../../src/lib/utils/db')>('../../src/lib/utils/db');
+	return {
+		...actual,
+		createSession: vi.fn(async (_db: unknown, userId: string) => ({
+			id: 'stored-session-digest',
+			token: 'opaque-session-token',
+			user_id: userId,
+			expires_at: new Date('2099-01-01T00:00:00.000Z')
+		})),
+		replaceSession: vi.fn(async (_db: unknown, userId: string) => ({
+			id: 'stored-session-digest',
+			token: 'opaque-session-token',
+			user_id: userId,
+			expires_at: new Date('2099-01-01T00:00:00.000Z')
+		}))
+	};
+});
 
 // Mock console to avoid noise
 vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -27,7 +59,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
-		vi.stubGlobal('crypto', { randomUUID: () => 'test-uuid-123' });
+		vi.stubGlobal('crypto', webcrypto as Crypto);
+		vi.stubEnv('DEV', true);
 
 		mockFetch = vi.fn();
 		vi.stubGlobal('fetch', mockFetch);
@@ -37,14 +70,14 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 		it('should redirect to login with error when no code provided', async () => {
 			const mockEvent = {
 				url: new URL('http://localhost/api/auth/github/callback'),
-				cookies: makeOAuthCookies(null),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {}
 			};
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			try {
-				await GET(mockEvent as any);
+				await GET(withDatabase(mockEvent) as any);
 				expect.fail('Should have redirected');
 			} catch (err: any) {
 				expect(err.status).toBe(302);
@@ -87,8 +120,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						KV: mockKV
@@ -98,7 +131,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			expect(mockKV.get).toHaveBeenCalledWith('auth_config:github');
 		});
@@ -109,8 +142,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						KV: mockKV
@@ -121,7 +154,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			try {
-				await GET(mockEvent as any);
+				await GET(withDatabase(mockEvent) as any);
 				expect.fail('Should have redirected');
 			} catch (err: any) {
 				expect(err.status).toBe(302);
@@ -131,8 +164,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 		it('should redirect with not_configured when no OAuth config found', async () => {
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {}
 				}
@@ -141,7 +174,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			try {
-				await GET(mockEvent as any);
+				await GET(withDatabase(mockEvent) as any);
 				expect.fail('Should have redirected');
 			} catch (err: any) {
 				expect(err.status).toBe(302);
@@ -151,7 +184,47 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 	});
 
 	describe('Token exchange errors', () => {
+		it('rejects a callback whose transaction preflight is no longer valid', async () => {
+			const { verifyOAuthTransaction } = await import('../../src/lib/utils/oauth-state');
+			vi.mocked(verifyOAuthTransaction).mockResolvedValueOnce(null);
+			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
+
+			await expect(
+				GET(
+					withDatabase({
+						url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+						cookies: { get: vi.fn(), set: vi.fn() },
+						platform: { env: {} }
+					}) as any
+				)
+			).rejects.toMatchObject({ location: '/auth/login?error=invalid_state' });
+			expect(mockFetch).not.toHaveBeenCalled();
+		});
+
+		it('rejects a callback when another request consumes the transaction first', async () => {
+			const { consumeOAuthTransaction } = await import('../../src/lib/utils/oauth-state');
+			vi.mocked(consumeOAuthTransaction).mockResolvedValueOnce(null);
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: vi.fn().mockResolvedValue({ access_token: 'token' })
+			});
+			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
+
+			await expect(
+				GET(
+					withDatabase({
+						url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+						cookies: { get: vi.fn(), set: vi.fn() },
+						platform: { env: { GITHUB_CLIENT_ID: 'id', GITHUB_CLIENT_SECRET: 'secret' } }
+					}) as any
+				)
+			).rejects.toMatchObject({ location: '/auth/login?error=invalid_state' });
+			expect(mockFetch).toHaveBeenCalledOnce();
+		});
+
 		it('should redirect with error when token exchange fails', async () => {
+			const { consumeOAuthTransaction, verifyOAuthTransaction } =
+				await import('../../src/lib/utils/oauth-state');
 			mockFetch.mockResolvedValueOnce({
 				ok: false,
 				status: 400,
@@ -159,8 +232,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -172,12 +245,14 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			try {
-				await GET(mockEvent as any);
+				await GET(withDatabase(mockEvent) as any);
 				expect.fail('Should have redirected');
 			} catch (err: any) {
 				expect(err.status).toBe(302);
 				expect(err.location).toBe('/auth/login?error=token_exchange_failed');
 			}
+			expect(verifyOAuthTransaction).toHaveBeenCalledOnce();
+			expect(consumeOAuthTransaction).not.toHaveBeenCalled();
 		});
 
 		it('should redirect with error when no access token in response', async () => {
@@ -187,8 +262,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -200,7 +275,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			try {
-				await GET(mockEvent as any);
+				await GET(withDatabase(mockEvent) as any);
 				expect.fail('Should have redirected');
 			} catch (err: any) {
 				expect(err.status).toBe(302);
@@ -211,6 +286,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 	describe('User info fetch errors', () => {
 		it('should redirect with error when user fetch fails', async () => {
+			const { consumeOAuthTransaction } = await import('../../src/lib/utils/oauth-state');
 			mockFetch.mockResolvedValueOnce({
 				ok: true,
 				json: () => Promise.resolve({ access_token: 'test-token' })
@@ -222,8 +298,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -235,12 +311,13 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			try {
-				await GET(mockEvent as any);
+				await GET(withDatabase(mockEvent) as any);
 				expect.fail('Should have redirected');
 			} catch (err: any) {
 				expect(err.status).toBe(302);
 				expect(err.location).toBe('/auth/login?error=user_fetch_failed');
 			}
+			expect(consumeOAuthTransaction).toHaveBeenCalledOnce();
 		});
 	});
 
@@ -268,8 +345,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -282,7 +359,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			// Should redirect to /admin since username matches
 			expect(response.headers.get('Location')).toContain('/admin');
@@ -316,8 +393,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -329,7 +406,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			expect(mockKV.get).toHaveBeenCalledWith('github_owner_id');
 			expect(response.headers.get('Location')).toContain('/admin');
@@ -363,8 +440,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -376,7 +453,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			expect(response.headers.get('Location')).toContain('/admin');
 		});
@@ -403,8 +480,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -417,7 +494,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			// Should continue without throwing, user will not be owner
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			expect(response.headers.get('Location')).toContain('/');
 		});
@@ -520,8 +597,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -533,7 +610,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			expect(insertOAuthRun).toHaveBeenCalledTimes(1);
 			expect(updateUserRun).toHaveBeenCalledTimes(1);
@@ -560,8 +637,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies('invalid-base64!!!'),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue('invalid-base64!!!'), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -573,17 +650,27 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			// Should not throw, treat as new login
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 		});
 
 		it('should link GitHub account to existing user', async () => {
-			const existingSession = btoa(
-				JSON.stringify({ id: 'existing-user-123', login: 'existinguser' })
-			)
-				.replace(/\+/g, '-')
-				.replace(/\//g, '_')
-				.replace(/=+$/, '');
+			const { consumeOAuthTransaction, verifyOAuthTransaction } =
+				await import('../../src/lib/utils/oauth-state');
+			vi.mocked(verifyOAuthTransaction).mockResolvedValueOnce({
+				provider: 'github',
+				state: 'legacy-valid-state',
+				intent: 'link',
+				userId: 'existing-user-123',
+				issuedAt: Date.now()
+			});
+			vi.mocked(consumeOAuthTransaction).mockResolvedValueOnce({
+				provider: 'github',
+				state: 'legacy-valid-state',
+				intent: 'link',
+				userId: 'existing-user-123',
+				issuedAt: Date.now()
+			});
 
 			mockFetch.mockResolvedValueOnce({
 				ok: true,
@@ -629,8 +716,11 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(existingSession),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				locals: {
+					user: { id: 'existing-user-123', login: 'existinguser' }
+				},
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -642,7 +732,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			expect(response.headers.get('Location')).toContain('/profile?linked=github');
 		});
@@ -675,7 +765,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 							})
 						};
 					}
-					if (sql.includes('SELECT * FROM users WHERE id')) {
+					if (sql.includes('SELECT id FROM users WHERE id')) {
 						return {
 							bind: vi.fn().mockReturnValue({
 								first: vi.fn().mockResolvedValue({
@@ -694,8 +784,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -707,7 +797,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			// Should redirect to /admin since user is admin
 			expect(response.headers.get('Location')).toContain('/admin');
@@ -774,8 +864,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -787,7 +877,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 		});
 	});
@@ -845,8 +935,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -858,7 +948,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 		});
 	});
@@ -895,8 +985,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -908,7 +998,7 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			expect(response.status).toBe(302);
 			expect(mockKV.put).toHaveBeenCalledWith('admin_first_login_completed', 'true');
 		});
@@ -933,8 +1023,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			});
 
 			const mockEvent = {
-				url: new URL('https://example.com/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('https://example.com/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -945,14 +1035,14 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			const response = await GET(mockEvent as any);
+			const response = await GET(withDatabase(mockEvent) as any);
 			const cookie = response.headers.get('Set-Cookie');
 			expect(cookie).toContain('Secure');
 		});
 	});
 
 	describe('Database error handling', () => {
-		it('should continue auth even if DB fails', async () => {
+		it('should fail closed if DB access fails', async () => {
 			mockFetch.mockResolvedValueOnce({
 				ok: true,
 				json: () => Promise.resolve({ access_token: 'test-token' })
@@ -976,8 +1066,8 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			};
 
 			const mockEvent = {
-				url: new URL('http://localhost/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-				cookies: makeOAuthCookies(null),
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
 				platform: {
 					env: {
 						GITHUB_CLIENT_ID: 'client-id',
@@ -989,9 +1079,68 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
-			// Should not throw, should continue with auth
-			const response = await GET(mockEvent as any);
-			expect(response.status).toBe(302);
+			await expect(GET(withDatabase(mockEvent) as any)).rejects.toMatchObject({
+				status: 302,
+				location: '/auth/login?error=oauth_failed'
+			});
 		});
 	});
 });
+
+function withDatabase<T extends { platform?: { env?: Record<string, unknown> } }>(event: T): T {
+	return {
+		...event,
+		platform: {
+			...event.platform,
+			env: {
+				...event.platform?.env,
+				DB: callbackDatabase(
+					(event.platform?.env?.DB as ReturnType<typeof database>) ?? database(),
+					event.platform?.env
+				)
+			}
+		}
+	} as T;
+}
+
+function callbackDatabase(db: ReturnType<typeof database>, env?: Record<string, unknown>) {
+	return {
+		...db,
+		prepare: vi.fn((sql: string) => {
+			if (
+				sql.trim() !==
+				'SELECT id, email, name, github_login, github_avatar_url, is_admin FROM users WHERE id = ?'
+			) {
+				return (db.prepare as (sql: string) => ReturnType<typeof db.prepare>)(sql);
+			}
+			return {
+				bind: vi.fn((userId: string) => ({
+					first: vi.fn().mockResolvedValue({
+						id: userId,
+						email: `${userId}@example.com`,
+						name: 'OAuth User',
+						github_login:
+							typeof env?.GITHUB_OWNER_ID === 'string' && Number.isNaN(Number(env.GITHUB_OWNER_ID))
+								? env.GITHUB_OWNER_ID
+								: 'testuser',
+						github_avatar_url: null,
+						is_admin: userId === 'linked-user-456' ? 1 : 0
+					})
+				}))
+			};
+		})
+	};
+}
+
+function database() {
+	return {
+		prepare: vi.fn(() => ({
+			bind: vi.fn(() => ({
+				first: vi.fn().mockResolvedValue(null),
+				all: vi.fn().mockResolvedValue({ results: [] }),
+				run: vi.fn().mockResolvedValue({ success: true })
+			}))
+		}))
+	};
+}
+import '../helpers/server-response';

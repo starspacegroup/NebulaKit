@@ -1,8 +1,8 @@
 # Keeping `/documentation` In Sync
 
 Companion to [AGENTS.md](../AGENTS.md) §7. This is the operational detail: what counts as a
-documentable change, where it goes on the page, how to test it, and how to recreate the route if a
-project deleted it during customization.
+documentable change, where it goes on the page, how to test it, and how to recreate the route if it
+is accidentally removed.
 
 The page lives at [src/routes/documentation/+page.svelte](../src/routes/documentation/+page.svelte)
 and is covered by [tests/unit/documentation-page.test.ts](../tests/unit/documentation-page.test.ts).
@@ -42,7 +42,7 @@ section rather than appending to the end:
 | Section (`id`)        | Put this here                                                       |
 | --------------------- | ------------------------------------------------------------------- |
 | `start-here`          | First-run orientation and ordering of setup steps                   |
-| `quick-start`         | Install/dev/build/deploy commands (both bun and npm variants)       |
+| `quick-start`         | Bun install/dev/build/deploy commands                               |
 | `feature-overview`    | "What you get" — one bullet per user-visible capability             |
 | `how-to-use`          | Task-oriented walkthroughs for using features                       |
 | `ai-workflow`         | How to work with AI assistants in this repo                         |
@@ -83,9 +83,8 @@ Style constraints that apply to this page like any other: CSS variables only, no
 
 ## If The Route Doesn't Exist
 
-Projects built from this template sometimes delete `/documentation` while stripping template
-branding. That removes the template's _content_, not the requirement. Recreate the route with your
-own product's documentation:
+If `/documentation` is accidentally removed, recreate the route with NebulaKit's current product
+documentation:
 
 ```svelte
 <!-- src/routes/documentation/+page.svelte -->
@@ -122,9 +121,8 @@ Then restore the `/documentation` link in `Footer.svelte` and the command palett
 test asserting the heading and at least one real instruction, so the page can never silently
 disappear again.
 
-## After Customization
+## Product Alignment
 
-Once [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) is `complete`, the page
-must describe **your** app: your name, your features, your deploy target. No leftover NebulaKit
-references, no template repo links in `references`, no instructions for features you removed. From
-that point on this document's rule takes over — every feature ships with its docs.
+The page must describe NebulaKit's current name, features, deploy target, and executable commands.
+Retired workflows and removed features must disappear from the route in the same change. Every
+user-visible feature continues to ship with its documentation.

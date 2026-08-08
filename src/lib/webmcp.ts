@@ -14,8 +14,8 @@
  *  - **Same-origin only.** Path inputs are resolved against this site's origin
  *    and rejected if they escape it, so a tool can never be used to fetch an
  *    attacker-chosen URL with the user's cookies attached.
- *  - **No privilege escalation.** These run in the user's page with the user's
- *    session. They expose nothing an anonymous visitor could not already read.
+ *  - **No privilege escalation.** Page reads are allowlisted by the public
+ *    sitemap and omit browser credentials, even when the visitor is signed in.
  *
  * Dependencies are injected rather than imported so the tools can be unit
  * tested without a browser (see tests/unit/webmcp.test.ts).
@@ -132,7 +132,8 @@ export function buildWebMcpTools(deps: WebMcpDeps): WebMcpTool[] {
 			inputSchema: { type: 'object', properties: {} },
 			execute: async () => {
 				const response = await doFetch(`${deps.origin}/sitemap.xml`, {
-					headers: { Accept: 'application/xml' }
+					headers: { Accept: 'application/xml' },
+					credentials: 'omit'
 				});
 				if (!response.ok) return text(`Could not read the sitemap (HTTP ${response.status}).`);
 
@@ -161,8 +162,31 @@ export function buildWebMcpTools(deps: WebMcpDeps): WebMcpTool[] {
 				const path = resolveSamePath(deps.origin, input.path);
 				if (!path) return text('Provide a path on this site, such as "/documentation".');
 
+				const sitemapResponse = await doFetch(`${deps.origin}/sitemap.xml`, {
+					headers: { Accept: 'application/xml' },
+					credentials: 'omit'
+				});
+				if (!sitemapResponse.ok) {
+					return text(`Could not verify the public page index (HTTP ${sitemapResponse.status}).`);
+				}
+				const sitemap = await sitemapResponse.text();
+				const publicPaths = new Set(
+					Array.from(sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)).flatMap((match) => {
+						try {
+							const location = new URL(match[1]);
+							return location.origin === deps.origin ? [location.pathname + location.search] : [];
+						} catch {
+							return [];
+						}
+					})
+				);
+				if (!publicPaths.has(path)) {
+					return text(`${path} is not listed as public and cannot be read by this tool.`);
+				}
+
 				const response = await doFetch(`${deps.origin}${path}`, {
-					headers: { Accept: 'text/markdown' }
+					headers: { Accept: 'text/markdown' },
+					credentials: 'omit'
 				});
 				if (!response.ok) return text(`${path} returned HTTP ${response.status}.`);
 				return text(await response.text());

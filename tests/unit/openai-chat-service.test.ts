@@ -115,6 +115,37 @@ describe('OpenAI Chat Service', () => {
 
 			expect(result?.apiKey).toBe('sk-enabled');
 		});
+
+		it('selects only an enabled key configured for the requested model', async () => {
+			const keys = {
+				key1: { provider: 'openai', apiKey: 'sk-first', enabled: true, models: ['gpt-4o'] },
+				key2: {
+					provider: 'openai',
+					apiKey: 'sk-second',
+					enabled: true,
+					models: ['gpt-4o-mini']
+				},
+				key3: {
+					provider: 'openai',
+					apiKey: 'sk-disabled',
+					enabled: false,
+					models: ['o3']
+				}
+			};
+			const mockKV = {
+				get: vi.fn(async (key: string) =>
+					key === 'ai_keys_list'
+						? JSON.stringify(Object.keys(keys))
+						: JSON.stringify(keys[key.replace('ai_key:', '') as keyof typeof keys] ?? null)
+				)
+			};
+			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
+			const platform = { env: { KV: mockKV } } as any;
+
+			expect((await getEnabledOpenAIKey(platform, 'gpt-4o-mini'))?.apiKey).toBe('sk-second');
+			expect(await getEnabledOpenAIKey(platform, 'o3')).toBeNull();
+			expect(await getEnabledOpenAIKey(platform, 'missing')).toBeNull();
+		});
 	});
 
 	describe('streamChatCompletion', () => {

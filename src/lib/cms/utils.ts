@@ -14,10 +14,16 @@ import type {
 	ContentTypeParsed,
 	ContentTypeSettings
 } from './types';
+import { sanitizeCmsUrl } from './sanitize';
 
-function normalizeContentTypeSettings(settings: ContentTypeSettings = {}): ContentTypeSettings {
+function normalizeContentTypeSettings(
+	settings: ContentTypeSettings = {},
+	slug: string
+): ContentTypeSettings {
 	return {
 		...settings,
+		routePrefix: `/${slug}`,
+		isPublic: settings.isPublic !== false,
 		showInCommandPalette: settings.showInCommandPalette !== false
 	};
 }
@@ -50,7 +56,10 @@ export function generateSlug(title: string): string {
  * Parse a content type from D1 row format to runtime format.
  */
 export function parseContentType(row: ContentType): ContentTypeParsed {
-	const settings = normalizeContentTypeSettings(JSON.parse(row.settings) as ContentTypeSettings);
+	const settings = normalizeContentTypeSettings(
+		JSON.parse(row.settings) as ContentTypeSettings,
+		row.slug
+	);
 
 	return {
 		id: row.id,
@@ -211,10 +220,17 @@ export function validateFields(
 		}
 
 		// URL validation
-		if (def.type === 'url' && value) {
-			try {
-				new URL(String(value));
-			} catch {
+		if ((def.type === 'url' || def.type === 'image') && value) {
+			const sanitized = sanitizeCmsUrl(String(value), def.type === 'image');
+			let valid = !!sanitized;
+			if (sanitized && def.type === 'url') {
+				try {
+					new URL(sanitized);
+				} catch {
+					valid = false;
+				}
+			}
+			if (!valid) {
 				errors.push(`${def.label} must be a valid URL`);
 			}
 		}
@@ -300,9 +316,16 @@ export function validateContentTypeInput(input: {
 		}
 	}
 
-	// Validate route prefix
-	if (input.settings?.routePrefix && !input.settings.routePrefix.startsWith('/')) {
-		errors.push('Route prefix must start with / (e.g., "/blog")');
+	// Public CMS routes are implemented at /{slug}; custom prefixes have no
+	// matching SvelteKit route and would create dead links on discovery surfaces.
+	if (input.settings?.routePrefix) {
+		if (!input.settings.routePrefix.startsWith('/')) {
+			errors.push('Route prefix must start with / (e.g., "/blog")');
+		} else if (!input.slug) {
+			errors.push('Route prefix is derived from the content type slug and cannot be customized.');
+		} else if (input.slug && input.settings.routePrefix !== `/${input.slug}`) {
+			errors.push(`Custom route prefixes are not supported; use "/${input.slug}".`);
+		}
 	}
 
 	return errors;

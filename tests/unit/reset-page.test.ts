@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const ownerLocals = { user: { id: 'owner-1', isOwner: true, isAdmin: true } };
+
 /**
  * Tests for Reset Page Server
  * TDD: Testing the reset page server-side logic
@@ -29,7 +31,8 @@ describe('Reset Page Server', () => {
 			const mockGet = vi.fn().mockResolvedValue(null);
 
 			const result = await load({
-				platform: { env: { KV: { get: mockGet } } }
+				platform: { env: { KV: { get: mockGet } } },
+				locals: ownerLocals
 			} as any);
 
 			expect(result).toEqual({});
@@ -42,7 +45,8 @@ describe('Reset Page Server', () => {
 			const mockGet = vi.fn().mockResolvedValue('false');
 
 			const result = await load({
-				platform: { env: { KV: { get: mockGet } } }
+				platform: { env: { KV: { get: mockGet } } },
+				locals: ownerLocals
 			} as any);
 
 			expect(result).toEqual({});
@@ -55,7 +59,8 @@ describe('Reset Page Server', () => {
 
 			await expect(
 				load({
-					platform: { env: { KV: { get: mockGet } } }
+					platform: { env: { KV: { get: mockGet } } },
+					locals: ownerLocals
 				} as any)
 			).rejects.toMatchObject({ status: 302, location: '/' });
 		});
@@ -64,7 +69,8 @@ describe('Reset Page Server', () => {
 			const { load } = await import('../../src/routes/reset/+page.server');
 
 			const result = await load({
-				platform: null
+				platform: null,
+				locals: ownerLocals
 			} as any);
 
 			expect(result).toEqual({});
@@ -74,7 +80,8 @@ describe('Reset Page Server', () => {
 			const { load } = await import('../../src/routes/reset/+page.server');
 
 			const result = await load({
-				platform: { env: {} }
+				platform: { env: {} },
+				locals: ownerLocals
 			} as any);
 
 			expect(result).toEqual({});

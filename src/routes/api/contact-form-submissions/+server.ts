@@ -6,7 +6,7 @@ import {
 	countContactFormSubmissions
 } from '$lib/services/contact';
 import { validateContactInput } from '$lib/utils/contact-validation';
-import { verifyTurnstile, turnstileEnabled } from '$lib/server/turnstile';
+import { getTurnstileConfig, verifyTurnstile } from '$lib/server/turnstile';
 import { isPiiRevealed, maskName, maskEmail, PII_REVEAL_COOKIE } from '$lib/server/pii-mask';
 
 /**
@@ -52,14 +52,18 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const result = validateContactInput(body);
 	if (!result.ok) throw error(400, result.error);
 
-	const secretKey = platform?.env?.TURNSTILE_SECRET_KEY;
-	if (turnstileEnabled(secretKey)) {
+	const config = getTurnstileConfig(
+		platform?.env?.TURNSTILE_SITE_KEY,
+		platform?.env?.TURNSTILE_SECRET_KEY
+	);
+	if ('error' in config) throw error(503, config.error);
+	if (config.enabled) {
 		const token =
 			typeof body['cf-turnstile-response'] === 'string'
 				? (body['cf-turnstile-response'] as string)
 				: null;
 		const ok = await verifyTurnstile({
-			secretKey: secretKey as string,
+			secretKey: config.secretKey,
 			token,
 			remoteIp: request.headers.get('CF-Connecting-IP')
 		});

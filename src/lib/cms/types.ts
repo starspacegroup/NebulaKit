@@ -73,7 +73,7 @@ export interface ContentTypeSettings {
 	hasSEO?: boolean;
 	/** Track author (default: true) */
 	hasAuthor?: boolean;
-	/** URL prefix for public routes (default: /{slug}) */
+	/** Canonical public route. If present, it must equal /{slug}. */
 	routePrefix?: string;
 	/** Items per page on list views (default: 12) */
 	listPageSize?: number;

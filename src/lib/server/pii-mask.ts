@@ -82,6 +82,8 @@ export function isPiiRevealed(
 
 /** Cookie name + scope shared by the reveal endpoint and every server read. */
 export const PII_REVEAL_COOKIE = 'pii_reveal';
-export const PII_REVEAL_COOKIE_PATH = '/admin';
+// The same server-side reveal decision protects both /admin pages and
+// /api/admin responses, so the browser must send the opt-in cookie to both.
+export const PII_REVEAL_COOKIE_PATH = '/';
 /** Reveal auto-expires (1h) so it's never left permanently on. */
 export const PII_REVEAL_MAX_AGE = 60 * 60;

@@ -1,5 +1,6 @@
+import { createSession } from '$lib/utils/db';
 import { hashPassword, validatePassword } from '$lib/utils/passwords';
-import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
+import { buildDatabaseSessionCookieHeader } from '$lib/utils/session';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -55,22 +56,18 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 		.bind(userId, email, name, passwordHash)
 		.run();
 
-	const sessionUser = createSessionUser({
-		id: userId,
-		email,
-		name,
-		github_login: null,
-		github_avatar_url: null,
-		is_admin: 0,
-		isOwner: false
-	});
+	const session = await createSession(platform.env.DB, userId, 7);
 
 	return json(
 		{ success: true, redirectTo: '/' },
 		{
 			status: 201,
 			headers: {
-				'Set-Cookie': buildSessionCookieHeader(sessionUser, url)
+				'Set-Cookie': await buildDatabaseSessionCookieHeader(
+					session.token,
+					url,
+					platform.env.SESSION_SECRET
+				)
 			}
 		}
 	);

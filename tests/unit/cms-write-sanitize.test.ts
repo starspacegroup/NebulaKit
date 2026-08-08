@@ -47,7 +47,13 @@ beforeEach(() => {
 	getContentTypeBySlug.mockResolvedValue(blogType);
 	// The merged PUT reads the prior item before writing, so main's proof job can
 	// detect a first publish. Without this the route 404s before sanitizing.
-	getContentItem.mockResolvedValue({ id: 'ci-1', slug: 'hello', publishedAt: null, fields: {} });
+	getContentItem.mockResolvedValue({
+		id: 'ci-1',
+		contentTypeId: 'ct-1',
+		slug: 'hello',
+		publishedAt: null,
+		fields: {}
+	});
 });
 
 describe('POST /api/cms/[type] sanitizes richtext before storage', () => {

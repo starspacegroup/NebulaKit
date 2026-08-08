@@ -20,13 +20,12 @@ import { afterEach, vi } from 'vitest';
 // Install happy-dom's own Storage whenever what's on the global isn't usable,
 // so the suite behaves the same on every Node version.
 for (const key of ['localStorage', 'sessionStorage'] as const) {
-	const current: unknown = (globalThis as Record<string, unknown>)[key];
-	if (current && typeof (current as globalThis.Storage).getItem === 'function') continue;
-
 	const storage = new Storage();
-	// `window` and `globalThis` are the same object under happy-dom, but don't
-	// rely on that — a Set keeps this correct either way without double-defining.
-	for (const target of new Set<object>([globalThis, window])) {
+	// `window` and `globalThis` are usually the same object under happy-dom, but
+	// don't rely on that. Node-only test files intentionally have no `window`.
+	const targets = new Set<object>([globalThis]);
+	if (typeof window !== 'undefined') targets.add(window);
+	for (const target of targets) {
 		Object.defineProperty(target, key, { value: storage, configurable: true, writable: true });
 	}
 }
@@ -64,17 +63,40 @@ globalThis.IntersectionObserver = class IntersectionObserver {
 	disconnect() {}
 } as any;
 
+// Svelte 5 implements transitions with the Web Animations API. happy-dom does
+// not provide it yet, so complete animations on a microtask after Svelte has
+// attached its `onfinish` callback.
+if (typeof Element !== 'undefined' && typeof Element.prototype.animate !== 'function') {
+	Object.defineProperty(Element.prototype, 'animate', {
+		configurable: true,
+		value: function animate(): Animation {
+			const animation = {
+				cancel: vi.fn(),
+				currentTime: 0,
+				effect: null,
+				onfinish: null as ((event: AnimationPlaybackEvent) => void) | null,
+				playState: 'finished'
+			};
+
+			queueMicrotask(() => animation.onfinish?.(new Event('finish') as AnimationPlaybackEvent));
+			return animation as unknown as Animation;
+		}
+	});
+}
+
 // Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-	writable: true,
-	value: (query: string) => ({
-		matches: false,
-		media: query,
-		onchange: null,
-		addListener: () => {},
-		removeListener: () => {},
-		addEventListener: () => {},
-		removeEventListener: () => {},
-		dispatchEvent: () => true
-	})
-});
+if (typeof window !== 'undefined') {
+	Object.defineProperty(window, 'matchMedia', {
+		writable: true,
+		value: (query: string) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: () => {},
+			removeListener: () => {},
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			dispatchEvent: () => true
+		})
+	});
+}

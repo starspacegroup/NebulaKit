@@ -18,8 +18,7 @@
  * WHY REQUEST-ORIGIN URLS, NOT `site.config.url`: the sitemap protocol requires
  * every listed URL to share the sitemap's own host, and robots.txt is per-host
  * by definition. Deriving from the live request keeps preview deploys, custom
- * domains, and *.pages.dev all correct without anyone re-running
- * `bun run customize` — which is exactly why these files never go stale.
+ * domains, and *.pages.dev all correct without deploy-specific URL edits.
  *
  * This module must stay dependency-free (no `$app`, no Node APIs) so routes,
  * hooks, and tests can all import it.
@@ -99,15 +98,15 @@ export const CRAWLER_ALLOW: readonly string[] = ['/api/health'];
  * Content Signals (contentsignals.org) — how this site's content may be used
  * once it has been fetched, expressed alongside the crawl rules.
  *
- * NebulaKit's shipped default is fully permissive: the template is open source
- * and its demo content is meant to be found, quoted, and learned from.
+ * NebulaKit's shipped default is fully permissive: its public open-source
+ * content is meant to be found, quoted, and learned from.
  *
  *   search    — may be indexed and linked in search results
  *   ai-input  — may be retrieved to ground a live AI answer (RAG) and cited
  *   ai-train  — may be used as AI training data
  *
- * DOWNSTREAM SITES: this is a policy choice, not a technical one. If your
- * content is proprietary, flip `ai-train` (and possibly `ai-input`) to `no`
+ * This is a policy choice, not a technical one. Before publishing proprietary
+ * content, flip `ai-train` (and possibly `ai-input`) to `no`
  * here — every robots.txt group picks the change up automatically.
  */
 export const CONTENT_SIGNAL = 'search=yes, ai-input=yes, ai-train=yes';

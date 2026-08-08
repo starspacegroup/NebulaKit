@@ -1,27 +1,36 @@
-import { requireAdmin } from '$lib/server/auth-guard';
-import { authConfigKey, findProviderByKeyId } from '$lib/server/oauth-config';
-import { error, json } from '@sveltejs/kit';
+import { requireOwner } from '$lib/server/auth-guards';
+import { AUTH_PROVIDERS } from '$lib/utils/auth-provider-config';
+import { error, isHttpError, json } from '@sveltejs/kit';
 import type { KVNamespace } from '@cloudflare/workers-types';
 import type { RequestHandler } from './$types';
 
-/**
- * The GitHub OAuth config is written by the setup flow and is what login
- * depends on, so it stays read-only here regardless of caller.
- */
-async function assertNotSetupKey(kv: KVNamespace, id: string, action: string): Promise<void> {
-	const stored = await kv.get(authConfigKey('github'));
-	if (!stored) return;
+interface StoredAuthConfig {
+	clientId?: string;
+	clientSecret?: string;
+	createdAt?: string;
+	id?: string;
+	provider?: string;
+	updatedAt?: string;
+}
 
-	let config: { id?: string };
-	try {
-		config = JSON.parse(stored);
-	} catch (err) {
-		// A malformed config must not be a way past the guard.
-		console.error('Failed to parse GitHub auth config:', err);
-		throw error(500, 'Stored GitHub authentication config is unreadable');
+async function findStoredConfig(
+	kv: KVNamespace,
+	id: string
+): Promise<{ config: StoredAuthConfig; provider: (typeof AUTH_PROVIDERS)[number] } | null> {
+	for (const provider of AUTH_PROVIDERS) {
+		const stored = await kv.get(`auth_config:${provider}`);
+		if (!stored) continue;
+		const config = JSON.parse(stored) as StoredAuthConfig;
+		if (config.id === id) return { config, provider };
 	}
+	return null;
+}
 
-	if (config?.id === id) {
+function assertNotSetupKey(
+	target: { provider: (typeof AUTH_PROVIDERS)[number] },
+	action: string
+): void {
+	if (target.provider === 'github') {
 		throw error(
 			403,
 			`Cannot ${action} setup authentication key. This key was configured during initial setup.`
@@ -29,93 +38,64 @@ async function assertNotSetupKey(kv: KVNamespace, id: string, action: string): P
 	}
 }
 
-// PUT - Update auth key
 export const PUT: RequestHandler = async ({ params, request, platform, locals }) => {
-	requireAdmin(locals);
+	requireOwner(locals);
 
 	try {
-		const { id } = params;
-		const data = await request.json();
-
-		if (!data.name || !data.clientId) {
-			throw error(400, 'Missing required fields');
-		}
-
 		const kv = platform?.env?.KV;
-		if (!kv) {
-			throw error(500, 'KV storage not available');
-		}
+		if (!kv) throw error(500, 'KV storage not available');
 
-		await assertNotSetupKey(kv, id, 'edit');
+		const data = await request.json();
+		if (!data.name || !data.clientId) throw error(400, 'Missing required fields');
 
-		// Resolve the target from what is stored, not from `data.provider` —
-		// trusting the body let a caller aim the write at a different config
-		// than the one the guard above just checked.
-		const target = await findProviderByKeyId(kv, id);
-		if (!target) {
-			throw error(404, 'Authentication key not found');
-		}
+		const target = await findStoredConfig(kv, params.id);
+		if (!target) throw error(404, 'Authentication key not found');
+		assertNotSetupKey(target, 'edit');
 
-		const authConfig = {
+		const updatedAt = new Date().toISOString();
+		const authConfig: StoredAuthConfig = {
 			...target.config,
-			id,
+			id: params.id,
 			provider: target.provider,
 			clientId: data.clientId,
-			// Only update clientSecret if provided
 			...(data.clientSecret && { clientSecret: data.clientSecret }),
-			updatedAt: new Date().toISOString()
+			updatedAt
 		};
-
-		await kv.put(authConfigKey(target.provider), JSON.stringify(authConfig));
-		console.log(`✓ Updated ${target.provider} OAuth config in KV`);
+		await kv.put(`auth_config:${target.provider}`, JSON.stringify(authConfig));
 
 		return json({
 			success: true,
 			key: {
-				id,
+				id: params.id,
 				name: data.name,
 				provider: target.provider,
 				type: data.type,
 				clientId: data.clientId,
-				updatedAt: authConfig.updatedAt
+				updatedAt
 			}
 		});
-	} catch (err: unknown) {
-		if (err && typeof err === 'object' && 'status' in err) {
-			throw err;
-		}
+	} catch (err) {
+		if (isHttpError(err)) throw err;
 		console.error('Failed to update auth key:', err);
 		throw error(500, 'Failed to update authentication key');
 	}
 };
 
-// DELETE - Delete auth key
 export const DELETE: RequestHandler = async ({ params, platform, locals }) => {
-	requireAdmin(locals);
+	requireOwner(locals);
 
 	try {
-		const { id } = params;
-
 		const kv = platform?.env?.KV;
-		if (!kv) {
-			throw error(500, 'KV storage not available');
-		}
+		if (!kv) throw error(500, 'KV storage not available');
 
-		await assertNotSetupKey(kv, id, 'delete');
+		const target = await findStoredConfig(kv, params.id);
+		if (!target) throw error(404, 'Authentication key not found');
+		assertNotSetupKey(target, 'delete');
 
-		const target = await findProviderByKeyId(kv, id);
-		if (!target) {
-			throw error(404, 'Authentication key not found');
-		}
-
-		await kv.delete(authConfigKey(target.provider));
-		console.log(`✓ Deleted ${target.provider} OAuth config from KV`);
-
+		await kv.delete(`auth_config:${target.provider}`);
 		return json({ success: true });
-	} catch (err: unknown) {
-		if (err && typeof err === 'object' && 'status' in err) {
-			throw err;
-		}
+	} catch (err) {
+		if (isHttpError(err)) throw err;
 		console.error('Failed to delete auth key:', err);
 		throw error(500, 'Failed to delete authentication key');
 	}

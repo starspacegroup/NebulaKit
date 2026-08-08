@@ -4,17 +4,17 @@
 
 ```bash
 # Development
-npm run dev              # Start dev server (port 4277)
-npm run build            # Build for production
-npm run preview          # Preview production build
-npm run check            # TypeScript type checking
+bun run dev              # Start dev server (port 4277)
+bun run build            # Build for production
+bun run preview          # Preview production build
+bun run check            # TypeScript type checking
 
 # Testing (REQUIRED before commits)
-npm run test             # Run unit & integration tests
-npm run test:watch       # Watch mode for TDD
-npm run test:coverage    # Coverage report (must be ≥90%)
-npm run test:e2e         # End-to-end tests
-npm run test:all         # Run all tests
+bun run test             # Run unit & integration tests
+bun run test:watch       # Watch mode for TDD
+bun run test:coverage    # Coverage report (hard floor: 95%, all four metrics)
+bun run test:e2e         # End-to-end tests
+bun run test:all         # Run all tests
 
 # Tunneling (expose local dev server publicly via cloudflared)
 bun run tunnel           # Free quick tunnel (trycloudflare.com, no account needed)
@@ -23,16 +23,16 @@ bun run dev:tunnel       # Dev server + tunnel in one command
                          # VITE_HMR=true bun run dev  # re-enable HMR for local-only work
 
 # Deployment
-npm run deploy           # Deploy to Cloudflare Pages
+bun run deploy           # Deploy to Cloudflare Pages
 ```
 
 ## ✅ Pre-Commit Checklist
 
 - [ ] Tests written FIRST (TDD)
-- [ ] `npm run test` passes
-- [ ] `npm run test:coverage` shows ≥90%
-- [ ] `npm run check` passes (no TS errors)
-- [ ] `npm run dev` works locally
+- [ ] `bun run test` passes
+- [ ] `bun run test:coverage` shows ≥95%
+- [ ] `bun run check` passes (no TS errors)
+- [ ] `bun run dev` works locally
 - [ ] No new external dependencies (or justified)
 
 ## 🧪 TDD Workflow
@@ -195,7 +195,7 @@ test('should navigate to page', async ({ page }) => {
 5. Is it absolutely necessary?
 
 # Only add if answers are satisfactory
-npm install package-name --save-dev
+bun add --dev package-name
 ```
 
 ## 🔗 Key Files
@@ -208,28 +208,28 @@ npm install package-name --save-dev
 
 ## 📊 Coverage Goals
 
-- **Minimum**: 90% across all metrics
-- **Critical paths**: 100% (auth, payments, mutations)
+- **Minimum**: 95% across all metrics — enforced by vitest `thresholds` in `vite.config.ts`
+- **Critical paths**: focused tests required; no separate unenforced percentage claim
 - **New code**: Must maintain or improve coverage
 
 ## 🆘 Getting Help
 
 ```bash
 # Check if dev works
-npm run dev
+bun run dev
 
 # Run type checking
-npm run check
+bun run check
 
 # View coverage report
-npm run test:coverage
+bun run test:coverage
 # Open: coverage/index.html
 
 # Debug tests
-npm run test:ui
+bun run test:ui
 
 # Debug E2E tests
-npm run test:e2e:ui
+bun run test:e2e:ui
 ```
 
 ## 🌟 Resources
@@ -244,7 +244,7 @@ npm run test:e2e:ui
 **Golden Rules**:
 
 1. ✅ Tests first, always
-2. ✅ 90%+ coverage, no exceptions
+2. ✅ 95% coverage, no exceptions
 3. ✅ Build over buy
 4. ✅ Cloudflare first
 5. ✅ Type safety everywhere

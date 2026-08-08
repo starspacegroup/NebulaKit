@@ -1,20 +1,56 @@
+import { webcrypto } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The OAuth routes now round-trip a `state` value through an HttpOnly cookie:
-// the init route sets it, the callback requires it back. Tests therefore need
-// a cookie jar whose state lookups answer, and callback URLs carrying a
-// matching `state` param.
-const TEST_OAUTH_STATE = 'test-oauth-state';
-function makeOAuthCookies(sessionValue: unknown = null) {
+vi.mock('$lib/utils/oauth-state', async () => {
+	const actual = await vi.importActual<typeof import('../../src/lib/utils/oauth-state')>(
+		'../../src/lib/utils/oauth-state'
+	);
 	return {
-		get: vi.fn((name: string) =>
-			name.startsWith('oauth_state_') ? TEST_OAUTH_STATE : sessionValue
-		),
-		set: vi.fn(),
-		delete: vi.fn()
+		...actual,
+		createOAuthTransaction: vi.fn(async () => ({
+			state: 'legacy-valid-state',
+			cookie: 'legacy-signed-state-cookie'
+		})),
+		consumeOAuthState: vi.fn(async (provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		})),
+		verifyOAuthTransaction: vi.fn(async (_db: unknown, provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		})),
+		consumeOAuthTransaction: vi.fn(async (_db: unknown, provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		}))
 	};
-}
+});
 
+vi.mock('$lib/utils/db', async () => {
+	const actual =
+		await vi.importActual<typeof import('../../src/lib/utils/db')>('../../src/lib/utils/db');
+	return {
+		...actual,
+		createSession: vi.fn(async (_db: unknown, userId: string) => ({
+			id: 'stored-session-digest',
+			token: 'opaque-session-token',
+			user_id: userId,
+			expires_at: new Date('2099-01-01T00:00:00.000Z')
+		})),
+		replaceSession: vi.fn(async (_db: unknown, userId: string) => ({
+			id: 'stored-session-digest',
+			token: 'opaque-session-token',
+			user_id: userId,
+			expires_at: new Date('2099-01-01T00:00:00.000Z')
+		}))
+	};
+});
 
 /**
  * Tests for GitHub OAuth Endpoints
@@ -25,6 +61,8 @@ describe('GitHub Auth API', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
+		vi.stubGlobal('crypto', webcrypto as Crypto);
+		vi.stubEnv('DEV', true);
 	});
 
 	describe('GET /api/auth/github', () => {
@@ -41,9 +79,8 @@ describe('GitHub Auth API', () => {
 
 			try {
 				await GET({
-					platform: mockPlatform,
-					url: new URL('http://localhost:4277/api/auth/github'),
-					cookies: makeOAuthCookies()
+					platform: withDatabase(mockPlatform),
+					url: new URL('http://localhost:4277/api/auth/github')
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -53,11 +90,11 @@ describe('GitHub Auth API', () => {
 		});
 
 		it('should redirect to GitHub OAuth when configured via env', async () => {
-			vi.stubGlobal('crypto', { randomUUID: () => 'state-uuid' });
-
 			const mockPlatform = {
 				env: {
-					GITHUB_CLIENT_ID: 'env-client-id'
+					GITHUB_CLIENT_ID: 'env-client-id',
+					SESSION_SECRET: 'test-session-secret',
+					DB: {}
 				}
 			};
 
@@ -65,9 +102,10 @@ describe('GitHub Auth API', () => {
 
 			try {
 				await GET({
-					platform: mockPlatform,
+					platform: withDatabase(mockPlatform),
 					url: new URL('http://localhost:4277/api/auth/github'),
-					cookies: makeOAuthCookies()
+					cookies: { set: vi.fn() },
+					locals: {}
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -78,10 +116,10 @@ describe('GitHub Auth API', () => {
 		});
 
 		it('should redirect to GitHub OAuth when configured via KV', async () => {
-			vi.stubGlobal('crypto', { randomUUID: () => 'state-uuid' });
-
 			const mockPlatform = {
 				env: {
+					SESSION_SECRET: 'test-session-secret',
+					DB: {},
 					KV: {
 						get: vi.fn().mockResolvedValue(JSON.stringify({ clientId: 'kv-client-id' }))
 					}
@@ -92,9 +130,10 @@ describe('GitHub Auth API', () => {
 
 			try {
 				await GET({
-					platform: mockPlatform,
+					platform: withDatabase(mockPlatform),
 					url: new URL('http://localhost:4277/api/auth/github'),
-					cookies: makeOAuthCookies()
+					cookies: { set: vi.fn() },
+					locals: {}
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -111,8 +150,8 @@ describe('GitHub Auth API', () => {
 			try {
 				await GET({
 					url: new URL('http://localhost:4277/api/auth/github/callback'),
-					cookies: makeOAuthCookies(),
-					platform: {}
+					cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+					platform: withDatabase({})
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -134,9 +173,9 @@ describe('GitHub Auth API', () => {
 
 			try {
 				await GET({
-					url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-					cookies: makeOAuthCookies(),
-					platform: mockPlatform
+					url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
+					cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+					platform: withDatabase(mockPlatform)
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -163,9 +202,9 @@ describe('GitHub Auth API', () => {
 
 			try {
 				await GET({
-					url: new URL('http://localhost:4277/api/auth/github/callback?code=invalid-code&state=test-oauth-state'),
-					cookies: makeOAuthCookies(),
-					platform: mockPlatform
+					url: new URL('http://localhost:4277/api/auth/github/callback?code=invalid-code'),
+					cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+					platform: withDatabase(mockPlatform)
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -191,9 +230,9 @@ describe('GitHub Auth API', () => {
 
 			try {
 				await GET({
-					url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-					cookies: makeOAuthCookies(),
-					platform: mockPlatform
+					url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
+					cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+					platform: withDatabase(mockPlatform)
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -226,9 +265,9 @@ describe('GitHub Auth API', () => {
 
 			try {
 				await GET({
-					url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
-					cookies: makeOAuthCookies(),
-					platform: mockPlatform
+					url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
+					cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+					platform: withDatabase(mockPlatform)
 				} as any);
 				expect.fail('Should have thrown redirect');
 			} catch (err: any) {
@@ -238,7 +277,11 @@ describe('GitHub Auth API', () => {
 		});
 
 		it('should complete OAuth flow and set session cookie', async () => {
-			const mockCookies = makeOAuthCookies(null);
+			const mockCookies = {
+				set: vi.fn(),
+				delete: vi.fn(),
+				get: vi.fn().mockReturnValue(null)
+			};
 
 			const mockPlatform = {
 				env: {
@@ -268,9 +311,9 @@ describe('GitHub Auth API', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			const response = await GET({
-				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any);
 
 			// Should return a redirect response with cookie header
@@ -282,7 +325,11 @@ describe('GitHub Auth API', () => {
 		});
 
 		it('should redirect non-owner to home', async () => {
-			const mockCookies = makeOAuthCookies(null);
+			const mockCookies = {
+				set: vi.fn(),
+				delete: vi.fn(),
+				get: vi.fn().mockReturnValue(null)
+			};
 
 			const mockPlatform = {
 				env: {
@@ -312,9 +359,9 @@ describe('GitHub Auth API', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			const response = await GET({
-				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any);
 
 			// Should return a redirect response
@@ -324,7 +371,11 @@ describe('GitHub Auth API', () => {
 
 		it('should store user in database when available', async () => {
 			const mockDbRun = vi.fn().mockResolvedValue({});
-			const mockCookies = makeOAuthCookies(null);
+			const mockCookies = {
+				set: vi.fn(),
+				delete: vi.fn(),
+				get: vi.fn().mockReturnValue(null)
+			};
 
 			const mockPlatform = {
 				env: {
@@ -361,9 +412,9 @@ describe('GitHub Auth API', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			const response = await GET({
-				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any);
 
 			expect(response.status).toBe(302);
@@ -372,7 +423,11 @@ describe('GitHub Auth API', () => {
 
 		it('should update existing user in database', async () => {
 			const mockDbRun = vi.fn().mockResolvedValue({});
-			const mockCookies = makeOAuthCookies(null);
+			const mockCookies = {
+				set: vi.fn(),
+				delete: vi.fn(),
+				get: vi.fn().mockReturnValue(null)
+			};
 
 			// Track call order to return different results for different queries
 			let callCount = 0;
@@ -420,9 +475,9 @@ describe('GitHub Auth API', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			const response = await GET({
-				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any);
 
 			expect(response.status).toBe(302);
@@ -432,7 +487,11 @@ describe('GitHub Auth API', () => {
 
 		it('should mark first admin login as completed', async () => {
 			const mockKVPut = vi.fn().mockResolvedValue(undefined);
-			const mockCookies = makeOAuthCookies(null);
+			const mockCookies = {
+				set: vi.fn(),
+				delete: vi.fn(),
+				get: vi.fn().mockReturnValue(null)
+			};
 
 			const mockPlatform = {
 				env: {
@@ -466,9 +525,9 @@ describe('GitHub Auth API', () => {
 			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
 
 			const response = await GET({
-				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code&state=test-oauth-state'),
+				url: new URL('http://localhost:4277/api/auth/github/callback?code=test-code'),
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any);
 
 			expect(response.status).toBe(302);
@@ -479,6 +538,7 @@ describe('GitHub Auth API', () => {
 	describe('GET/POST /api/auth/logout', () => {
 		it('should clear session cookie on GET logout', async () => {
 			const mockCookies = {
+				get: vi.fn().mockReturnValue(undefined),
 				delete: vi.fn()
 			};
 
@@ -498,6 +558,7 @@ describe('GitHub Auth API', () => {
 
 		it('should clear session cookie on POST logout', async () => {
 			const mockCookies = {
+				get: vi.fn().mockReturnValue(undefined),
 				delete: vi.fn()
 			};
 
@@ -517,3 +578,52 @@ describe('GitHub Auth API', () => {
 	});
 });
 
+function withDatabase<T extends { env?: Record<string, unknown> }>(platform: T): T {
+	const db = (platform.env?.DB as ReturnType<typeof database>) ?? database();
+	return {
+		...platform,
+		env: {
+			...platform.env,
+			DB: callbackDatabase(db)
+		}
+	} as T;
+}
+
+function callbackDatabase(db: ReturnType<typeof database>) {
+	return {
+		...db,
+		prepare: vi.fn((sql: string) => {
+			if (
+				sql.trim() !==
+				'SELECT id, email, name, github_login, github_avatar_url, is_admin FROM users WHERE id = ?'
+			) {
+				return (db.prepare as (sql: string) => ReturnType<typeof db.prepare>)(sql);
+			}
+			return {
+				bind: vi.fn((userId: string) => ({
+					first: vi.fn().mockResolvedValue({
+						id: userId,
+						email: `${userId}@example.com`,
+						name: 'OAuth User',
+						github_login: userId === '123456' ? 'owner' : 'testuser',
+						github_avatar_url: null,
+						is_admin: 0
+					})
+				}))
+			};
+		})
+	};
+}
+
+function database() {
+	return {
+		prepare: vi.fn(() => ({
+			bind: vi.fn(() => ({
+				first: vi.fn().mockResolvedValue(null),
+				all: vi.fn().mockResolvedValue({ results: [] }),
+				run: vi.fn().mockResolvedValue({ success: true })
+			}))
+		}))
+	};
+}
+import '../helpers/server-response';

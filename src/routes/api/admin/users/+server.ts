@@ -1,15 +1,16 @@
+import { requireAdmin } from '$lib/server/auth-guards';
+import {
+	isPiiRevealed,
+	maskEmail,
+	maskGeneric,
+	maskName,
+	PII_REVEAL_COOKIE
+} from '$lib/server/pii-mask';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ platform, locals }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+export const GET: RequestHandler = async ({ platform, locals, cookies }) => {
+	const viewer = requireAdmin(locals);
 
 	try {
 		const db = platform?.env?.DB;
@@ -37,24 +38,30 @@ export const GET: RequestHandler = async ({ platform, locals }) => {
 			)
 			.all();
 
-		return json({
-			users: result.results || []
-		});
+		const revealed = isPiiRevealed(viewer, cookies?.get(PII_REVEAL_COOKIE));
+		const users = (result.results || []).map((entry: Record<string, unknown>) =>
+			revealed
+				? entry
+				: {
+						...entry,
+						id: maskGeneric(entry.id as string | null | undefined),
+						email: maskEmail(entry.email as string | null | undefined),
+						name: maskName(entry.name as string | null | undefined),
+						github_login: maskGeneric(entry.github_login as string | null | undefined),
+						github_avatar_url: null,
+						github_id: maskGeneric(entry.github_id as string | null | undefined)
+					}
+		);
+
+		return json({ users });
 	} catch (err) {
 		console.error('Failed to fetch users:', err);
 		throw error(500, 'Failed to fetch users');
 	}
 };
 
-export const POST: RequestHandler = async ({ platform, locals, request }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+export const POST: RequestHandler = async ({ platform, locals, request, cookies }) => {
+	const viewer = requireAdmin(locals);
 
 	try {
 		const db = platform?.env?.DB;
@@ -81,15 +88,25 @@ export const POST: RequestHandler = async ({ platform, locals, request }) => {
 			.bind(userId, email, githubLogin)
 			.run();
 
+		const user = {
+			id: userId,
+			email,
+			github_login: githubLogin,
+			is_admin: 0
+		};
+		const revealed = isPiiRevealed(viewer, cookies?.get(PII_REVEAL_COOKIE));
+
 		return json({
 			success: true,
 			message: 'User invited successfully',
-			user: {
-				id: userId,
-				email,
-				github_login: githubLogin,
-				is_admin: 0
-			}
+			user: revealed
+				? user
+				: {
+						...user,
+						id: maskGeneric(user.id),
+						email: maskEmail(user.email),
+						github_login: maskGeneric(user.github_login)
+					}
 		});
 	} catch (err: any) {
 		console.error('Failed to invite user:', err);

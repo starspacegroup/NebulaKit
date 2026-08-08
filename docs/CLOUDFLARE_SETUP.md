@@ -12,7 +12,7 @@ There is no error, no warning, nothing in the dashboard that looks wrong.
 A wrong _name_ is loud: `wrangler d1 migrations apply <name>` fails immediately.
 A wrong _id_ is silent.
 
-This template used to ship **real** ids. Six projects derived from it inherited
+An earlier NebulaKit release shipped **real** ids. Six sibling products inherited
 the same `database_id`, the same KV `id`, and the same KV `preview_id`:
 
 | project             | what it thought it had | what it actually bound |
@@ -46,8 +46,8 @@ bun run db:migrate         # create the tables
 `name` in `wrangler.toml` or passed as an argument), creates the three
 resources, writes their ids over the `REPLACE_ME_*` placeholders, and then runs
 `check:bindings` to confirm the result. It exists because the remaining risk
-after placeholders is the human step — creating four resources and pasting four
-ids into the right four lines is exactly where the mistake above came from.
+after placeholders is the human step — creating three resources and pasting
+three ids into the right lines is exactly where the mistake above came from.
 
 It will not guess. If wrangler's output cannot be parsed into exactly one id of
 the right shape, or if wrangler fails, `wrangler.toml` is left untouched and you
@@ -60,10 +60,10 @@ commands without running them.
 <summary>By hand instead</summary>
 
 ```bash
-wrangler d1 create <project>-db
-wrangler kv namespace create "KV"
-wrangler kv namespace create "KV" --preview
-wrangler r2 bucket create <project>-files    # only if you use R2
+bunx wrangler d1 create <project>-db
+bunx wrangler kv namespace create "KV"
+bunx wrangler kv namespace create "KV" --preview
+bunx wrangler r2 bucket create <project>-files    # only if you use R2
 ```
 
 Paste each returned id into `wrangler.toml`, replacing the `REPLACE_ME_*`
@@ -80,31 +80,32 @@ bun run db:migrate
 ## The database name
 
 `db:migrate` reads `database_name` from `wrangler.toml` rather than hardcoding
-one. These scripts used to say `nebulakit-db` — the template's own database —
-so a derived project either failed outright or, if it still had the leaked id in
+one. Earlier NebulaKit scripts used to say `nebulakit-db`, so a sibling product
+either failed outright or, if it still had the leaked id in
 place, applied its migrations **into the shared database**. That is how one D1
 ended up with four projects' migrations interleaved. Name and id now come from
 the same file, so they cannot disagree.
 
 ## The guard
 
-`scripts/check-bindings.mjs` runs automatically before `dev`, `build`,
-`db:migrate` and `db:migrate:list`. It fails the command — it does not warn —
-on any of:
+`scripts/check-bindings.mjs` runs inside `dev`, `build`, `build:ci`, and every
+database migration command. Production builds, remote migrations, and migration
+listing fail on any problem below. Local dev, local migrations, and `build:ci`
+warn instead because they cannot reach a remote Cloudflare resource:
 
 1. a `REPLACE_ME_*` placeholder still in place,
-2. a **quarantined** id (one of the three this template leaked; those are
-   hard-coded in the script and are never legitimate in a derived project),
+2. a **quarantined** id (one of the three leaked by that historical release;
+   those are hard-coded in the script and are no longer legitimate anywhere),
 3. `preview_id === id`, or `preview_database_id === database_id` — the aliasing
    that sends dev writes into production.
 
 Point it at any config to audit another repo:
 
 ```bash
-node scripts/check-bindings.mjs ../other-project/wrangler.toml
+bun scripts/check-bindings.mjs ../other-project/wrangler.toml
 ```
 
-Warnings were not enough here — the original template _did_ carry a comment
+Warnings were not enough here — that historical NebulaKit release _did_ carry a comment
 saying "replace the database_id below with the actual ID", and six projects
 skipped it anyway. That is why this exits non-zero.
 

@@ -23,7 +23,7 @@ Live at **`/admin/stats`**, gated on the per-admin `can_view_stats` grant.
 1. **Apply the migrations** (`0007`–`0009`):
 
    ```bash
-   npm run db:migrate:local     # or db:migrate for remote
+   bun run db:migrate:local     # or db:migrate for remote
    ```
 
 2. **Grant yourself access.** The owner sees Stats automatically. Any other admin

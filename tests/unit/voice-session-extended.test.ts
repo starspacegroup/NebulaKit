@@ -82,6 +82,26 @@ describe('Voice Session API - Extended Coverage', () => {
 		expect(createRealtimeSession).toHaveBeenCalledWith('test-key', 'gpt-4o-realtime-custom');
 	});
 
+	it('should prefer the first configured voice model from the canonical array', async () => {
+		vi.mocked(getEnabledOpenAIKey).mockResolvedValue({
+			id: 'key-1',
+			name: 'Test Key',
+			provider: 'openai',
+			apiKey: 'test-key',
+			enabled: true,
+			voiceEnabled: true,
+			voiceModels: ['gpt-realtime-primary', 'gpt-realtime-secondary'],
+			voiceModel: 'gpt-realtime-legacy'
+		});
+		vi.mocked(createRealtimeSession).mockResolvedValue({ token: 'session-token-123' });
+
+		const response = await POST(createMockEvent() as unknown as Parameters<typeof POST>[0]);
+		const data = await response.json();
+
+		expect(data.model).toBe('gpt-realtime-primary');
+		expect(createRealtimeSession).toHaveBeenCalledWith('test-key', 'gpt-realtime-primary');
+	});
+
 	it('should use default voice model when not configured', async () => {
 		vi.mocked(getEnabledOpenAIKey).mockResolvedValue({
 			id: 'key-1',

@@ -160,6 +160,16 @@ describe('sitemap.xml', () => {
 		expect(body.split('<lastmod>').length - 1).toBe(1);
 	});
 
+	it('omits malformed non-empty CMS timestamps', async () => {
+		const db = createDb([{ type_slug: 'blog', item_slug: 'bad-date', lastmod: 'yesterday' }]);
+		const body = await (
+			await sitemapGet(event('/sitemap.xml', { platform: { env: { DB: db } } }))
+		).text();
+
+		expect(body).toContain(`${ORIGIN}/blog/bad-date`);
+		expect(body).not.toContain('<lastmod>');
+	});
+
 	it('still serves static routes when the database fails', async () => {
 		// A partial sitemap beats a 500, which tells the crawler there is none.
 		const response = await sitemapGet(
@@ -192,14 +202,20 @@ describe('/.well-known/api-catalog', () => {
 		}
 	});
 
-	it('only advertises endpoints that exist in the codebase', () => {
+	it('only advertises concrete endpoints with actual handlers', async () => {
 		// Guards the honesty rule: a catalogued path an agent cannot reach is worse
-		// than an absent catalog. Anchors map to src/routes/api/<segments>.
+		// than an absent catalog. Every anchor must map to a +server handler, not
+		// merely a parent directory containing dynamic routes.
 		const routes = resolve(__dirname, '../../src/routes');
-		const anchors = ['/api/contact-form-submissions', '/api/health', '/api/cms', '/api/chat'];
+		const body = await (await catalogGet(event('/.well-known/api-catalog'))).json();
+		const anchors = body.linkset.map(
+			(member: { anchor: string }) => new URL(member.anchor).pathname
+		);
 		for (const anchor of anchors) {
-			expect(existsSync(join(routes, anchor))).toBe(true);
+			expect(existsSync(join(routes, anchor, '+server.ts')), `${anchor} has no handler`).toBe(true);
 		}
+		expect(anchors).not.toContain('/api/cms');
+		expect(anchors).not.toContain('/api/chat');
 	});
 });
 
@@ -265,7 +281,7 @@ describe('/auth.md', () => {
 	});
 
 	it('states plainly that there is no agent registration or OAuth server', async () => {
-		// This template deliberately does NOT publish oauth-authorization-server or
+		// NebulaKit deliberately does NOT publish oauth-authorization-server or
 		// oauth-protected-resource, because it is an OAuth client. If someone later
 		// adds a real authorization server, this expectation should be updated
 		// alongside the new metadata — not deleted to make the test pass.

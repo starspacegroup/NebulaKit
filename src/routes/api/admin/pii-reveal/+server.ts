@@ -10,7 +10,8 @@ import {
 /**
  * Toggle the admin PII-reveal state. Re-authorizes server-side (never trusts
  * the client) and stores the choice in a short-lived, httpOnly `pii_reveal`
- * cookie scoped to `/admin`. Opting out deletes the cookie.
+ * cookie sent to both `/admin` pages and `/api/admin` response boundaries.
+ * Opting out deletes the cookie.
  */
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	if (!canRevealPii(locals.user)) {

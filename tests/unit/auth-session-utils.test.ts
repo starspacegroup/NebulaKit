@@ -47,22 +47,46 @@ describe('Auth Session Utilities', () => {
 		expect(sessionUser.isAdmin).toBe(false);
 	});
 
-	it('decodes valid session cookies and rejects invalid payloads', async () => {
+	it('verifies signed session cookies and rejects unsigned or tampered payloads', async () => {
 		const { decodeSessionCookie, encodeSession } = await import('../../src/lib/utils/session');
+		const secret = 'test-session-secret';
 
-		const encoded = encodeSession({
-			id: 'user-1',
-			login: 'octocat',
-			email: 'primary@example.com',
-			name: 'Primary User',
-			isOwner: false,
-			isAdmin: true,
-			githubLogin: 'octocat'
-		});
+		const encoded = await encodeSession(
+			{
+				id: 'user-1',
+				login: 'octocat',
+				email: 'primary@example.com',
+				name: 'Primary User',
+				isOwner: false,
+				isAdmin: true,
+				githubLogin: 'octocat'
+			},
+			secret
+		);
 
-		expect(decodeSessionCookie(encoded)?.login).toBe('octocat');
-		expect(decodeSessionCookie()).toBeNull();
-		expect(decodeSessionCookie('not-valid-base64')).toBeNull();
+		expect((await decodeSessionCookie(encoded, secret))?.login).toBe('octocat');
+		expect(await decodeSessionCookie()).toBeNull();
+		expect(await decodeSessionCookie('not-valid-base64', secret)).toBeNull();
+		expect(await decodeSessionCookie(encoded.split('.')[0], secret)).toBeNull();
+		expect(await decodeSessionCookie(`${encoded.slice(0, -1)}x`, secret)).toBeNull();
+	});
+
+	it('refuses to issue sessions without a production secret', async () => {
+		vi.stubEnv('PROD', true);
+		vi.stubEnv('DEV', false);
+		const { encodeSession } = await import('../../src/lib/utils/session');
+
+		await expect(
+			encodeSession(
+				{
+					id: 'user-1',
+					login: 'octocat',
+					email: 'primary@example.com',
+					isOwner: false
+				},
+				undefined
+			)
+		).rejects.toThrow('SESSION_SECRET');
 	});
 
 	it('adds the Secure attribute for https cookies only', async () => {
@@ -77,12 +101,38 @@ describe('Auth Session Utilities', () => {
 			isAdmin: false
 		};
 
-		expect(buildSessionCookieHeader(sessionUser, new URL('https://localhost/profile'))).toContain(
-			'Secure'
-		);
 		expect(
-			buildSessionCookieHeader(sessionUser, new URL('http://localhost/profile'))
+			await buildSessionCookieHeader(
+				sessionUser,
+				new URL('https://localhost/profile'),
+				'test-session-secret'
+			)
+		).toContain('Secure');
+		expect(
+			await buildSessionCookieHeader(
+				sessionUser,
+				new URL('http://localhost/profile'),
+				'test-session-secret'
+			)
 		).not.toContain('Secure');
+	});
+
+	it('signs opaque database session tokens and rejects unsigned tokens', async () => {
+		const { buildDatabaseSessionCookieHeader, decodeDatabaseSessionCookie } =
+			await import('../../src/lib/utils/session');
+		const header = await buildDatabaseSessionCookieHeader(
+			'opaque-token',
+			new URL('https://example.com'),
+			'test-session-secret'
+		);
+		const cookie = header.match(/^session=([^;]+)/)?.[1];
+
+		await expect(decodeDatabaseSessionCookie(cookie, 'test-session-secret')).resolves.toBe(
+			'opaque-token'
+		);
+		await expect(
+			decodeDatabaseSessionCookie('opaque-token', 'test-session-secret')
+		).resolves.toBeNull();
 	});
 });
 
@@ -112,3 +162,4 @@ describe('Password Utilities', () => {
 		);
 	});
 });
+import '../helpers/server-response';

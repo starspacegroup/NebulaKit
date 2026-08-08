@@ -306,3 +306,4 @@ describe.skip('GitHub OAuth Callback - Extended Coverage', () => {
 		expect(setCookie).toContain('HttpOnly');
 	});
 });
+import '../helpers/server-response';

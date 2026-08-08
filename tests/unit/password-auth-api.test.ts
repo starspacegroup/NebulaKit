@@ -21,11 +21,26 @@ vi.mock('../../src/lib/services/account-merge', () => ({
 	mergeAccounts: vi.fn().mockResolvedValue(undefined)
 }));
 
+vi.mock('../../src/lib/utils/db', async () => {
+	const actual =
+		await vi.importActual<typeof import('../../src/lib/utils/db')>('../../src/lib/utils/db');
+	return {
+		...actual,
+		createSession: vi.fn(async (_db: unknown, userId: string) => ({
+			id: 'stored-session-digest',
+			token: 'opaque-session-token',
+			user_id: userId,
+			expires_at: new Date('2099-01-01T00:00:00.000Z')
+		}))
+	};
+});
+
 describe('Password Auth APIs', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
 		vi.stubGlobal('crypto', webcrypto as Crypto);
+		vi.stubEnv('DEV', true);
 	});
 
 	it('rejects signup when the database is unavailable', async () => {
@@ -919,3 +934,4 @@ describe('Password Auth APIs', () => {
 		});
 	});
 });
+import '../helpers/server-response';

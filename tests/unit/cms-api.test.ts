@@ -119,6 +119,19 @@ describe('CMS API - Content Items', () => {
 	let mockPlatform: any;
 	let mockLocals: any;
 	let mockDB: any;
+	const contentTypeRow = {
+		id: 'ct-1',
+		slug: 'blog',
+		name: 'Blog',
+		description: null,
+		fields: '[]',
+		settings: '{}',
+		icon: 'article',
+		sort_order: 0,
+		is_system: 1,
+		created_at: '2024-01-01',
+		updated_at: '2024-01-01'
+	};
 
 	beforeEach(() => {
 		vi.resetModules();
@@ -344,7 +357,7 @@ describe('CMS API - Content Items', () => {
 		it('should return a content item', async () => {
 			const { GET } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
-			mockDB.first.mockResolvedValue({
+			mockDB.first.mockResolvedValueOnce(contentTypeRow).mockResolvedValueOnce({
 				id: 'ci-1',
 				content_type_id: 'ct-1',
 				slug: 'hello',
@@ -375,7 +388,7 @@ describe('CMS API - Content Items', () => {
 		it('attaches the item tags', async () => {
 			const { GET } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
-			mockDB.first.mockResolvedValue({
+			mockDB.first.mockResolvedValueOnce(contentTypeRow).mockResolvedValueOnce({
 				id: 'ci-1',
 				content_type_id: 'ct-1',
 				slug: 'hello',
@@ -413,7 +426,7 @@ describe('CMS API - Content Items', () => {
 		it('still returns the item when the tag lookup fails', async () => {
 			const { GET } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
-			mockDB.first.mockResolvedValue({
+			mockDB.first.mockResolvedValueOnce(contentTypeRow).mockResolvedValueOnce({
 				id: 'ci-2',
 				content_type_id: 'ct-1',
 				slug: 'x',
@@ -555,6 +568,15 @@ describe('CMS API - Content Items', () => {
 			const { DELETE } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
 			mockDB.run.mockResolvedValue({ success: true, meta: { changes: 1 } });
+			mockDB.first
+				.mockResolvedValueOnce(contentTypeRow)
+				.mockResolvedValueOnce({
+					id: 'ci-1',
+					content_type_id: 'ct-1',
+					fields: '{}',
+					published_at: null
+				})
+				.mockResolvedValueOnce({ published_at: null, settings: '{}' });
 
 			const response = await DELETE({
 				platform: mockPlatform,
@@ -571,6 +593,7 @@ describe('CMS API - Content Items', () => {
 			const { DELETE } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
 			mockDB.run.mockResolvedValue({ success: true, meta: { changes: 0 } });
+			mockDB.first.mockResolvedValueOnce(contentTypeRow).mockResolvedValueOnce(null);
 
 			try {
 				await DELETE({

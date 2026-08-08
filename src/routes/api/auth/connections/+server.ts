@@ -77,12 +77,13 @@ export const DELETE: RequestHandler = async ({ locals, platform, request, url })
 				{ success: true, connections: simulatedConnections.map((name) => ({ provider: name })) },
 				{
 					headers: {
-						'Set-Cookie': buildSessionCookieHeader(
+						'Set-Cookie': await buildSessionCookieHeader(
 							{
 								...locals.user,
 								simulatedConnections
 							},
-							url
+							url,
+							platform?.env?.SESSION_SECRET
 						)
 					}
 				}

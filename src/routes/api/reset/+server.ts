@@ -1,4 +1,4 @@
-import { requireOwner } from '$lib/server/auth-guard';
+import { requireOwner } from '$lib/server/auth-guards';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -14,6 +14,9 @@ export const POST: RequestHandler = async ({ platform, cookies, locals }) => {
 		if (!platform?.env?.KV) {
 			throw error(500, 'KV storage not available');
 		}
+		if (!platform.env.DB) {
+			throw error(500, 'Database not available');
+		}
 
 		// Kept as defence in depth: the owner can still bolt this shut entirely.
 		const resetDisabled = await platform.env.KV.get('reset_route_disabled');
@@ -24,31 +27,24 @@ export const POST: RequestHandler = async ({ platform, cookies, locals }) => {
 		// Delete setup-related KV keys
 		const keysToDelete = [
 			'auth_config:github',
+			'auth_config:discord',
 			'github_owner_id',
 			'github_owner_username',
 			'admin_first_login_completed'
 		];
 
-		for (const key of keysToDelete) {
-			try {
-				await platform.env.KV.delete(key);
-				console.log(`✓ Deleted KV key: ${key}`);
-			} catch (err) {
-				console.warn(`Failed to delete KV key ${key}:`, err);
-			}
-		}
+		await Promise.all(keysToDelete.map((key) => platform.env.KV.delete(key)));
+		await platform.env.DB.prepare('DELETE FROM sessions').run();
 
 		// Clear the session cookie to force re-login
 		cookies.delete('session', { path: '/' });
-
-		console.log('✓ Setup configuration reset complete');
 
 		return json({
 			success: true,
 			message: 'Configuration reset successfully. You will be redirected to the setup page.'
 		});
 	} catch (err) {
-		if (err instanceof Error && 'status' in err) {
+		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
 		}
 		console.error('Failed to reset configuration:', err);

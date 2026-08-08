@@ -1,7 +1,8 @@
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
+import { createSession } from '$lib/utils/db';
 import { verifyPassword } from '$lib/utils/passwords';
-import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
+import { buildDatabaseSessionCookieHeader, createSessionUser } from '$lib/utils/session';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -55,6 +56,7 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 	});
 
 	const redirectTo = sessionUser.isAdmin ? '/admin' : '/';
+	const session = await createSession(platform.env.DB, user.id, 7);
 
 	return json(
 		{
@@ -65,7 +67,11 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 		{
 			status: 200,
 			headers: {
-				'Set-Cookie': buildSessionCookieHeader(sessionUser, url)
+				'Set-Cookie': await buildDatabaseSessionCookieHeader(
+					session.token,
+					url,
+					platform.env.SESSION_SECRET
+				)
 			}
 		}
 	);

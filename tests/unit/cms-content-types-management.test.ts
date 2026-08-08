@@ -215,7 +215,7 @@ describe('CMS Service - Content Type Management', () => {
 			expect(result.fields).toHaveLength(3);
 		});
 
-		it('should update content type settings including URL prefix', async () => {
+		it('should normalize a persisted custom URL prefix to the slug route', async () => {
 			const newSettings = {
 				routePrefix: '/questions',
 				hasDrafts: true,
@@ -240,7 +240,7 @@ describe('CMS Service - Content Type Management', () => {
 			const result = await updateContentTypeInDB(mockDB, 'type-1', { settings: newSettings });
 
 			expect(result).toBeTruthy();
-			expect(result.settings.routePrefix).toBe('/questions');
+			expect(result.settings.routePrefix).toBe('/faq');
 		});
 
 		it('should return null when content type not found', async () => {
@@ -483,7 +483,7 @@ describe('CMS Content Types API - PUT /api/cms/types/[id]', () => {
 		await expect(PUT(event)).rejects.toThrow();
 	});
 
-	it('should update content type', async () => {
+	it('should reject an unsupported custom route prefix', async () => {
 		const mockDB = createMockDB();
 		// Return updated type
 		mockDB._firstResults.push({
@@ -511,11 +511,8 @@ describe('CMS Content Types API - PUT /api/cms/types/[id]', () => {
 			db: mockDB
 		});
 
-		const response = await PUT(event);
-		const data = await response.json();
-
-		expect(response.status).toBe(200);
-		expect(data.contentType.name).toBe('Updated FAQ');
+		await expect(PUT(event)).rejects.toMatchObject({ status: 400 });
+		expect(mockDB.first).not.toHaveBeenCalled();
 	});
 
 	it('should update content type command palette visibility', async () => {
@@ -677,6 +674,17 @@ describe('CMS Content Type Field Builder Validation', () => {
 		});
 
 		expect(errors.some((e: string) => e.includes('/'))).toBe(true);
+	});
+
+	it('should reject custom route prefixes that do not match the content type slug', () => {
+		const errors = validateContentTypeInput({
+			name: 'FAQ',
+			slug: 'faq',
+			fields: [],
+			settings: { routePrefix: '/questions' }
+		});
+
+		expect(errors).toContain('Custom route prefixes are not supported; use "/faq".');
 	});
 });
 

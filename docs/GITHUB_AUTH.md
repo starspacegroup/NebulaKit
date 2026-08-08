@@ -33,6 +33,8 @@ Create a `.dev.vars` file in the project root:
 GITHUB_CLIENT_ID=your_client_id_here
 GITHUB_CLIENT_SECRET=your_client_secret_here
 GITHUB_OWNER_ID=your_github_user_id_here
+SESSION_SECRET=generate_a_random_secret_here
+SETUP_SECRET=generate_a_different_random_secret_here
 ```
 
 **Option B: Using wrangler.toml**
@@ -46,7 +48,9 @@ GITHUB_OWNER_ID = "your_github_user_id_here"
 
 **Option C: Using the /setup page**
 
-Visit `/setup` in your browser and enter your credentials through the web interface.
+Set `SESSION_SECRET` and `SETUP_SECRET`, then visit `/setup` and enter the setup secret, OAuth
+credentials, and owner username. Once an owner or provider configuration exists, only the
+authenticated owner can change setup.
 
 #### Finding Your GitHub User ID
 
@@ -86,6 +90,8 @@ For Cloudflare Workers deployment, set these environment variables:
 # Set secrets (for sensitive data)
 wrangler secret put GITHUB_CLIENT_ID
 wrangler secret put GITHUB_CLIENT_SECRET
+wrangler secret put SESSION_SECRET
+wrangler secret put SETUP_SECRET
 
 # Set vars (can be public, defined in wrangler.toml or set via CLI)
 wrangler secret put GITHUB_OWNER_ID
@@ -103,6 +109,8 @@ GITHUB_OWNER_ID = "583231"  # Replace with your actual GitHub user ID
 - `GITHUB_CLIENT_ID`: Your GitHub OAuth App Client ID
 - `GITHUB_CLIENT_SECRET`: Your GitHub OAuth App Client Secret
 - `GITHUB_OWNER_ID`: Your GitHub user ID (numeric) - **only this user can access /admin**
+- `SESSION_SECRET`: Random secret used to sign opaque session and OAuth-state cookies
+- `SETUP_SECRET`: Separate bearer secret accepted only during first-time bootstrap
 
 ⚠️ **Important:** Without setting `GITHUB_OWNER_ID`, you will be able to log in with GitHub, but `isOwner` will be `false` and you won't have admin access.
 
@@ -115,10 +123,15 @@ GITHUB_OWNER_ID = "583231"  # Replace with your actual GitHub user ID
 3. **Callback**: GitHub redirects back to `/api/auth/github/callback` with an authorization code
 4. **Token Exchange**: The app exchanges the code for an access token
 5. **User Info**: The app fetches user details from GitHub API
-6. **Session**: A session cookie is created with user information
+6. **Session**: An opaque token is signed into the cookie; its digest, expiry, identity, and current roles are stored in D1
 7. **Redirect**:
-   - If user is the OAuth app owner → redirected to `/admin`
-   - Otherwise → redirected to home page
+   - Owners and administrators are redirected to `/admin`
+   - Normal users are redirected to the home page
+
+Discord does not establish a new owner identity. Setup establishes ownership from the configured
+GitHub identity; a Discord login receives owner status only when it resolves to that same canonical
+account through an existing link or an unambiguous email match. A standalone Discord account remains
+a normal user unless an owner later grants it administrator access.
 
 ### Logout / return-to behavior — design decision (2026-07-14)
 
@@ -138,7 +151,8 @@ relative path (no absolute/protocol-relative URLs) to avoid an open-redirect.
 ### Admin Access Control
 
 - **Protected Routes**: All routes under `/admin` require authentication
-- **Owner-Only**: Only the GitHub user who created the OAuth app can access `/admin`
+- **Admin Access**: Authenticated owners and users granted admin rights can access `/admin`
+- **Owner-Only Controls**: Only the owner can manage authentication keys or reset setup
 - **Server-Side Check**: Protection is enforced server-side in `+layout.server.ts`
 
 ### User Interface
@@ -151,15 +165,18 @@ relative path (no absolute/protocol-relative URLs) to avoid an open-redirect.
 
 - `/setup` - Initial setup page for GitHub OAuth configuration
 - `/auth/login` - Login page with GitHub OAuth button
-- `/auth/logout` - Logout endpoint (GET or POST)
+- `/api/auth/logout` - Logout endpoint (GET or POST)
 - `/api/auth/github` - OAuth initiation (redirects to GitHub)
 - `/api/auth/github/callback` - OAuth callback handler
-- `/admin` - Admin panel (owner-only)
+- `/admin` - Admin panel (admin/owner session required)
 
 ## Security Features
 
 - **Session Cookies**: HTTP-only, secure (in production), SameSite=lax
+- **Revocable Sessions**: Identity and roles are reloaded from D1 on every request
+- **OAuth State**: GitHub and Discord validate provider-specific signed state and unexpired D1 transactions before exchanging the authorization code. The transaction is atomically consumed after a successful token exchange, preventing replay while allowing safe retry when provider authentication did not complete.
 - **Owner Verification**: Compares GitHub user ID with stored owner ID
+- **Owner-Only Operations**: Authentication-key administration and reset require the owner; reset revokes all active sessions
 - **Server-Side Protection**: All admin routes protected by layout load function
 - **Token Security**: Access tokens never stored in browser
 
@@ -169,7 +186,7 @@ All authentication features are covered by tests:
 
 ```bash
 # Run auth-related tests
-npm run test -- github-auth admin-protection
+bunx vitest run tests/unit/github-auth.test.ts tests/unit/admin-protection.test.ts
 
 # All tests should pass:
 # ✓ github-auth.test.ts (9 tests)
@@ -178,7 +195,7 @@ npm run test -- github-auth admin-protection
 
 ## Development
 
-The implementation follows TDD principles with 100% test coverage for auth logic.
+The implementation follows TDD principles and contributes to the enforced 95% coverage floor.
 
 ### Key Files
 
@@ -191,7 +208,8 @@ The implementation follows TDD principles with 100% test coverage for auth logic
 ## Production Considerations
 
 1. **Secrets Management**: Use Cloudflare Workers secrets, never commit credentials
-2. **Session Storage**: Consider using D1 or KV for session storage instead of cookies
-3. **Token Encryption**: Encrypt sensitive data before storage
+2. **Session Storage**: Apply D1 migrations before enabling login; authentication fails closed without D1
+3. **Secret Separation**: Use different high-entropy values for `SESSION_SECRET` and `SETUP_SECRET`
 4. **HTTPS**: Always use HTTPS in production for secure cookies
 5. **Error Handling**: Implement proper error logging and user feedback
+6. **Reset**: Restrict `/reset` operationally as well as through its owner-only application policy

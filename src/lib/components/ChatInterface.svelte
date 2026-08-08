@@ -38,7 +38,7 @@
 	let voiceState: 'idle' | 'listening' | 'processing' | 'speaking' = 'idle';
 	let currentUserTranscript = '';
 	let currentAssistantId: string | null = null;
-	let pendingUserMessageId: string | null = null;
+	let currentUserMessageId: string | null = null;
 	let isFocused = false;
 	let audioQueue: ArrayBuffer[] = [];
 	let isPlayingAudio = false;
@@ -111,6 +111,11 @@
 			textareaElement.style.height = 'auto';
 			textareaElement.style.height = textareaElement.scrollHeight + 'px';
 		}
+	}
+
+	function ensureVoiceConversation(): string {
+		const currentId = $chatHistoryStore.currentConversationId;
+		return currentId || chatHistoryStore.createConversation().id;
 	}
 
 	async function sendMessage() {
@@ -286,9 +291,6 @@
 
 			// Connect to OpenAI Realtime API via WebSocket
 			const wsModel = model || 'gpt-4o-realtime-preview-2024-12-17';
-			console.log('Connecting to OpenAI Realtime API with model:', wsModel);
-			console.log('Token length:', token?.length, 'Token prefix:', token?.substring(0, 20) + '...');
-
 			realtimeWs = new WebSocket(`wss://api.openai.com/v1/realtime?model=${wsModel}`, [
 				'realtime',
 				`openai-insecure-api-key.${token}`,
@@ -296,8 +298,6 @@
 			]);
 
 			realtimeWs.onopen = () => {
-				console.log('Voice chat WebSocket connected successfully');
-				console.log('WebSocket readyState:', realtimeWs?.readyState);
 				// Don't send session.update here - wait for session.created event
 			};
 
@@ -350,13 +350,8 @@
 				try {
 					const data = JSON.parse(event.data);
 
-					// Log ALL events for debugging
-					console.log('Realtime event received:', data.type, data);
-
 					// Handle session.created - now we can configure our session
 					if (data.type === 'session.created') {
-						console.log('Session created:', data.session?.id);
-						console.log('Full session data:', JSON.stringify(data.session, null, 2));
 						// Now send our session configuration
 						if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
 							const sessionConfig = {
@@ -378,19 +373,19 @@
 									temperature: 0.8
 								}
 							};
-							console.log('Sending session.update:', JSON.stringify(sessionConfig, null, 2));
 							realtimeWs.send(JSON.stringify(sessionConfig));
 						}
 					}
 
 					// Handle session.updated - session is now fully configured, can start audio
 					if (data.type === 'session.updated') {
-						console.log('Session configured and ready:', data.session?.id);
 						sessionConfigured = true;
 					}
 
 					// Track when user starts speaking
 					if (data.type === 'input_audio_buffer.speech_started') {
+						currentUserTranscript = '';
+						currentUserMessageId = null;
 						voiceState = 'listening';
 					}
 
@@ -403,21 +398,14 @@
 					if (data.type === 'conversation.item.input_audio_transcription.completed') {
 						const transcript = data.transcript;
 						if (transcript) {
-							if (pendingUserMessageId) {
-								// Update the placeholder message with actual transcript
-								messages = messages.map((msg) =>
-									msg.id === pendingUserMessageId ? { ...msg, content: transcript } : msg
-								);
-								pendingUserMessageId = null;
+							const conversationId = ensureVoiceConversation();
+							if (currentUserMessageId) {
+								chatHistoryStore.updateMessage(conversationId, currentUserMessageId, transcript);
 							} else {
-								// No pending message, add new one (shouldn't happen often)
-								const userMessage = {
-									id: Date.now().toString(),
-									role: 'user' as const,
-									content: transcript,
-									timestamp: new Date()
-								};
-								messages = [...messages, userMessage];
+								currentUserMessageId = chatHistoryStore.addMessage(conversationId, {
+									role: 'user',
+									content: transcript
+								}).id;
 							}
 							currentUserTranscript = '';
 							scrollToBottom();
@@ -445,45 +433,36 @@
 					if (data.type === 'response.audio_transcript.delta') {
 						voiceState = 'speaking';
 						if (!currentAssistantId) {
-							// First, ensure user message exists before assistant response
-							if (!pendingUserMessageId) {
-								// Create placeholder for user message (will be updated with transcript)
-								pendingUserMessageId = Date.now().toString();
-								const userPlaceholder = {
-									id: pendingUserMessageId,
-									role: 'user' as const,
-									content: currentUserTranscript || '...',
-									timestamp: new Date()
-								};
-								messages = [...messages, userPlaceholder];
+							const conversationId = ensureVoiceConversation();
+							if (!currentUserMessageId) {
+								currentUserMessageId = chatHistoryStore.addMessage(conversationId, {
+									role: 'user',
+									content: currentUserTranscript || '...'
+								}).id;
 							}
 
-							// Now start new assistant message
-							currentAssistantId = (Date.now() + 1).toString();
-							const assistantMessage = {
-								id: currentAssistantId,
-								role: 'assistant' as const,
-								content: data.delta || '',
-								timestamp: new Date()
-							};
-							messages = [...messages, assistantMessage];
+							currentAssistantId = chatHistoryStore.addMessage(conversationId, {
+								role: 'assistant',
+								content: data.delta || ''
+							}).id;
 						} else {
-							// Update existing assistant message
-							messages = messages.map((msg) =>
-								msg.id === currentAssistantId
-									? { ...msg, content: msg.content + (data.delta || '') }
-									: msg
+							const conversationId = ensureVoiceConversation();
+							const assistantMessage = $currentMessages.find(
+								(msg) => msg.id === currentAssistantId
 							);
+							if (assistantMessage) {
+								chatHistoryStore.updateMessage(
+									conversationId,
+									currentAssistantId,
+									assistantMessage.content + (data.delta || '')
+								);
+							}
 						}
 						scrollToBottom();
 					}
 
 					// Handle AI response completion - back to listening
 					if (data.type === 'response.done') {
-						console.log('Response done - full data:', JSON.stringify(data, null, 2));
-						console.log('Response status:', data.response?.status);
-						console.log('Response output:', data.response?.output);
-
 						// Extract usage data from response
 						const usage = data.response?.usage;
 						if (usage && currentAssistantId) {
@@ -499,26 +478,18 @@
 								displayName: getModelDisplayName(currentVoiceModel)
 							};
 
-							// Update the assistant message with cost info
-							messages = messages.map((msg) =>
-								msg.id === currentAssistantId ? { ...msg, cost: messageCost } : msg
-							);
-
-							// Also save to the store if we have a conversation
 							const conversationId = $chatHistoryStore.currentConversationId;
-							if (conversationId) {
-								// Find the assistant message and save it with cost
-								const assistantMsg = messages.find((m) => m.id === currentAssistantId);
-								if (assistantMsg) {
-									chatHistoryStore.addMessage(conversationId, {
-										role: 'assistant',
-										content: assistantMsg.content,
-										cost: messageCost
-									});
-								}
+							const assistantMessage = $currentMessages.find(
+								(msg) => msg.id === currentAssistantId
+							);
+							if (conversationId && assistantMessage) {
+								chatHistoryStore.updateMessage(
+									conversationId,
+									currentAssistantId,
+									assistantMessage.content,
+									messageCost
+								);
 							}
-
-							console.log('Voice message cost:', formatCost(costResult.totalCost));
 						}
 
 						// Check if response was cancelled or had no output
@@ -529,11 +500,11 @@
 						}
 
 						currentAssistantId = null;
+						currentUserMessageId = null;
 						voiceState = 'listening';
 					}
 
 					if (data.type === 'response.audio_transcript.done') {
-						currentAssistantId = null;
 						voiceState = 'listening';
 					}
 
@@ -573,11 +544,6 @@
 			};
 
 			realtimeWs.onclose = (event) => {
-				console.log('Voice chat WebSocket closed');
-				console.log('Close code:', event.code);
-				console.log('Close reason:', event.reason || '(no reason provided)');
-				console.log('Was clean close:', event.wasClean);
-
 				// Only stop if we're still supposed to be active
 				if (isVoiceActive) {
 					// Check if it was a clean close or an error
@@ -683,7 +649,7 @@
 		voiceState = 'idle';
 		currentUserTranscript = '';
 		currentAssistantId = null;
-		pendingUserMessageId = null;
+		currentUserMessageId = null;
 		audioQueue = [];
 		isPlayingAudio = false;
 		sessionConfigured = false;
@@ -904,8 +870,7 @@
 						rows="1"
 						maxlength={MAX_INPUT_LENGTH}
 						disabled={isVoiceActive}
-						aria-label="Chat message input"
-					></textarea>
+						aria-label="Chat message input"></textarea>
 
 					<!-- Character count (shows when approaching limit) -->
 					{#if showCharCount}

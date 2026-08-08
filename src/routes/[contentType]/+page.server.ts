@@ -35,6 +35,9 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 	if (!contentType) {
 		throw error(404, 'Content type not found');
 	}
+	if (contentType.settings.isPublic === false) {
+		throw error(404, 'Not found');
+	}
 
 	// Parse query params
 	const filters: ContentItemFilters = {

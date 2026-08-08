@@ -13,6 +13,7 @@ describe('Discord OAuth Init - Extended Branch Coverage', () => {
 			const mockEvent = {
 				platform: {
 					env: {
+						SESSION_SECRET: 'test-session-secret',
 						DISCORD_CLIENT_ID: undefined,
 						KV: {
 							get: vi.fn().mockRejectedValue(new Error('KV Error'))
@@ -41,7 +42,9 @@ describe('Discord OAuth Init - Extended Branch Coverage', () => {
 			const mockEvent = {
 				platform: {
 					env: {
+						SESSION_SECRET: 'test-session-secret',
 						DISCORD_CLIENT_ID: undefined,
+						DB: transactionDatabase(),
 						KV: {
 							get: vi.fn().mockResolvedValue(
 								JSON.stringify({
@@ -53,8 +56,10 @@ describe('Discord OAuth Init - Extended Branch Coverage', () => {
 					}
 				},
 				url: new URL('http://localhost:4277/api/auth/discord'),
+				locals: {},
 				cookies: {
-					set: vi.fn()
+					set: vi.fn(),
+					get: vi.fn()
 				}
 			};
 
@@ -145,5 +150,66 @@ describe('Discord OAuth Init - Extended Branch Coverage', () => {
 				expect(err.location).toBe('/api/auth/dev-simulate?provider=discord&mode=link');
 			}
 		});
+
+		it('requires an authenticated user for account linking', async () => {
+			const event = configuredLinkEvent();
+			const { GET } = await import('../../src/routes/api/auth/discord/+server');
+
+			await expect(GET(event as any)).rejects.toMatchObject({
+				status: 302,
+				location: '/auth/login?error=authentication_required'
+			});
+		});
+
+		it('requires a signed database session for account linking', async () => {
+			const event = configuredLinkEvent();
+			event.locals = { user: { id: 'user-1' } };
+			const { GET } = await import('../../src/routes/api/auth/discord/+server');
+
+			await expect(GET(event as any)).rejects.toMatchObject({
+				status: 302,
+				location: '/auth/login?error=authentication_required'
+			});
+		});
+
+		it('binds link state to the authenticated database session', async () => {
+			const { signValue } = await import('../../src/lib/utils/session');
+			const event = configuredLinkEvent();
+			event.locals = { user: { id: 'user-1' } };
+			event.cookies.get.mockReturnValue(
+				await signValue({ token: 'opaque-session-token' }, 'test-session-secret')
+			);
+			const { GET } = await import('../../src/routes/api/auth/discord/+server');
+
+			await expect(GET(event as any)).rejects.toMatchObject({
+				status: 302,
+				location: expect.stringContaining('discord.com/api/oauth2/authorize')
+			});
+		});
 	});
 });
+
+function configuredLinkEvent() {
+	return {
+		platform: {
+			env: {
+				SESSION_SECRET: 'test-session-secret',
+				DISCORD_CLIENT_ID: 'client-id',
+				DB: transactionDatabase()
+			}
+		},
+		url: new URL('http://localhost:4277/api/auth/discord?mode=link'),
+		locals: {},
+		cookies: { set: vi.fn(), get: vi.fn() }
+	};
+}
+
+function transactionDatabase() {
+	return {
+		prepare: vi.fn(() => ({
+			bind: vi.fn(() => ({
+				run: vi.fn().mockResolvedValue({ success: true })
+			}))
+		}))
+	};
+}

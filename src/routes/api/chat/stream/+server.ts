@@ -1,6 +1,8 @@
 import {
 	formatMessagesForOpenAI,
+	getConfiguredChatModels,
 	getEnabledOpenAIKey,
+	selectDefaultChatModel,
 	streamChatCompletion
 } from '$lib/services/openai-chat';
 import { calculateCost, getModelDisplayName } from '$lib/utils/cost';
@@ -27,14 +29,19 @@ export async function POST({ request, platform, locals }: RequestEvent) {
 			throw error(400, 'Invalid messages format');
 		}
 
-		// Get enabled OpenAI key
-		const aiKey = await getEnabledOpenAIKey(platform!);
-		if (!aiKey) {
-			throw error(503, 'No OpenAI API key configured');
+		if (requestedModel !== undefined && (typeof requestedModel !== 'string' || !requestedModel)) {
+			throw error(400, 'Invalid model');
 		}
 
-		// Use requested model or default to gpt-4o
-		const model = requestedModel || 'gpt-4o';
+		let aiKey = await getEnabledOpenAIKey(platform!, requestedModel);
+		if (!aiKey && requestedModel) {
+			throw error(400, 'Unknown or disabled model');
+		}
+		if (!aiKey) throw error(503, 'No OpenAI API key configured');
+
+		const configuredModels = getConfiguredChatModels(aiKey);
+		const model = requestedModel || selectDefaultChatModel(configuredModels);
+		if (!model) throw error(503, 'No chat models configured');
 
 		// Format messages for OpenAI
 		const formattedMessages = formatMessagesForOpenAI(messages);

@@ -21,6 +21,12 @@ import type { ContentFieldDefinition } from './types';
 const FilterXSS = ((xssModule as unknown as { default?: typeof xssModule }).default ?? xssModule)
 	.FilterXSS as typeof xssModule.FilterXSS;
 
+const MAX_EMBED_PROPS_BYTES = 4096;
+const MAX_EMBED_DEPTH = 6;
+const MAX_EMBED_ENTRIES = 64;
+const EMBED_PROP_KEY = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+const FORBIDDEN_PROP_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 // Presentational SVG subset for inline illustrations. Deliberately absent:
 // script, foreignObject, use, image, animate*, and any href/xlink:href —
 // the tags/attrs that can execute or fetch.
@@ -111,21 +117,86 @@ const ALLOWED_TAGS: Record<string, string[]> = {
 	stop: ['offset', 'stop-color', 'stop-opacity']
 };
 
-function isSafeUrl(value: string): boolean {
-	const trimmed = value.trim().toLowerCase();
-	if (trimmed.startsWith('javascript:') || trimmed.startsWith('vbscript:')) {
-		return false;
+function decodeUrlEntities(value: string): string {
+	return value
+		.replace(/&#(?:x([0-9a-f]+)|(\d+));?/gi, (_match, hex: string, decimal: string) => {
+			const codePoint = Number.parseInt(hex || decimal, hex ? 16 : 10);
+			return Number.isFinite(codePoint) && codePoint > 0 && codePoint <= 0x10ffff
+				? String.fromCodePoint(codePoint)
+				: '\uFFFD';
+		})
+		.replace(/&(amp|apos|colon|gt|lt|newline|quot|tab);/gi, (_match, entity: string) => {
+			const entities: Record<string, string> = {
+				amp: '&',
+				apos: "'",
+				colon: ':',
+				gt: '>',
+				lt: '<',
+				newline: '\n',
+				quot: '"',
+				tab: '\t'
+			};
+			return entities[entity.toLowerCase()];
+		});
+}
+
+export function sanitizeCmsUrl(raw: string, image = false): string | null {
+	const decoded = decodeUrlEntities(raw)
+		.replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
+		.trim();
+	if (!decoded) return null;
+
+	const normalized = decoded.replace(/\s/g, '').toLowerCase();
+	if (/^[\\/]{2}/.test(normalized)) return null;
+
+	const colon = normalized.indexOf(':');
+	const firstPathCharacter = normalized.search(/[/?#]/);
+	if (colon >= 0 && (firstPathCharacter < 0 || colon < firstPathCharacter)) {
+		const scheme = normalized.slice(0, colon);
+		const allowedSchemes = image ? ['http', 'https'] : ['http', 'https', 'mailto', 'tel'];
+		if (!allowedSchemes.includes(scheme)) return null;
 	}
-	if (trimmed.startsWith('data:')) {
-		return false;
+
+	return decoded;
+}
+
+function isSafeEmbedValue(value: unknown, depth = 0): boolean {
+	if (depth > MAX_EMBED_DEPTH) return false;
+	if (value === null || typeof value === 'boolean') return true;
+	if (typeof value === 'number') return Number.isFinite(value);
+	if (typeof value === 'string') return value.length <= MAX_EMBED_PROPS_BYTES;
+	if (Array.isArray(value)) {
+		return (
+			value.length <= MAX_EMBED_ENTRIES &&
+			value.every((entry) => isSafeEmbedValue(entry, depth + 1))
+		);
 	}
-	return true;
+	if (typeof value !== 'object') return false;
+
+	const entries = Object.entries(value as Record<string, unknown>);
+	return (
+		entries.length <= MAX_EMBED_ENTRIES &&
+		entries.every(
+			([key, entry]) =>
+				EMBED_PROP_KEY.test(key) &&
+				!FORBIDDEN_PROP_KEYS.has(key) &&
+				isSafeEmbedValue(entry, depth + 1)
+		)
+	);
 }
 
 const filter = new FilterXSS({
 	whiteList: ALLOWED_TAGS,
 	stripIgnoreTag: true,
-	stripIgnoreTagBody: ['script', 'style'],
+	stripIgnoreTagBody: [
+		'iframe',
+		'math',
+		'noscript',
+		'object',
+		'script',
+		'style',
+		'template'
+	],
 	onTagAttr(tag, name, value) {
 		if (tag === 'div' && name === 'data-svelte-embed') {
 			return EMBED_NAME_PATTERN.test(value)
@@ -134,19 +205,43 @@ const filter = new FilterXSS({
 		}
 		if (tag === 'div' && name === 'data-props') {
 			// The value arrives raw from the parser (entity-escaped as stored)
+			if (value.length > MAX_EMBED_PROPS_BYTES) return '';
 			try {
 				const decoded = decodeAttrEntities(value);
 				const parsed = JSON.parse(decoded);
-				if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-					return `data-props="${encodeAttrEntities(JSON.stringify(parsed))}"`;
+				if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && isSafeEmbedValue(parsed)) {
+					const serialized = JSON.stringify(parsed);
+					if (serialized.length <= MAX_EMBED_PROPS_BYTES) {
+						return `data-props="${encodeAttrEntities(serialized)}"`;
+					}
 				}
 			} catch {
 				// fall through — drop the attribute
 			}
 			return '';
 		}
-		if ((name === 'href' || name === 'src') && !isSafeUrl(value)) {
-			return '';
+		if (name === 'href' || name === 'src') {
+			const safeUrl = sanitizeCmsUrl(value, name === 'src');
+			return safeUrl ? `${name}="${encodeAttrEntities(safeUrl)}"` : '';
+		}
+		if (name === 'target') {
+			return value.toLowerCase() === '_blank' ? 'target="_blank"' : '';
+		}
+		if (name === 'rel') {
+			const safeTokens = new Set(['nofollow', 'noopener', 'noreferrer', 'sponsored', 'ugc']);
+			const rel = value
+				.toLowerCase()
+				.split(/\s+/)
+				.filter((token, index, tokens) => safeTokens.has(token) && tokens.indexOf(token) === index)
+				.join(' ');
+			return rel ? `rel="${rel}"` : '';
+		}
+		if (name === 'width' || name === 'height' || (tag === 'ol' && name === 'start')) {
+			const maximum = tag === 'ol' ? 1_000_000 : 4096;
+			const number = Number(value);
+			return Number.isInteger(number) && number >= 1 && number <= maximum
+				? `${name}="${number}"`
+				: '';
 		}
 		return undefined; // default handling
 	}
@@ -157,7 +252,18 @@ export function sanitizeHtml(html: string): string {
 	if (typeof html !== 'string' || !html) {
 		return '';
 	}
-	return filter.process(html);
+	return filter
+		.process(html)
+		.replace(/<div\b([^>]*)>/g, (tag, attributes: string) =>
+			attributes.includes('data-props=') && !attributes.includes('data-svelte-embed=')
+				? tag.replace(/\sdata-props="[^"]*"/, '')
+				: tag
+		)
+		.replace(/<a\b[^>]*target="_blank"[^>]*>/g, (tag) => {
+			const existingRel = tag.match(/\srel="([^"]*)"/)?.[1].split(/\s+/) ?? [];
+			const rel = [...new Set(['noopener', 'noreferrer', ...existingRel])].join(' ');
+			return tag.replace(/\srel="[^"]*"/, '').replace(/>$/, ` rel="${rel}">`);
+		});
 }
 
 /**
@@ -176,3 +282,9 @@ export function sanitizeRichtextFields(
 	}
 	return result;
 }
+
+/** Render-boundary alias used for defense in depth over legacy/imported rows. */
+export const sanitizeRichTextHtml = sanitizeHtml;
+
+/** Service-boundary alias; CMS-v2 keeps sanitization centralized here. */
+export const sanitizeContentFields = sanitizeRichtextFields;

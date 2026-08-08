@@ -1,24 +1,17 @@
-import { issueOAuthState } from '$lib/server/oauth-state';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
+import { getAuthProviderCredentials } from '$lib/utils/auth-provider-config';
+import {
+	createOAuthTransaction,
+	oauthStateCookieName,
+	oauthStateCookieOptions
+} from '$lib/utils/oauth-state';
+import { decodeDatabaseSessionCookie } from '$lib/utils/session';
 import type { RequestHandler } from './$types';
 
 // GET - Redirect to GitHub OAuth
-export const GET: RequestHandler = async ({ platform, url, cookies }) => {
-	let clientId = platform?.env?.GITHUB_CLIENT_ID;
-
-	// Try to fetch from KV if environment variable not set
-	if (!clientId && platform?.env?.KV) {
-		try {
-			const stored = await platform.env.KV.get('auth_config:github');
-			if (stored) {
-				const config = JSON.parse(stored);
-				clientId = config.clientId;
-			}
-		} catch (err) {
-			console.error('Failed to fetch from KV:', err);
-		}
-	}
+export const GET: RequestHandler = async ({ platform, url, cookies, locals }) => {
+	const { clientId } = await getAuthProviderCredentials(platform, 'github');
 
 	// Check if GitHub OAuth is configured
 	if (!clientId) {
@@ -39,8 +32,27 @@ export const GET: RequestHandler = async ({ platform, url, cookies }) => {
 		throw redirect(302, '/setup?error=oauth_not_configured');
 	}
 
-	// CSRF protection: the callback compares this against the cookie below.
-	const state = issueOAuthState(cookies, 'github', url.protocol === 'https:');
+	const linking = url.searchParams.get('mode') === 'link';
+	if (linking && !locals.user) {
+		throw redirect(302, '/auth/login?error=authentication_required');
+	}
+	const db = platform?.env?.DB;
+	if (!db) throw error(503, 'OAuth state storage is unavailable');
+	const boundSessionToken = linking
+		? await decodeDatabaseSessionCookie(cookies.get('session'), platform?.env?.SESSION_SECRET)
+		: undefined;
+	if (linking && !boundSessionToken) {
+		throw redirect(302, '/auth/login?error=authentication_required');
+	}
+	const { state, cookie } = await createOAuthTransaction(
+		db,
+		'github',
+		linking ? 'link' : 'login',
+		linking ? locals.user?.id : undefined,
+		boundSessionToken || undefined,
+		platform?.env?.SESSION_SECRET
+	);
+	cookies.set(oauthStateCookieName('github'), cookie, oauthStateCookieOptions('github', url));
 
 	const params = new URLSearchParams({
 		client_id: clientId,

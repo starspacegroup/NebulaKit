@@ -3,6 +3,7 @@ node_modules
 /build
 /.svelte-kit
 /package
+/dist
 .env
 .env.*
 .dev.vars
@@ -14,11 +15,9 @@ vite.config.ts.timestamp-*
 .wrangler
 wrangler.toml.local
 
-# Local customization input (see CUSTOMIZE.md) — never commit into your product
-customize.config.json
-
 # LLM outputs (test logs, coverage dumps, etc.)
 .llm-outputs/
+*.log
 
 # Testing
 coverage/

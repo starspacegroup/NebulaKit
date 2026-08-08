@@ -37,8 +37,7 @@ function buildDevUser(provider: SupportedProvider, role: SimulatedRole) {
 	const login = `${loginPrefix}-${suffix}`;
 	const isSuperadmin = role === 'superadmin';
 	const isAdmin = role === 'admin' || isSuperadmin;
-	const namePrefix =
-		role === 'superadmin' ? 'Superadmin' : role === 'admin' ? 'Admin' : 'User';
+	const namePrefix = role === 'superadmin' ? 'Superadmin' : role === 'admin' ? 'Admin' : 'User';
 
 	return {
 		id: `dev-${provider}-${suffix}`,
@@ -66,7 +65,10 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 
 	const mode = parseMode(url.searchParams.get('mode'));
 	if (mode === 'link') {
-		const existingUser = decodeSessionCookie(cookies.get('session'));
+		const existingUser = await decodeSessionCookie(
+			cookies.get('session'),
+			platform?.env?.SESSION_SECRET
+		);
 
 		if (existingUser?.isPretend) {
 			const simulatedConnections = Array.from(
@@ -77,12 +79,13 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 				status: 302,
 				headers: {
 					Location: new URL(`/profile?linked=${provider}`, url.origin).toString(),
-					'Set-Cookie': buildSessionCookieHeader(
+					'Set-Cookie': await buildSessionCookieHeader(
 						{
 							...existingUser,
 							simulatedConnections
 						},
-						url
+						url,
+						platform?.env?.SESSION_SECRET
 					)
 				}
 			});
@@ -97,7 +100,7 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 		status: 302,
 		headers: {
 			Location: new URL(redirectTarget, url.origin).toString(),
-			'Set-Cookie': buildSessionCookieHeader(sessionUser, url)
+			'Set-Cookie': await buildSessionCookieHeader(sessionUser, url, platform?.env?.SESSION_SECRET)
 		}
 	});
 };

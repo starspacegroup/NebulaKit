@@ -1,3 +1,4 @@
+import { webcrypto } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -9,6 +10,7 @@ describe('Database Utilities', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
+		vi.stubGlobal('crypto', webcrypto as Crypto);
 	});
 
 	describe('createUser', () => {
@@ -164,41 +166,31 @@ describe('Database Utilities', () => {
 	});
 
 	describe('createSession', () => {
-		it('should create a new session with default expiry', async () => {
-			const mockSession = {
-				id: 'session-uuid',
-				user_id: 'user-123',
-				expires_at: new Date()
-			};
-
+		it('stores only a digest and returns the raw opaque token once', async () => {
+			const run = vi.fn().mockResolvedValue({ success: true });
+			const bind = vi.fn().mockReturnValue({ run });
 			const mockDb = {
 				prepare: vi.fn().mockReturnValue({
-					bind: vi.fn().mockReturnValue({
-						first: vi.fn().mockResolvedValue(mockSession)
-					})
+					bind
 				})
 			};
 
-			vi.stubGlobal('crypto', { randomUUID: () => 'session-uuid' });
-
-			const { createSession } = await import('../../src/lib/utils/db');
+			const { createSession, hashSessionToken } = await import('../../src/lib/utils/db');
 			const result = await createSession(mockDb as any, 'user-123');
 
-			expect(result).toEqual(mockSession);
+			expect(result.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+			expect(result.id).toBe(await hashSessionToken(result.token));
+			expect(bind).toHaveBeenCalledWith(result.id, 'user-123', expect.any(String));
+			expect(bind).not.toHaveBeenCalledWith(result.token, 'user-123', expect.any(String));
 			expect(mockDb.prepare).toHaveBeenCalledWith(
-				'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?) RETURNING *'
+				'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)'
 			);
+			expect(run).toHaveBeenCalled();
 		});
 
 		it('should create session with custom expiry days', async () => {
-			const mockSession = {
-				id: 'session-uuid',
-				user_id: 'user-123',
-				expires_at: new Date()
-			};
-
 			const mockBind = vi.fn().mockReturnValue({
-				first: vi.fn().mockResolvedValue(mockSession)
+				run: vi.fn().mockResolvedValue({ success: true })
 			});
 
 			const mockDb = {
@@ -207,15 +199,13 @@ describe('Database Utilities', () => {
 				})
 			};
 
-			vi.stubGlobal('crypto', { randomUUID: () => 'session-uuid' });
-
 			const { createSession } = await import('../../src/lib/utils/db');
 			await createSession(mockDb as any, 'user-123', 7);
 
 			// Check that bind was called with correct arguments
 			expect(mockBind).toHaveBeenCalled();
 			const bindArgs = mockBind.mock.calls[0];
-			expect(bindArgs[0]).toBe('session-uuid');
+			expect(bindArgs[0]).toMatch(/^[A-Za-z0-9_-]{43}$/);
 			expect(bindArgs[1]).toBe('user-123');
 			// Third arg is the expiry date string
 			expect(typeof bindArgs[2]).toBe('string');
@@ -225,18 +215,14 @@ describe('Database Utilities', () => {
 			const mockDb = {
 				prepare: vi.fn().mockReturnValue({
 					bind: vi.fn().mockReturnValue({
-						first: vi.fn().mockResolvedValue(null)
+						run: vi.fn().mockRejectedValue(new Error('D1 insert failed'))
 					})
 				})
 			};
 
-			vi.stubGlobal('crypto', { randomUUID: () => 'session-uuid' });
-
 			const { createSession } = await import('../../src/lib/utils/db');
 
-			await expect(createSession(mockDb as any, 'user-123')).rejects.toThrow(
-				'Failed to create session'
-			);
+			await expect(createSession(mockDb as any, 'user-123')).rejects.toThrow('D1 insert failed');
 		});
 	});
 
@@ -298,6 +284,36 @@ describe('Database Utilities', () => {
 
 			expect(mockDb.prepare).toHaveBeenCalledWith('DELETE FROM sessions WHERE id = ?');
 			expect(mockRun).toHaveBeenCalled();
+		});
+	});
+
+	describe('replaceSession', () => {
+		it('atomically inserts the replacement and deletes the previous session digest', async () => {
+			const statements: unknown[] = [];
+			const mockDb = {
+				prepare: vi.fn((sql: string) => ({
+					bind: vi.fn((...values: unknown[]) => ({ sql, values }))
+				})),
+				batch: vi.fn(async (batch: unknown[]) => {
+					statements.push(...batch);
+					return [];
+				})
+			};
+
+			const { hashSessionToken, replaceSession } = await import('../../src/lib/utils/db');
+			const session = await replaceSession(mockDb as any, 'user-123', 'previous-token', 7);
+
+			expect(mockDb.batch).toHaveBeenCalledTimes(1);
+			expect(statements).toEqual([
+				{
+					sql: 'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
+					values: [session.id, 'user-123', expect.any(String)]
+				},
+				{
+					sql: 'DELETE FROM sessions WHERE id = ?',
+					values: [await hashSessionToken('previous-token')]
+				}
+			]);
 		});
 	});
 

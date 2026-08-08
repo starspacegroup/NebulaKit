@@ -42,13 +42,15 @@ describe('GitHub OAuth Initiation - Extended Coverage', () => {
 	) => {
 		return {
 			url: new URL('http://localhost/api/auth/github'),
-			// The init route stashes the OAuth `state` here for the callback to verify.
-			cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+			cookies: { set: vi.fn(), get: vi.fn() },
+			locals: {},
 			platform:
 				overrides.platform !== null
 					? {
 							env: {
+								SESSION_SECRET: 'test-session-secret',
 								GITHUB_CLIENT_ID: overrides.envClientId,
+								DB: transactionDatabase(),
 								KV: overrides.kvGet
 									? {
 											get: overrides.kvGet
@@ -166,4 +168,47 @@ describe('GitHub OAuth Initiation - Extended Coverage', () => {
 			} as unknown as Parameters<typeof GET>[0])
 		).rejects.toThrow('Redirect to /api/auth/dev-simulate?provider=github&mode=link');
 	});
+
+	it('requires an authenticated user for account linking', async () => {
+		const event = createMockEvent({ envClientId: 'env-client-id' });
+		event.url = new URL('http://localhost/api/auth/github?mode=link');
+
+		await expect(GET(event as unknown as Parameters<typeof GET>[0])).rejects.toThrow(
+			'Redirect to /auth/login?error=authentication_required'
+		);
+	});
+
+	it('requires a signed database session for account linking', async () => {
+		const event = createMockEvent({ envClientId: 'env-client-id' });
+		event.url = new URL('http://localhost/api/auth/github?mode=link');
+		event.locals = { user: { id: 'user-1' } };
+
+		await expect(GET(event as unknown as Parameters<typeof GET>[0])).rejects.toThrow(
+			'Redirect to /auth/login?error=authentication_required'
+		);
+	});
+
+	it('binds link state to the authenticated database session', async () => {
+		const { signValue } = await import('../../src/lib/utils/session');
+		const event = createMockEvent({ envClientId: 'env-client-id' });
+		event.url = new URL('http://localhost/api/auth/github?mode=link');
+		event.locals = { user: { id: 'user-1' } };
+		event.cookies.get.mockReturnValue(
+			await signValue({ token: 'opaque-session-token' }, 'test-session-secret')
+		);
+
+		await expect(GET(event as unknown as Parameters<typeof GET>[0])).rejects.toThrow(
+			'Redirect to https://github.com/login/oauth/authorize'
+		);
+	});
 });
+
+function transactionDatabase() {
+	return {
+		prepare: vi.fn(() => ({
+			bind: vi.fn(() => ({
+				run: vi.fn().mockResolvedValue({ success: true })
+			}))
+		}))
+	};
+}

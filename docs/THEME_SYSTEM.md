@@ -52,7 +52,7 @@ All text/background combinations must meet:
 
 - **4.5:1** minimum for normal text
 - **3:1** minimum for large text (18pt+)
-- Run `npm run validate:contrast` to check
+- Run `bun run validate:contrast` to check
 
 ## 📋 Available CSS Variables
 
@@ -219,7 +219,7 @@ Apply `data-theme="dark"` to `<html>` or any container:
 1. **Run validation script:**
 
    ```bash
-   npm run validate:contrast
+   bun run validate:contrast
    ```
 
 2. **Online tools:**
@@ -318,7 +318,7 @@ const themes = {
 };
 ```
 
-Run: `npm run validate:contrast`
+Run: `bun run validate:contrast`
 
 3. **Update TypeScript types:**
 
@@ -346,7 +346,7 @@ export interface ThemeColors {
 
 **Need a color?** → Check `src/app.css` first  
 **Color doesn't exist?** → Add to `app.css` for both themes  
-**Check contrast?** → `npm run validate:contrast`  
+**Check contrast?** → `bun run validate:contrast`
 **Test component?** → Toggle theme in app (Ctrl+K → "toggle theme")  
 **Documentation?** → You're reading it! 📚
 

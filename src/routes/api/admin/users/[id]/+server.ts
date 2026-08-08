@@ -1,15 +1,9 @@
+import { requireOwner } from '$lib/server/auth-guards';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const PATCH: RequestHandler = async ({ platform, locals, params, request }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	const owner = requireOwner(locals);
 
 	const userId = params.id;
 	const body = await request.json();
@@ -36,20 +30,8 @@ export const PATCH: RequestHandler = async ({ platform, locals, params, request 
 		}
 
 		// Check if trying to modify self
-		if (userId === locals.user.id) {
+		if (userId === owner.id) {
 			throw error(400, 'Cannot modify your own admin status');
-		}
-
-		// Get setup owner email from KV
-		const setupData = await platform?.env?.KV?.get('setup:complete');
-		if (setupData) {
-			const setupInfo = JSON.parse(setupData);
-			const ownerEmail = setupInfo.ownerEmail;
-
-			// Prevent demoting the setup owner
-			if (targetUser.email === ownerEmail && !isAdmin) {
-				throw error(400, 'Cannot demote the setup owner');
-			}
 		}
 
 		// Update user admin status
@@ -57,6 +39,9 @@ export const PATCH: RequestHandler = async ({ platform, locals, params, request 
 			.prepare('UPDATE users SET is_admin = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
 			.bind(isAdmin ? 1 : 0, userId)
 			.run();
+
+		// Force the target to authenticate again after any authorization change.
+		await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
 
 		return json({
 			success: true,
@@ -72,14 +57,7 @@ export const PATCH: RequestHandler = async ({ platform, locals, params, request 
 };
 
 export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	const owner = requireOwner(locals);
 
 	const userId = params.id;
 
@@ -90,7 +68,7 @@ export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
 		}
 
 		// Check if trying to delete self
-		if (userId === locals.user.id) {
+		if (userId === owner.id) {
 			throw error(400, 'Cannot delete your own account');
 		}
 
@@ -102,18 +80,6 @@ export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
 
 		if (!targetUser) {
 			throw error(404, 'User not found');
-		}
-
-		// Get setup owner email from KV
-		const setupData = await platform?.env?.KV?.get('setup:complete');
-		if (setupData) {
-			const setupInfo = JSON.parse(setupData);
-			const ownerEmail = setupInfo.ownerEmail;
-
-			// Prevent deleting the setup owner
-			if (targetUser.email === ownerEmail) {
-				throw error(400, 'Cannot delete the setup owner');
-			}
 		}
 
 		// Delete user (cascades to sessions and oauth_accounts)

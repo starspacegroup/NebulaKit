@@ -41,7 +41,7 @@ describe('Chat History Store - Error Paths', () => {
 	});
 
 	it('should handle localStorage.getItem returning invalid JSON', async () => {
-		const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('not valid json {{{');
+		const getItemSpy = vi.spyOn(localStorage, 'getItem').mockReturnValue('not valid json {{{');
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		const module = await import('../../src/lib/stores/chatHistory.js');
@@ -64,7 +64,7 @@ describe('Chat History Store - Error Paths', () => {
 	});
 
 	it('should handle localStorage.getItem throwing an error', async () => {
-		const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+		const getItemSpy = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
 			throw new Error('Storage access denied');
 		});
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -83,10 +83,10 @@ describe('Chat History Store - Error Paths', () => {
 	});
 
 	it('should handle localStorage.setItem throwing (quota exceeded)', async () => {
-		const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+		const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
 			throw new DOMException('Quota exceeded', 'QuotaExceededError');
 		});
-		const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
+		const getItemSpy = vi.spyOn(localStorage, 'getItem').mockReturnValue(null);
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		const module = await import('../../src/lib/stores/chatHistory.js');

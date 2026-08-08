@@ -1,290 +1,163 @@
-![alt text](image.png)
+[![NebulaKit — independent Cloudflare-native platform](./static/og-image.png)](https://github.com/starspacegroup/NebulaKit)
 
-# ✨ NebulaKit
+# NebulaKit
 
-> A cosmic-grade SvelteKit starter template powered by Cloudflare's full stack
+NebulaKit is an independent Cloudflare-native platform for publishing structured content,
+managing authenticated users, operating AI-assisted workflows, and observing the application
+without third-party analytics. It is built with SvelteKit and runs on Cloudflare Pages with D1,
+KV, and R2 bindings.
 
-[![Built with SvelteKit](https://img.shields.io/badge/Built%20with-SvelteKit-FF3E00?style=flat&logo=svelte)](https://kit.svelte.dev/)
-[![Powered by Cloudflare](https://img.shields.io/badge/Powered%20by-Cloudflare-F38020?style=flat&logo=cloudflare)](https://www.cloudflare.com/)
+[![SvelteKit](https://img.shields.io/badge/SvelteKit-4%2F5-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev/docs/kit)
+[![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/pages/)
+[![Coverage](https://img.shields.io/badge/coverage-95%25%20floor-5b5bd6)](./CONTRIBUTING.md#coverage-requirements)
 
-NebulaKit is a production-ready SvelteKit template with everything you need to build modern web applications. It comes with Cloudflare Workers integration (D1, KV, R2, Queues, Turnstile), a complete theme system, command palette, LLM chat UI, full authentication, and polished drag-and-drop—all built in from day one.
+## What ships
 
-## Before Anything Else
+- **Content operations:** typed CMS schemas, rich-text embeds, tags, media uploads, public
+  content routes, and guarded admin editing.
+- **Authentication:** email/password accounts plus GitHub and Discord OAuth, account linking,
+  session cookies, owner bootstrap, and per-user admin permissions.
+- **AI workspace:** configurable provider keys, streaming chat, conversation history, model
+  selection, and optional realtime voice sessions.
+- **Private administration:** users, auth credentials, AI keys, contact submissions, CMS,
+  privacy-safe PII reveal controls, and first-party analytics.
+- **Agent-ready publishing:** `robots.txt`, dynamic sitemap, RFC 9727 API catalog, Agent Skills
+  discovery, `/auth.md`, HTML-to-Markdown negotiation, and read-only WebMCP tools.
+- **Accessible shell:** command palette, responsive navigation, light/dark themes, complete PWA
+  install metadata, and automated WCAG AA contrast checks.
 
-If this repository is being used as a starter template, complete [docs/INITIAL_CUSTOMIZATION.md](./docs/INITIAL_CUSTOMIZATION.md) before normal feature work. Track whether that cleanup is still pending in [INITIAL_CUSTOMIZATION_STATUS.md](./INITIAL_CUSTOMIZATION_STATUS.md).
+NebulaKit does **not** advertise an OAuth authorization server or an MCP server. Its discovery
+metadata lists only routes implemented by this repository.
 
 Planned additions to the kit — including features to upstream from downstream NebulaKit projects — are tracked in [ROADMAP.md](./ROADMAP.md).
 
-## 🌟 Features
+## Requirements
 
-- **🚀 Cloudflare Full Stack**: D1 database, KV storage, R2 buckets, Queues, and Turnstile built-in
-- **🎨 Theme System**: Light/dark modes with extensible CSS variables
-- **⌨️ Command Palette**: Keyboard-first navigation (Cmd/Ctrl + K)
-- **💬 LLM Chat UI**: Ready-to-use chat interface for AI integration
-- **🔐 Full Authentication**: Email/password + SSO (Google, GitHub) with account linking
-- **📱 Mobile-First**: Responsive layouts optimized for all devices
-- **🤖 Agent Ready**: robots.txt with AI crawler rules, dynamic sitemap, `.well-known` discovery, Markdown content negotiation, and WebMCP tools — all working out of the box
-- **🎯 Drag & Drop**: Polished DnD with cross-column and mobile support
-- **⚡ TypeScript**: Full type safety with Cloudflare Workers types
-- **🎨 UI Components**: Beautiful, accessible components out of the box
+- [Bun](https://bun.sh/) 1.3.14 or newer
+- A Cloudflare account with Pages, D1, KV, and R2 access for remote deployment
+- Node.js 22 or newer when running the Node-based utility scripts
 
-## 🚀 Quick Start
+The repository deliberately contains placeholder D1/KV identifiers. Builds fail until real,
+project-owned resources are configured; this prevents accidental access to another deployment's
+data.
 
-### Use the Template
-
-Click the **"Use this template"** button above to create your own repository, or **"Open in a codespace"** to start coding instantly in the cloud.
-
-### Local Development
-
-Recommended: Bun (faster installs and scripts in this repo).
+## Local development
 
 ```bash
-# Install dependencies
-bun install
-
-# Start development server
+bun install --frozen-lockfile
+bun run db:migrate:local
 bun run dev
+```
 
-# Build for production
+Open <http://localhost:4277>. Local migrations use Wrangler's local state and do not require
+production Cloudflare identifiers.
+
+Useful commands:
+
+```bash
+bun run check              # Svelte/TypeScript diagnostics
+bun run test               # unit and integration tests
+bun run test:coverage      # enforced 95% floor on all four metrics
+bun run validate:contrast  # WCAG AA theme contrast
+bun run test:e2e           # local D1 migration + Playwright suite
+bun run validate:all       # check + tests + contrast
+```
+
+The authoritative contribution and test workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Cloudflare setup
+
+Authenticate Wrangler, select the intended Cloudflare account, then create NebulaKit-owned
+resources:
+
+```bash
+bunx wrangler login
+bun run setup:cf --dry-run
+bun run setup:cf
+bunx wrangler r2 bucket create nebulakit-files
+bun run db:migrate
+```
+
+`bun run setup:cf` creates the D1 database and separate production/preview KV namespaces, writes
+their identifiers to `wrangler.toml`, and runs the binding guard. If more than one account is
+available, set `CLOUDFLARE_ACCOUNT_ID` explicitly before running it.
+
+Never reuse resource IDs from another project. Never set the KV preview namespace equal to the
+production namespace. See [docs/CLOUDFLARE_SETUP.md](./docs/CLOUDFLARE_SETUP.md) for the complete
+procedure and failure recovery.
+
+After the resources exist:
+
+```bash
 bun run build
-
-# Deploy to Cloudflare Pages
 bun run deploy
 ```
 
-Prefer npm instead? Use the equivalent commands:
+Secrets belong in Cloudflare Pages settings or Wrangler secrets, never in Git. Start with
+[.env.example](./.env.example) for local configuration. Authentication requires separate,
+high-entropy `SESSION_SECRET` and `SETUP_SECRET` values; generate each independently before using
+`/setup`.
 
-```bash
-npm install
-npm run dev
-npm run build
-npm run deploy
+## Application workflow
+
+1. Run the local or remote D1 migrations.
+2. Set `SESSION_SECRET` and `SETUP_SECRET`, then open `/setup` with the bootstrap secret to configure
+   owner identity and authentication credentials.
+3. Sign in through `/auth/login` or create a password account through `/auth/signup`.
+4. Configure AI providers under `/admin/ai-keys` if chat is required.
+5. Create content types and entries under `/admin/cms`.
+6. Review privacy-safe usage data at `/admin/stats` when the account has `can_view_stats`.
+
+The in-application guide at `/documentation` is the canonical user/operator walkthrough and must
+change in the same commit as any user-visible feature.
+
+## Architecture
+
+```text
+src/
+├── lib/
+│   ├── cms/          # schemas, registry, embeds, uploads
+│   ├── components/   # application and admin UI
+│   ├── server/       # request-bound server helpers
+│   ├── services/     # CMS, contact, account merge, AI clients
+│   └── utils/        # sessions, auth state, analytics, validation
+└── routes/
+    ├── admin/        # protected operator surfaces
+    ├── api/          # auth, CMS, chat, stats, setup, uploads
+    ├── chat/         # authenticated AI workspace
+    └── documentation/# shipped operator documentation
+
+migrations/           # immutable ordered D1 migrations
+scripts/              # binding, migration, setup, palette, tunnel tools
+static/               # icons and social assets
+tests/                # unit, integration, fixtures, and E2E
 ```
 
-Visit `http://localhost:4277` to see your app!
+Important boundaries:
 
-### 🚇 Local Tunneling (Cloudflare Tunnel)
+- Existing migration files are immutable once committed to `main`; add a new numbered migration.
+- Colors come from CSS variables in `src/app.css`; do not add hardcoded theme colors.
+- Tests must never use a real user store or production Cloudflare resource.
+- Discovery metadata must not claim routes or protocols the application does not implement.
 
-Share your local dev server with the outside world — no account needed for the free mode:
+## Documentation
 
-```bash
-# Free public URL via trycloudflare.com (zero config, zero account)
-bun run tunnel
-# or: npm run tunnel
+- [Local setup](./docs/LOCAL_SETUP.md)
+- [Cloudflare setup](./docs/CLOUDFLARE_SETUP.md)
+- [Agent readiness](./docs/AGENT_READINESS.md)
+- [CMS embeds](./docs/CMS_EMBEDS.md)
+- [Admin analytics](./docs/ADMIN_STATS.md)
+- [Theme system](./docs/THEME_SYSTEM.md)
+- [Command palette](./docs/COMMAND_PALETTE.md)
+- [TDD workflow](./docs/TDD_WORKFLOW.md)
+- [In-app documentation contract](./docs/DOCUMENTATION_PAGE.md)
 
-# Run dev server + tunnel together in one command
-bun run dev:tunnel
-```
+## Contributing
 
-The tunnel URL (e.g. `https://random-words.trycloudflare.com`) is printed to the console as soon as the tunnel is up.
+Use Conventional Commits, write behavior tests first, keep all coverage metrics at or above 95%,
+and run the full relevant gates before opening a pull request. See
+[CONTRIBUTING.md](./CONTRIBUTING.md).
 
-**Custom domain** (e.g. `myapp.yourdomain.com`):
+## License
 
-1. Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com/) → Networks → Tunnels
-2. Create a tunnel, add a public hostname pointing to `http://localhost:4277`
-3. Copy the tunnel token
-4. Add your domain to `vite.config.ts` → `server.allowedHosts` (e.g. `'.yourdomain.com'`)
-
-```bash
-TUNNEL_TOKEN=<your-token> bun run tunnel
-```
-
-> **Prerequisite:** `cloudflared` must be installed.
->
-> - macOS: `brew install cloudflared`
-> - Linux: https://pkg.cloudflare.com/index.html
-> - Windows: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
-
-**What's pre-wired for tunnel use** (in `vite.config.ts`):
-
-- `allowedHosts` includes `trycloudflare.com` — no Vite 403 rejections on free tunnels
-- HMR is **off by default** — WebSocket connections through cloudflared are unreliable and cause page hangs; set `VITE_HMR=true` to re-enable for purely local dev
-- `staleDepsFix` plugin strips stale `?v=` hashes so Vite never returns 504s on first load through a tunnel
-- `optimizeDeps.include` pre-bundles Svelte at startup so the first tunneled page load doesn't trigger a slow on-demand optimization
-
-The tunnel script lives at `scripts/tunnel.js` and respects a `PORT` env var if you change the dev port.
-
-## 🧪 Testing (TDD Required!)
-
-NebulaKit follows **Test-Driven Development** with 90%+ code coverage requirements:
-
-```bash
-# Run all tests
-npm run test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Check coverage (must be ≥90%)
-npm run test:coverage
-
-# Run E2E tests
-npm run test:e2e
-
-# Run all tests (unit + E2E)
-npm run test:all
-```
-
-**Important**: All features and bug fixes require tests written FIRST. See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
-
-## 📚 Documentation
-
-- [Setup Guide](./SETUP.md) - Complete installation and configuration instructions
-- [Features](./FEATURES.md) - Detailed feature documentation and usage examples
-- [Contributing Guide](./CONTRIBUTING.md) - Development workflow and testing standards
-- [Theme System Guide](./docs/THEME_SYSTEM.md) - Comprehensive theming and accessibility guide
-- [Admin Stats](./docs/ADMIN_STATS.md) - First-party cookie-free analytics and the Cloudflare plan-limit meter
-- [Agent Readiness](./docs/AGENT_READINESS.md) - Discovery surfaces for AI agents and crawlers, the content-usage policy to review before launch, and the DNS records to add by hand
-- [In-App Documentation Rule](./docs/DOCUMENTATION_PAGE.md) - Keeping the `/documentation` route in sync with shipped features
-- [GitHub Copilot Instructions](.github/copilot-instructions.md) - AI-assisted development guidelines
-
-## 🏗️ Project Structure
-
-```
-NebulaKit/
-├── src/
-│   ├── lib/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── stores/         # Svelte stores (theme, etc.)
-│   │   ├── server/         # Server-side utilities
-│   │   └── utils/          # Helper functions
-│   ├── routes/             # SvelteKit routes
-│   │   ├── auth/          # Authentication pages
-│   │   ├── chat/          # LLM chat interface
-│   │   └── demo/          # Feature demonstrations
-│   ├── app.css            # Global styles & theme
-│   └── app.html           # HTML template
-├── static/                 # Static assets
-└── wrangler.toml          # Cloudflare configuration
-```
-
-## 🎨 Theming
-
-NebulaKit includes a comprehensive theme system with:
-
-- ✅ **WCAG AA compliant** colors (4.5:1 contrast minimum)
-- 🌓 Light and dark modes with automatic system detection
-- 🎨 CSS custom properties for all design tokens
-- ♿ Accessibility-first design approach
-- 🧪 Automated contrast validation
-
-```css
-/* All colors use CSS variables - never hardcode! */
-.button {
-	background-color: var(--color-primary);
-	color: var(--color-background);
-	border-radius: var(--radius-md);
-	padding: var(--spacing-sm) var(--spacing-md);
-}
-```
-
-**Validate theme contrast:**
-
-```bash
-npm run validate:contrast
-```
-
-See the [Theme System Guide](./docs/THEME_SYSTEM.md) for complete documentation.
-
-## 🔐 Authentication
-
-Built-in auth pages with support for:
-
-- Email/password authentication
-- OAuth providers (Google, GitHub)
-- Session management
-- Account linking
-
-Easily extend with [@auth/sveltekit](https://authjs.dev/) for more providers.
-
-## 💬 Chat UI
-
-The included chat interface is ready to connect to your LLM API:
-
-```typescript
-// In /routes/chat/+page.svelte
-async function sendMessage() {
-	const response = await fetch('/api/chat', {
-		method: 'POST',
-		body: JSON.stringify({ message: input })
-	});
-	// Handle response
-}
-```
-
-## ☁️ Cloudflare Integration
-
-### D1 Database
-
-```typescript
-const result = await platform.env.DB.prepare('SELECT * FROM users WHERE email = ?')
-	.bind(email)
-	.first();
-```
-
-### KV Storage
-
-```typescript
-await platform.env.KV.put('key', 'value');
-const value = await platform.env.KV.get('key');
-```
-
-### R2 Storage
-
-```typescript
-await platform.env.BUCKET.put('file.jpg', fileData);
-const file = await platform.env.BUCKET.get('file.jpg');
-```
-
-### Queues
-
-```typescript
-await platform.env.QUEUE.send({ data: 'message' });
-```
-
-## 🎯 Drag & Drop
-
-The demo page includes a fully functional kanban board with:
-
-- Desktop drag and drop
-- Mobile touch support
-- Cross-column dragging
-- Smooth animations
-
-## 📱 Mobile Support
-
-NebulaKit is mobile-first with:
-
-- Responsive breakpoints (640px, 768px, 1024px, 1280px)
-- Touch-optimized interactions
-- Mobile navigation menu
-- Optimized bundle sizes
-
-## 🛠️ Tech Stack
-
-- [SvelteKit](https://kit.svelte.dev/) - Web framework
-- [Cloudflare Workers](https://workers.cloudflare.com/) - Edge runtime
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
-- [Vite](https://vitejs.dev/) - Build tool
-
-## 📝 License
-
-MIT License - feel free to use this template for any project!
-
-## 🤝 Contributing
-
-We welcome contributions! Please read our [Contributing Guide](./CONTRIBUTING.md) first.
-
-**Key requirements:**
-
-- ✅ Test-Driven Development (TDD) - write tests first
-- ✅ 90%+ code coverage on all changes
-- ✅ Cloudflare-first architecture
-- ✅ Minimal external dependencies
-- ✅ All tests passing before PR
-
-See [.github/copilot-instructions.md](.github/copilot-instructions.md) for detailed development guidelines.
-
-## ⭐ Show Your Support
-
-If you find NebulaKit useful, please consider giving it a star on GitHub!
+MIT. See [LICENSE](./LICENSE).

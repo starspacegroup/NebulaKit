@@ -104,7 +104,12 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 		it('should include simulated connections for pretend users', async () => {
 			const mockEvent = {
 				locals: {
-					user: { id: 'dev-1', login: 'dev-user', isPretend: true, simulatedConnections: ['discord'] }
+					user: {
+						id: 'dev-1',
+						login: 'dev-user',
+						isPretend: true,
+						simulatedConnections: ['discord']
+					}
 				},
 				platform: {
 					env: {}
@@ -117,6 +122,51 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 
 			expect(data.connections).toHaveLength(1);
 			expect(data.connections[0].provider).toBe('discord');
+		});
+
+		it('treats a database result without rows as empty', async () => {
+			const { GET } = await import('../../src/routes/api/auth/connections/+server');
+			const response = await GET({
+				locals: { user: { id: 'user-1' } },
+				platform: {
+					env: {
+						DB: {
+							prepare: vi.fn(() => ({
+								bind: vi.fn(() => ({ all: vi.fn().mockResolvedValue({}) }))
+							}))
+						}
+					}
+				}
+			} as any);
+
+			await expect(response.json()).resolves.toEqual({ connections: [] });
+		});
+
+		it('does not duplicate a simulated provider already returned by D1', async () => {
+			const { GET } = await import('../../src/routes/api/auth/connections/+server');
+			const discord = { provider: 'discord', provider_account_id: '123', created_at: 'now' };
+			const response = await GET({
+				locals: {
+					user: {
+						id: 'dev-1',
+						login: 'dev',
+						isPretend: true,
+						simulatedConnections: ['discord']
+					}
+				},
+				platform: {
+					env: {
+						DB: {
+							prepare: vi.fn(() => ({
+								bind: vi.fn(() => ({ all: vi.fn().mockResolvedValue({ results: [discord] }) }))
+							}))
+						}
+					}
+				}
+			} as any);
+
+			const data = await response.json();
+			expect(data.connections).toEqual([discord]);
 		});
 	});
 
@@ -365,6 +415,49 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 			expect(response.headers.get('Set-Cookie')).toContain('session=');
 		});
 
+		it('unlinks safely when a pretend user has no simulated connection list', async () => {
+			const { DELETE } = await import('../../src/routes/api/auth/connections/+server');
+			const response = await DELETE({
+				locals: {
+					user: {
+						id: 'dev-1',
+						login: 'dev',
+						email: 'dev@example.dev',
+						isPretend: true
+					}
+				},
+				platform: { env: {} },
+				url: new URL('http://localhost/api/auth/connections'),
+				request: { json: vi.fn().mockResolvedValue({ provider: 'github' }) }
+			} as any);
+
+			await expect(response.json()).resolves.toMatchObject({ success: true, connections: [] });
+		});
+
+		it('allows a password user to unlink when the account query has no results array', async () => {
+			const run = vi.fn().mockResolvedValue({ success: true });
+			const db = {
+				prepare: vi.fn((sql: string) => ({
+					bind: vi.fn(() =>
+						sql.includes('password_hash')
+							? { first: vi.fn().mockResolvedValue({ password_hash: 'hash' }) }
+							: sql.includes('SELECT provider')
+								? { all: vi.fn().mockResolvedValue({}) }
+								: { run }
+					)
+				}))
+			};
+			const { DELETE } = await import('../../src/routes/api/auth/connections/+server');
+			const response = await DELETE({
+				locals: { user: { id: 'user-1' } },
+				platform: { env: { DB: db } },
+				request: { json: vi.fn().mockResolvedValue({ provider: 'github' }) }
+			} as any);
+
+			await expect(response.json()).resolves.toEqual({ success: true });
+			expect(run).toHaveBeenCalledOnce();
+		});
+
 		it('should return 500 when delete operation fails', async () => {
 			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -422,3 +515,4 @@ describe('Auth Connections API - Extended Branch Coverage', () => {
 		});
 	});
 });
+import '../helpers/server-response';

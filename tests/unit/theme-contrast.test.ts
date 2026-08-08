@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
 	checkContrast,
 	validateThemeContrast,
@@ -6,6 +8,16 @@ import {
 } from '../../src/lib/utils/contrast';
 
 describe('Theme Contrast Validation', () => {
+	it('uses src/app.css as the validator palette source', () => {
+		const validator = readFileSync(
+			resolve(import.meta.dirname, '../../scripts/validate-theme-contrast.cjs'),
+			'utf8'
+		);
+
+		expect(validator).toContain("readFileSync(join(__dirname, '../src/app.css')");
+		expect(validator).not.toContain("background: '#ffffff'");
+	});
+
 	describe('Light Theme', () => {
 		it('should meet WCAG AA contrast standards', () => {
 			const lightTheme: ThemeColors = {

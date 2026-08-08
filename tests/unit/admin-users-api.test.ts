@@ -82,7 +82,11 @@ describe('Admin Users API', () => {
 			mockPlatform.env.DB.all.mockResolvedValueOnce({ results: mockUsers });
 
 			const { GET } = await import('../../src/routes/api/admin/users/+server.js');
-			const response = await GET({ platform: mockPlatform, locals: mockLocals } as any);
+			const response = await GET({
+				platform: mockPlatform,
+				locals: mockLocals,
+				cookies: { get: () => '1' }
+			} as any);
 			const data = await response.json();
 
 			expect(data.users).toEqual(mockUsers);
@@ -154,6 +158,7 @@ describe('Admin Users API', () => {
 			const response = await POST({
 				platform: mockPlatform,
 				locals: mockLocals,
+				cookies: { get: () => '1' },
 				request: {
 					json: async () => ({ githubLogin: 'testuser', email: 'test@test.com' })
 				}
@@ -322,5 +327,3 @@ describe('Admin Users API', () => {
 		});
 	});
 });
-
-

@@ -4,7 +4,14 @@ import {
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
-import { decodeSessionCookie } from '$lib/utils/session';
+import { resolveOwnerStatus } from '$lib/utils/auth-identity';
+import { findValidSession } from '$lib/utils/db';
+import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
+import {
+	createSessionUser,
+	decodeDatabaseSessionCookie,
+	decodeSessionCookie
+} from '$lib/utils/session';
 import {
 	browserBucket,
 	deviceBucket,
@@ -20,54 +27,90 @@ import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
 // Auth handling hook
-const authHandler: Handle = async ({ event, resolve }) => {
+export function authHandler(input: {
+	event: any;
+	resolve: (event: any) => Response | Promise<Response>;
+}): Promise<Response>;
+export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Promise<Response> {
 	// Get session cookie
-	const sessionId = event.cookies.get('session');
+	const sessionCookie = event.cookies.get('session');
 
-	if (sessionId) {
-		const sessionData = decodeSessionCookie(sessionId);
-
-		if (sessionData) {
-			// Refresh admin flags from the database (optional - don't fail auth if
-			// DB unavailable). Reading them per-request rather than trusting the
-			// cookie means granting or revoking access takes effect immediately.
-			if (event.platform?.env?.DB) {
-				const db = event.platform.env.DB;
-				let userRecord: { is_admin: number; can_view_stats?: number } | null = null;
-				try {
-					userRecord = await db
-						.prepare('SELECT is_admin, can_view_stats FROM users WHERE id = ?')
-						.bind(sessionData.id)
-						.first<{ is_admin: number; can_view_stats: number }>();
-				} catch {
-					// `can_view_stats` arrives in migration 0009. On a database that
-					// hasn't run it yet the combined SELECT fails, which must not cost
-					// us the is_admin refresh — fall back to the narrower query.
-					try {
-						userRecord = await db
-							.prepare('SELECT is_admin FROM users WHERE id = ?')
-							.bind(sessionData.id)
-							.first<{ is_admin: number }>();
-					} catch {
-						// Database error - continue with session data from cookie
-					}
-				}
-
-				if (userRecord) {
-					sessionData.isAdmin = userRecord.is_admin === 1;
-					sessionData.canViewStats = userRecord.can_view_stats === 1;
+	if (sessionCookie) {
+		try {
+			// Self-contained identities are reserved for the explicitly enabled
+			// local development simulator. Production identity always comes from D1.
+			if (isDevAuthSimulationEnabled(event.url, event.platform)) {
+				const pretendUser = await decodeSessionCookie(
+					sessionCookie,
+					event.platform?.env?.SESSION_SECRET
+				);
+				if (pretendUser?.isPretend) {
+					event.locals.user = pretendUser;
 				}
 			}
 
-			event.locals.user = sessionData;
-		} else {
-			// Invalid session, clear cookie
+			if (!event.locals.user) {
+				const db = event.platform?.env?.DB;
+				if (!db) throw new Error('Session database unavailable');
+				const sessionToken = await decodeDatabaseSessionCookie(
+					sessionCookie,
+					event.platform?.env?.SESSION_SECRET
+				);
+				if (!sessionToken) throw new Error('Session cookie is unsigned or malformed');
+
+				const session = await findValidSession(db, sessionToken);
+				if (!session) throw new Error('Session is missing, expired, or revoked');
+
+				type AuthUserRecord = {
+					id: string;
+					email: string;
+					name: string | null;
+					github_login: string | null;
+					github_avatar_url: string | null;
+					is_admin: number;
+					can_view_stats?: number;
+				};
+				let userRecord: AuthUserRecord | null;
+				try {
+					userRecord = await db
+						.prepare(
+							`SELECT id, email, name, github_login, github_avatar_url,
+							        is_admin, can_view_stats
+							 FROM users WHERE id = ?`
+						)
+						.bind(session.user_id)
+						.first<AuthUserRecord>();
+				} catch {
+					// Migration 0009 added can_view_stats; retain compatibility with
+					// a locally created database that has not applied it yet.
+					userRecord = await db
+						.prepare(
+							`SELECT id, email, name, github_login, github_avatar_url, is_admin
+							 FROM users WHERE id = ?`
+						)
+						.bind(session.user_id)
+						.first<AuthUserRecord>();
+				}
+
+				if (!userRecord) throw new Error('Session user no longer exists');
+				const isOwner = await resolveOwnerStatus(event.platform, userRecord);
+				event.locals.user = {
+					...createSessionUser({
+						...userRecord,
+						isOwner,
+						isAdmin: userRecord.is_admin === 1 || isOwner
+					}),
+					canViewStats: userRecord.can_view_stats === 1
+				};
+			}
+		} catch {
+			delete event.locals.user;
 			event.cookies.delete('session', { path: '/' });
 		}
 	}
 
 	return resolve(event);
-};
+}
 
 const BOT_UA = /bot|crawler|spider|preview|facebookexternalhit|lighthouse|headless/i;
 const UNTRACKED_ROUTES = /^\/(admin|api|setup)(\/|$)/;

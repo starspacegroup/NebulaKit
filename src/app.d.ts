@@ -38,6 +38,8 @@ declare global {
 				GITHUB_OWNER_ID?: string;
 				DISCORD_CLIENT_ID?: string;
 				DISCORD_CLIENT_SECRET?: string;
+				SESSION_SECRET?: string;
+				SETUP_SECRET?: string;
 				DEV_AUTH_BYPASS?: string;
 				/** Shared bearer secret for /api/cron/* scheduler endpoints. */
 				CRON_SECRET?: string;

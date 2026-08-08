@@ -1,7 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const contactMocks = vi.hoisted(() => ({ createContactFormSubmission: vi.fn() }));
-const turnstileMocks = vi.hoisted(() => ({ verifyTurnstile: vi.fn(), turnstileEnabled: vi.fn() }));
+const turnstileMocks = vi.hoisted(() => ({
+	verifyTurnstile: vi.fn(),
+	getTurnstileConfig: vi.fn()
+}));
 
 vi.mock('$lib/services/contact', () => contactMocks);
 vi.mock('$lib/server/turnstile', () => turnstileMocks);
@@ -18,21 +21,35 @@ function actionEvent(fields: Record<string, string>, env: Record<string, unknown
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	turnstileMocks.turnstileEnabled.mockReturnValue(false);
+	turnstileMocks.getTurnstileConfig.mockReturnValue({ enabled: false });
 });
 
 describe('contact load', () => {
-	it('surfaces the turnstile site key when present', async () => {
+	it('surfaces the turnstile site key when both keys are present', async () => {
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: true,
+			siteKey: 'site',
+			secretKey: 'secret'
+		});
 		const data = (await load({
-			platform: { env: { TURNSTILE_SITE_KEY: 'sk' } }
+			platform: { env: { TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' } }
 		} as never)) as { turnstileSiteKey: string | null };
-		expect(data.turnstileSiteKey).toBe('sk');
+		expect(data.turnstileSiteKey).toBe('site');
 	});
 	it('is null when the site key is absent', async () => {
 		const data = (await load({ platform: { env: {} } } as never)) as {
 			turnstileSiteKey: string | null;
 		};
 		expect(data.turnstileSiteKey).toBeNull();
+	});
+	it('reports partial configuration as an operator error', async () => {
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: false,
+			error: 'Turnstile requires both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY.'
+		});
+		await expect(
+			load({ platform: { env: { TURNSTILE_SITE_KEY: 'site' } } } as never)
+		).rejects.toMatchObject({ status: 500 });
 	});
 });
 
@@ -59,7 +76,11 @@ describe('contact default action', () => {
 	});
 
 	it('fails when turnstile is enabled and verification fails', async () => {
-		turnstileMocks.turnstileEnabled.mockReturnValue(true);
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: true,
+			siteKey: 'site',
+			secretKey: 'sk'
+		});
 		turnstileMocks.verifyTurnstile.mockResolvedValue(false);
 		const res = await actions.default(
 			actionEvent(valid, { DB: {}, TURNSTILE_SECRET_KEY: 'sk' }) as never
@@ -69,7 +90,11 @@ describe('contact default action', () => {
 	});
 
 	it('creates when turnstile is enabled and verification passes', async () => {
-		turnstileMocks.turnstileEnabled.mockReturnValue(true);
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: true,
+			siteKey: 'site',
+			secretKey: 'sk'
+		});
 		turnstileMocks.verifyTurnstile.mockResolvedValue(true);
 		const res = await actions.default(
 			actionEvent(
@@ -81,5 +106,17 @@ describe('contact default action', () => {
 			) as never
 		);
 		expect(res).toMatchObject({ success: true });
+	});
+
+	it('fails safely when Turnstile is partially configured', async () => {
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: false,
+			error: 'Turnstile requires both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY.'
+		});
+		const res = await actions.default(
+			actionEvent(valid, { DB: {}, TURNSTILE_SECRET_KEY: 'sk' }) as never
+		);
+		expect(res).toMatchObject({ status: 503 });
+		expect(contactMocks.createContactFormSubmission).not.toHaveBeenCalled();
 	});
 });

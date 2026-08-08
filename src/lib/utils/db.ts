@@ -16,6 +16,26 @@ export interface Session {
 	expires_at: Date;
 }
 
+export interface CreatedSession extends Session {
+	/** Raw bearer token returned once to the browser. D1 stores only its digest. */
+	token: string;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+	let binary = '';
+	for (const byte of bytes) binary += String.fromCharCode(byte);
+	return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+export function createSessionToken(): string {
+	return bytesToBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+}
+
+export async function hashSessionToken(token: string): Promise<string> {
+	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+	return bytesToBase64Url(new Uint8Array(digest));
+}
+
 /**
  * Create a new user in the database
  */
@@ -55,28 +75,53 @@ export async function createSession(
 	db: D1Database,
 	userId: string,
 	expiresInDays: number = 30
-): Promise<Session> {
-	// Generate UUID (Cloudflare Workers supports crypto.randomUUID)
-	const id = crypto.randomUUID();
+): Promise<CreatedSession> {
+	const token = createSessionToken();
+	const id = await hashSessionToken(token);
 	const expiresAt = new Date();
 	expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-	const stmt = db.prepare(
-		'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?) RETURNING *'
-	);
-	const result = await stmt.bind(id, userId, expiresAt.toISOString()).first<Session>();
+	const stmt = db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)');
+	await stmt.bind(id, userId, expiresAt.toISOString()).run();
 
-	if (!result) {
-		throw new Error('Failed to create session');
-	}
+	return { id, token, user_id: userId, expires_at: expiresAt };
+}
 
-	return result;
+/**
+ * Create a session and revoke the previous token as one D1 transaction.
+ */
+export async function replaceSession(
+	db: D1Database,
+	userId: string,
+	previousToken: string,
+	expiresInDays: number = 30
+): Promise<CreatedSession> {
+	const token = createSessionToken();
+	const [id, previousId] = await Promise.all([
+		hashSessionToken(token),
+		hashSessionToken(previousToken)
+	]);
+	const expiresAt = new Date();
+	expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+	await db.batch([
+		db
+			.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)')
+			.bind(id, userId, expiresAt.toISOString()),
+		db.prepare('DELETE FROM sessions WHERE id = ?').bind(previousId)
+	]);
+
+	return { id, token, user_id: userId, expires_at: expiresAt };
 }
 
 /**
  * Find session by ID and check if it's valid
  */
-export async function findValidSession(db: D1Database, sessionId: string): Promise<Session | null> {
+export async function findValidSession(
+	db: D1Database,
+	sessionToken: string
+): Promise<Session | null> {
+	const sessionId = await hashSessionToken(sessionToken);
 	const stmt = db.prepare('SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")');
 	return await stmt.bind(sessionId).first<Session>();
 }
@@ -84,7 +129,8 @@ export async function findValidSession(db: D1Database, sessionId: string): Promi
 /**
  * Delete session (logout)
  */
-export async function deleteSession(db: D1Database, sessionId: string): Promise<void> {
+export async function deleteSession(db: D1Database, sessionToken: string): Promise<void> {
+	const sessionId = await hashSessionToken(sessionToken);
 	const stmt = db.prepare('DELETE FROM sessions WHERE id = ?');
 	await stmt.bind(sessionId).run();
 }

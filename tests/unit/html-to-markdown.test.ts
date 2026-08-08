@@ -83,6 +83,14 @@ describe('inline formatting', () => {
 	it('escapes characters that would change structure', () => {
 		expect(htmlToMarkdown(page('<p>a*b_c[d]</p>'))).toBe('a\\*b\\_c\\[d\\]');
 	});
+
+	it('drops empty formatting and interactive inline controls', () => {
+		expect(
+			htmlToMarkdown(
+				page('<p>a<strong></strong><em></em><del></del><code></code><button>x</button>b</p>')
+			)
+		).toBe('ab');
+	});
 });
 
 describe('lists', () => {
@@ -105,8 +113,10 @@ describe('lists', () => {
 
 describe('code blocks', () => {
 	it('strips the template indentation a <pre> inherits', () => {
-		const html = page('<pre><code>\n\t\t\t\tnpm install\n\t\t\t\tnpm test\n\t\t\t</code></pre>');
-		expect(htmlToMarkdown(html)).toBe('```\nnpm install\nnpm test\n```');
+		const html = page(
+			'<pre><code>\n\t\t\t\tbun install\n\t\t\t\tbun run test\n\t\t\t</code></pre>'
+		);
+		expect(htmlToMarkdown(html)).toBe('```\nbun install\nbun run test\n```');
 	});
 
 	it('preserves relative indentation inside the block', () => {
@@ -312,6 +322,10 @@ describe('list edge cases', () => {
 	it('skips empty items without breaking the numbering of the rest', () => {
 		expect(htmlToMarkdown(page('<ol><li>a</li><li></li><li>c</li></ol>'))).toContain('1. a');
 	});
+
+	it('ignores non-item children in a list', () => {
+		expect(htmlToMarkdown(page('<ul>loose<div>noise</div><li>kept</li></ul>'))).toBe('- kept');
+	});
 });
 
 describe('table edge cases', () => {
@@ -340,6 +354,26 @@ describe('table edge cases', () => {
 			.filter((line) => line.startsWith('|'))
 			.map((line) => line.split('|').length);
 		expect(new Set(widths).size).toBe(1);
+	});
+
+	it('ignores rows without cells', () => {
+		expect(htmlToMarkdown(page('<table><tr><div>not a cell</div></tr></table>'))).toBe('');
+	});
+});
+
+describe('sparse structural markup', () => {
+	it('drops empty headings, paragraphs, and wrappers', () => {
+		expect(htmlToMarkdown(page('<h2></h2><p></p><section><div></div></section>'))).toBe('');
+	});
+
+	it('keeps block content nested inside structural wrappers', () => {
+		expect(htmlToMarkdown(page('<section><div><p>nested</p></div></section>'))).toBe('nested');
+	});
+
+	it('preserves blank quote lines in multiline blockquotes', () => {
+		expect(htmlToMarkdown(page('<blockquote><p>one</p><p>two</p></blockquote>'))).toBe(
+			'> one\n>\n> two'
+		);
 	});
 });
 

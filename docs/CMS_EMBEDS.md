@@ -85,6 +85,9 @@ write-time sanitization.
 
 ## Typed props
 
+An embed whose component is not registered **renders nothing** rather than
+breaking the page. The surrounding content still renders.
+
 Each prop field in the schema (`src/lib/cms/embeds/props-schema.ts`) has a
 `type`:
 
@@ -114,8 +117,18 @@ types. Embeds with **no** `props` schema fall back to the raw-JSON props editor.
 
 ## Security notes
 
+CMS create and update operations sanitize fields declared as `richtext` before
+persistence. `CmsContent` applies the same allowlist once at the rendering
+boundary before its only `{@html}` injection, which protects legacy or imported
+rows that predate write sanitization. Plain text fields remain literal strings
+and are rendered through normal Svelte interpolation.
+
 - Richtext is sanitized **on write** (`sanitizeRichtextFields`, POST + PUT) with
   `xss`, and rendered with `{@html}` on read. Writes are owner/admin-gated.
 - Unknown embed names render as nothing rather than breaking the page.
 - The sanitizer's SVG subset is presentational only — no `script`,
   `foreignObject`, `use`, or `href`/`data:` URLs.
+- Embed names and props are validated and bounded before placeholders are stored
+  or rendered.
+- Keep all richtext rendering behind `CmsContent`; a new bare `{@html}` would
+  bypass both the embed renderer and the defense-in-depth read boundary.

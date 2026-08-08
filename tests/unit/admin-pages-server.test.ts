@@ -46,7 +46,6 @@ describe('Admin AI Keys Page Server', () => {
 		});
 
 		const result = await load({ fetch: mockFetch });
-
 		expect(result.keys).toEqual([]);
 	});
 
@@ -55,7 +54,6 @@ describe('Admin AI Keys Page Server', () => {
 		mockFetch.mockRejectedValue(new Error('Network error'));
 
 		const result = await load({ fetch: mockFetch });
-
 		expect(result.keys).toEqual([]);
 		expect(consoleSpy).toHaveBeenCalledWith('Failed to load AI keys:', expect.any(Error));
 		consoleSpy.mockRestore();
@@ -103,23 +101,20 @@ describe('Admin Auth Keys Page Server', () => {
 		expect(mockFetch).toHaveBeenCalledWith('/api/admin/auth-keys');
 	});
 
-	it('should return empty keys when fetch fails', async () => {
+	it('should fail closed when fetch returns an error', async () => {
 		mockFetch.mockResolvedValue({
-			ok: false
+			ok: false,
+			status: 503
 		});
 
-		const result = await load({ fetch: mockFetch });
-
-		expect(result.keys).toEqual([]);
+		await expect(load({ fetch: mockFetch })).rejects.toMatchObject({ status: 503 });
 	});
 
-	it('should return empty keys when fetch throws error', async () => {
+	it('should fail closed when fetch throws an error', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		mockFetch.mockRejectedValue(new Error('Network error'));
 
-		const result = await load({ fetch: mockFetch });
-
-		expect(result.keys).toEqual([]);
+		await expect(load({ fetch: mockFetch })).rejects.toMatchObject({ status: 500 });
 		expect(consoleSpy).toHaveBeenCalledWith('Failed to load auth keys:', expect.any(Error));
 		consoleSpy.mockRestore();
 	});

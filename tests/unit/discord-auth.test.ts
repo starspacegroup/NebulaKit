@@ -1,20 +1,36 @@
+import { webcrypto } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The OAuth routes now round-trip a `state` value through an HttpOnly cookie:
-// the init route sets it, the callback requires it back. Tests therefore need
-// a cookie jar whose state lookups answer, and callback URLs carrying a
-// matching `state` param.
-const TEST_OAUTH_STATE = 'test-oauth-state';
-function makeOAuthCookies(sessionValue: unknown = null) {
+vi.mock('$lib/utils/oauth-state', async () => {
+	const actual = await vi.importActual<typeof import('../../src/lib/utils/oauth-state')>(
+		'../../src/lib/utils/oauth-state'
+	);
 	return {
-		get: vi.fn((name: string) =>
-			name.startsWith('oauth_state_') ? TEST_OAUTH_STATE : sessionValue
-		),
-		set: vi.fn(),
-		delete: vi.fn()
+		...actual,
+		createOAuthTransaction: vi.fn(async () => ({
+			state: 'legacy-valid-state',
+			cookie: 'legacy-signed-state-cookie'
+		})),
+		consumeOAuthState: vi.fn(async (provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		})),
+		verifyOAuthTransaction: vi.fn(async (_db: unknown, provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		})),
+		consumeOAuthTransaction: vi.fn(async (_db: unknown, provider: 'github' | 'discord') => ({
+			provider,
+			state: 'legacy-valid-state',
+			intent: 'login',
+			issuedAt: Date.now()
+		}))
 	};
-}
-
+});
 
 /**
  * Tests for Discord OAuth Authentication
@@ -40,6 +56,7 @@ describe('Discord OAuth - Initial Redirect', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
+		vi.stubGlobal('crypto', webcrypto as Crypto);
 	});
 
 	it('should redirect to setup if Discord OAuth is not configured', async () => {
@@ -58,8 +75,7 @@ describe('Discord OAuth - Initial Redirect', () => {
 		await expect(
 			GET({
 				url: mockUrl,
-				cookies: makeOAuthCookies(),
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any)
 		).rejects.toMatchObject({ status: 302, location: '/setup?error=oauth_not_configured' });
 	});
@@ -71,6 +87,8 @@ describe('Discord OAuth - Initial Redirect', () => {
 		const mockPlatform = {
 			env: {
 				DISCORD_CLIENT_ID: 'test-discord-client-id',
+				SESSION_SECRET: 'test-session-secret',
+				DB: {},
 				KV: null
 			}
 		};
@@ -78,8 +96,9 @@ describe('Discord OAuth - Initial Redirect', () => {
 		await expect(
 			GET({
 				url: mockUrl,
-				cookies: makeOAuthCookies(),
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform),
+				cookies: { set: vi.fn() },
+				locals: {}
 			} as any)
 		).rejects.toMatchObject({
 			status: 302
@@ -98,6 +117,8 @@ describe('Discord OAuth - Initial Redirect', () => {
 		const mockPlatform = {
 			env: {
 				DISCORD_CLIENT_ID: undefined,
+				SESSION_SECRET: 'test-session-secret',
+				DB: {},
 				KV: {
 					get: vi.fn().mockResolvedValue(JSON.stringify({ clientId: 'kv-discord-client-id' }))
 				}
@@ -107,8 +128,9 @@ describe('Discord OAuth - Initial Redirect', () => {
 		await expect(
 			GET({
 				url: mockUrl,
-				cookies: makeOAuthCookies(),
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform),
+				cookies: { set: vi.fn() },
+				locals: {}
 			} as any)
 		).rejects.toMatchObject({
 			status: 302
@@ -125,15 +147,18 @@ describe('Discord OAuth - Initial Redirect', () => {
 		const mockUrl = new URL('http://localhost/api/auth/discord');
 		const mockPlatform = {
 			env: {
-				DISCORD_CLIENT_ID: 'test-discord-client-id'
+				DISCORD_CLIENT_ID: 'test-discord-client-id',
+				SESSION_SECRET: 'test-session-secret',
+				DB: {}
 			}
 		};
 
 		await expect(
 			GET({
 				url: mockUrl,
-				cookies: makeOAuthCookies(),
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform),
+				cookies: { set: vi.fn() },
+				locals: {}
 			} as any)
 		).rejects.toMatchObject({ status: 302 });
 
@@ -146,6 +171,7 @@ describe('Discord OAuth - Callback', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
+		vi.stubGlobal('crypto', webcrypto as Crypto);
 		vi.stubGlobal('fetch', vi.fn());
 	});
 
@@ -153,13 +179,16 @@ describe('Discord OAuth - Callback', () => {
 		const { GET } = await import('../../src/routes/api/auth/discord/callback/+server');
 
 		const mockUrl = new URL('http://localhost/api/auth/discord/callback');
-		const mockCookies = makeOAuthCookies();
+		const mockCookies = {
+			set: vi.fn(),
+			get: vi.fn()
+		};
 
 		await expect(
 			GET({
 				url: mockUrl,
 				cookies: mockCookies,
-				platform: {}
+				platform: withDatabase({})
 			} as any)
 		).rejects.toMatchObject({ status: 302, location: '/auth/login?error=no_code' });
 	});
@@ -167,8 +196,11 @@ describe('Discord OAuth - Callback', () => {
 	it('should redirect to login with error when Discord OAuth not configured', async () => {
 		const { GET } = await import('../../src/routes/api/auth/discord/callback/+server');
 
-		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state');
-		const mockCookies = makeOAuthCookies();
+		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=test-code');
+		const mockCookies = {
+			set: vi.fn(),
+			get: vi.fn()
+		};
 		const mockPlatform = {
 			env: {
 				DISCORD_CLIENT_ID: undefined,
@@ -183,7 +215,7 @@ describe('Discord OAuth - Callback', () => {
 			GET({
 				url: mockUrl,
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any)
 		).rejects.toMatchObject({ status: 302, location: '/auth/login?error=not_configured' });
 	});
@@ -209,8 +241,11 @@ describe('Discord OAuth - Callback', () => {
 				json: () => Promise.resolve(mockDiscordUser)
 			} as any);
 
-		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state');
-		const mockCookies = makeOAuthCookies();
+		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=test-code');
+		const mockCookies = {
+			set: vi.fn(),
+			get: vi.fn()
+		};
 		const mockPlatform = {
 			env: {
 				DISCORD_CLIENT_ID: 'test-client-id',
@@ -233,7 +268,7 @@ describe('Discord OAuth - Callback', () => {
 		const response = await GET({
 			url: mockUrl,
 			cookies: mockCookies,
-			platform: mockPlatform
+			platform: withDatabase(mockPlatform)
 		} as any);
 
 		expect(response.status).toBe(302);
@@ -250,8 +285,11 @@ describe('Discord OAuth - Callback', () => {
 			text: () => Promise.resolve('Bad Request')
 		} as any);
 
-		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=invalid-code&state=test-oauth-state');
-		const mockCookies = makeOAuthCookies();
+		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=invalid-code');
+		const mockCookies = {
+			set: vi.fn(),
+			get: vi.fn()
+		};
 		const mockPlatform = {
 			env: {
 				DISCORD_CLIENT_ID: 'test-client-id',
@@ -263,7 +301,7 @@ describe('Discord OAuth - Callback', () => {
 			GET({
 				url: mockUrl,
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any)
 		).rejects.toMatchObject({ status: 302, location: '/auth/login?error=token_exchange_failed' });
 	});
@@ -282,8 +320,11 @@ describe('Discord OAuth - Callback', () => {
 				text: () => Promise.resolve('Unauthorized')
 			} as any);
 
-		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=test-code&state=test-oauth-state');
-		const mockCookies = makeOAuthCookies();
+		const mockUrl = new URL('http://localhost/api/auth/discord/callback?code=test-code');
+		const mockCookies = {
+			set: vi.fn(),
+			get: vi.fn()
+		};
 		const mockPlatform = {
 			env: {
 				DISCORD_CLIENT_ID: 'test-client-id',
@@ -295,8 +336,58 @@ describe('Discord OAuth - Callback', () => {
 			GET({
 				url: mockUrl,
 				cookies: mockCookies,
-				platform: mockPlatform
+				platform: withDatabase(mockPlatform)
 			} as any)
 		).rejects.toMatchObject({ status: 302, location: '/auth/login?error=user_fetch_failed' });
 	});
 });
+
+function withDatabase<T extends { env?: Record<string, unknown> }>(platform: T): T {
+	const db = (platform.env?.DB as ReturnType<typeof database>) ?? database();
+	return {
+		...platform,
+		env: {
+			...platform.env,
+			DB: callbackDatabase(db)
+		}
+	} as T;
+}
+
+function callbackDatabase(db: ReturnType<typeof database>) {
+	return {
+		...db,
+		prepare: vi.fn((sql: string) => {
+			if (
+				sql.trim() !==
+				'SELECT id, email, name, github_login, github_avatar_url, is_admin FROM users WHERE id = ?'
+			) {
+				return (db.prepare as (sql: string) => ReturnType<typeof db.prepare>)(sql);
+			}
+			return {
+				bind: vi.fn((userId: string) => ({
+					first: vi.fn().mockResolvedValue({
+						id: userId,
+						email: `${userId}@example.com`,
+						name: 'Discord User',
+						github_login: null,
+						github_avatar_url: null,
+						is_admin: 0
+					})
+				}))
+			};
+		})
+	};
+}
+
+function database() {
+	return {
+		prepare: vi.fn(() => ({
+			bind: vi.fn(() => ({
+				first: vi.fn().mockResolvedValue(null),
+				all: vi.fn().mockResolvedValue({ results: [] }),
+				run: vi.fn().mockResolvedValue({ success: true })
+			}))
+		}))
+	};
+}
+import '../helpers/server-response';

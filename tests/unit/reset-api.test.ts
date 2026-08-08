@@ -1,16 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// These endpoints are admin/owner-gated now, so tests drive them as the owner.
-const OWNER_LOCALS = {
-	user: {
-		id: '72961',
-		login: 'davis9001',
-		email: 'owner@example.com',
-		isOwner: true,
-		isAdmin: true
-	}
-};
+const ownerLocals = { user: { id: 'owner-1', isOwner: true, isAdmin: true } };
 
+function database() {
+	return {
+		prepare: vi.fn(() => ({ run: vi.fn().mockResolvedValue({ success: true }) }))
+	};
+}
 
 /**
  * Tests for Reset API
@@ -46,9 +42,9 @@ describe('Reset API', () => {
 
 			await expect(
 				POST({
-					locals: OWNER_LOCALS,
 					platform: { env: {} },
-					cookies: mockCookies
+					cookies: mockCookies,
+					locals: ownerLocals
 				} as any)
 			).rejects.toMatchObject({ status: 500 });
 		});
@@ -63,9 +59,9 @@ describe('Reset API', () => {
 
 			await expect(
 				POST({
-					locals: OWNER_LOCALS,
-					platform: { env: { KV: { get: mockGet } } },
-					cookies: mockCookies
+					platform: { env: { KV: { get: mockGet }, DB: database() } },
+					cookies: mockCookies,
+					locals: ownerLocals
 				} as any)
 			).rejects.toMatchObject({ status: 403 });
 
@@ -80,16 +76,17 @@ describe('Reset API', () => {
 			const mockCookiesDelete = vi.fn();
 
 			const response = await POST({
-				locals: OWNER_LOCALS,
 				platform: {
 					env: {
 						KV: {
 							get: mockGet,
 							delete: mockDelete
-						}
+						},
+						DB: database()
 					}
 				},
-				cookies: { delete: mockCookiesDelete }
+				cookies: { delete: mockCookiesDelete },
+				locals: ownerLocals
 			} as any);
 
 			const data = await response.json();
@@ -98,6 +95,7 @@ describe('Reset API', () => {
 
 			// Should delete all setup-related KV keys
 			expect(mockDelete).toHaveBeenCalledWith('auth_config:github');
+			expect(mockDelete).toHaveBeenCalledWith('auth_config:discord');
 			expect(mockDelete).toHaveBeenCalledWith('github_owner_id');
 			expect(mockDelete).toHaveBeenCalledWith('github_owner_username');
 			expect(mockDelete).toHaveBeenCalledWith('admin_first_login_completed');
@@ -106,7 +104,7 @@ describe('Reset API', () => {
 			expect(mockCookiesDelete).toHaveBeenCalledWith('session', { path: '/' });
 		});
 
-		it('should handle individual KV delete failures gracefully', async () => {
+		it('should fail closed when any KV deletion fails', async () => {
 			const { POST } = await import('../../src/routes/api/reset/+server');
 
 			const mockGet = vi.fn().mockResolvedValue(null);
@@ -118,22 +116,21 @@ describe('Reset API', () => {
 				.mockResolvedValue(undefined);
 			const mockCookiesDelete = vi.fn();
 
-			const response = await POST({
-				locals: OWNER_LOCALS,
+			const response = POST({
 				platform: {
 					env: {
 						KV: {
 							get: mockGet,
 							delete: mockDelete
-						}
+						},
+						DB: database()
 					}
 				},
-				cookies: { delete: mockCookiesDelete }
+				cookies: { delete: mockCookiesDelete },
+				locals: ownerLocals
 			} as any);
 
-			const data = await response.json();
-			// Should still succeed overall
-			expect(data.success).toBe(true);
+			await expect(response).rejects.toMatchObject({ status: 500 });
 		});
 
 		it('should handle unexpected errors', async () => {
@@ -146,9 +143,9 @@ describe('Reset API', () => {
 
 			await expect(
 				POST({
-					locals: OWNER_LOCALS,
-					platform: { env: { KV: { get: mockGet } } },
-					cookies: mockCookies
+					platform: { env: { KV: { get: mockGet }, DB: database() } },
+					cookies: mockCookies,
+					locals: ownerLocals
 				} as any)
 			).rejects.toMatchObject({ status: 500 });
 		});
@@ -165,11 +162,12 @@ describe('Reset API', () => {
 
 			await expect(
 				POST({
-					locals: OWNER_LOCALS,
-					platform: { env: { KV: { get: mockGet } } },
-					cookies: mockCookies
+					platform: { env: { KV: { get: mockGet }, DB: database() } },
+					cookies: mockCookies,
+					locals: ownerLocals
 				} as any)
 			).rejects.toMatchObject({ status: 404 });
 		});
 	});
 });
+import '../helpers/server-response';

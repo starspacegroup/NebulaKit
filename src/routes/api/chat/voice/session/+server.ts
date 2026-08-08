@@ -24,14 +24,13 @@ export async function POST({ request, platform, locals }: RequestEvent) {
 			throw error(403, 'Voice chat is not enabled');
 		}
 
-		// Use configured voice model or default
-		const voiceModel = aiKey.voiceModel || 'gpt-4o-realtime-preview-2024-12-17';
-		console.log('Creating realtime session with model:', voiceModel);
+		// Admin configuration stores an ordered array; retain the singular field only
+		// for keys already persisted by older releases.
+		const voiceModel =
+			aiKey.voiceModels?.[0] || aiKey.voiceModel || 'gpt-4o-realtime-preview-2024-12-17';
 
 		// Create realtime session
 		const session = await createRealtimeSession(aiKey.apiKey, voiceModel);
-		console.log('Realtime session created, token length:', session.token?.length);
-		console.log('Token prefix:', session.token?.substring(0, 30) + '...');
 
 		return json({
 			token: session.token,

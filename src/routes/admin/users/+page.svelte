@@ -295,14 +295,16 @@
 									<div class="actions">
 										<button
 											class="btn-icon"
-											class:disabled={user.id === data.user.id}
-											disabled={user.id === data.user.id}
+											class:disabled={!data.user.isOwner || user.id === data.user.id}
+											disabled={!data.user.isOwner || user.id === data.user.id}
 											on:click={() => toggleAdmin(user.id, user.is_admin)}
-											title={user.id === data.user.id
-												? 'Cannot modify your own role'
-												: user.is_admin
-													? 'Demote from admin'
-													: 'Promote to admin'}
+											title={!data.user.isOwner
+												? 'Owner access required'
+												: user.id === data.user.id
+													? 'Cannot modify your own role'
+													: user.is_admin
+														? 'Demote from admin'
+														: 'Promote to admin'}
 											aria-label={user.is_admin ? 'Demote from admin' : 'Promote to admin'}
 										>
 											{#if user.is_admin}
@@ -331,12 +333,14 @@
 										</button>
 										<button
 											class="btn-icon btn-danger"
-											class:disabled={user.id === data.user.id}
-											disabled={user.id === data.user.id}
+											class:disabled={!data.user.isOwner || user.id === data.user.id}
+											disabled={!data.user.isOwner || user.id === data.user.id}
 											on:click={() => deleteUser(user.id, user.name || user.email)}
-											title={user.id === data.user.id
-												? 'Cannot delete your own account'
-												: 'Delete user'}
+											title={!data.user.isOwner
+												? 'Owner access required'
+												: user.id === data.user.id
+													? 'Cannot delete your own account'
+													: 'Delete user'}
 											aria-label="Delete user"
 										>
 											<svg
@@ -369,7 +373,7 @@
 	<div class="modal-overlay" on:click={closeInviteModal}>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<div class="modal" on:click|stopPropagation role="dialog" aria-modal="true">
+		<div class="modal" on:click|stopPropagation role="dialog" aria-modal="true" tabindex="-1">
 			<div class="modal-header">
 				<h2>Invite GitHub User</h2>
 				<button aria-label="Close" class="btn-close" on:click={closeInviteModal}>

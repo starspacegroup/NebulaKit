@@ -6,7 +6,7 @@
  * HONESTY RULE (AGENTS.md §8): this document says plainly that the site is an
  * OAuth *client* (it signs users in with GitHub/Discord), not an authorization
  * server, and that there is no automated agent-credential issuance. That is why
- * this template does NOT publish /.well-known/oauth-authorization-server or
+ * NebulaKit does NOT publish /.well-known/oauth-authorization-server or
  * /.well-known/oauth-protected-resource: those documents would advertise token
  * endpoints that do not exist, and an agent following them would fail in ways
  * that look like an outage.
@@ -52,7 +52,9 @@ owner (see "Contact" below).
 ## How human sign-in works
 
 Authenticated areas (the admin console, \`/profile\`, the CMS and chat APIs) are
-protected by a **session cookie**, established by a human logging in.
+protected by a **signed opaque session cookie**, established by a human logging
+in. The browser holds only the raw opaque token; D1 stores its digest, expiry,
+identity, and current roles so sessions can be revoked server-side.
 
 | Property   | Value                                       |
 | ---------- | ------------------------------------------- |
@@ -84,9 +86,10 @@ header. Sending one has no effect.
 ## In-browser tools (WebMCP)
 
 When a user visits this site with a WebMCP-capable agent, the page registers
-tools via \`navigator.modelContext\` for searching and reading content. Those
-tools inherit the user's existing session and permissions — they grant no
-additional authority.
+tools via \`navigator.modelContext\` for searching, reading, and visible
+same-origin navigation. Page reads are restricted to the public sitemap
+allowlist and omit browser credentials, so an authenticated browser cannot use
+WebMCP to expose private or admin content.
 
 ## Rate limits and etiquette
 

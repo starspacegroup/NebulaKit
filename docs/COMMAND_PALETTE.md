@@ -135,7 +135,7 @@ The Command Palette follows WCAG AA accessibility standards:
 Comprehensive test coverage (18 tests):
 
 ```bash
-npm test -- src/lib/components/CommandPalette.test.ts
+bunx vitest run src/lib/components/CommandPalette.test.ts
 ```
 
 Tests cover:

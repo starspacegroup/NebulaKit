@@ -1,3 +1,4 @@
+import { webcrypto } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRedirect = vi.fn((status: number, location: string) => {
@@ -12,7 +13,9 @@ vi.mock('@sveltejs/kit', () => ({
 }));
 
 describe('Dev auth simulation endpoint', () => {
-	function decodeSessionFromCookie(setCookieHeader: string): Record<string, unknown> {
+	async function decodeSessionFromCookie(
+		setCookieHeader: string
+	): Promise<Record<string, unknown>> {
 		const sessionPart = setCookieHeader
 			.split(';')
 			.map((part) => part.trim())
@@ -22,18 +25,16 @@ describe('Dev auth simulation endpoint', () => {
 			throw new Error('Session cookie not found');
 		}
 
-		const encoded = sessionPart.replace('session=', '');
-		let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-		while (base64.length % 4) {
-			base64 += '=';
-		}
-
-		return JSON.parse(atob(base64)) as Record<string, unknown>;
+		const { decodeSessionCookie } = await import('../../src/lib/utils/session');
+		const decoded = await decodeSessionCookie(sessionPart.replace('session=', ''), 'test-secret');
+		if (!decoded) throw new Error('Session cookie is invalid');
+		return decoded as unknown as Record<string, unknown>;
 	}
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
+		vi.stubGlobal('crypto', webcrypto as Crypto);
 	});
 
 	it('creates a simulated GitHub session when bypass is enabled', async () => {
@@ -43,7 +44,8 @@ describe('Dev auth simulation endpoint', () => {
 			url: new URL('http://localhost/api/auth/dev-simulate?provider=github'),
 			platform: {
 				env: {
-					DEV_AUTH_BYPASS: 'true'
+					DEV_AUTH_BYPASS: 'true',
+					SESSION_SECRET: 'test-secret'
 				}
 			}
 		} as any);
@@ -53,7 +55,7 @@ describe('Dev auth simulation endpoint', () => {
 		const cookieHeader = response.headers.get('Set-Cookie') || '';
 		expect(cookieHeader).toContain('session=');
 		expect(cookieHeader).toContain('HttpOnly');
-		const session = decodeSessionFromCookie(cookieHeader);
+		const session = await decodeSessionFromCookie(cookieHeader);
 		expect(session.isPretend).toBe(true);
 		expect(session.simulatedConnections).toEqual(['github']);
 	});
@@ -65,7 +67,8 @@ describe('Dev auth simulation endpoint', () => {
 			url: new URL('http://localhost/api/auth/dev-simulate?provider=discord'),
 			platform: {
 				env: {
-					DEV_AUTH_BYPASS: 'true'
+					DEV_AUTH_BYPASS: 'true',
+					SESSION_SECRET: 'test-secret'
 				}
 			}
 		} as any);
@@ -82,7 +85,8 @@ describe('Dev auth simulation endpoint', () => {
 			url: new URL('http://localhost/api/auth/dev-simulate?provider=github&role=admin'),
 			platform: {
 				env: {
-					DEV_AUTH_BYPASS: 'true'
+					DEV_AUTH_BYPASS: 'true',
+					SESSION_SECRET: 'test-secret'
 				}
 			}
 		} as any);
@@ -90,7 +94,7 @@ describe('Dev auth simulation endpoint', () => {
 		expect(response.status).toBe(302);
 		expect(response.headers.get('Location')).toBe('http://localhost/admin');
 		const cookieHeader = response.headers.get('Set-Cookie') || '';
-		const session = decodeSessionFromCookie(cookieHeader);
+		const session = await decodeSessionFromCookie(cookieHeader);
 		expect(session.isAdmin).toBe(true);
 		expect(session.isOwner).toBe(false);
 		expect(session.isPretend).toBe(true);
@@ -103,7 +107,8 @@ describe('Dev auth simulation endpoint', () => {
 			url: new URL('http://localhost/api/auth/dev-simulate?provider=discord&role=superadmin'),
 			platform: {
 				env: {
-					DEV_AUTH_BYPASS: 'true'
+					DEV_AUTH_BYPASS: 'true',
+					SESSION_SECRET: 'test-secret'
 				}
 			}
 		} as any);
@@ -111,7 +116,7 @@ describe('Dev auth simulation endpoint', () => {
 		expect(response.status).toBe(302);
 		expect(response.headers.get('Location')).toBe('http://localhost/admin');
 		const cookieHeader = response.headers.get('Set-Cookie') || '';
-		const session = decodeSessionFromCookie(cookieHeader);
+		const session = await decodeSessionFromCookie(cookieHeader);
 		expect(session.isAdmin).toBe(true);
 		expect(session.isOwner).toBe(true);
 		expect(session.isPretend).toBe(true);
@@ -160,16 +165,15 @@ describe('Dev auth simulation endpoint', () => {
 			simulatedConnections: ['github']
 		};
 
-		const encodedSession = btoa(JSON.stringify(existingSession))
-			.replace(/\+/g, '-')
-			.replace(/\//g, '_')
-			.replace(/=+$/, '');
+		const { signValue } = await import('../../src/lib/utils/session');
+		const encodedSession = await signValue(existingSession, 'test-secret');
 
 		const response = await GET({
 			url: new URL('http://localhost/api/auth/dev-simulate?provider=discord&mode=link'),
 			platform: {
 				env: {
-					DEV_AUTH_BYPASS: 'true'
+					DEV_AUTH_BYPASS: 'true',
+					SESSION_SECRET: 'test-secret'
 				}
 			},
 			cookies: {
@@ -180,8 +184,9 @@ describe('Dev auth simulation endpoint', () => {
 		expect(response.status).toBe(302);
 		expect(response.headers.get('Location')).toBe('http://localhost/profile?linked=discord');
 
-		const updatedSession = decodeSessionFromCookie(response.headers.get('Set-Cookie') || '');
+		const updatedSession = await decodeSessionFromCookie(response.headers.get('Set-Cookie') || '');
 		expect(updatedSession.id).toBe(existingSession.id);
 		expect(updatedSession.simulatedConnections).toEqual(['github', 'discord']);
 	});
 });
+import '../helpers/server-response';

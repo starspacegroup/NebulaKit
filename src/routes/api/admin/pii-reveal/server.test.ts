@@ -32,13 +32,13 @@ describe('POST /api/admin/pii-reveal', () => {
 		expect(cookies.set).toHaveBeenCalledWith(
 			'pii_reveal',
 			'1',
-			expect.objectContaining({ path: '/admin', httpOnly: true, sameSite: 'strict' })
+			expect.objectContaining({ path: '/', httpOnly: true, sameSite: 'strict' })
 		);
 	});
 
 	it('deletes the cookie for an owner opting out', async () => {
 		const { event, cookies } = makeEvent({ user: { isOwner: true }, reveal: false });
 		await POST(event as never);
-		expect(cookies.delete).toHaveBeenCalledWith('pii_reveal', { path: '/admin' });
+		expect(cookies.delete).toHaveBeenCalledWith('pii_reveal', { path: '/' });
 	});
 });
