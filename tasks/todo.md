@@ -123,8 +123,10 @@ Full-gate evidence recorded on 2026-08-08 (second session), after the doc and sc
 - `bun run test:coverage` passed: 97.86% statements, 95.13% branches, 97.96% functions, 98.42%
   lines — all above the 95 floor, with branches the narrowest margin at 0.13 points.
 - `bun run check` reported 0 errors and 0 warnings across 1,634 files.
-- Not re-run this session, so still resting on the prior entries above: E2E, contrast validation,
-  local D1 migration, and `build:ci`. No change here touched routes, themes, schema, or bindings.
+- `bun run validate:contrast` passed both themes against WCAG AA, and `bun run test:e2e` passed 8/8
+  Chromium tests in 41.6s after `db:migrate:local` reported no pending migrations.
+- Still resting on the prior entries above, and not re-run: `build:ci`. Unchanged in substance —
+  nothing this session touched routes, themes, schema, or bindings.
 
 ## Explicitly outside this worktree
 
