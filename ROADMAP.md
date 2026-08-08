@@ -1,22 +1,21 @@
 # NebulaKit Roadmap
 
 Planned additions to the kit, sourced primarily from features built downstream in
-NebulaKit-derived projects that proved generalizable. Each entry names the source
-project and the paths to lift from, so implementation starts from working code.
+NebulaKit-derived projects that proved generalizable. Each entry identifies the source
+and the paths to lift from, so implementation starts from working code.
 
 Downstream projects surveyed (2026-07-06):
 
-| Project       | Location                                                | Divergence from kit                                             |
-| ------------- | ------------------------------------------------------- | --------------------------------------------------------------- |
-| Nabu          | `~/_Projects/StarSpace/Nabu/nabu`                       | Large — media/AI-generation platform                            |
-| AgapeVerse    | `~/_Projects/AgapeVerse/agapeverse-nebulakit`           | Large — payments/credits consumer app                           |
-| Atlas         | `~/_Projects/StarSpace/Atlas/Atlas`                     | Near-stock                                                      |
-| Arizona       | `~/_Projects/davis9001/Arizona/arizona-nebulakit`       | Near-stock (removed the simulated-SSO "PRETEND" providers)      |
-| davis9001.dev | `~/_Projects/davis9001/Website/davis9001.dev-sveltekit` | Large — CMS v2 (WYSIWYG + Svelte embeds + R2 media), task board |
+| Project                               | Divergence from kit                                             |
+| ------------------------------------- | --------------------------------------------------------------- |
+| Nabu                                  | Large — media/AI-generation platform                            |
+| Payments/credits downstream app       | Large — consumer app with Stripe checkout and a credits ledger  |
+| CMS-heavy downstream site             | Large — CMS v2 (WYSIWYG + Svelte embeds + R2 media), task board |
+| Two near-stock downstream deployments | Near-stock (one removed the simulated-SSO "PRETEND" providers)  |
 
 ## Upstream candidates — new modules
 
-### Payments: Stripe integration + PPP region pricing (from AgapeVerse)
+### Payments: Stripe integration + PPP region pricing (from the payments/credits app)
 
 A complete, kit-shaped Stripe module: checkout, product/price/discount management from
 the admin area, appearance matching the kit theme system, and — as a **first-class
@@ -31,7 +30,7 @@ concept, not a bolt-on — purchasing-power-parity (PPP) region pricing**. Full 
   `currency_options`; refuses live keys without `--live`), `src/lib/utils/fx.ts`
   (admin-preview USD reference). Key architecture: PPP rides on `currency_options` of
   **existing** prices — no new price IDs, no migration, entitlement/webhook logic
-  untouched. The AgapeVerse amount table is HeartPoints-specific; generalize it into
+  untouched. The downstream amount table is product-specific; generalize it into
   app-defined price roles (see the design doc).
 - Admin UI: `src/routes/admin/stripe/` (products, discounts) and
   `src/routes/api/admin/stripe-*` (config, bootstrap, products, prices, coupons,
@@ -39,16 +38,16 @@ concept, not a bolt-on — purchasing-power-parity (PPP) region pricing**. Full 
 - The `stripe-bootstrap` endpoint (idempotent first-time product/price setup) fits the
   kit's zero-env-setup philosophy (`docs/ZERO_ENV_SETUP.md`).
 
-### Credits / points ledger (from AgapeVerse)
+### Credits / points ledger (from the payments/credits app)
 
-AgapeVerse's "heartpoints" is a general credits system under a domain name: balance,
-append-only transaction ledger, purchase via Stripe, weekly allowance cron, and an admin
-transactions view. Upstream as a generic **credits** module.
+The downstream implementation is a general credits system wearing a product-specific
+name: balance, append-only transaction ledger, purchase via Stripe, weekly allowance
+cron, and an admin transactions view. Upstream as a generic **credits** module.
 
-- `src/lib/utils/heartpoints.ts`, `heartpoint-ledger.ts`, `src/lib/utils/db/heartpoints.ts`
-- `src/routes/api/heartpoint-transactions/`, `src/routes/admin/heartpoint-transactions/`
-- `src/routes/api/cron/weekly-heartpoint-allowance/`
-- Pairs with the Stripe module (`account/buy-heartpoints` flow).
+- A balance module, an append-only ledger module, and their D1 query layer under `src/lib/utils/`.
+- Paired API and admin transaction routes under `src/routes/api/` and `src/routes/admin/`.
+- A weekly-allowance cron route under `src/routes/api/cron/`.
+- Pairs with the Stripe module through a credit-purchase flow under `account/`.
 
 ### Media library on R2 (from Nabu)
 
@@ -60,7 +59,7 @@ binding — the missing "user uploads" story.
 - `src/lib/services/file-archive.ts`, `media-history.ts`, `src/lib/utils/attachments.ts`
 - `src/routes/api/archive/` (+ `file`, `ai-save`)
 
-### CMS v2: WYSIWYG richtext + Svelte component embeds (from davis9001.dev)
+### CMS v2: WYSIWYG richtext + Svelte component embeds (from the CMS-heavy downstream site)
 
 > **Status: ✅ shipped (2026-07-12), with improvements.** The TipTap WYSIWYG,
 > Svelte embed system, and R2 media pipeline are all in the kit and tested.
@@ -70,18 +69,18 @@ binding — the missing "user uploads" story.
 > `import.meta.glob`), and **SSR embeds** (eager component registry). Write-path
 > hardening (`sanitizeRichtextFields`, using `xss`) runs on every create/update.
 > A brand-neutral **Callout** reference embed ships as a live example (the
-> davis9001 Dirac physics embeds were intentionally left downstream). See
+> CMS-heavy site's Dirac physics embeds were intentionally left downstream). See
 > [docs/CMS_EMBEDS.md](./docs/CMS_EMBEDS.md). **Remaining:** the opt-in
 > markdown-blog-import recipe (item 4 below) is not yet ported.
 
-**Goal: the kit's CMS grows up.** davis9001.dev took the registry-driven CMS and made
+**Goal: the kit's CMS grows up.** That site took the registry-driven CMS and made
 authoring actually pleasant — a real WYSIWYG editor, live Svelte components embedded
 inside richtext content, and an R2 image pipeline wired into the editor. Bring the
 whole system into the kit, and improve it where the downstream version cut corners.
 This is the flagship CMS upgrade; land it before the smaller CMS backports below.
 
-What downstream built (three commits: `60daa7e` TipTap WYSIWYG, `dfe12f7` Svelte
-embed system, `852f16c` R2 media pipeline):
+What downstream built (three changes: TipTap WYSIWYG, Svelte embed system, R2 media
+pipeline):
 
 1. **TipTap WYSIWYG for `richtext` fields** — replaces raw markdown textareas.
    Round-trips stored HTML, hardened write path (server-side sanitize on save,
@@ -132,9 +131,9 @@ Make it better in the kit ("maybe even better"):
   (design tokens) rather than hardcoded colors, so they look native in any app.
 - **Revision history tie-in.** Pairs with the "revision-history pattern" entry
   below — richtext + embeds are exactly the fields you want revert for.
-- **Reconcile with AgapeVerse's `escapeHtml` XSS hardening** (see Backports) so the
-  kit ships one coherent sanitize story: escape on render, sanitize on write,
-  allowlisted embed placeholders.
+- **Reconcile with the payments/credits app's `escapeHtml` XSS hardening** (see
+  Backports) so the kit ships one coherent sanitize story: escape on render,
+  sanitize on write, allowlisted embed placeholders.
 
 ### AI generation provider framework (from Nabu)
 
@@ -156,7 +155,7 @@ progress. Extends the kit's existing LLM chat + admin ai-keys pages.
   `ChatSidebar.svelte`)
 - Server-persisted conversations: `src/routes/api/chat/conversations/`
 
-### Admin: PII privacy mode (from AgapeVerse)
+### Admin: PII privacy mode (from the payments/credits app)
 
 Masks personal data in admin views by default, with an explicit reveal action —
 a good default for any kit app with an admin area.
@@ -165,18 +164,18 @@ a good default for any kit app with an admin area.
   `PiiPrivacyToggle.svelte`
 - `src/lib/server/pii-mask.ts`, `src/routes/api/admin/pii-reveal/`
 
-### Admin: user impersonation (from AgapeVerse)
+### Admin: user impersonation (from the payments/credits app)
 
 Log in as a user for support/debugging, with an explicit stop/exit.
 
 - `src/routes/api/auth/impersonation/` (+ `stop`)
 - Session plumbing in `src/lib/utils/auth-session.ts`
 
-### Admin: stats dashboard & user management (from AgapeVerse)
+### Admin: stats dashboard & user management (from the payments/credits app)
 
 - `src/routes/admin/stats/`, `src/routes/admin/user/`
 
-### System prompts admin (from AgapeVerse)
+### System prompts admin (from the payments/credits app)
 
 Manage LLM system prompts from the admin area with a test-generate loop — natural
 companion to the kit's chat UI.
@@ -184,7 +183,7 @@ companion to the kit's chat UI.
 - `src/lib/utils/db/system-prompts.ts`, `src/routes/admin/system-prompts/`,
   `src/routes/api/admin/system-prompts/` (+ `test-generate`)
 
-### Contact form + submissions inbox (from AgapeVerse)
+### Contact form + submissions inbox (from the payments/credits app)
 
 Public contact form (Turnstile-protected) with an admin review queue.
 
@@ -205,15 +204,16 @@ pluggable publishers (`src/lib/services/publishers/{devto,linkedin}.ts`) and sch
 (`ScheduleManager.svelte`). Upstream the connect + publisher interfaces; ship dev.to /
 LinkedIn as reference implementations.
 
-### Cron endpoint pattern (from AgapeVerse)
+### Cron endpoint pattern (from the payments/credits app)
 
 `src/routes/api/cron/` convention wired to Cloudflare cron triggers in `wrangler.toml`,
 with a shared auth guard. Document + scaffold in the kit.
 
 ## Upstream candidates — smaller components & utils
 
-- **NewVersionBanner** (AgapeVerse `src/lib/components/NewVersionBanner.svelte`) —
-  "a new deploy is live, refresh" banner; pairs with Cloudflare's frequent deploys.
+- **NewVersionBanner** (the payments/credits app's
+  `src/lib/components/NewVersionBanner.svelte`) — "a new deploy is live, refresh"
+  banner; pairs with Cloudflare's frequent deploys.
 - **GoogleFontPicker** (Nabu `src/lib/components/GoogleFontPicker.svelte`) — theme-system
   companion.
 - **ColorHarmonyWheel / BrandColorEditor** (Nabu) — color tooling for the theme system;
@@ -221,13 +221,13 @@ with a shared auth guard. Document + scaffold in the kit.
 - **PricingSection** (Nabu `src/lib/components/PricingSection.svelte` + `utils/pricing.ts`) —
   standard marketing pricing block; pairs with the Stripe module.
 - **Revision-history pattern** (Nabu `text-history.ts`, `media-history.ts`,
-  `TextRevisionHistory.svelte`; AgapeVerse keeps versions too) — generic
+  `TextRevisionHistory.svelte`; the payments/credits app keeps versions too) — generic
   "field revisions with revert" service + UI.
-- **Discord webhook notifications** (AgapeVerse `src/lib/utils/discord.ts`) — tiny ops
-  notifier for signups/purchases/errors.
-- **display-name.ts** (AgapeVerse) — safe public display-name derivation.
-- **oauth-state.ts** (AgapeVerse) — signed OAuth `state` handling; review against the
-  kit's current auth flow and upstream the hardening.
+- **Discord webhook notifications** (the payments/credits app's
+  `src/lib/utils/discord.ts`) — tiny ops notifier for signups/purchases/errors.
+- **display-name.ts** (the payments/credits app) — safe public display-name derivation.
+- **oauth-state.ts** (the payments/credits app) — signed OAuth `state` handling; review
+  against the kit's current auth flow and upstream the hardening.
 
 ## Backports — fixes made downstream to kit files
 
@@ -235,18 +235,20 @@ with a shared auth guard. Document + scaffold in the kit.
   downstream apps add tables keyed by `user_id`; Nabu introduced
   `USER_ID_TRANSFER_TABLES` (+ an admin-status check). Kit should make the transfer
   table list a documented extension point instead of a hardcoded set.
-- **theme store: defensive localStorage access** (AgapeVerse `src/lib/stores/theme.ts`) —
-  guards for SSR/disabled-storage environments before touching `localStorage` /
-  `matchMedia`.
-- **cms XSS hardening** (AgapeVerse `src/lib/cms/utils.ts`) — `escapeHtml` for rendered
-  content; reconcile with the kit's newer `showInCommandPalette` normalization (changes
-  went both directions).
+- **theme store: defensive localStorage access** (the payments/credits app's
+  `src/lib/stores/theme.ts`) — guards for SSR/disabled-storage environments before
+  touching `localStorage` / `matchMedia`.
+- **cms XSS hardening** (the payments/credits app's `src/lib/cms/utils.ts`) —
+  `escapeHtml` for rendered content; reconcile with the kit's newer
+  `showInCommandPalette` normalization (changes went both directions).
 - **Simulated-SSO "PRETEND" providers** (kit `AuthProviderButtons.svelte`,
-  `utils/session.ts`) — Arizona stripped this dev-only affordance. Decide: keep behind a
-  dev flag or remove from the kit; it shouldn't require downstream deletion.
+  `utils/session.ts`) — a near-stock deployment stripped this dev-only affordance.
+  Decide: keep behind a dev flag or remove from the kit; it shouldn't require
+  downstream deletion.
 
 ## Process note
 
-Atlas and Arizona are near-stock, so template drift is manageable today. When modules
-above land in the kit, sync them into those two first — they're effectively free
-upgrades there, while Nabu/AgapeVerse will need per-file reconciliation.
+Two downstream deployments remain near-stock, so template drift is manageable today.
+When modules above land in the kit, sync them into those two first — they're effectively
+free upgrades there, while Nabu and the payments/credits app will need per-file
+reconciliation.
