@@ -14,8 +14,7 @@ export interface ContactInput {
 }
 
 export type ContactValidationResult =
-	| { ok: true; value: ContactInput }
-	| { ok: false; error: string };
+	{ ok: true; value: ContactInput } | { ok: false; error: string };
 
 /** Minimum trimmed message length — blocks empty/one-word noise submissions. */
 export const CONTACT_MESSAGE_MIN_LENGTH = 8;

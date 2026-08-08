@@ -1,8 +1,9 @@
 # NebulaKit Roadmap
 
-Planned additions to the kit, sourced primarily from features built downstream in
+Planned additions, sourced primarily from features built downstream in
 NebulaKit-derived projects that proved generalizable. Each entry identifies the source
-and the paths to lift from, so implementation starts from working code.
+and, where the module layout is what makes it liftable, sketches that layout so
+implementation starts from a known shape rather than a blank file.
 
 Downstream projects surveyed (2026-07-06):
 

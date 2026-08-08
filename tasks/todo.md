@@ -111,12 +111,29 @@ Delivery evidence recorded on 2026-08-08 (second session):
 - **Still open, needs an owner decision.** `migrations/0006_contact_form_submissions.sql` keeps its
   "Ported from AgapeVerse" comment. Migration files are immutable under the Release Rules, and that
   rule outranks a cosmetic scrub, so this needs a deliberate remedy rather than an edit.
+- **Time-sensitive, decide before merge.** The `0010_` collision is not yet permanent. Only
+  `0010_content_item_timestamp_proof.sql` is on `origin/main`; `0010_oauth_transactions.sql` and
+  `0011_minimize_oauth_tokens.sql` are branch-only and have never been applied to a remote D1, so
+  §2 immutability does not yet bind them. Renaming those two to `0011_`/`0012_` before the merge
+  removes the collision; both replay safely (the first guards with `IF NOT EXISTS`, the second is an
+  idempotent `UPDATE`), though a local D1 that already applied them re-runs them under the new
+  names. Merging as-is bakes a duplicate migration number into `main` and weakens §2's "next
+  sequential migration" rule for every sibling that pulls the file. Not actioned: renaming another
+  author's committed migrations on a PR awaiting merge is the owner's call.
 - **Still open, deliberately not actioned.** 33 tracked files carry pre-existing Prettier drift,
   including `.prettierrc` itself. Not swept: it would add 33 unrelated files to a 223-file PR
-  awaiting merge, and the stated verification gate is touched-file Prettier, not repo-wide. The
-  prior "touched-file Prettier passed" entries remain accurate as written.
-- The owner's own GitHub handle and domain remain as fixtures in four test files. Lower risk than
-  third-party names and left alone.
+  awaiting merge, and the stated verification gate is touched-file Prettier, not repo-wide. One
+  exception was corrected: `src/lib/utils/contact-validation.ts` is a file this branch edits, so the
+  "unrelated" rationale never covered it. Prettier has now been applied to it, which collapses a
+  type union it had been reformatting. Every file this session touched is Prettier-clean.
+- **Still open, needs one owner decision.** `davis9001` is classified inconsistently. `ROADMAP.md`
+  anonymized it as a third-party downstream project, while an earlier entry here called it the
+  owner's own handle and left it alone; those cannot both be right, and this ledger should not have
+  asserted the ownership either way without evidence. The string remains in
+  `tests/unit/wayback.test.ts`, `tests/unit/branch-coverage-boost.test.ts`,
+  `tests/unit/branch-final-push.test.ts`, and `src/lib/components/ContentProof.test.ts`. If the
+  ROADMAP classification is right the scrub is incomplete on a public repo; if the other is right the
+  ROADMAP edit was unnecessary. Decide once and record it.
 
 Full-gate evidence recorded on 2026-08-08 (second session), after the doc and scrub commits:
 
