@@ -142,7 +142,13 @@ Delivery evidence recorded on 2026-08-08 (second session):
   never sets the flag; the contract exists for downstream apps, which is what the deleted docstring
   said. Surfaced by the PR review at score 75 — below that workflow's reporting threshold, correctly,
   since in-repo impact is nil, but real and inherited by the siblings sharing this code.
-- **Still open, needs one owner decision.** `davis9001` is classified inconsistently. `ROADMAP.md`
+- **Resolved without needing the ownership answer.** The `davis9001` handle and domain are gone from
+  the four test files; fixtures now use `example-user` and `example.com`, and the URL-encoded form in
+  `wayback.test.ts` was kept consistent. Nothing asserted the literal — all 56 tests in those files
+  still pass. Waiting on whether the handle is the owner's or a third party's was the wrong gate:
+  neutral fixtures are correct either way, costing nothing if it is the owner's and helping if it is
+  not. The historical inconsistency is recorded below for the record.
+- ~~**Still open, needs one owner decision.**~~ `davis9001` was classified inconsistently. `ROADMAP.md`
   anonymized it as a third-party downstream project, while an earlier entry here called it the
   owner's own handle and left it alone; those cannot both be right, and this ledger should not have
   asserted the ownership either way without evidence. The string remains in

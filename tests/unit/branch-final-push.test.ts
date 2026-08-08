@@ -218,7 +218,7 @@ describe('API Setup - generic error branches', () => {
 // ─── 5. Admin Auth Keys - Discord parse error (L47) + outer catch (L52-53) + POST non-status (L97-98) ─
 
 const AUTH_KEYS_ADMIN = {
-	user: { id: '72961', login: 'davis9001', email: 'o@example.com', isOwner: true, isAdmin: true }
+	user: { id: '72961', login: 'example-user', email: 'o@example.com', isOwner: true, isAdmin: true }
 };
 
 describe('Admin Auth Keys - uncovered catch branches', () => {

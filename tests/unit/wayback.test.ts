@@ -13,10 +13,10 @@ describe('triggerWaybackCapture', () => {
 		const fetchMock = vi.fn().mockResolvedValue({ ok: true });
 		globalThis.fetch = fetchMock;
 
-		await triggerWaybackCapture('https://davis9001.dev/predictions/foo');
+		await triggerWaybackCapture('https://example.com/predictions/foo');
 
 		expect(fetchMock).toHaveBeenCalledWith(
-			'https://web.archive.org/save/https%3A%2F%2Fdavis9001.dev%2Fpredictions%2Ffoo',
+			'https://web.archive.org/save/https%3A%2F%2Fexample.com%2Fpredictions%2Ffoo',
 			{ method: 'GET' }
 		);
 	});
