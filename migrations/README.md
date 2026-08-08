@@ -89,5 +89,5 @@ Migrations that have already run are **skipped automatically** - they will never
 | `0008_platform_usage.sql`               | Daily billable-request counters for the Cloudflare plan-limit meter                 |
 | `0009_user_can_view_stats.sql`          | `users.can_view_stats` — per-admin grant for the Stats section                      |
 | `0010_content_item_timestamp_proof.sql` | RFC 3161 timestamp proofs and Wayback snapshots for CMS content items               |
-| `0010_oauth_transactions.sql`           | One-time, expiring OAuth login/link transactions with session binding               |
-| `0011_minimize_oauth_tokens.sql`        | Remove legacy provider credentials; retain identity links only                      |
+| `0011_oauth_transactions.sql`           | One-time, expiring OAuth login/link transactions with session binding               |
+| `0012_minimize_oauth_tokens.sql`        | Remove legacy provider credentials; retain identity links only                      |

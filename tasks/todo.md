@@ -120,15 +120,14 @@ Delivery evidence recorded on 2026-08-08 (second session):
 - A review of this branch found seven guidance defects in the second-session doc commits, all
   verified against source and fixed in `8d14eeb`. The notable one: CLAUDE.md had documented the
   `0010_` collision as permanent, which is what surfaced that it is still fixable before merge.
-- **Time-sensitive, decide before merge.** The `0010_` collision is not yet permanent. Only
-  `0010_content_item_timestamp_proof.sql` is on `origin/main`; `0010_oauth_transactions.sql` and
-  `0011_minimize_oauth_tokens.sql` are branch-only and have never been applied to a remote D1, so
-  §2 immutability does not yet bind them. Renaming those two to `0011_`/`0012_` before the merge
-  removes the collision; both replay safely (the first guards with `IF NOT EXISTS`, the second is an
-  idempotent `UPDATE`), though a local D1 that already applied them re-runs them under the new
-  names. Merging as-is bakes a duplicate migration number into `main` and weakens §2's "next
-  sequential migration" rule for every sibling that pulls the file. Not actioned: renaming another
-  author's committed migrations on a PR awaiting merge is the owner's call.
+- **Resolved.** The `0010_` collision is gone. A full review of PR #6 scored it the only finding
+  above the reporting threshold, and it was fixed under `--fix`: `0010_oauth_transactions.sql` →
+  `0011_oauth_transactions.sql` and `0011_minimize_oauth_tokens.sql` → `0012_minimize_oauth_tokens.sql`,
+  via `git mv` so history follows. Both were branch-only and never applied to a remote D1, so §2
+  immutability did not bind them, and both replay safely on a local D1 that had applied them under
+  the old names. The sequence is now `0001_`–`0012_`, next is `0013_`. Doc references updated in
+  `migrations/README.md`, `CLAUDE.md`, and here. Reported on the PR as
+  [issuecomment-5225548231](https://github.com/starspacegroup/NebulaKit/pull/6#issuecomment-5225548231).
 - **Still open, deliberately not actioned.** 33 tracked files carry pre-existing Prettier drift,
   including `.prettierrc` itself. Not swept: it would add 33 unrelated files to a 223-file PR
   awaiting merge, and the stated verification gate is touched-file Prettier, not repo-wide. One
