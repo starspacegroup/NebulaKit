@@ -90,7 +90,16 @@ describe('CMS Utils', () => {
 				author_id: 'user-1',
 				published_at: '2024-01-01T00:00:00Z',
 				created_at: '2024-01-01T00:00:00Z',
-				updated_at: '2024-01-01T00:00:00Z'
+				updated_at: '2024-01-01T00:00:00Z',
+				timestamp_proof_hash: null,
+				timestamp_proof_tsr: null,
+				timestamp_proof_requested_at: null,
+				timestamp_proof_tsa_url: null,
+				timestamp_proof_error: null,
+				wayback_snapshot_url: null,
+				wayback_checked_at: null,
+				resolution_resolved_at: null,
+				resolution_resolved_by: null
 			};
 
 			const parsed = parseContentItem(row);

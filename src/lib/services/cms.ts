@@ -360,7 +360,8 @@ export async function listContentItems(
 export async function updateContentItem(
 	db: D1Database,
 	id: string,
-	input: UpdateContentItemInput
+	input: UpdateContentItemInput,
+	actorId?: string
 ): Promise<ContentItemParsed | null> {
 	// Get existing item
 	const existing = await db
@@ -430,12 +431,29 @@ export async function updateContentItem(
 		publishedAt = new Date().toISOString();
 	}
 
+	// Resolution-provenance stamping: any field flagged stampProvenanceOnChange
+	// that actually changed value bumps resolution_resolved_at/by, regardless
+	// of publish-lock state (this is how a resolution status/note gets tracked).
+	let resolutionResolvedAt = existing.resolution_resolved_at;
+	let resolutionResolvedBy = existing.resolution_resolved_by;
+	if (input.fields) {
+		const stampFieldNames = definitions.filter((d) => d.stampProvenanceOnChange).map((d) => d.name);
+		const changed = stampFieldNames.some(
+			(name) => JSON.stringify(existingFieldsObj[name]) !== JSON.stringify(input.fields![name])
+		);
+		if (changed) {
+			resolutionResolvedAt = new Date().toISOString();
+			resolutionResolvedBy = actorId ?? null;
+		}
+	}
+
 	const row = await db
 		.prepare(
 			`UPDATE content_items
 			 SET title = ?, slug = ?, status = ?, fields = ?,
 			     seo_title = ?, seo_description = ?, seo_image = ?, show_in_command_palette = ?,
-			     published_at = ?, updated_at = CURRENT_TIMESTAMP
+			     published_at = ?, resolution_resolved_at = ?, resolution_resolved_by = ?,
+			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = ?
 			 RETURNING *`
 		)
@@ -449,6 +467,8 @@ export async function updateContentItem(
 			seoImage,
 			showInCommandPalette,
 			publishedAt,
+			resolutionResolvedAt,
+			resolutionResolvedBy,
 			id
 		)
 		.first<ContentItem>();
@@ -463,7 +483,75 @@ export async function updateContentItem(
 /**
  * Delete a content item.
  */
+/**
+ * Record an RFC 3161 timestamp-proof attempt (success or failure). Never
+ * part of Create/UpdateContentItemInput — only called from the background
+ * proof job and the manual retry endpoint, so a generic PUT payload can
+ * never spoof proof state.
+ */
+export async function recordTimestampProofAttempt(
+	db: D1Database,
+	id: string,
+	data: {
+		hash: string;
+		tsr: string | null;
+		requestedAt: string;
+		tsaUrl: string | null;
+		error: string | null;
+	}
+): Promise<void> {
+	await db
+		.prepare(
+			`UPDATE content_items
+			 SET timestamp_proof_hash = ?, timestamp_proof_tsr = ?, timestamp_proof_requested_at = ?,
+			     timestamp_proof_tsa_url = ?, timestamp_proof_error = ?
+			 WHERE id = ?`
+		)
+		.bind(data.hash, data.tsr, data.requestedAt, data.tsaUrl, data.error, id)
+		.run();
+}
+
+/** Record a discovered Wayback Machine snapshot. Safe to call repeatedly. */
+export async function recordWaybackSnapshot(
+	db: D1Database,
+	id: string,
+	data: { url: string; checkedAt: string }
+): Promise<void> {
+	await db
+		.prepare(
+			'UPDATE content_items SET wayback_snapshot_url = ?, wayback_checked_at = ? WHERE id = ?'
+		)
+		.bind(data.url, data.checkedAt, id)
+		.run();
+}
+
+/**
+ * Delete a content item.
+ *
+ * Throws LockedContentError if the item has ever been published and its
+ * content type has timestamp proofs enabled — deleting it would erase the
+ * proof/resolution history from the site's own record. Archiving remains
+ * available for these items.
+ */
 export async function deleteContentItem(db: D1Database, id: string): Promise<boolean> {
+	const existing = await db
+		.prepare(
+			`SELECT ci.published_at, ct.settings
+			 FROM content_items ci JOIN content_types ct ON ct.id = ci.content_type_id
+			 WHERE ci.id = ?`
+		)
+		.bind(id)
+		.first<{ published_at: string | null; settings: string }>();
+
+	if (existing && existing.published_at !== null) {
+		const settings = JSON.parse(existing.settings) as ContentTypeSettings;
+		if (settings.enableTimestampProof) {
+			throw new LockedContentError(
+				'Cannot delete a published item once its timestamp proof is enabled — archive it instead'
+			);
+		}
+	}
+
 	const result = await db.prepare('DELETE FROM content_items WHERE id = ?').bind(id).run();
 
 	return (result.meta?.changes || 0) > 0;

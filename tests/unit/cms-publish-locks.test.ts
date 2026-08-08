@@ -198,4 +198,105 @@ describe('updateContentItem publish locks', () => {
 		const bound = mockDB.bind.mock.calls.at(-1);
 		expect(bound).toContain('2026-01-01');
 	});
+
+	it('stamps resolution provenance when a flagged field changes', async () => {
+		const { updateContentItem } = await import('../../src/lib/services/cms.js');
+		const STAMPED = {
+			name: 'outcome',
+			label: 'Outcome',
+			type: 'select' as const,
+			stampProvenanceOnChange: true
+		};
+		primeDB(existingItem({ fields: '{"outcome":"open"}' }), [STAMPED]);
+
+		await updateContentItem(mockDB, 'ci-1', { fields: { outcome: 'correct' } }, 'user-9');
+
+		// actor comes from the caller's session, not the patch
+		expect(mockDB.bind.mock.calls.at(-1)).toContain('user-9');
+	});
+
+	it('records a null actor when none was supplied', async () => {
+		const { updateContentItem } = await import('../../src/lib/services/cms.js');
+		const STAMPED = {
+			name: 'outcome',
+			label: 'Outcome',
+			type: 'select' as const,
+			stampProvenanceOnChange: true
+		};
+		primeDB(existingItem({ fields: '{"outcome":"open"}' }), [STAMPED]);
+
+		await updateContentItem(mockDB, 'ci-1', { fields: { outcome: 'correct' } });
+
+		expect(mockDB.bind.mock.calls.at(-1)).toContain(null);
+	});
+
+	it('leaves provenance untouched when the flagged field is unchanged', async () => {
+		const { updateContentItem } = await import('../../src/lib/services/cms.js');
+		const STAMPED = {
+			name: 'outcome',
+			label: 'Outcome',
+			type: 'select' as const,
+			stampProvenanceOnChange: true
+		};
+		primeDB(existingItem({ fields: '{"outcome":"open"}', resolution_resolved_at: null }), [
+			STAMPED
+		]);
+
+		await updateContentItem(mockDB, 'ci-1', { fields: { outcome: 'open' } });
+
+		const bound = mockDB.bind.mock.calls.at(-1);
+		expect(bound.filter((v: unknown) => v === null).length).toBeGreaterThan(0);
+	});
+});
+
+describe('deleteContentItem proof guard', () => {
+	let mockDB: any;
+
+	beforeEach(() => {
+		vi.resetModules();
+		mockDB = {
+			prepare: vi.fn().mockReturnThis(),
+			bind: vi.fn().mockReturnThis(),
+			first: vi.fn(),
+			run: vi.fn().mockResolvedValue({ meta: { changes: 1 } })
+		};
+	});
+
+	it('refuses to delete a published item whose type has proofs enabled', async () => {
+		const { deleteContentItem } = await import('../../src/lib/services/cms.js');
+		mockDB.first.mockResolvedValueOnce({
+			published_at: '2026-01-01',
+			settings: '{"enableTimestampProof":true}'
+		});
+
+		// Deleting would erase the proof history the item exists to carry.
+		await expect(deleteContentItem(mockDB, 'ci-1')).rejects.toMatchObject({
+			name: 'LockedContentError'
+		});
+		expect(mockDB.run).not.toHaveBeenCalled();
+	});
+
+	it('allows deleting a published item when proofs are not enabled', async () => {
+		const { deleteContentItem } = await import('../../src/lib/services/cms.js');
+		mockDB.first.mockResolvedValueOnce({ published_at: '2026-01-01', settings: '{}' });
+
+		await expect(deleteContentItem(mockDB, 'ci-1')).resolves.toBe(true);
+	});
+
+	it('allows deleting an item that was never published', async () => {
+		const { deleteContentItem } = await import('../../src/lib/services/cms.js');
+		mockDB.first.mockResolvedValueOnce({
+			published_at: null,
+			settings: '{"enableTimestampProof":true}'
+		});
+
+		await expect(deleteContentItem(mockDB, 'ci-1')).resolves.toBe(true);
+	});
+
+	it('allows deletion when the joined row is missing entirely', async () => {
+		const { deleteContentItem } = await import('../../src/lib/services/cms.js');
+		mockDB.first.mockResolvedValueOnce(null);
+
+		await expect(deleteContentItem(mockDB, 'ci-1')).resolves.toBe(true);
+	});
 });

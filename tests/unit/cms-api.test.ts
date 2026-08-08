@@ -394,6 +394,36 @@ describe('CMS API - Content Items', () => {
 		it('should update a content item', async () => {
 			const { PUT } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
+			// PUT: content type (for proof settings + public URL)
+			mockDB.first.mockResolvedValueOnce({
+				id: 'ct-1',
+				slug: 'blog',
+				name: 'Blog',
+				description: null,
+				fields: '[]',
+				settings: '{}',
+				icon: 'article',
+				sort_order: 0,
+				is_system: 0,
+				created_at: '2024-01-01',
+				updated_at: '2024-01-01'
+			});
+			// PUT: prior item, to detect a first publish
+			mockDB.first.mockResolvedValueOnce({
+				id: 'ci-1',
+				content_type_id: 'ct-1',
+				slug: 'hello',
+				title: 'Hello',
+				status: 'draft',
+				fields: '{"body":"Old"}',
+				seo_title: null,
+				seo_description: null,
+				seo_image: null,
+				author_id: null,
+				published_at: null,
+				created_at: '2024-01-01',
+				updated_at: '2024-01-01'
+			});
 			// updateContentItem: get existing
 			mockDB.first.mockResolvedValueOnce({
 				id: 'ci-1',

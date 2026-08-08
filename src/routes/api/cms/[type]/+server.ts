@@ -5,7 +5,8 @@
  * POST /api/cms/[type] - Create a new item
  */
 import type { ContentItemFilters } from '$lib/cms/types';
-import { validateFields } from '$lib/cms/utils';
+import { getContentTypeRoutePrefix, validateFields } from '$lib/cms/utils';
+import { runTimestampProofJob } from '$lib/content-proof/proof-job';
 import { createContentItem, getContentTypeBySlug, listContentItems } from '$lib/services/cms';
 import { requireAdmin } from '$lib/server/auth-guard';
 import { error, json } from '@sveltejs/kit';
@@ -58,7 +59,7 @@ export const GET: RequestHandler = async ({ platform, locals, params, url }) => 
 	}
 };
 
-export const POST: RequestHandler = async ({ platform, locals, params, request }) => {
+export const POST: RequestHandler = async ({ platform, locals, params, request, url }) => {
 	if (!locals.user) {
 		throw error(401, 'Unauthorized');
 	}
@@ -105,6 +106,12 @@ export const POST: RequestHandler = async ({ platform, locals, params, request }
 
 		if (!item) {
 			throw error(500, 'Failed to create content item');
+		}
+
+		// An item created straight into 'published' is a first publish too.
+		if (item.publishedAt && contentType.settings.enableTimestampProof) {
+			const publicUrl = `${url.origin}${getContentTypeRoutePrefix(contentType)}/${item.slug}`;
+			platform?.context?.waitUntil(runTimestampProofJob(db, item, publicUrl));
 		}
 
 		return json({ item }, { status: 201 });

@@ -23,6 +23,17 @@ function normalizeContentTypeSettings(settings: ContentTypeSettings = {}): Conte
 }
 
 /**
+ * Public route prefix for a content type — its explicit `routePrefix`
+ * setting, else `/<slug>`.
+ */
+export function getContentTypeRoutePrefix(contentType: {
+	settings: ContentTypeSettings;
+	slug: string;
+}): string {
+	return contentType.settings.routePrefix || `/${contentType.slug}`;
+}
+
+/**
  * Generate a URL-friendly slug from a title string.
  */
 export function generateSlug(title: string): string {
@@ -74,7 +85,16 @@ export function parseContentItem(row: ContentItem): ContentItemParsed {
 		showInCommandPalette: row.show_in_command_palette !== 0,
 		publishedAt: row.published_at,
 		createdAt: row.created_at,
-		updatedAt: row.updated_at
+		updatedAt: row.updated_at,
+		timestampProofHash: row.timestamp_proof_hash,
+		timestampProofTsr: row.timestamp_proof_tsr,
+		timestampProofRequestedAt: row.timestamp_proof_requested_at,
+		timestampProofTsaUrl: row.timestamp_proof_tsa_url,
+		timestampProofError: row.timestamp_proof_error,
+		waybackSnapshotUrl: row.wayback_snapshot_url,
+		waybackCheckedAt: row.wayback_checked_at,
+		resolutionResolvedAt: row.resolution_resolved_at,
+		resolutionResolvedBy: row.resolution_resolved_by
 	};
 }
 
