@@ -220,6 +220,15 @@ Agent-guidance drift corrected on 2026-08-09 (fourth session):
 - Noted, not acted on: PR #7 (`security/opaque-sessions`, base `main`) is open on the org repo and
   overlaps PR #6, which already contains the merge of that branch at `c7040ab`. Whoever merges these
   needs to decide the order; both cannot land independently without a conflict or an empty diff.
+- Both open PRs are consolidated on `fork/dev` as of 2026-08-09, which fast-forwarded `c7040ab` →
+  `952438c`. "All PRs" is two, and PR #7 needed no separate merge: its head `db30a29` is already an
+  ancestor of PR #6's head, verified with `git merge-base --is-ancestor`. `fork/dev` now contains
+  both heads.
+- **This closes nothing and is not the acceptance criterion.** Both PRs target `starspacegroup:main`,
+  so merging into a fork branch leaves them `OPEN`. The org repo has **no `dev` branch at all** —
+  only `main`, `cms-v2-embeds`, and `security/opaque-sessions` — and one cannot be created from this
+  account under the same 403. Note also that `ci.yml` triggers on `main`/`develop`, so a branch named
+  `dev` would not run CI even if it existed on the org repo.
 
 ## Explicitly outside this worktree
 
