@@ -211,6 +211,15 @@ Agent-guidance drift corrected on 2026-08-09 (fourth session):
 - Docs only, no source touched. `bunx prettier --check` clean on all three files, `git diff --check`
   clean, and `product-identity` + `agent-readiness` pass 53/53 — those are the suites that read these
   files off disk. No coverage or e2e claim is made, because nothing under coverage changed.
+- Delivered as `46a0247` on `docs/agent-guidance-drift-20260809`, pushed to
+  `fork/cursor/nebulakit-quality-pass-20260808` as a fast-forward from `c7040ab` — so **PR #6 now
+  carries it** and reports `MERGEABLE` / `mergeStateStatus: CLEAN` at head `46a0247`. A fresh PR was
+  considered and rejected: the corrections only parse on top of the opaque-sessions work, which is
+  not on `origin/main`, so a new PR would have shown 36 commits rather than four doc files. PR #6's
+  head is now 36 commits ahead of `origin/main`; local `main` is untouched at `c7040ab` (35 ahead).
+- Noted, not acted on: PR #7 (`security/opaque-sessions`, base `main`) is open on the org repo and
+  overlaps PR #6, which already contains the merge of that branch at `c7040ab`. Whoever merges these
+  needs to decide the order; both cannot land independently without a conflict or an empty diff.
 
 ## Explicitly outside this worktree
 
