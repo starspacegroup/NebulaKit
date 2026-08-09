@@ -242,6 +242,9 @@ Sibling audit, read-only pass recorded on 2026-08-08 (fourth session):
   still waits on PR #6 landing. No sibling-repository file was staged, edited, or committed.
 - **4 of the 7 P0 items were compared** across Guides, nabu, and sortalizer. Not yet audited:
   sanitize-before-`{@html}`, one-time OAuth state consumption, and the coverage-inclusion item.
+  ~~Not yet audited~~ — all three were completed on 2026-08-09; see the block below. The read-only
+  half of the audit is now **7 of 7** and complete. Propagation still waits on PR #6, so the item
+  stays `[~]`.
 - `isSuperAdmin` (the `e0e509c` fix): **does not apply.** The identifier does not appear anywhere in
   Guides, nabu, or sortalizer `src/`. It exists only in NebulaKit (`app.d.ts`, `auth-guards.ts`,
   `stats-guard.ts`), so the guard-divergence it fixed cannot occur in the siblings.
@@ -271,3 +274,43 @@ Sibling audit, read-only pass recorded on 2026-08-08 (fourth session):
 - Guides is checked out on `cursor/guides-main-security-20260808` with a clean tree, but that branch
   is **empty**: `git log main..HEAD` and `git diff --stat main...HEAD` both return nothing. It does
   not already carry this fix.
+
+Sibling audit, remaining three P0 items, read-only pass on 2026-08-09 (fifth session). Still no
+sibling-repository file staged, edited, or committed — every result below is from reading source.
+
+- **Sanitize-before-`{@html}`: no gap, and the scope of that claim is every `{@html}` in each repo,
+  not a sample.** sortalizer has no `src/lib/cms/` and no `{@html}` anywhere, so it is not exposed.
+  nabu covers both halves of the AGENTS.md rule: `sanitizeContentFields` on create (`cms.ts:142`)
+  and update (`cms.ts:343`), and again at the render boundary in
+  `[contentType]/[slug]/+page.server.ts:60`, so the raw-looking `{@html item.fields.body}` in its
+  `+page.svelte` receives already-sanitized fields. Guides has **no HTML sanitizer and no `xss`
+  dependency at all**, which looks alarming and is not: it has exactly three `{@html}` sites, and
+  all three are safe by construction. Two render `renderMarkdownToHtml`, a hand-rolled renderer that
+  escapes its entire input first (`markdown.ts:147`) and routes every href through `sanitizeHref`;
+  the third is a hardcoded SVG string literal (`profile/+page.svelte:214`). Guides stores Markdown
+  where NebulaKit stores rich-text HTML, so the NebulaKit sanitizer does not apply to it — different
+  content model, not a missing fix.
+- **One-time OAuth state: no gap.** All four repositories persist an `oauth_transactions` row and
+  consume it with a single atomic statement — `UPDATE ... WHERE id = ? AND provider = ? AND
+consumed_at IS NULL AND datetime(expires_at) > CURRENT_TIMESTAMP RETURNING intent, user_id,
+session_id` — then reject intent mismatch and, for `link`, require the row's `session_id` to match
+  the hash of the caller's live session. Only the packaging differs: nabu keeps it at
+  `src/lib/server/oauth-state.ts` rather than `src/lib/utils/`, and sortalizer ships a single
+  `migrations/schema.sql` instead of numbered files, so its table is there rather than in an
+  `oauth_transactions` migration. **A first pass called sortalizer's expiry check missing; that was a
+  false positive** — a truncated `grep` had cut the `datetime(expires_at)` line, which is present.
+- **Open finding — nabu only. `vite.config.ts` excludes `src/hooks.server.ts` from coverage**
+  ("Hooks are tested implicitly through integration tests"), which is precisely the P0 item
+  NebulaKit closed. NebulaKit, Guides, and sortalizer all measure it. The exclusion matters more in
+  nabu than the same line would elsewhere: nabu's `handle` is `sequence(authHandler)`, so that one
+  file **is** the entire authorization boundary, where NebulaKit's is one handler of four. It is not
+  untested — `tests/unit/hooks-owner-admin.test.ts` covers owner-not-demoted, non-owner demoted,
+  non-owner promoted, and a forged cookie — but its harness supplies `DB: { prepare }` in all four
+  cases, so the `if (!db) throw new Error('Session database unavailable')` fail-closed branch is
+  exercised by nothing, and the 95% floor cannot notice, because the file is not measured. That
+  branch is the AGENTS.md rule "auth fails closed when D1 … is unavailable." Severity is below the
+  Guides escalation — no live privilege gap was found — but the gate that would catch one is off.
+  The fix is deleting one line, and it belongs in a nabu branch.
+- Not claimed: no sibling test suite or coverage run was executed. These are source-reading results,
+  so the nabu conclusion is "that branch has no test that reaches it and no gate measures the file,"
+  not a measured coverage percentage.
