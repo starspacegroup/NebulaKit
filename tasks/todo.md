@@ -125,7 +125,8 @@ Delivery evidence recorded on 2026-08-08 (second session):
   `0011_oauth_transactions.sql` and `0011_minimize_oauth_tokens.sql` → `0012_minimize_oauth_tokens.sql`,
   via `git mv` so history follows. Both were branch-only and never applied to a remote D1, so §2
   immutability did not bind them, and both replay safely on a local D1 that had applied them under
-  the old names. The sequence is now `0001_`–`0012_`, next is `0013_`. Doc references updated in
+  the old names. The sequence was `0001_`–`0012_` as of that fix, next `0013_`; `0013_session_payload.sql`
+  has since landed with the opaque-sessions merge, so the current next number is `0014_`. Doc references updated in
   `migrations/README.md`, `CLAUDE.md`, and here. Reported on the PR as
   [issuecomment-5225548231](https://github.com/starspacegroup/NebulaKit/pull/6#issuecomment-5225548231).
 - **Resolved.** The Prettier drift is swept in `106c3ce`. 32 files carried it, including
@@ -174,11 +175,42 @@ Merge attempt recorded on 2026-08-08 (third session):
 - Publishing to `origin/main` is **impossible from this account**, confirmed empirically rather than
   inferred: `git push --dry-run origin main` returns
   `remote: Permission to starspacegroup/NebulaKit.git denied to donaldfilimon` / HTTP 403. Local
-  `main` is 29 commits ahead of `origin/main` and cannot be published. Squash-merging PR #6 needs the
+  `main` was 29 commits ahead of `origin/main` at that time (35 as of 2026-08-09) and cannot be
+  published. Squash-merging PR #6 needs the
   same write permission, so it is blocked on a maintainer of `starspacegroup/NebulaKit`, as is
   approving the parked workflow run that leaves the PR `unstable` with zero checks.
 - No direct push to `origin/main` was attempted beyond the dry run. Even with permission it would
   bypass the PR the ledger specifies, and would publish 29 commits to a public default branch.
+
+Agent-guidance drift corrected on 2026-08-09 (fourth session):
+
+- `CLAUDE.md` was last written at `2f3a4b0`; `db30a29` and `c7040ab` (the opaque-sessions merge)
+  landed after it and falsified four statements. All four are fixed. Everything else in the file was
+  re-verified against source and still holds: the 95 thresholds in `vite.config.ts`, `devPort: 4277`,
+  the 14-file `git grep -ln "AGENTS.md §"` count, the CI job topology and `BUN_VERSION` pin, the
+  `docs/` table, and the absence of a `lint`/`format` script.
+- The migration inventory said `0001_`–`0012_`, next `0013_`, in three places — `CLAUDE.md`, the
+  `Current Migrations` table in `migrations/README.md` (which omitted the row entirely), and the
+  `0010_`-collision entry above. `0013_session_payload.sql` has landed; next is `0014_`. The
+  `CLAUDE.md` numbering paragraph now carries `0013_` as its second worked example: it was authored
+  as `0011_` on the opaque-sessions branch, `main` had meanwhile shipped `0011_` and `0012_`, and it
+  took the next free slot at merge rather than anything on `main` being renamed.
+- The auth paragraph still described the retired cookie scheme — "a signed opaque session token …
+  its digest and expiry live in D1". Nothing is signed. Rewritten to the actual scheme: an opaque
+  random token, the row keyed by its SHA-256, expiry **and** the trusted payload in `sessions.data`,
+  `getAuthSession` failing closed on both a forged cookie and a pre-`0013_` row with no payload, and
+  an explicit instruction not to reintroduce a cookie the hooks trust without a server-side lookup.
+  Two further invariants were undocumented and are now recorded: the `datetime(expires_at)`
+  normalization (a raw string compare sorts `'T'` after `' '` and reads a same-day expiry as valid
+  for up to a day), and the two coexisting session APIs in `db.ts`.
+- **Checked and found still true, so not changed as a finding:** the per-request privilege refresh
+  survived the merge. `authHandler` takes identity from the stored payload but re-reads `is_admin`,
+  `can_view_stats`, and owner status from `users` on every request, so the AGENTS.md Security
+  Boundaries rule holds and revocation still needs no re-login. The `isPretend` bypass, gated on
+  `isDevAuthSimulationEnabled`, is now stated explicitly rather than left implicit.
+- Docs only, no source touched. `bunx prettier --check` clean on all three files, `git diff --check`
+  clean, and `product-identity` + `agent-readiness` pass 53/53 — those are the suites that read these
+  files off disk. No coverage or e2e claim is made, because nothing under coverage changed.
 
 ## Explicitly outside this worktree
 

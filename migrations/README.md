@@ -91,3 +91,4 @@ Migrations that have already run are **skipped automatically** - they will never
 | `0010_content_item_timestamp_proof.sql` | RFC 3161 timestamp proofs and Wayback snapshots for CMS content items               |
 | `0011_oauth_transactions.sql`           | One-time, expiring OAuth login/link transactions with session binding               |
 | `0012_minimize_oauth_tokens.sql`        | Remove legacy provider credentials; retain identity links only                      |
+| `0013_session_payload.sql`              | `sessions.data` — server-side session payload behind the opaque session cookie      |
