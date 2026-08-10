@@ -3,6 +3,11 @@
 
 	export let data: PageData;
 
+	// While PII is masked the ids in this table are masks, so a mutation would
+	// target a nonexistent row (404) and the "not yourself" comparison below
+	// could never match. Owner-only actions therefore also require reveal.
+	$: canMutateUsers = Boolean(data.user.isOwner && data.piiRevealed);
+
 	let users = data.users || [];
 	let searchQuery = '';
 	let searchResults: any[] = [];
@@ -199,7 +204,17 @@
 		{#if searchResults.length > 0}
 			<div class="search-results">
 				{#each searchResults as result}
-					<button class="search-result-item" on:click={() => openInviteModal(result)}>
+					<!-- While PII is masked the login shown here is a mask, and inviting
+					     would submit that mask as the GitHub login. Reveal first. -->
+					<button
+						class="search-result-item"
+						class:disabled={!data.piiRevealed}
+						disabled={!data.piiRevealed}
+						title={data.piiRevealed
+							? `Invite ${result.login}`
+							: 'Reveal identifiers before inviting — the login shown is masked'}
+						on:click={() => openInviteModal(result)}
+					>
 						<img src={result.avatar_url} alt={result.login} class="avatar" />
 						<div class="user-info">
 							<span class="username">{result.login}</span>
@@ -295,16 +310,18 @@
 									<div class="actions">
 										<button
 											class="btn-icon"
-											class:disabled={!data.user.isOwner || user.id === data.user.id}
-											disabled={!data.user.isOwner || user.id === data.user.id}
+											class:disabled={!canMutateUsers || user.id === data.user.id}
+											disabled={!canMutateUsers || user.id === data.user.id}
 											on:click={() => toggleAdmin(user.id, user.is_admin)}
 											title={!data.user.isOwner
 												? 'Owner access required'
-												: user.id === data.user.id
-													? 'Cannot modify your own role'
-													: user.is_admin
-														? 'Demote from admin'
-														: 'Promote to admin'}
+												: !data.piiRevealed
+													? 'Reveal identifiers to act on users — the ids shown are masked'
+													: user.id === data.user.id
+														? 'Cannot modify your own role'
+														: user.is_admin
+															? 'Demote from admin'
+															: 'Promote to admin'}
 											aria-label={user.is_admin ? 'Demote from admin' : 'Promote to admin'}
 										>
 											{#if user.is_admin}
@@ -333,14 +350,16 @@
 										</button>
 										<button
 											class="btn-icon btn-danger"
-											class:disabled={!data.user.isOwner || user.id === data.user.id}
-											disabled={!data.user.isOwner || user.id === data.user.id}
+											class:disabled={!canMutateUsers || user.id === data.user.id}
+											disabled={!canMutateUsers || user.id === data.user.id}
 											on:click={() => deleteUser(user.id, user.name || user.email)}
 											title={!data.user.isOwner
 												? 'Owner access required'
-												: user.id === data.user.id
-													? 'Cannot delete your own account'
-													: 'Delete user'}
+												: !data.piiRevealed
+													? 'Reveal identifiers to act on users — the ids shown are masked'
+													: user.id === data.user.id
+														? 'Cannot delete your own account'
+														: 'Delete user'}
 											aria-label="Delete user"
 										>
 											<svg
@@ -536,8 +555,13 @@
 		border-bottom: none;
 	}
 
-	.search-result-item:hover {
+	.search-result-item:hover:not(.disabled) {
 		background: var(--color-surface);
+	}
+
+	.search-result-item.disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
 	}
 
 	.avatar {

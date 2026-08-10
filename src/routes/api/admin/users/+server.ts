@@ -44,6 +44,11 @@ export const GET: RequestHandler = async ({ platform, locals, cookies }) => {
 				? entry
 				: {
 						...entry,
+						// Masked rows are display-only: the id here is a mask, so it can
+						// never be a valid PATCH/DELETE target and the `user.id ===
+						// viewer.id` self-action guard cannot match either. The admin UI
+						// therefore disables those actions until PII is revealed, rather
+						// than letting them fire and 404. See admin/users/+page.svelte.
 						id: maskGeneric(entry.id as string | null | undefined),
 						email: maskEmail(entry.email as string | null | undefined),
 						name: maskName(entry.name as string | null | undefined),

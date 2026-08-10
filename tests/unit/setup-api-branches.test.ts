@@ -227,6 +227,41 @@ describe('Setup API - Extended Branch Coverage', () => {
 			).rejects.toMatchObject({ status: 500 });
 		});
 
+		// A torn write would lock setup (the lock treats any leftover key as
+		// "already configured") while leaving no owner able to authenticate, and
+		// the reset endpoint that clears it is owner-only. Rolling back keeps a
+		// failed attempt retryable instead of bricking the deployment.
+		it('should roll back partial writes when a later KV write fails', async () => {
+			mockKVGet.mockResolvedValue(null);
+			const kvDelete = vi.fn().mockResolvedValue(undefined);
+			const kvPut = vi
+				.fn()
+				.mockResolvedValueOnce(undefined) // auth_config:github lands
+				.mockRejectedValueOnce(new Error('KV write failed')); // owner id does not
+
+			const event = createMockEvent({ kvPut }) as unknown as Parameters<typeof POST>[0];
+			(event as any).platform.env.KV.delete = kvDelete;
+
+			await expect(POST(event)).rejects.toMatchObject({ status: 500 });
+
+			// The one key that landed is removed, so the next attempt sees clean state.
+			expect(kvDelete).toHaveBeenCalledWith('auth_config:github');
+			expect(kvDelete).toHaveBeenCalledTimes(1);
+		});
+
+		it('should still fail closed when the KV binding cannot delete', async () => {
+			mockKVGet.mockResolvedValue(null);
+			const kvPut = vi
+				.fn()
+				.mockResolvedValueOnce(undefined)
+				.mockRejectedValueOnce(new Error('KV write failed'));
+
+			// No delete on the binding — compensation is skipped, not crashed on.
+			await expect(
+				POST(createMockEvent({ kvPut }) as unknown as Parameters<typeof POST>[0])
+			).rejects.toMatchObject({ status: 500 });
+		});
+
 		it('should default to github provider when not specified', async () => {
 			mockKVGet.mockResolvedValue(null);
 

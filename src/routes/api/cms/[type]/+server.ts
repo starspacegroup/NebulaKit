@@ -61,12 +61,7 @@ export const GET: RequestHandler = async ({ platform, locals, params, url }) => 
 };
 
 export const POST: RequestHandler = async ({ platform, locals, params, request, url }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	const user = requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -97,7 +92,7 @@ export const POST: RequestHandler = async ({ platform, locals, params, request, 
 			seoDescription: body.seoDescription,
 			seoImage: body.seoImage,
 			showInCommandPalette: body.showInCommandPalette,
-			authorId: locals.user.id,
+			authorId: user.id,
 			tagIds: body.tagIds
 		});
 

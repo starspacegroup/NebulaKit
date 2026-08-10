@@ -15,8 +15,16 @@ const mockRedirect = vi.fn((status: number, location: string) => {
 	throw err;
 });
 
+const mockError = vi.fn((status: number, message: string) => {
+	const err = new Error(message) as Error & { status: number; body: { message: string } };
+	err.status = status;
+	err.body = { message };
+	throw err;
+});
+
 vi.mock('@sveltejs/kit', () => ({
-	redirect: (status: number, location: string) => mockRedirect(status, location)
+	redirect: (status: number, location: string) => mockRedirect(status, location),
+	error: (status: number, message: string) => mockError(status, message)
 }));
 
 describe('Reset Page Server', () => {
@@ -85,6 +93,45 @@ describe('Reset Page Server', () => {
 			} as any);
 
 			expect(result).toEqual({});
+		});
+	});
+
+	describe('access control', () => {
+		// The page destroys configuration, so it is owner-only and must reject
+		// before any KV read — the rendered copy documents this contract.
+		it('rejects anonymous visitors', async () => {
+			const { load } = await import('../../src/routes/reset/+page.server');
+			const mockGet = vi.fn();
+
+			await expect(
+				load({ platform: { env: { KV: { get: mockGet } } }, locals: {} } as any)
+			).rejects.toMatchObject({ status: 401 });
+			expect(mockGet).not.toHaveBeenCalled();
+		});
+
+		it('rejects a signed-in non-owner', async () => {
+			const { load } = await import('../../src/routes/reset/+page.server');
+			const mockGet = vi.fn();
+
+			await expect(
+				load({
+					platform: { env: { KV: { get: mockGet } } },
+					locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true } }
+				} as any)
+			).rejects.toMatchObject({ status: 403 });
+			expect(mockGet).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('page copy', () => {
+		it('describes the enforced owner-only contract, not the retired open-access warning', async () => {
+			const { readFileSync } = await import('node:fs');
+			const source = readFileSync('src/routes/reset/+page.svelte', 'utf-8');
+
+			// The load function rejects anonymous and non-owner visitors, so the page
+			// must not claim it is reachable without authentication.
+			expect(source).not.toMatch(/accessible without authentication/i);
+			expect(source).toMatch(/only reachable by the signed-in owner/i);
 		});
 	});
 });

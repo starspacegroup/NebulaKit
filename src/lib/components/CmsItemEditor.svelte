@@ -11,6 +11,7 @@
 	import { goto } from '$app/navigation';
 	import ImageField from '$lib/components/ImageField.svelte';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
+	import TaskListField from '$lib/components/TaskListField.svelte';
 
 	export let contentType: any;
 	/** Existing item for edit mode; null/undefined for create mode. */
@@ -37,7 +38,7 @@
 					defaults[field.name] = field.defaultValue;
 				} else if (field.type === 'boolean') {
 					defaults[field.name] = false;
-				} else if (field.type === 'multiselect') {
+				} else if (field.type === 'multiselect' || field.type === 'tasklist') {
 					defaults[field.name] = [];
 				} else if (field.type === 'number') {
 					defaults[field.name] = null;
@@ -282,6 +283,8 @@
 									bind:value={formFields[field.name]}
 									placeholder={field.placeholder || 'https://… or upload'}
 								/>
+							{:else if field.type === 'tasklist'}
+								<TaskListField bind:value={formFields[field.name]} />
 							{:else if field.type === 'json'}
 								<textarea
 									id="field-{field.name}"

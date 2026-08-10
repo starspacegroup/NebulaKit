@@ -382,8 +382,9 @@ bun run db:migrate:list</code
 			<h2>Authentication and Setup Flow</h2>
 			<p>
 				Authentication is built into this app on a setup-first workflow — no third-party auth
-				library sits in the request path. The browser receives a signed opaque session token, while
-				the revocable session record, identity, and roles are loaded from D1 on every request.
+				library sits in the request path. The browser receives an unsigned opaque session token
+				(random, worthless without its server-side record — its SHA-256 digest is the lookup key),
+				while the revocable session record, identity, and roles are loaded from D1 on every request.
 				Authentication fails closed if D1 or <code>SESSION_SECRET</code> is unavailable.
 			</p>
 			<p>

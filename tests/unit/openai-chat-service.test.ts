@@ -76,6 +76,75 @@ describe('OpenAI Chat Service', () => {
 			expect(result).toBeNull();
 		});
 
+		// /api/chat/models lists the union of chat models across every enabled key,
+		// so a model-less stream request must not fail just because the first key
+		// happens to be voice-only.
+		it('should skip chat-less keys when no model is requested', async () => {
+			const mockKV = { get: vi.fn() };
+
+			mockKV.get.mockImplementation((key: string) => {
+				if (key === 'ai_keys_list') {
+					return Promise.resolve(JSON.stringify(['voice-only', 'chat-capable']));
+				}
+				if (key === 'ai_key:voice-only') {
+					return Promise.resolve(
+						JSON.stringify({
+							id: 'voice-only',
+							provider: 'openai',
+							apiKey: 'sk-voice',
+							enabled: true,
+							models: ['gpt-4o-realtime-preview']
+						})
+					);
+				}
+				if (key === 'ai_key:chat-capable') {
+					return Promise.resolve(
+						JSON.stringify({
+							id: 'chat-capable',
+							provider: 'openai',
+							apiKey: 'sk-chat',
+							enabled: true,
+							models: ['gpt-4o-mini']
+						})
+					);
+				}
+				return Promise.resolve(null);
+			});
+
+			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
+			const result = await getEnabledOpenAIKey({ env: { KV: mockKV } } as any);
+
+			expect(result?.id).toBe('chat-capable');
+		});
+
+		it('should fall back to the first key when none are chat-capable', async () => {
+			const mockKV = { get: vi.fn() };
+
+			mockKV.get.mockImplementation((key: string) => {
+				if (key === 'ai_keys_list') {
+					return Promise.resolve(JSON.stringify(['voice-only']));
+				}
+				if (key === 'ai_key:voice-only') {
+					return Promise.resolve(
+						JSON.stringify({
+							id: 'voice-only',
+							provider: 'openai',
+							apiKey: 'sk-voice',
+							enabled: true,
+							models: ['gpt-4o-realtime-preview']
+						})
+					);
+				}
+				return Promise.resolve(null);
+			});
+
+			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
+			const result = await getEnabledOpenAIKey({ env: { KV: mockKV } } as any);
+
+			// The route then surfaces 503 "No chat models configured", unchanged.
+			expect(result?.id).toBe('voice-only');
+		});
+
 		it('should skip disabled OpenAI keys', async () => {
 			const mockKV = {
 				get: vi.fn()

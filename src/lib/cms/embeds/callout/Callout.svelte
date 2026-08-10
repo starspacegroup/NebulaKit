@@ -56,7 +56,7 @@
 		border-left-color: var(--color-warning, #d97706);
 	}
 	.callout-danger {
-		border-left-color: var(--color-danger, #ef4444);
+		border-left-color: var(--color-danger);
 	}
 
 	.callout-icon {

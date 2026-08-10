@@ -176,7 +176,7 @@ describe('Documentation Page', () => {
 				.getByRole('heading', { name: /Authentication and Setup Flow/i })
 				.closest('section') as HTMLElement;
 
-			expect(section.textContent).toMatch(/signed opaque session token/i);
+			expect(section.textContent).toMatch(/unsigned opaque session token/i);
 			expect(section.textContent).toMatch(/SESSION_SECRET/);
 			expect(section.textContent).toMatch(/SETUP_SECRET/);
 			expect(section.textContent).toMatch(/unexpired one-time state in D1/i);

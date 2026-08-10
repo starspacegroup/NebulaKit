@@ -55,12 +55,7 @@ export const GET: RequestHandler = async ({ platform, locals, params }) => {
 };
 
 export const PUT: RequestHandler = async ({ platform, locals, params, request, url }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	const user = requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -103,7 +98,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 				tagIds: body.tagIds
 			},
 			// Provenance actor comes from the session, never the request body.
-			locals.user.id
+			user.id
 		);
 
 		if (!item) {
@@ -126,12 +121,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 };
 
 export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {

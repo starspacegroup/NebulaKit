@@ -37,7 +37,7 @@ Setup / maintenance scripts (`scripts/`): `setup:cf` (create the Cloudflare D1/K
 
 ### What CI actually runs
 
-`.github/workflows/ci.yml`, on push and PR to `main`/`develop`, with Bun pinned to `1.3.14`:
+`.github/workflows/ci.yml`, on push and PR to `main`/`develop`, with Bun pinned to `1.4.0` (must match the Bun that wrote `bun.lock` — a `lockfileVersion` newer than the pinned Bun understands fails `--frozen-lockfile` at install):
 
 - **`test`** — `bun run check` → `bun run validate:contrast` → `bun run build:ci` → `bun run test:coverage` → codecov upload (`fail_ci_if_error: false`, so an upload failure does not fail that step; whether a codecov status blocks a PR is branch-protection state, not something this file settles).
 - **`e2e`** — `bunx playwright install --with-deps`, then `bun run test:e2e`. E2E is meant to gate in CI, not only locally.

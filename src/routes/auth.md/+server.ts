@@ -52,7 +52,7 @@ owner (see "Contact" below).
 ## How human sign-in works
 
 Authenticated areas (the admin console, \`/profile\`, the CMS and chat APIs) are
-protected by a **signed opaque session cookie**, established by a human logging
+protected by an **unsigned opaque session cookie**, established by a human logging
 in. The browser holds only the raw opaque token; D1 stores its digest, expiry,
 identity, and current roles so sessions can be revoked server-side.
 

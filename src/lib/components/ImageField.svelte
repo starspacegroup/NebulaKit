@@ -102,7 +102,7 @@
 	}
 
 	.image-field-error {
-		color: var(--color-danger, #ef4444);
+		color: var(--color-danger);
 		font-size: 0.8125rem;
 		margin: 0;
 	}

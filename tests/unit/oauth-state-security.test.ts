@@ -559,17 +559,17 @@ function database() {
 						sql.includes('FROM sessions')
 							? { id: 'session-digest', user_id: 'user-1', expires_at: '2099-01-01T00:00:00.000Z' }
 							: sql.includes('oauth_transactions')
-							? { intent: 'login', user_id: null, session_id: null }
-							: sql.includes('SELECT id, email, name, github_login')
-								? {
-										id: values[0],
-										email: `${values[0]}@example.com`,
-										name: 'OAuth User',
-										github_login: values[0] === '123' ? 'octocat' : null,
-										github_avatar_url: null,
-										is_admin: 0
-									}
-								: null
+								? { intent: 'login', user_id: null, session_id: null }
+								: sql.includes('SELECT id, email, name, github_login')
+									? {
+											id: values[0],
+											email: `${values[0]}@example.com`,
+											name: 'OAuth User',
+											github_login: values[0] === '123' ? 'octocat' : null,
+											github_avatar_url: null,
+											is_admin: 0
+										}
+									: null
 					),
 					all: vi.fn().mockResolvedValue({ results: [] }),
 					run: vi.fn().mockResolvedValue({ success: true })
@@ -594,6 +594,31 @@ function transactionDatabase(stored: {
 		}))
 	};
 }
+
+describe('OAuth transaction retention', () => {
+	it('prunes consumed and expired rows without touching live ones', async () => {
+		const { pruneOAuthTransactions } = await import('../../src/lib/utils/oauth-state');
+		const run = vi.fn().mockResolvedValue({ success: true });
+		const prepare = vi.fn((_sql: string) => ({ run }));
+
+		await pruneOAuthTransactions({ prepare } as never);
+
+		const sql = prepare.mock.calls[0][0];
+		expect(sql).toContain('DELETE FROM oauth_transactions');
+		expect(sql).toContain('consumed_at IS NOT NULL');
+		expect(sql).toContain('datetime(expires_at) <= CURRENT_TIMESTAMP');
+		expect(run).toHaveBeenCalledTimes(1);
+	});
+
+	it('never lets a failed prune break the sign-in it runs alongside', async () => {
+		const { pruneOAuthTransactions } = await import('../../src/lib/utils/oauth-state');
+		const prepare = vi.fn(() => ({
+			run: vi.fn().mockRejectedValue(new Error('D1 unavailable'))
+		}));
+
+		await expect(pruneOAuthTransactions({ prepare } as never)).resolves.toBeUndefined();
+	});
+});
 
 function authenticatedUser() {
 	return {

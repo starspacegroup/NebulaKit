@@ -85,7 +85,17 @@ export async function getEnabledOpenAIKey(
 ): Promise<AIKey | null> {
 	if (model && !CHAT_MODEL_IDS.has(model)) return null;
 	const keys = await getEnabledOpenAIKeys(platform);
-	return keys.find((key) => !model || getConfiguredChatModels(key).includes(model)) ?? null;
+	if (model) {
+		return keys.find((key) => getConfiguredChatModels(key).includes(model)) ?? null;
+	}
+
+	// With no model requested the caller wants *a* chat-capable key. Taking the
+	// first enabled key regardless would hand back a voice-only one and surface as
+	// "No chat models configured" even though a later key can serve chat — which
+	// contradicts /api/chat/models, that lists the union across keys. Fall back to
+	// the first key only when none are chat-capable, so the caller still gets the
+	// same 503 for a genuinely chat-less configuration.
+	return keys.find((key) => getConfiguredChatModels(key).length > 0) ?? keys[0] ?? null;
 }
 
 export async function getEnabledOpenAIKeys(platform: App.Platform): Promise<AIKey[]> {

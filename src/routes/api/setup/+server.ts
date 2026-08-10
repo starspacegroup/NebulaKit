@@ -98,9 +98,29 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			updatedAt: now
 		};
 
-		await kv.put('auth_config:github', JSON.stringify(authConfig));
-		await kv.put('github_owner_id', adminGithubId);
-		await kv.put('github_owner_username', adminGithubUsername);
+		// KV has no transactions, and the lock above treats *any* leftover key as
+		// "setup already happened". A torn write would therefore lock setup while
+		// leaving no owner able to authenticate — and the reset endpoint that clears
+		// the lock is itself owner-only, so the deployment would be unrecoverable
+		// without manual KV surgery. Roll back what we wrote so a failed attempt
+		// leaves no state behind and the operator can simply retry.
+		const written: string[] = [];
+		try {
+			await kv.put('auth_config:github', JSON.stringify(authConfig));
+			written.push('auth_config:github');
+			await kv.put('github_owner_id', adminGithubId);
+			written.push('github_owner_id');
+			await kv.put('github_owner_username', adminGithubUsername);
+			written.push('github_owner_username');
+		} catch {
+			// Best-effort compensation. If it also fails there is nothing further
+			// this request can do, so the operator clears the keys manually.
+			if (typeof kv.delete === 'function') {
+				await Promise.allSettled(written.map((key) => kv.delete(key)));
+			}
+			console.error('Setup write failed; rolled back partial configuration');
+			throw error(500, 'Failed to save configuration. No changes were kept — please retry.');
+		}
 
 		return json({
 			success: true,

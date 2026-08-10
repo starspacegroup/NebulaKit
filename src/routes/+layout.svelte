@@ -23,7 +23,7 @@
 	$: commandPaletteProps = {
 		hasAIProviders: data.hasAIProviders,
 		isAuthenticated: Boolean(data.user),
-		canAccessAdmin: Boolean(data.user?.isAdmin || data.user?.isOwner),
+		canAccessAdmin: Boolean(data.user?.isAdmin || data.user?.isOwner || data.user?.isSuperAdmin),
 		cmsCommands: data.cmsPaletteItems
 	} as Record<string, unknown>;
 

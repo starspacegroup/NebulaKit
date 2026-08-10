@@ -86,7 +86,6 @@ export async function verifySignedValue<T>(
 	}
 }
 
-
 export type OAuthProvider = 'github' | 'discord';
 export type OAuthIntent = 'login' | 'link';
 
@@ -181,6 +180,27 @@ interface OAuthStateCookies {
 	delete(name: string, options: { path: string }): void;
 }
 
+/**
+ * Drop transactions that can never be consumed again: already-consumed rows and
+ * anything past its expiry. Both are dead weight — `verifyOAuthTransaction` and
+ * `consumeOAuthTransaction` already refuse them — so removing them cannot widen
+ * the replay window. Best-effort by design: a failed prune is logged, not thrown,
+ * because it must not turn a housekeeping problem into a failed sign-in.
+ */
+export async function pruneOAuthTransactions(db: D1Database): Promise<void> {
+	try {
+		await db
+			.prepare(
+				`DELETE FROM oauth_transactions
+				 WHERE consumed_at IS NOT NULL
+				    OR datetime(expires_at) <= CURRENT_TIMESTAMP`
+			)
+			.run();
+	} catch {
+		console.error('Failed to prune OAuth transactions');
+	}
+}
+
 /** Persist a state digest before redirecting to the provider. */
 export async function createOAuthTransaction(
 	db: D1Database,
@@ -198,6 +218,13 @@ export async function createOAuthTransaction(
 	const stateId = await hashSessionToken(issued.state);
 	const sessionId = boundSessionToken ? await hashSessionToken(boundSessionToken) : null;
 	const expiresAt = new Date(Date.now() + OAUTH_STATE_MAX_AGE_SECONDS * 1000).toISOString();
+
+	// Every anonymous OAuth init inserts a row, and consumption only stamps
+	// consumed_at — without this the table grows without bound for visitors who
+	// never complete provider login. Prune on the same path that creates rows so
+	// retention stays self-limiting with no scheduled job. A prune failure must
+	// never block a sign-in, so it is best-effort.
+	await pruneOAuthTransactions(db);
 
 	await db
 		.prepare(

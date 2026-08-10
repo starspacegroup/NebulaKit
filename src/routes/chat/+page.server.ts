@@ -13,7 +13,7 @@ export const load: ServerLoad = async ({ platform, locals }) => {
 	// If no providers are enabled, redirect based on user role
 	if (!hasProviders) {
 		// If user is admin, redirect to admin panel
-		if (locals.user?.isAdmin || locals.user?.isOwner) {
+		if (locals.user?.isAdmin || locals.user?.isOwner || locals.user?.isSuperAdmin) {
 			throw redirect(302, '/admin');
 		}
 		// Otherwise redirect to home

@@ -670,7 +670,7 @@
 	}
 
 	.rte-upload-error {
-		color: var(--color-danger, #ef4444);
+		color: var(--color-danger);
 		font-size: 0.8125rem;
 		padding: 0.375rem 0.75rem;
 		border-bottom: 1px solid var(--color-border);
@@ -912,7 +912,7 @@
 	}
 
 	.rte-props-error {
-		color: var(--color-danger, #ef4444);
+		color: var(--color-danger);
 		font-size: 0.8125rem;
 		margin-top: 0.375rem;
 	}

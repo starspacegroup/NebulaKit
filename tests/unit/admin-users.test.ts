@@ -248,7 +248,7 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
-					piiRevealed: false,
+					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					users: []
@@ -295,7 +295,7 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
-					piiRevealed: false,
+					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					users: []
@@ -346,7 +346,7 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
-					piiRevealed: false,
+					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					users: []
@@ -589,7 +589,7 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
-					piiRevealed: false,
+					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					users: mockUsers
@@ -620,7 +620,7 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
-					piiRevealed: false,
+					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					users: mockUsers
@@ -651,7 +651,7 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
-					piiRevealed: false,
+					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					users: mockUsers
@@ -663,6 +663,44 @@ describe('Admin Users Page', () => {
 
 		expect(promoteButton.hasAttribute('disabled')).toBe(false);
 		expect(deleteButton.hasAttribute('disabled')).toBe(false);
+	});
+
+	// The list masks ids while PII is hidden, so a mutation sent with one would
+	// target a nonexistent row (404) and the "not yourself" comparison could never
+	// match. The page gates the actions on reveal rather than letting them fire.
+	it('should gate row actions behind PII reveal, since masked ids are not valid targets', () => {
+		const mockUsers = [
+			{
+				id: 'ot****er', // as returned by the API while masked
+				name: 'O**** U***',
+				email: 'o****@test.com',
+				github_login: 'ot******er',
+				is_admin: 0,
+				created_at: '2024-01-01'
+			}
+		];
+
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: true,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
+
+		const promoteButton = screen.getByLabelText(/Promote to admin/i);
+		const deleteButton = screen.getByLabelText(/Delete user/i);
+
+		expect(promoteButton.hasAttribute('disabled')).toBe(true);
+		expect(deleteButton.hasAttribute('disabled')).toBe(true);
+		expect(promoteButton.getAttribute('title')).toContain('Reveal identifiers');
+		expect(deleteButton.getAttribute('title')).toContain('Reveal identifiers');
 	});
 
 	it('should show role and deletion controls as owner-only for administrators', () => {
