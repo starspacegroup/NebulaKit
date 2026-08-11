@@ -230,6 +230,35 @@ Agent-guidance drift corrected on 2026-08-09 (fourth session):
   account under the same 403. Note also that `ci.yml` triggers on `main`/`develop`, so a branch named
   `dev` would not run CI even if it existed on the org repo.
 
+Delivery evidence recorded on 2026-08-10 (sixth session):
+
+- The consolidation moved to a dedicated branch and PR: `consolidate/local-main-20260810` is PR
+  [#9](https://github.com/starspacegroup/NebulaKit/pull/9) (42 commits, head `8443b8b`, base
+  `main`), and the heads of PR #6 (`46a0247`), PR #7 (`security/opaque-sessions`), and PR #8
+  (`cms-v2-embeds`) are all ancestors of that head — verified with `git merge-base --is-ancestor`,
+  so merging #9 strictly contains all three.
+- **The hosted-checks blocker is resolved for PR #9.** A maintainer approved the fork-PR workflow
+  runs, and CI has now executed on `starspacegroup/NebulaKit` for the first time. Both jobs are
+  green at head `8443b8b`: Test & Coverage and E2E Tests, run `31439300377` (2026-08-10). PR #9
+  reports `MERGEABLE` / `mergeStateStatus: CLEAN`. Getting there took two fixes this session:
+  `e3b87b9` regenerated `bun.lock` with released Bun 1.3.14 (a canary had written
+  `lockfileVersion: 2`, which the pinned CI Bun cannot parse, so `--frozen-lockfile` aborted at
+  install), and `8443b8b` fixed an E2E command-palette hydration race. Nine Codex review findings
+  on #9 were also addressed, replied to, and resolved (`b44470c` and follow-ups).
+- **PR #6 now runs CI and fails both jobs** at `bun install --frozen-lockfile` (run `31434971833`):
+  its head still carries the canary `bun.lock`. Not fixed there deliberately — its head is an
+  ancestor of #9's, and pushing a lockfile commit to it would fork the lineage for a PR that #9
+  supersedes. The failure is an argument for merging #9 and closing #6, not a regression to chase.
+- **Still blocked, re-verified today — publication.** `git push --dry-run origin main` returns
+  `Permission to starspacegroup/NebulaKit.git denied to donaldfilimon` (403), unchanged. The
+  remaining acceptance step is a maintainer squash-merging PR #9 and closing the superseded PRs
+  (#6, #7, and #8's content all land with it). The squash message still needs the
+  `Co-Authored-By: David Monaghan <monaghan.david@gmail.com>` trailer for the `cms-v2-embeds`
+  lineage commits.
+- `CLAUDE.md`'s CI paragraph claimed the workflow had never executed; falsified by the runs above
+  and rewritten this session with the run ids, including PR #6's live demonstration of the
+  canary-lockfile trap the same file documents.
+
 ## Explicitly outside this worktree
 
 - [~] After NebulaKit is merged, audit whether the same inherited fixes apply to Guides, nabu, and
