@@ -474,3 +474,115 @@ mark {
 	padding: 0.125rem 0.25rem;
 	border-radius: var(--radius-sm);
 }
+
+/* Screen-reader-only text: present for assistive technology, invisible on screen. */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Drag and drop — the presentation half of $lib/actions/draggable.
+   Kept here rather than in the action so a project can restyle a drag without
+   touching its behaviour.
+   --------------------------------------------------------------------------- */
+
+/* A grab handle owns its gesture, so the browser must not treat a press on it
+   as the start of a scroll, a text selection, or — on iOS — a long-press callout.
+   `touch-action` only covers the scroll half: without the callout and selection
+   rules, holding a handle on iPhone raises the Copy / Search bubble and selects
+   the nearest word instead of starting a drag. */
+[data-drag-handle] {
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+
+/* Same protection for the item under the pointer once a drag is under way. */
+[data-dragging],
+.drag-ghost {
+	-webkit-touch-callout: none;
+}
+
+[data-drag-handle]:active {
+	cursor: grabbing;
+}
+
+/* The item left behind while its ghost is under the pointer. */
+[data-dragging] {
+	opacity: 0.4;
+}
+
+[data-dragging='keyboard'] {
+	opacity: 1;
+	outline: 2px solid var(--color-primary);
+	outline-offset: 2px;
+}
+
+/* The copy that follows the pointer. Positioned by the action; styled here. */
+.drag-ghost {
+	position: fixed;
+	z-index: 10000;
+	pointer-events: none;
+	opacity: 0.95;
+	border-radius: var(--radius-md);
+	border: 2px solid var(--color-primary);
+	background-color: var(--color-surface);
+	box-shadow: var(--shadow-xl);
+	transform: rotate(1.5deg) scale(1.02);
+	transition: none;
+}
+
+/* Where the item would land.
+
+   Zero-height, with the visible bar drawn by a pseudo-element, so inserting the
+   indicator cannot reflow the list it is pointing into. A bar that occupies real
+   space shifts every item below it, which moves the very midpoints the insertion
+   index was computed from — the list then flickers between two positions while
+   the pointer holds still. */
+.drop-indicator {
+	position: relative;
+	height: 0;
+	margin: 0;
+	border: 0;
+}
+
+.drop-indicator::before {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	top: -2px;
+	height: 3px;
+	border-radius: var(--radius-sm);
+	background-color: var(--color-primary);
+	box-shadow: 0 0 8px var(--color-primary);
+}
+
+.drop-indicator--horizontal {
+	width: 0;
+}
+
+.drop-indicator--horizontal::before {
+	inset-inline: auto;
+	inset-block: 0;
+	left: -2px;
+	top: auto;
+	width: 3px;
+	height: auto;
+}
+
+/* Honour a reduced-motion preference: the ghost stops performing. */
+@media (prefers-reduced-motion: reduce) {
+	.drag-ghost {
+		transform: none;
+	}
+}

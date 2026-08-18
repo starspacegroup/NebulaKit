@@ -7,7 +7,7 @@
 [![Built with SvelteKit](https://img.shields.io/badge/Built%20with-SvelteKit-FF3E00?style=flat&logo=svelte)](https://kit.svelte.dev/)
 [![Powered by Cloudflare](https://img.shields.io/badge/Powered%20by-Cloudflare-F38020?style=flat&logo=cloudflare)](https://www.cloudflare.com/)
 
-NebulaKit is a production-ready SvelteKit template with everything you need to build modern web applications. It comes with Cloudflare Workers integration (D1, KV, R2, Queues, Turnstile), a complete theme system, command palette, LLM chat UI, full authentication, and polished drag-and-drop—all built in from day one.
+NebulaKit is a production-ready SvelteKit template with everything you need to build modern web applications. It comes with Cloudflare Workers integration (D1, KV, R2, Queues, Turnstile), a complete theme system, command palette, LLM chat UI, full authentication, and drag-and-drop that works with a mouse, a finger or a keyboard—all built in from day one.
 
 ## Before Anything Else
 
@@ -22,7 +22,7 @@ If this repository is being used as a starter template, complete [docs/INITIAL_C
 - **🔐 Full Authentication**: Email/password + SSO (Google, GitHub) with account linking
 - **📱 Mobile-First**: Responsive layouts optimized for all devices
 - **🤖 Agent Ready**: robots.txt with AI crawler rules, dynamic sitemap, `.well-known` discovery, Markdown content negotiation, and WebMCP tools — all working out of the box
-- **🎯 Drag & Drop**: Polished DnD with cross-column and mobile support
+- **🎯 Drag & Drop**: Pointer, touch and keyboard dragging, a columned widget board, and a pure reorder engine
 - **⚡ TypeScript**: Full type safety with Cloudflare Workers types
 - **🎨 UI Components**: Beautiful, accessible components out of the box
 
@@ -242,12 +242,21 @@ await platform.env.QUEUE.send({ data: 'message' });
 
 ## 🎯 Drag & Drop
 
-The demo page includes a fully functional kanban board with:
+`<WidgetBoard>` gives you a columned board of draggable widgets:
 
-- Desktop drag and drop
-- Mobile touch support
-- Cross-column dragging
-- Smooth animations
+```svelte
+<WidgetBoard bind:widgets {columns} on:change={(e) => save(e.detail.widgets)} />
+```
+
+- Mouse, touch (hold to lift) and **keyboard** dragging, announced to screen readers
+- Cross-column moves, a drop indicator, and edge auto-scroll
+- Reordering is a pure function (`reorder()`), so orders can never collide
+- A widget registry that ships empty — register yours without touching the board
+
+The two actions behind it, `use:draggable` and `use:dropzone`, work on any
+markup, so a sortable list or a nav reorder needs no board at all.
+
+**Reference:** [docs/WIDGET_BOARD.md](./docs/WIDGET_BOARD.md)
 
 ## 📱 Mobile Support
 

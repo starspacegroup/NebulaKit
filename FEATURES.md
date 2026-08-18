@@ -217,33 +217,80 @@ import GitHub from '@auth/sveltekit/providers/github';
 
 ## 🎯 Drag & Drop System
 
-### Features
+Pointer, touch and keyboard dragging, built in-house on Pointer Events — not
+HTML5 drag-and-drop, which gives no touch support and little control over how a
+drag looks.
 
-- Desktop drag and drop
-- Mobile touch support
-- Cross-column dragging
-- Visual feedback
-- Smooth animations
+### What ships
+
+| Piece                              | What it is                                                           |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| `reorder()` (`$lib/utils/reorder`) | Pure list surgery. Orders stay contiguous and unique by construction |
+| `use:draggable` / `use:dropzone`   | Svelte actions. Mouse, touch hold, keyboard, ghost, auto-scroll      |
+| `<WidgetBoard>`                    | Columns, drop handling, and registry-driven widget rendering         |
+| `$lib/widgets/`                    | Manifest + component registry. **Ships empty** — bring your own      |
+
+The widget registry is empty on purpose, the same way the CMS embed registry is:
+a template should not force its widgets on a project. The board and the drag
+behaviour are complete; the widgets are yours.
 
 ### Usage
 
-The demo page shows a kanban board implementation. Extend it for your needs:
+```svelte
+<script>
+	import WidgetBoard from '$lib/components/WidgetBoard.svelte';
 
-```typescript
-function handleDrop(e: DragEvent, targetId: string) {
-	// Your drop logic
-}
+	let widgets = [{ id: 'notes', type: 'notes', group: 'left', order: 0 }];
+	const columns = [
+		{ id: 'left', title: 'Left' },
+		{ id: 'right', title: 'Right' }
+	];
+</script>
+
+<WidgetBoard bind:widgets {columns} on:change={(e) => save(e.detail.widgets)} />
 ```
 
-### Mobile Support
+Dragging anything else — a sortable list, a nav reorder — takes the two actions
+directly, with no board involved:
 
-Touch events are handled separately for better mobile UX:
-
-```typescript
-handleTouchStart(e: TouchEvent, item: Item) { }
-handleTouchMove(e: TouchEvent) { }
-handleTouchEnd(e: TouchEvent) { }
+```svelte
+<ul use:dropzone={{ group: 'list' }}>
+	{#each items as item (item.id)}
+		<li use:draggable={{ id: item.id, group: 'list', onDrop }}>
+			<button data-drag-handle>Drag</button>
+			{item.name}
+		</li>
+	{/each}
+</ul>
 ```
+
+### Keyboard and screen readers
+
+Every pointer gesture has a keyboard equivalent, and it is not optional. Focus a
+handle, then:
+
+| Key              | Effect                                    |
+| ---------------- | ----------------------------------------- |
+| Space or Enter   | Pick up, and drop again                   |
+| Arrow up/down    | Move within the column                    |
+| Arrow left/right | Move to the next column across            |
+| Escape           | Cancel, returning the item where it began |
+
+Each move is announced through a live region. Translate the strings by assigning
+to `dragMessages` from `$lib/actions/draggable`.
+
+### Mobile
+
+A touch is treated as a scroll until proven otherwise: dragging starts after a
+300 ms hold on the handle, cancels if the finger travels more than 10 px first,
+and buzzes on engage where the device supports it. Dragging near the top or
+bottom of the viewport auto-scrolls the page, faster the closer you get.
+
+Handles grow to a fingertip-sized target on coarse pointers, and neither they nor
+the widget header can be selected — on iOS a long press on selectable chrome
+raises the Copy / Search callout instead of starting a drag.
+
+**Reference:** [docs/WIDGET_BOARD.md](docs/WIDGET_BOARD.md)
 
 ## 🎨 UI Components
 
