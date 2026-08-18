@@ -19,6 +19,19 @@ const mockUser = {
 describe('Admin AI Keys Page', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// A clean queue every test: mockClear leaves queued once-values behind,
+		// and a leftover response would be answered to the wrong call.
+		mockFetch.mockReset();
+		// The page loads its OpenAI model list on mount (loadOpenAIModels). Answer
+		// that here, so the response each test queues below reaches the call it is
+		// actually testing rather than being spent on the mount-time load. Without
+		// it, a test whose fetch then resolves to `undefined` pushes an undefined
+		// entry into `keys`, and the keyed {#each} over them throws on a later
+		// flush — as an unhandled rejection, long after the test has passed.
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({ chatModels: [], voiceModels: [] })
+		});
 	});
 
 	it('should render the page title', () => {
@@ -500,11 +513,7 @@ describe('Admin AI Keys Page', () => {
 	});
 
 	it('should update UI optimistically when toggle is clicked', async () => {
-		// `mockResolvedValue`, not `...Once`: the page also loads its OpenAI model
-		// list on mount, and a single queued response would be spent there — the
-		// toggle would then see a failure and revert, which is the opposite of
-		// what this test is checking.
-		mockFetch.mockResolvedValue({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({ success: true })
 		});
