@@ -6,7 +6,7 @@
  * the origin would turn a site tool into a credentialed fetch primitive for
  * whatever URL an agent was talked into using.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	buildWebMcpTools,
 	registerWebMcpTools,
@@ -210,9 +210,21 @@ describe('set_color_theme', () => {
 describe('registerWebMcpTools', () => {
 	const original = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
 
-	beforeEach(() => {
-		if (original) Object.defineProperty(globalThis, 'navigator', original);
-	});
+	function restoreNavigator() {
+		if (original) {
+			Object.defineProperty(globalThis, 'navigator', original);
+			return;
+		}
+		// No own descriptor means the real `navigator` comes from the prototype,
+		// so there is nothing to redefine — the stub has to be deleted for it to
+		// show through again. Without this, the last stub in this block leaks into
+		// every later file in the run (the pool is single-threaded), and anything
+		// reading `navigator.platform` on mount dies a long way from here.
+		delete (globalThis as { navigator?: Navigator }).navigator;
+	}
+
+	beforeEach(restoreNavigator);
+	afterAll(restoreNavigator);
 
 	it('does nothing on a browser without WebMCP', () => {
 		// Which is almost every browser today — this must never throw.

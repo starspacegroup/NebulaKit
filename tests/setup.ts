@@ -31,6 +31,18 @@ for (const key of ['localStorage', 'sessionStorage'] as const) {
 	}
 }
 
+// happy-dom's `document.createTextNode` does not stringify its argument, so a
+// numeric 0 becomes an EMPTY text node: `{count}` in a Svelte template renders
+// as nothing whenever the count is zero, and a test asserting on "0" fails
+// against markup that is correct in every real browser (the DOM spec types the
+// argument as a DOMString, so browsers coerce it).
+//
+// Symptom if this is removed: a stat tile showing "%" instead of "0%", or a
+// counter rendering blank — but only under test.
+const createTextNode = document.createTextNode.bind(document);
+document.createTextNode = ((data: unknown) =>
+	createTextNode(String(data))) as typeof document.createTextNode;
+
 // Provide a default $app/stores mock so components using $page (e.g. SharingMeta) work in tests.
 // Individual test files can override this with their own vi.mock('$app/stores', ...).
 vi.mock('$app/stores', () => ({

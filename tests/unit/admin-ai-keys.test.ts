@@ -22,13 +22,37 @@ describe('Admin AI Keys Page', () => {
 	});
 
 	it('should render the page title', () => {
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const title = screen.getByText('AI Provider Keys');
 		expect(title).toBeTruthy();
 	});
 
 	it('should render an empty state when no keys exist', () => {
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const emptyMessage = screen.getByText(/No AI provider keys configured/i);
 		expect(emptyMessage).toBeTruthy();
 	});
@@ -39,20 +63,56 @@ describe('Admin AI Keys Page', () => {
 			{ id: '2', name: 'Anthropic', provider: 'anthropic', createdAt: '2024-01-02' }
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		expect(screen.getByText('OpenAI')).toBeTruthy();
 		expect(screen.getByText('Anthropic')).toBeTruthy();
 	});
 
 	it('should show add key button', () => {
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const addButton = screen.getByText(/Add AI Key/i);
 		expect(addButton).toBeTruthy();
 	});
 
 	it('should open add key form when add button is clicked', async () => {
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const addButton = screen.getByText(/Add AI Key/i);
 
 		await fireEvent.click(addButton);
@@ -62,7 +122,19 @@ describe('Admin AI Keys Page', () => {
 	});
 
 	it('should validate required fields when adding a key', async () => {
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const addButton = screen.getByText(/Add AI Key/i);
 		await fireEvent.click(addButton);
 
@@ -79,7 +151,19 @@ describe('Admin AI Keys Page', () => {
 			json: async () => ({ success: true, key: { id: '3', name: 'Test AI', provider: 'openai' } })
 		});
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const addButton = screen.getByText(/Add AI Key/i);
 		await fireEvent.click(addButton);
 
@@ -105,7 +189,19 @@ describe('Admin AI Keys Page', () => {
 	it('should show edit form when edit button is clicked', async () => {
 		const mockKeys = [{ id: '1', name: 'OpenAI', provider: 'openai', createdAt: '2024-01-01' }];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const editButton = screen.getByLabelText(/Edit OpenAI/i);
 		await fireEvent.click(editButton);
@@ -122,7 +218,19 @@ describe('Admin AI Keys Page', () => {
 
 		const mockKeys = [{ id: '1', name: 'OpenAI', provider: 'openai', createdAt: '2024-01-01' }];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const deleteButton = screen.getByLabelText(/Delete OpenAI/i);
 		await fireEvent.click(deleteButton);
@@ -151,7 +259,19 @@ describe('Admin AI Keys Page', () => {
 			}
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const maskedValue = screen.getByText(/••••••/i);
 		expect(maskedValue).toBeTruthy();
@@ -168,7 +288,19 @@ describe('Admin AI Keys Page', () => {
 			}
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const toggleButton = screen.getByLabelText(/Show value/i);
 		await fireEvent.click(toggleButton);
@@ -178,7 +310,19 @@ describe('Admin AI Keys Page', () => {
 	});
 
 	it('should display available AI providers', async () => {
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const addButton = screen.getByText(/Add AI Key/i);
 		await fireEvent.click(addButton);
 
@@ -204,7 +348,19 @@ describe('Admin AI Keys Page', () => {
 			}
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const toggleSwitch = screen.getByLabelText(/Toggle OpenAI/i);
 		expect(toggleSwitch).toBeTruthy();
@@ -228,7 +384,19 @@ describe('Admin AI Keys Page', () => {
 			}
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const enabledToggle = screen.getByLabelText(/Toggle OpenAI Enabled/i);
 		const disabledToggle = screen.getByLabelText(/Toggle Anthropic Disabled/i);
@@ -253,7 +421,19 @@ describe('Admin AI Keys Page', () => {
 			}
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const toggleSwitch = screen.getByLabelText(/Toggle OpenAI/i);
 		await fireEvent.click(toggleSwitch);
@@ -288,7 +468,19 @@ describe('Admin AI Keys Page', () => {
 			}
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const toggleSwitch = screen.getByLabelText(/Toggle OpenAI/i);
 		await fireEvent.click(toggleSwitch);
@@ -308,7 +500,11 @@ describe('Admin AI Keys Page', () => {
 	});
 
 	it('should update UI optimistically when toggle is clicked', async () => {
-		mockFetch.mockResolvedValueOnce({
+		// `mockResolvedValue`, not `...Once`: the page also loads its OpenAI model
+		// list on mount, and a single queued response would be spent there — the
+		// toggle would then see a failure and revert, which is the opposite of
+		// what this test is checking.
+		mockFetch.mockResolvedValue({
 			ok: true,
 			json: async () => ({ success: true })
 		});
@@ -323,7 +519,19 @@ describe('Admin AI Keys Page', () => {
 			}
 		];
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: mockKeys } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: mockKeys
+				}
+			}
+		});
 
 		const toggleSwitch = screen.getByLabelText(/Toggle OpenAI/i);
 		expect(toggleSwitch).toBeChecked();
@@ -343,7 +551,19 @@ describe('Admin AI Keys Page', () => {
 			})
 		});
 
-		render(AIKeysPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], keys: [] } } });
+		render(AIKeysPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					keys: []
+				}
+			}
+		});
 		const addButton = screen.getByText(/Add AI Key/i);
 		await fireEvent.click(addButton);
 
@@ -367,5 +587,3 @@ describe('Admin AI Keys Page', () => {
 		});
 	});
 });
-
-

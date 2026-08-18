@@ -34,6 +34,11 @@ function staleDepsFix() {
 
 export default defineConfig({
 	plugins: [staleDepsFix(), sveltekit()],
+	// Resolve Svelte's browser build under Vitest. Without this, `svelte` resolves
+	// to its server export, where `onMount` is a no-op — component tests render
+	// fine but nothing that happens on mount ever runs, so a test asserting on
+	// mounted behaviour silently checks the pre-mount markup instead.
+	resolve: process.env.VITEST ? { conditions: ['browser'] } : {},
 	// Preview (vite preview) reuses the dev port so local URLs stay stable.
 	preview: {
 		port: site.devPort,
