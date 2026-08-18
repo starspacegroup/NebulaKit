@@ -313,6 +313,37 @@
 		margin: var(--spacing-md) 0;
 	}
 
+	/* Captioned figures. The sanitizer already allows <figure>/<figcaption>, but
+	   without these the caption renders as body copy welded to the next
+	   paragraph. */
+	.cms-content :global(figure) {
+		margin: var(--spacing-lg) 0;
+	}
+
+	.cms-content :global(figure img) {
+		display: block;
+		margin: 0 auto;
+	}
+
+	.cms-content :global(figcaption) {
+		margin-top: var(--spacing-sm);
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		line-height: 1.6;
+		text-align: center;
+	}
+
+	/* Byline inside body content, for posts with a co-author worth naming. The
+	   wrapper <p> carries the class (the sanitizer allows class on p). */
+	.cms-content :global(.byline) {
+		margin: 0 0 var(--spacing-md);
+		padding-bottom: var(--spacing-sm);
+		border-bottom: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		font-size: 0.95rem;
+		letter-spacing: 0.01em;
+	}
+
 	/* Default article template */
 	.cms-default-article header {
 		margin-bottom: var(--spacing-xl);

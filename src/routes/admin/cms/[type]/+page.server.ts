@@ -44,7 +44,9 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 	if (itemsRes.ok) {
 		const itemsData = await itemsRes.json();
 		items = itemsData.items || [];
-		totalItems = itemsData.totalItems || 0;
+		// The API forwards the service's PaginatedResult, whose count field is
+		// `total` — reading `totalItems` here silently pinned the counter to 0.
+		totalItems = itemsData.total || 0;
 		totalPages = itemsData.totalPages || 1;
 		currentPage = itemsData.page || 1;
 	}

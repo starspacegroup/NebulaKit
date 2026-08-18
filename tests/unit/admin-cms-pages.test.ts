@@ -91,8 +91,9 @@ describe('Admin CMS Type Management Page Server', () => {
 			.mockResolvedValueOnce({
 				ok: true,
 				json: async () => ({
+					// Matches the real API, which forwards PaginatedResult's `total`.
 					items: mockItems,
-					totalItems: 1,
+					total: 1,
 					totalPages: 1,
 					page: 1
 				})
