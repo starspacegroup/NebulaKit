@@ -31,7 +31,9 @@ describe('Auth Login Page UI', () => {
 			}
 		});
 
-		expect(screen.getByRole('group', { name: /pretend login role selection/i })).toBeInTheDocument();
+		expect(
+			screen.getByRole('group', { name: /pretend login role selection/i })
+		).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'User' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Admin' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Superadmin' })).toBeInTheDocument();

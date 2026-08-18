@@ -215,4 +215,3 @@ describe('/setup - GitHub OAuth Setup', () => {
 		expect(homepageUrl?.textContent).toContain('http://localhost:4277');
 	});
 });
-

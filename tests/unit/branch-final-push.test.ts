@@ -218,7 +218,7 @@ describe('API Setup - generic error branches', () => {
 // ─── 5. Admin Auth Keys - Discord parse error (L47) + outer catch (L52-53) + POST non-status (L97-98) ─
 
 const AUTH_KEYS_ADMIN = {
-	user: { id: '72961', login: 'davis9001', email: 'o@example.com', isOwner: true, isAdmin: true }
+	user: { id: '72961', login: 'example-user', email: 'o@example.com', isOwner: true, isAdmin: true }
 };
 
 describe('Admin Auth Keys - uncovered catch branches', () => {
@@ -226,7 +226,7 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 		vi.resetModules();
 	});
 
-	it('should catch Discord config parse error and continue', async () => {
+	it('should fail closed on a corrupt Discord config', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		const { GET } = await import('../../src/routes/api/admin/auth-keys/+server.js');
 
@@ -238,22 +238,17 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 			})
 		};
 
-		const response = await GET({
-			locals: AUTH_KEYS_ADMIN,
-			platform: { env: { KV: mockKV } }
-		} as any);
-
-		expect(response.status).toBe(200);
-		const data = await response.json();
-		expect(data.keys).toEqual([]); // Discord was skipped due to parse error
-		expect(consoleSpy).toHaveBeenCalledWith(
-			expect.stringContaining('Failed to parse Discord OAuth config'),
-			expect.anything()
-		);
+		await expect(
+			GET({
+				locals: AUTH_KEYS_ADMIN,
+				platform: { env: { KV: mockKV } }
+			} as any)
+		).rejects.toMatchObject({ status: 500 });
+		expect(consoleSpy).toHaveBeenCalled();
 		consoleSpy.mockRestore();
 	});
 
-	it('should handle GitHub config parse error and continue', async () => {
+	it('should fail closed on a corrupt GitHub config', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		const { GET } = await import('../../src/routes/api/admin/auth-keys/+server.js');
 
@@ -265,14 +260,12 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 			})
 		};
 
-		const response = await GET({
-			locals: AUTH_KEYS_ADMIN,
-			platform: { env: { KV: mockKV } }
-		} as any);
-
-		expect(response.status).toBe(200);
-		const data = await response.json();
-		expect(data.keys).toEqual([]);
+		await expect(
+			GET({
+				locals: AUTH_KEYS_ADMIN,
+				platform: { env: { KV: mockKV } }
+			} as any)
+		).rejects.toMatchObject({ status: 500 });
 		consoleSpy.mockRestore();
 	});
 

@@ -3,6 +3,7 @@ node_modules
 /build
 /.svelte-kit
 /package
+/dist
 .env
 .env.*
 .dev.vars
@@ -14,11 +15,14 @@ vite.config.ts.timestamp-*
 .wrangler
 wrangler.toml.local
 
-# Local customization input (see CUSTOMIZE.md) — never commit into your product
-customize.config.json
-
 # LLM outputs (test logs, coverage dumps, etc.)
 .llm-outputs/
+*.log
+
+# Agent session memory. Untracked but previously not ignored, so a `git add -A`
+# could publish transcript scratch. vite.config.ts already excludes it from
+# coverage; this keeps it out of commits too.
+.remember/
 
 # Testing
 coverage/

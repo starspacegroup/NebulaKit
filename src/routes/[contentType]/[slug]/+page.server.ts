@@ -36,6 +36,9 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 	if (!contentType) {
 		throw error(404, 'Content type not found');
 	}
+	if (contentType.settings.isPublic === false) {
+		throw error(404, 'Not found');
+	}
 
 	const item = await getContentItemBySlug(db, contentType.id, itemSlug);
 	if (!item) {

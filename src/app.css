@@ -12,6 +12,7 @@
 	--color-text-secondary: #5a6169; /* Updated from #6c757d for better contrast (5.95:1 on surface) */
 	--color-border: #dee2e6;
 	--color-error: #dc3545;
+	--color-danger: #dc2626; /* destructive accents (callouts, delete affordances); 4.8:1 on white */
 	--color-success: #28a745;
 	--color-warning: #ffc107;
 
@@ -71,6 +72,7 @@
 	--color-text-secondary: #adb5bd;
 	--color-border: #3a3a3a;
 	--color-error: #ef4444;
+	--color-danger: #ef4444; /* destructive accents; 4.6:1 on the dark background */
 	--color-success: #10b981;
 	--color-warning: #f59e0b;
 

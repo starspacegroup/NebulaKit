@@ -88,6 +88,7 @@ describe('Admin Users Extended API', () => {
 			const response = await GET({
 				url: new URL('http://localhost/api/admin/users/search?q=testuser'),
 				locals: { user: { id: '1', isOwner: true } },
+				cookies: { get: () => '1' },
 				fetch: mockFetch
 			} as any);
 
@@ -130,6 +131,37 @@ describe('Admin Users Extended API', () => {
 			const result = await response.json();
 			expect(result.users).toEqual([]);
 		});
+
+		it('treats a GitHub response without items as an empty result', async () => {
+			const { GET } = await import('../../src/routes/api/admin/users/search/+server');
+			const response = await GET({
+				url: new URL('http://localhost/api/admin/users/search?q=test'),
+				locals: { user: { id: 'owner', isOwner: true } },
+				cookies: { get: vi.fn(() => '1') },
+				fetch: vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({}) })
+			} as any);
+
+			await expect(response.json()).resolves.toEqual({ users: [] });
+		});
+
+		it('masks missing GitHub login and id values without leaking links', async () => {
+			const { GET } = await import('../../src/routes/api/admin/users/search/+server');
+			const response = await GET({
+				url: new URL('http://localhost/api/admin/users/search?q=test'),
+				locals: { user: { id: 'admin', isAdmin: true } },
+				cookies: { get: vi.fn() },
+				fetch: vi.fn().mockResolvedValue({
+					ok: true,
+					json: vi.fn().mockResolvedValue({
+						items: [{ login: null, id: null, avatar_url: 'private', html_url: 'private' }]
+					})
+				})
+			} as any);
+
+			await expect(response.json()).resolves.toEqual({
+				users: [{ login: '***', id: '***', avatar_url: null, html_url: null }]
+			});
+		});
 	});
 
 	describe('PATCH /api/admin/users/[id]', () => {
@@ -157,6 +189,19 @@ describe('Admin Users Extended API', () => {
 					platform: {}
 				} as any)
 			).rejects.toThrow();
+		});
+
+		it('should reserve role changes for the owner', async () => {
+			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server');
+
+			await expect(
+				PATCH({
+					params: { id: 'user-123' },
+					request: { json: vi.fn().mockResolvedValue({ isAdmin: true }) },
+					locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true } },
+					platform: {}
+				} as any)
+			).rejects.toMatchObject({ status: 403 });
 		});
 
 		it('should return 400 when isAdmin is not boolean', async () => {
@@ -247,30 +292,7 @@ describe('Admin Users Extended API', () => {
 			const result = await response.json();
 			expect(result.success).toBe(true);
 			expect(result.message).toContain('promoted');
-		});
-
-		it('should prevent demoting setup owner', async () => {
-			const mockDb = {
-				prepare: vi.fn().mockReturnValue({
-					bind: vi.fn().mockReturnThis(),
-					first: vi.fn().mockResolvedValue({ id: 'owner-123', email: 'owner@test.com' })
-				})
-			};
-
-			const mockKV = {
-				get: vi.fn().mockResolvedValue(JSON.stringify({ ownerEmail: 'owner@test.com' }))
-			};
-
-			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server');
-
-			await expect(
-				PATCH({
-					params: { id: 'owner-123' },
-					request: { json: vi.fn().mockResolvedValue({ isAdmin: false }) },
-					locals: { user: { id: 'admin-1', isOwner: true } },
-					platform: { env: { DB: mockDb, KV: mockKV } }
-				} as any)
-			).rejects.toThrow();
+			expect(mockDb.prepare).toHaveBeenCalledWith('DELETE FROM sessions WHERE user_id = ?');
 		});
 	});
 
@@ -297,6 +319,18 @@ describe('Admin Users Extended API', () => {
 					platform: {}
 				} as any)
 			).rejects.toThrow();
+		});
+
+		it('should reserve account deletion for the owner', async () => {
+			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server');
+
+			await expect(
+				DELETE({
+					params: { id: 'user-123' },
+					locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true } },
+					platform: {}
+				} as any)
+			).rejects.toMatchObject({ status: 403 });
 		});
 
 		it('should return 400 when trying to delete self', async () => {
@@ -333,29 +367,6 @@ describe('Admin Users Extended API', () => {
 					params: { id: 'nonexistent' },
 					locals: { user: { id: 'admin-1', isOwner: true } },
 					platform: { env: { DB: mockDb } }
-				} as any)
-			).rejects.toThrow();
-		});
-
-		it('should prevent deleting setup owner', async () => {
-			const mockDb = {
-				prepare: vi.fn().mockReturnValue({
-					bind: vi.fn().mockReturnThis(),
-					first: vi.fn().mockResolvedValue({ id: 'owner-123', email: 'owner@test.com' })
-				})
-			};
-
-			const mockKV = {
-				get: vi.fn().mockResolvedValue(JSON.stringify({ ownerEmail: 'owner@test.com' }))
-			};
-
-			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server');
-
-			await expect(
-				DELETE({
-					params: { id: 'owner-123' },
-					locals: { user: { id: 'admin-1', isOwner: true } },
-					platform: { env: { DB: mockDb, KV: mockKV } }
 				} as any)
 			).rejects.toThrow();
 		});

@@ -6,7 +6,13 @@
   (onMount) — during SSR the component renders an empty shell.
 -->
 <script lang="ts">
-	import { embedManifest } from '$lib/cms/embeds/manifest';
+	import { embedManifest, getEmbedDefinition } from '$lib/cms/embeds/manifest';
+	import {
+		buildFormModel,
+		coerceProps,
+		validateProps,
+		type EmbedPropsSchema
+	} from '$lib/cms/embeds/props-schema';
 	import { SvelteEmbed } from '$lib/cms/richtext-embed-extension';
 	import { extractImageFiles, uploadImage } from '$lib/cms/richtext-utils';
 	import { Editor } from '@tiptap/core';
@@ -43,18 +49,48 @@
 	let propsJson = '';
 	let propsError = '';
 	let propsSetter: ((p: Record<string, unknown>) => void) | null = null;
+	// When the embed declares a typed schema we render a form instead of raw JSON.
+	let propsSchema: EmbedPropsSchema | null = null;
+	// Transient form state for the props editor; bound to typed inputs.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	let propsModel: Record<string, any> = {};
 
 	function openPropsEditor(
+		embedName: string,
 		getProps: () => Record<string, unknown>,
 		setProps: (p: Record<string, unknown>) => void
 	) {
-		propsJson = JSON.stringify(getProps(), null, 2);
-		propsError = '';
+		const definition = getEmbedDefinition(embedName);
 		propsSetter = setProps;
+		propsError = '';
+		if (definition?.props && definition.props.length > 0) {
+			propsSchema = definition.props;
+			propsModel = buildFormModel(definition.props, getProps());
+		} else {
+			propsSchema = null;
+			propsJson = JSON.stringify(getProps(), null, 2);
+		}
 		showPropsEditor = true;
 	}
 
+	function closePropsEditor() {
+		showPropsEditor = false;
+		propsSetter = null;
+		propsSchema = null;
+	}
+
 	function applyProps() {
+		if (propsSchema) {
+			const coerced = coerceProps(propsSchema, propsModel);
+			const errors = validateProps(propsSchema, coerced);
+			if (errors.length > 0) {
+				propsError = errors.join(', ');
+				return;
+			}
+			propsSetter?.(coerced);
+			closePropsEditor();
+			return;
+		}
 		try {
 			const parsed = JSON.parse(propsJson || '{}');
 			if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -62,8 +98,7 @@
 				return;
 			}
 			propsSetter?.(parsed);
-			showPropsEditor = false;
-			propsSetter = null;
+			closePropsEditor();
 		} catch {
 			propsError = 'Invalid JSON';
 		}
@@ -432,8 +467,7 @@
 			bind:value
 			rows="14"
 			aria-label="HTML source"
-			spellcheck="false"
-		></textarea>
+			spellcheck="false"></textarea>
 	{/if}
 </div>
 
@@ -472,26 +506,53 @@
 {#if showPropsEditor}
 	<div
 		class="rte-modal-overlay"
-		on:click|self={() => (showPropsEditor = false)}
-		on:keydown={(e) => e.key === 'Escape' && (showPropsEditor = false)}
+		on:click|self={closePropsEditor}
+		on:keydown={(e) => e.key === 'Escape' && closePropsEditor()}
 		role="presentation"
 	>
 		<div class="rte-modal" role="dialog" aria-modal="true" aria-label="Edit embed props">
-			<h3>Embed props (JSON)</h3>
-			<textarea
-				class="rte-props-area"
-				bind:value={propsJson}
-				rows="8"
-				aria-label="Embed props JSON"
-				spellcheck="false"
-			></textarea>
+			<h3>Embed props</h3>
+			{#if propsSchema}
+				<div class="rte-props-form">
+					{#each propsSchema as field (field.key)}
+						<label class="rte-props-field">
+							<span class="rte-props-label">{field.label}</span>
+							{#if field.type === 'select'}
+								<select bind:value={propsModel[field.key]}>
+									{#each field.options || [] as opt (opt.value)}
+										<option value={opt.value}>{opt.label}</option>
+									{/each}
+								</select>
+							{:else if field.type === 'boolean'}
+								<input type="checkbox" bind:checked={propsModel[field.key]} />
+							{:else if field.type === 'number'}
+								<input type="number" bind:value={propsModel[field.key]} />
+							{:else}
+								<input
+									type="text"
+									bind:value={propsModel[field.key]}
+									placeholder={field.placeholder || ''}
+								/>
+							{/if}
+							{#if field.helpText}
+								<span class="rte-props-help">{field.helpText}</span>
+							{/if}
+						</label>
+					{/each}
+				</div>
+			{:else}
+				<textarea
+					class="rte-props-area"
+					bind:value={propsJson}
+					rows="8"
+					aria-label="Embed props JSON"
+					spellcheck="false"></textarea>
+			{/if}
 			{#if propsError}
 				<p class="rte-props-error" role="alert">{propsError}</p>
 			{/if}
 			<div class="rte-modal-actions">
-				<button type="button" class="rte-btn" on:click={() => (showPropsEditor = false)}>
-					Cancel
-				</button>
+				<button type="button" class="rte-btn" on:click={closePropsEditor}> Cancel </button>
 				<button type="button" class="rte-btn rte-active" on:click={applyProps}>Apply</button>
 			</div>
 		</div>
@@ -609,7 +670,7 @@
 	}
 
 	.rte-upload-error {
-		color: var(--color-danger, #ef4444);
+		color: var(--color-danger);
 		font-size: 0.8125rem;
 		padding: 0.375rem 0.75rem;
 		border-bottom: 1px solid var(--color-border);
@@ -851,9 +912,48 @@
 	}
 
 	.rte-props-error {
-		color: var(--color-danger, #ef4444);
+		color: var(--color-danger);
 		font-size: 0.8125rem;
 		margin-top: 0.375rem;
+	}
+
+	.rte-props-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.rte-props-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.rte-props-label {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.rte-props-field input[type='text'],
+	.rte-props-field input[type='number'],
+	.rte-props-field select {
+		width: 100%;
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		color: var(--color-text);
+		font-size: 0.875rem;
+		padding: 0.5rem 0.75rem;
+	}
+
+	.rte-props-field input[type='checkbox'] {
+		align-self: flex-start;
+	}
+
+	.rte-props-help {
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
 	}
 
 	.rte-modal-actions {

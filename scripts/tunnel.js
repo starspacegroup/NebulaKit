@@ -6,7 +6,6 @@
  *
  *   Free quick tunnel (no account required):
  *     bun run tunnel          # → random URL on trycloudflare.com
- *     npm run tunnel
  *
  *   Named tunnel on your own domain (requires a pre-configured cloudflared tunnel
  *   token from Cloudflare Zero Trust → Networks → Tunnels):

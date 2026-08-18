@@ -10,17 +10,17 @@ needs doing by hand, and how to verify it.
 
 ## Why routes, not files in `static/`
 
-Every surface below is a SvelteKit endpoint rather than a static file. Two
-reasons, both of which matter to anyone using NebulaKit as a template:
+Every surface below is a SvelteKit endpoint rather than a static file for two
+operational reasons:
 
 1. **Self-correcting URLs.** robots.txt, the sitemap, and the catalogs build
    absolute URLs from the _live request origin_. The sitemap protocol requires
    every entry to share the sitemap's host, so this is also the more correct
    reading of the spec. Practical effect: the files are right on `localhost`, on
-   a `*.pages.dev` preview, and on a custom domain, with no configuration.
-2. **`bun run customize` can't reach static files.** The customize script
-   rewrites `.ts/.js/.svelte/.json/.toml/.md/.html`. A `static/robots.txt` would
-   keep the template's URL forever, silently.
+   a `*.pages.dev` preview, and on a custom domain, without per-domain URL edits.
+2. **One source controls policy.** A generated route keeps the live origin and
+   policy constants together instead of duplicating deploy-specific URLs in a
+   static `robots.txt`.
 
 Policy and route data live in one module — [`src/lib/agent-discovery.ts`](../src/lib/agent-discovery.ts) —
 so the routes, the hooks, and the tests can never disagree.
@@ -55,8 +55,8 @@ Private surfaces (`/admin/`, `/api/`, `/auth/`, `/profile`, `/reset`, `/setup`,
 `status` link stays reachable.
 
 > **Content Signals default is fully permissive:** `search=yes, ai-input=yes,
-ai-train=yes`. That suits an open-source template whose demo content is meant
-> to be learned from. **If your site's content is proprietary, change
+ai-train=yes`. That matches NebulaKit's public open-source content. **Before
+> publishing proprietary content, change
 > `CONTENT_SIGNAL` in `src/lib/agent-discovery.ts` before launch.** Setting
 > `ai-train=no` is a one-word edit that every robots.txt group picks up.
 
@@ -99,10 +99,11 @@ Registers read-and-navigate tools via `navigator.modelContext` when the browser
 supports it, and does nothing when it doesn't (which is most browsers today).
 
 Every tool is safe to call without confirmation. Path inputs are resolved against
-the site's own origin and rejected if they escape it — these tools run in the
-user's page with the user's cookies, so an unchecked path would be a credentialed
-fetch primitive. **If you add a tool with side effects, require explicit user
-confirmation first**; agents call these speculatively.
+the site's own origin and rejected if they escape it. Content reads must also be
+present in the public sitemap, and both sitemap/page fetches omit browser
+credentials, so a signed-in visitor cannot expose private content through the
+tool. **If you add a tool with side effects, require explicit user confirmation
+first**; agents call these speculatively.
 
 ---
 
@@ -125,8 +126,8 @@ files are absent instead of probing for them.
 
 ## Still to do by hand: DNS-AID records
 
-DNS records live in your DNS provider, not this repo, so this is the one part
-the template cannot ship for you.
+DNS records live in your DNS provider, not this repo, so NebulaKit cannot publish
+them from the application.
 
 [DNS for AI Discovery](https://datatracker.ietf.org/doc/draft-mozleywilliams-dnsop-dnsaid/)
 advertises agent entry points as SVCB records ([RFC 9460](https://www.rfc-editor.org/rfc/rfc9460))
@@ -164,6 +165,12 @@ dig +dnssec _index._agents.example.com SVCB | grep -q 'ad;' && echo "DNSSEC OK"
 ---
 
 ## Verifying
+
+Discovery URLs derive from the request origin without per-domain URL edits, but
+service readiness still depends on real Cloudflare bindings. With the committed
+`REPLACE_ME_*` ids, `/api/health` correctly returns `503`/`degraded`; production
+builds and remote migration/deploy commands fail until `bun run setup:cf` writes
+project-owned ids.
 
 Unit tests cover the whole surface, including a guard that fails when a new
 public page is added without a sitemap decision:

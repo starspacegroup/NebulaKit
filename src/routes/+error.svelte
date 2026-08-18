@@ -55,10 +55,7 @@
 	};
 </script>
 
-<SharingMeta
-	title="{status} - {info.title}"
-	noindex={true}
-/>
+<SharingMeta title="{status} - {info.title}" noindex={true} />
 
 <div class="error-page">
 	<!-- Animated cosmic background -->

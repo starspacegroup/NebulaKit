@@ -1,4 +1,5 @@
 import { error, json } from '@sveltejs/kit';
+import { createAuthSession } from '$lib/utils/db';
 import { buildSessionCookieHeader } from '$lib/utils/session';
 import type { RequestHandler } from './$types';
 
@@ -73,17 +74,20 @@ export const DELETE: RequestHandler = async ({ locals, platform, request, url })
 			const existingConnections = locals.user.simulatedConnections || [];
 			const simulatedConnections = existingConnections.filter((value) => value !== provider);
 
+			if (!platform?.env?.DB) {
+				throw error(500, 'Database not available');
+			}
+
+			const sessionId = await createAuthSession(platform.env.DB, {
+				...locals.user,
+				simulatedConnections
+			});
+
 			return json(
 				{ success: true, connections: simulatedConnections.map((name) => ({ provider: name })) },
 				{
 					headers: {
-						'Set-Cookie': buildSessionCookieHeader(
-							{
-								...locals.user,
-								simulatedConnections
-							},
-							url
-						)
+						'Set-Cookie': buildSessionCookieHeader(sessionId, url)
 					}
 				}
 			);

@@ -26,31 +26,31 @@ const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');
 
 function walk(dir: string, extensions: string[]): string[] {
-  const results: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) results.push(...walk(full, extensions));
-    else if (extensions.some((ext) => entry.name.endsWith(ext))) results.push(full);
-  }
-  return results;
+	const results: string[] = [];
+	for (const entry of readdirSync(dir, { withFileTypes: true })) {
+		const full = join(dir, entry.name);
+		if (entry.isDirectory()) results.push(...walk(full, extensions));
+		else if (extensions.some((ext) => entry.name.endsWith(ext))) results.push(full);
+	}
+	return results;
 }
 
 function rel(f: string) {
-  return f.slice(ROOT.length + 1).replace(/\\/g, '/');
+	return f.slice(ROOT.length + 1).replace(/\\/g, '/');
 }
 
 function read(f: string) {
-  const content = readFileSync(f, 'utf-8');
-  // Strip <code>...</code> blocks so documentation examples in .svelte files
-  // don't trigger false positives (they're rendered HTML, not executed code).
-  if (f.endsWith('.svelte')) {
-    return content.replace(/<code[^>]*>[\s\S]*?<\/code>/g, '<code></code>');
-  }
-  return content;
+	const content = readFileSync(f, 'utf-8');
+	// Strip <code>...</code> blocks so documentation examples in .svelte files
+	// don't trigger false positives (they're rendered HTML, not executed code).
+	if (f.endsWith('.svelte')) {
+		return content.replace(/<code[^>]*>[\s\S]*?<\/code>/g, '<code></code>');
+	}
+	return content;
 }
 
 function offenders(files: string[], pattern: RegExp): string[] {
-  return files.filter((f) => pattern.test(read(f))).map(rel);
+	return files.filter((f) => pattern.test(read(f))).map(rel);
 }
 
 // ── File lists ────────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ const svelteFiles = walk(SRC, ['.svelte']);
  * Excludes: *.server.ts (server-only load files) and +server.ts (API routes).
  */
 const nonServerRouteFiles = walk(join(SRC, 'routes'), ['.ts']).filter(
-  (f) => !f.includes('.server.') && basename(f) !== '+server.ts' && !f.includes('.test.')
+	(f) => !f.includes('.server.') && basename(f) !== '+server.ts' && !f.includes('.test.')
 );
 
 const clientFiles = [...svelteFiles, ...nonServerRouteFiles];
@@ -85,7 +85,7 @@ const allSourceFiles = walk(SRC, ['.ts', '.svelte']).filter((f) => !f.includes('
  *   `const secret = platform.env.MY_SECRET`      — variable assignment, not a property
  */
 const SECRET_AS_PROP =
-  /\w+\s*:\s*(?:platform\.env|env)\.\w*(?:_SECRET|_REFRESH_TOKEN|_PRIVATE_KEY)\b/;
+	/\w+\s*:\s*(?:platform\.env|env)\.\w*(?:_SECRET|_REFRESH_TOKEN|_PRIVATE_KEY)\b/;
 
 /**
  * Detects SvelteKit private env module imports.
@@ -96,36 +96,36 @@ const PRIVATE_ENV_IMPORT = /from\s+['"][$]env\/(?:static|dynamic)\/private['"]/;
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('Secret Exposure Security', () => {
-  // Sanity: verify file discovery is actually working
-  it('discovers svelte files to scan', () => {
-    expect(svelteFiles.length, 'Expected to find .svelte files under src/').toBeGreaterThan(0);
-  });
+	// Sanity: verify file discovery is actually working
+	it('discovers svelte files to scan', () => {
+		expect(svelteFiles.length, 'Expected to find .svelte files under src/').toBeGreaterThan(0);
+	});
 
-  it('discovers source files to scan', () => {
-    expect(allSourceFiles.length, 'Expected to find source files under src/').toBeGreaterThan(0);
-  });
+	it('discovers source files to scan', () => {
+		expect(allSourceFiles.length, 'Expected to find source files under src/').toBeGreaterThan(0);
+	});
 
-  it('platform.env must not appear in client-side files', () => {
-    const bad = offenders(clientFiles, /platform\.env\b/);
-    expect(
-      bad,
-      `platform.env found in client-side files (only *.server.ts files may use it):\n  ${bad.join('\n  ')}`
-    ).toHaveLength(0);
-  });
+	it('platform.env must not appear in client-side files', () => {
+		const bad = offenders(clientFiles, /platform\.env\b/);
+		expect(
+			bad,
+			`platform.env found in client-side files (only *.server.ts files may use it):\n  ${bad.join('\n  ')}`
+		).toHaveLength(0);
+	});
 
-  it('$env/private modules must not be imported in client-side files', () => {
-    const bad = offenders(clientFiles, PRIVATE_ENV_IMPORT);
-    expect(
-      bad,
-      `$env/*/private imported in client-side files (only *.server.ts files may import it):\n  ${bad.join('\n  ')}`
-    ).toHaveLength(0);
-  });
+	it('$env/private modules must not be imported in client-side files', () => {
+		const bad = offenders(clientFiles, PRIVATE_ENV_IMPORT);
+		expect(
+			bad,
+			`$env/*/private imported in client-side files (only *.server.ts files may import it):\n  ${bad.join('\n  ')}`
+		).toHaveLength(0);
+	});
 
-  it('secret env var values must not be directly returned as object properties', () => {
-    const bad = offenders(allSourceFiles, SECRET_AS_PROP);
-    expect(
-      bad,
-      `Files that assign a secret env var value as an object property (risks serialising it into page data):\n  ${bad.join('\n  ')}`
-    ).toHaveLength(0);
-  });
+	it('secret env var values must not be directly returned as object properties', () => {
+		const bad = offenders(allSourceFiles, SECRET_AS_PROP);
+		expect(
+			bad,
+			`Files that assign a secret env var value as an object property (risks serialising it into page data):\n  ${bad.join('\n  ')}`
+		).toHaveLength(0);
+	});
 });

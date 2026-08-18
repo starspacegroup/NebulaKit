@@ -7,7 +7,7 @@ const contactMocks = vi.hoisted(() => ({
 }));
 const turnstileMocks = vi.hoisted(() => ({
 	verifyTurnstile: vi.fn(),
-	turnstileEnabled: vi.fn()
+	getTurnstileConfig: vi.fn()
 }));
 
 vi.mock('$lib/services/contact', () => contactMocks);
@@ -43,7 +43,7 @@ function postEvent(body: Record<string, unknown>, env: Record<string, unknown> =
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	turnstileMocks.turnstileEnabled.mockReturnValue(false);
+	turnstileMocks.getTurnstileConfig.mockReturnValue({ enabled: false });
 });
 
 describe('GET /api/contact-form-submissions', () => {
@@ -96,7 +96,11 @@ describe('POST /api/contact-form-submissions', () => {
 	});
 
 	it('rejects when turnstile is enabled and verification fails', async () => {
-		turnstileMocks.turnstileEnabled.mockReturnValue(true);
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: true,
+			siteKey: 'site',
+			secretKey: 'sk'
+		});
 		turnstileMocks.verifyTurnstile.mockResolvedValue(false);
 		await expect(
 			POST(
@@ -110,7 +114,11 @@ describe('POST /api/contact-form-submissions', () => {
 	});
 
 	it('creates when turnstile is enabled and verification passes', async () => {
-		turnstileMocks.turnstileEnabled.mockReturnValue(true);
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: true,
+			siteKey: 'site',
+			secretKey: 'sk'
+		});
 		turnstileMocks.verifyTurnstile.mockResolvedValue(true);
 		contactMocks.createContactFormSubmission.mockResolvedValue({ id: 'new' });
 		const res = await POST(
@@ -125,5 +133,21 @@ describe('POST /api/contact-form-submissions', () => {
 			) as never
 		);
 		expect(res.status).toBe(201);
+	});
+
+	it('503s without creating when Turnstile is partially configured', async () => {
+		turnstileMocks.getTurnstileConfig.mockReturnValue({
+			enabled: false,
+			error: 'Turnstile requires both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY.'
+		});
+		await expect(
+			POST(
+				postEvent(
+					{ name: 'Ada', email: 'ada@example.com', message: 'hello world' },
+					{ DB, TURNSTILE_SITE_KEY: 'site' }
+				) as never
+			)
+		).rejects.toMatchObject({ status: 503 });
+		expect(contactMocks.createContactFormSubmission).not.toHaveBeenCalled();
 	});
 });

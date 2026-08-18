@@ -5,6 +5,7 @@
  * PUT    /api/cms/types/[id] - Update a content type
  * DELETE /api/cms/types/[id] - Delete a content type (non-system only)
  */
+import { requireAdmin } from '$lib/server/auth-guards';
 import { validateContentTypeInput } from '$lib/cms/utils';
 import {
 	deleteContentTypeFromDB,
@@ -15,12 +16,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ platform, locals, params }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -40,12 +36,7 @@ export const GET: RequestHandler = async ({ platform, locals, params }) => {
 };
 
 export const PUT: RequestHandler = async ({ platform, locals, params, request }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -94,12 +85,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request })
 };
 
 export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {

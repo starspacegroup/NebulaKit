@@ -96,7 +96,7 @@ export const blogContentType: ContentTypeDefinition = {
  * Add new content types here. Each entry automatically gets:
  * - Database storage for items
  * - REST API endpoints at /api/cms/{slug}
- * - Public routes at /{routePrefix} and /{routePrefix}/{item-slug}
+ * - Public routes at /{slug} and /{slug}/{item-slug}
  * - Admin management UI at /admin/cms/{slug}
  *
  * Example of adding a new type:

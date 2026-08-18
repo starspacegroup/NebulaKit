@@ -214,7 +214,7 @@
 			</div>
 		{:else}
 			<p class="empty-note">
-				No database bound. Run <code>npm run db:migrate:local</code> and reload.
+				No database bound. Run <code>bun run db:migrate:local</code> and reload.
 			</p>
 		{/if}
 	</section>

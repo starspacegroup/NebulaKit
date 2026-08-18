@@ -180,19 +180,19 @@ Navigate to `/admin/ai-keys` and:
 **Test Voice Chat**:
 
 ```bash
-npm run test -- tests/unit/voice-chat-audio.test.ts
+bunx vitest run tests/unit/voice-chat-audio.test.ts
 ```
 
 **Test Chat Interface**:
 
 ```bash
-npm run test -- tests/unit/chat-interface.test.ts
+bunx vitest run tests/unit/chat-interface.test.ts
 ```
 
 **Run Dev Server**:
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 ## Error Handling
@@ -266,7 +266,7 @@ catch (err) {
 
 ### Coverage
 
-- 100% coverage of voice chat logic
+- Voice chat tests contribute to the enforced 95% coverage floor
 - All edge cases tested
 - Error handling verified
 

@@ -3,7 +3,7 @@ import { site } from './src/lib/site.config';
 
 const config: PlaywrightTestConfig = {
 	webServer: {
-		command: 'npm run dev',
+		command: 'bun run dev',
 		port: site.devPort,
 		reuseExistingServer: !process.env.CI
 	},

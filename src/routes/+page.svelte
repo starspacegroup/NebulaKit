@@ -392,7 +392,7 @@
 						fill="#FAAD3F"
 					/>
 				</svg>
-				Cloudflare starter for building fast, scalable apps including users authentication, command palette,
+				Cloudflare-native platform for content operations, secure accounts, command-driven navigation,
 				themes, and
 				<svg
 					class="ai-icon"
@@ -601,7 +601,7 @@
 		<div class="features-header">
 			<h2 class="features-title">Built for the Modern Web</h2>
 			<p class="features-subtitle">
-				A production-ready template with everything you need to build fast, scalable applications
+				An independent platform for publishing, administration, AI workflows, and operations
 			</p>
 		</div>
 
@@ -702,8 +702,8 @@
 					<h3 class="feature-title">Secure Authentication</h3>
 				</div>
 				<p class="feature-description">
-					Built-in authentication with session management, OAuth providers, and secure password
-					hashing. Ready for email/password, Google, GitHub, and more.
+					Built-in authentication with signed sessions, secure password hashing, account linking,
+					and GitHub and Discord OAuth clients.
 				</p>
 			</div>
 
@@ -785,8 +785,8 @@
 					<h3 class="feature-title">Test-Driven Development</h3>
 				</div>
 				<p class="feature-description">
-					Complete testing setup with Vitest and Playwright. Unit, integration, and E2E tests
-					configured out of the box. TDD workflow with 90%+ coverage targets.
+					Vitest unit and integration tests plus Playwright end-to-end coverage. Every coverage
+					metric has an enforced 95% floor.
 				</p>
 			</div>
 

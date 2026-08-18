@@ -6,18 +6,18 @@ This project uses **Cloudflare D1 migrations** with automatic tracking. D1 recor
 
 > **NEVER modify a migration file that has already been applied in production.**
 >
-> Applied migrations are immutable. If you need to change the schema, create a NEW migration file with the next sequence number. Editing an old migration will cause checksum mismatches, break deployments, and potentially corrupt production data.
+> Applied migrations are immutable. If you need to change the schema, create a NEW migration file with the next sequence number. D1 records applied migrations by filename; editing an old file does not replay it in environments where that filename is already recorded, so schemas silently diverge.
 
 ### How to tell if a migration is "applied"
 
 - Any migration file already committed to `main` should be treated as applied in production.
-- Run `npm run db:migrate:list` to see which migrations have been applied.
+- Run `bun run db:migrate:list` to see which migrations have been applied.
 - When in doubt, assume it has been applied and create a new migration instead.
 
 ### What you MUST do
 
 1. **Create a new file** with the next sequential number: `NNNN_description.sql`
-2. **Use `ALTER TABLE`** to modify existing tables, not `CREATE TABLE`
+2. **Use `ALTER TABLE`** for existing tables; use `CREATE TABLE` only for genuinely new tables
 3. **Use `IF NOT EXISTS` / `IF EXISTS`** guards where appropriate
 4. **Keep migrations small and focused** - one logical change per file
 
@@ -38,21 +38,20 @@ NNNN_short_description.sql
 - `NNNN` = zero-padded sequence number (0001, 0002, 0003, ...)
 - `short_description` = lowercase snake_case description of the change
 - Examples:
-  - `0001_initial_schema.sql`
-  - `0002_add_user_preferences.sql`
-  - `0003_add_index_on_email.sql`
+  - `0012_add_user_preferences.sql`
+  - `0013_add_index_on_email.sql`
 
 ## Commands
 
 ```bash
 # Apply all pending migrations to remote D1
-npm run db:migrate
+bun run db:migrate
 
 # Apply all pending migrations to local D1
-npm run db:migrate:local
+bun run db:migrate:local
 
 # List migrations and their status (applied / pending)
-npm run db:migrate:list
+bun run db:migrate:list
 ```
 
 ## How It Works
@@ -72,15 +71,24 @@ Migrations that have already run are **skipped automatically** - they will never
 1. Find the highest existing migration number
 2. Create a new file with the next number: `migrations/NNNN_your_change.sql`
 3. Write your SQL (ALTER TABLE, CREATE TABLE, CREATE INDEX, etc.)
-4. Test locally: `npm run db:migrate:local`
-5. Verify: `npm run db:migrate:list`
+4. Test locally: `bun run db:migrate:local`
+5. Verify: `bun run db:migrate:list`
 6. Commit and deploy
 
 ## Current Migrations
 
-| File                           | Description                                                                         |
-| ------------------------------ | ----------------------------------------------------------------------------------- |
-| `0001_initial_schema.sql`      | Base tables: users, sessions, oauth_accounts, chat_messages, indexes                |
-| `0007_page_view_stats.sql`     | Page-view aggregate counters: daily, hourly, referrer, country, audience dimensions |
-| `0008_platform_usage.sql`      | Daily billable-request counters for the Cloudflare plan-limit meter                 |
-| `0009_user_can_view_stats.sql` | `users.can_view_stats` — per-admin grant for the Stats section                      |
+| File                                    | Description                                                                         |
+| --------------------------------------- | ----------------------------------------------------------------------------------- |
+| `0001_initial_schema.sql`               | Base tables: users, sessions, oauth_accounts, chat_messages, indexes                |
+| `0002_cms_tables.sql`                   | CMS content types, items, tags, relationships, and indexes                          |
+| `0003_content_type_management.sql`      | System/user-managed content-type distinction                                        |
+| `0004_user_login_aliases.sql`           | Login aliases and lookup indexes                                                    |
+| `0005_command_palette_visibility.sql`   | Per-content-item command-palette visibility                                         |
+| `0006_contact_form_submissions.sql`     | Contact submission inbox and resolution state                                       |
+| `0007_page_view_stats.sql`              | Page-view aggregate counters: daily, hourly, referrer, country, audience dimensions |
+| `0008_platform_usage.sql`               | Daily billable-request counters for the Cloudflare plan-limit meter                 |
+| `0009_user_can_view_stats.sql`          | `users.can_view_stats` — per-admin grant for the Stats section                      |
+| `0010_content_item_timestamp_proof.sql` | RFC 3161 timestamp proofs and Wayback snapshots for CMS content items               |
+| `0011_oauth_transactions.sql`           | One-time, expiring OAuth login/link transactions with session binding               |
+| `0012_minimize_oauth_tokens.sql`        | Remove legacy provider credentials; retain identity links only                      |
+| `0013_session_payload.sql`              | `sessions.data` — server-side session payload behind the opaque session cookie      |

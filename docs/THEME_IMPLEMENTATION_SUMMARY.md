@@ -51,7 +51,7 @@ Built a comprehensive contrast checking utility:
 - ✅ `checkContrast()` - Validate WCAG AA/AAA standards with warnings
 - ✅ `validateThemeContrast()` - Validate entire theme color palettes
 - ✅ Full TypeScript type safety
-- ✅ 100% test coverage with TDD approach
+- ✅ Enforced 95% coverage floor with TDD approach
 - ✅ All 21 unit tests passing
 
 ### 4. Theme Validation Script
@@ -63,8 +63,8 @@ Built a comprehensive contrast checking utility:
 
 Created automated validation:
 
-- ✅ `npm run validate:contrast` - Validate all theme colors
-- ✅ `npm run validate:all` - Run all validations (type-check + tests + contrast)
+- ✅ `bun run validate:contrast` - Validate all theme colors
+- ✅ `bun run validate:all` - Run all validations (type-check + tests + contrast)
 - ✅ Color-coded terminal output (✓/✗ indicators)
 - ✅ Detailed contrast ratios for each color combination
 - ✅ Exit codes for CI/CD integration
@@ -154,13 +154,13 @@ Created complete theme system guide:
 **Check your theme colors:**
 
 ```bash
-npm run validate:contrast
+bun run validate:contrast
 ```
 
 **Run all validations:**
 
 ```bash
-npm run validate:all
+bun run validate:all
 ```
 
 **Using CSS variables (ALWAYS):**

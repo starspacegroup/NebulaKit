@@ -23,24 +23,26 @@ describe('CommandPalette scroll lock', () => {
 	});
 
 	it('should lock body scroll when opened, unlock when closed, and clean up on destroy', async () => {
-		const { component } = render(CommandPalette, { props: { show: false, hasAIProviders: false } });
+		const { rerender } = render(CommandPalette, {
+			props: { show: false, hasAIProviders: false }
+		});
 
 		// Initially no scroll lock
 		expect(document.body.style.overflow).toBe('');
 
 		// Open: should lock scroll
-		await component.$set({ show: true });
+		await rerender({ show: true, hasAIProviders: false });
 		await tick();
 		expect(document.body.getAttribute('style')).toContain('overflow: hidden');
 
 		// Close: should unlock scroll
-		await component.$set({ show: false });
+		await rerender({ show: false, hasAIProviders: false });
 		await tick();
 		const styleAfterClose = document.body.getAttribute('style');
 		expect(!styleAfterClose || !styleAfterClose.includes('overflow: hidden')).toBe(true);
 
 		// Re-open and destroy: should clean up
-		await component.$set({ show: true });
+		await rerender({ show: true, hasAIProviders: false });
 		await tick();
 		expect(document.body.getAttribute('style')).toContain('overflow: hidden');
 
@@ -49,11 +51,11 @@ describe('CommandPalette scroll lock', () => {
 	});
 
 	it('should redirect wheel events on backdrop to the commands container', async () => {
-		const { component, container } = render(CommandPalette, {
+		const { rerender, container } = render(CommandPalette, {
 			props: { show: false, hasAIProviders: false }
 		});
 
-		await component.$set({ show: true });
+		await rerender({ show: true, hasAIProviders: false });
 		await tick();
 
 		const backdrop = container.querySelector('.backdrop') as HTMLElement;

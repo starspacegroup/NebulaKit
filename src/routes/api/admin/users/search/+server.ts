@@ -1,15 +1,10 @@
+import { requireAdmin } from '$lib/server/auth-guards';
+import { isPiiRevealed, maskGeneric, PII_REVEAL_COOKIE } from '$lib/server/pii-mask';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ url, locals, fetch }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+export const GET: RequestHandler = async ({ url, locals, fetch, cookies }) => {
+	const viewer = requireAdmin(locals);
 
 	const query = url.searchParams.get('q');
 	if (!query || query.length < 2) {
@@ -34,14 +29,26 @@ export const GET: RequestHandler = async ({ url, locals, fetch }) => {
 
 		const data = await response.json();
 
-		return json({
-			users: (data.items || []).map((user: any) => ({
+		const revealed = isPiiRevealed(viewer, cookies?.get(PII_REVEAL_COOKIE));
+		const users = (data.items || []).map((user: any) => {
+			const result = {
 				login: user.login,
 				id: user.id,
 				avatar_url: user.avatar_url,
 				html_url: user.html_url
-			}))
+			};
+			return revealed
+				? result
+				: {
+						...result,
+						login: maskGeneric(String(result.login ?? '')),
+						id: maskGeneric(String(result.id ?? '')),
+						avatar_url: null,
+						html_url: null
+					};
 		});
+
+		return json({ users });
 	} catch (err) {
 		console.error('Failed to search GitHub users:', err);
 		throw error(500, 'Failed to search GitHub users');

@@ -93,13 +93,13 @@ describe('ContentProof', () => {
 
 	it('shows a Wayback link when a snapshot exists', () => {
 		const item = makeItem({
-			waybackSnapshotUrl: 'https://web.archive.org/web/20240101000000/https://davis9001.dev/x'
+			waybackSnapshotUrl: 'https://web.archive.org/web/20240101000000/https://example.com/x'
 		});
 		render(ContentProof, { props: { item } });
 
 		const link = screen.getByText('View archived snapshot') as HTMLAnchorElement;
 		expect(link.getAttribute('href')).toBe(
-			'https://web.archive.org/web/20240101000000/https://davis9001.dev/x'
+			'https://web.archive.org/web/20240101000000/https://example.com/x'
 		);
 	});
 

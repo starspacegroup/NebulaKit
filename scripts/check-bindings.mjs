@@ -5,7 +5,7 @@
  * Why this exists: Cloudflare binds D1 and KV by **id**. `database_name` is a
  * label wrangler never checks against the account. So a copied id silently
  * attaches your app to another project's database and every query succeeds.
- * NebulaKit shipped real ids in its template; six derived projects inherited
+ * An earlier NebulaKit release shipped real ids; six sibling products inherited
  * them and shared one D1 + one KV, including OAuth secrets and a GitHub PAT.
  *
  * Three failure modes, all silent without this check:
@@ -13,18 +13,18 @@
  *   2. a KNOWN-SHARED id pasted back in -> you'd rejoin the shared database
  *   3. preview_id === id                -> `wrangler dev` writes into prod
  *
- * Run standalone, or via the pre* hooks in package.json.
+ * Run standalone, or through the guarded package scripts in package.json.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-// Optional path arg so the same guard can vet any derived project's config:
+// Optional path arg so the same guard can vet a sibling project's config:
 //   node scripts/check-bindings.mjs ../../other-project/wrangler.toml
 //
 // --warn reports the same problems but exits 0. Use it for commands that cannot
 // reach a remote resource (the dev server), where an unconfigured clone is a
-// legitimate state: a fresh "Use this template" checkout must be able to run
+// legitimate state: a fresh NebulaKit clone must be able to run
 // `bun run dev` and the e2e suite before anyone has a Cloudflare account. Any
 // command that WRITES to, or reads from, a real remote resource keeps the hard
 // failure — that is the whole point of the guard.
@@ -34,7 +34,7 @@ const WARN_ONLY = argv.includes('--warn');
 const pathArg = argv.find((a) => !a.startsWith('--'));
 const CONFIG = pathArg ? pathArg : join(root, 'wrangler.toml');
 
-// Ids that leaked through the template. Never legitimate in a derived project.
+// Ids leaked by that historical release. They are no longer legitimate anywhere.
 const QUARANTINED = new Map([
 	['bd776be3-9823-4763-abb1-c18b40931456', 'shared nebulakit-db (D1)'],
 	['12a6576334dd4e16bf1e08d5cc1fac4a', 'shared KV namespace'],
@@ -73,7 +73,7 @@ lines.forEach((raw, i) => {
 		problems.push(
 			`${at}  ${key} points at the ${QUARANTINED.get(value)}.\n` +
 				`             That id belongs to no single project — it is the one this\n` +
-				`             template leaked. Create your own resource instead.`
+				`             historical NebulaKit release leaked. Create your own resource instead.`
 		);
 		return;
 	}
@@ -106,9 +106,9 @@ if (problems.length) {
 	for (const p of problems) report(`    - ${p}`);
 	report(`
   Fix:
-    wrangler d1 create <project>-db
-    wrangler kv namespace create "KV"
-    wrangler kv namespace create "KV" --preview
+    bunx wrangler d1 create <project>-db
+    bunx wrangler kv namespace create "KV"
+    bunx wrangler kv namespace create "KV" --preview
 
   Paste the returned ids into wrangler.toml. One set per project — never
   reuse another project's ids. See docs/CLOUDFLARE_SETUP.md.

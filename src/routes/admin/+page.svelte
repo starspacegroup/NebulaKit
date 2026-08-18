@@ -41,10 +41,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="Admin"
-	noindex={true}
-/>
+<SharingMeta title="Admin" noindex={true} />
 
 <div class="admin-home">
 	<h1>Admin Dashboard</h1>

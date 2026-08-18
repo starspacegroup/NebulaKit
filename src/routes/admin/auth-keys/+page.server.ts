@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ fetch }) => {
@@ -9,11 +10,10 @@ export const load: PageServerLoad = async ({ fetch }) => {
 				keys: data.keys || []
 			};
 		}
-	} catch (error) {
-		console.error('Failed to load auth keys:', error);
+		throw error(response.status || 500, 'Failed to load authentication keys');
+	} catch (err) {
+		if (err && typeof err === 'object' && 'status' in err) throw err;
+		console.error('Failed to load auth keys:', err);
+		throw error(500, 'Failed to load authentication keys');
 	}
-
-	return {
-		keys: []
-	};
 };

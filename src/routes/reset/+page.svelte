@@ -40,10 +40,7 @@
 	}
 </script>
 
-<SharingMeta
-	title="Reset Configuration"
-	noindex={true}
-/>
+<SharingMeta title="Reset Configuration" noindex={true} />
 
 <div class="container">
 	<div class="reset-card">
@@ -76,8 +73,9 @@
 		<div class="security-note">
 			<h3>🔒 Security Note</h3>
 			<p>
-				This reset page is currently accessible without authentication. After logging in as the
-				owner, you should disable this route from the Admin panel to prevent unauthorized resets.
+				This reset page is only reachable by the signed-in owner — anonymous and non-owner visitors
+				are rejected before it renders. If you want it gone entirely, you can also disable this
+				route from the Admin panel.
 			</p>
 		</div>
 

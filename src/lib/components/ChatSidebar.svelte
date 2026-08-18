@@ -122,30 +122,34 @@
 				<div class="conversation-group" in:slide={{ duration: 200 }}>
 					<div class="group-label">{group.label}</div>
 					{#each group.conversations as conversation (conversation.id)}
-						<button
+						<div
 							class="conversation-item"
 							class:selected={conversation.id === currentId}
 							data-conversation-id={conversation.id}
 							data-selected={conversation.id === currentId}
-							on:click={() => handleSelectConversation(conversation.id)}
-							aria-label="Select conversation: {conversation.title}"
-							title={conversation.title}
 							in:fly={{ x: -20, duration: 200, easing: quintOut }}
 						>
-							<svg
-								class="conversation-icon"
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
+							<button
+								class="conversation-select"
+								on:click={() => handleSelectConversation(conversation.id)}
+								aria-label="Select conversation: {conversation.title}"
+								title={conversation.title}
 							>
-								<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-							</svg>
-							<span class="conversation-title">{conversation.title}</span>
+								<svg
+									class="conversation-icon"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+								</svg>
+								<span class="conversation-title">{conversation.title}</span>
+							</button>
 							<button
 								class="delete-button"
 								on:click={(e) => handleDeleteConversation(e, conversation.id)}
@@ -168,7 +172,7 @@
 									/>
 								</svg>
 							</button>
-						</button>
+						</div>
 					{/each}
 				</div>
 			{/each}
@@ -291,18 +295,29 @@
 	.conversation-item {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
 		width: 100%;
-		padding: var(--spacing-sm) var(--spacing-md);
+		padding: 0 var(--spacing-sm) 0 var(--spacing-md);
 		background: transparent;
-		border: none;
 		border-radius: var(--radius-md);
-		cursor: pointer;
-		text-align: left;
 		color: var(--color-text);
-		font-size: 0.875rem;
 		transition: all var(--transition-fast);
 		position: relative;
+	}
+
+	.conversation-select {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		min-width: 0;
+		flex: 1;
+		padding: var(--spacing-sm) 0;
+		background: transparent;
+		border: none;
+		color: inherit;
+		cursor: pointer;
+		font: inherit;
+		font-size: 0.875rem;
+		text-align: left;
 	}
 
 	.conversation-item:hover {

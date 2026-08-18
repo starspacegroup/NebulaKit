@@ -1,13 +1,11 @@
 <!--
   Admin CMS Content Type Management
 
-  Shows items for a specific content type with filtering, sorting,
-  create/edit modals, and delete confirmation.
+  Lists items for a content type with filtering, sorting, and delete
+  confirmation. Creating and editing items happen on dedicated pages
+  (/admin/cms/[type]/new and /admin/cms/[type]/[id]).
 -->
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import TaskListField from '$lib/components/TaskListField.svelte';
-	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
@@ -24,109 +22,11 @@
 	let statusFilter = data.filters?.status || '';
 	let searchQuery = data.filters?.search || '';
 
-	// UI state
-	let showCreateModal = false;
-	let showEditModal = false;
+	// Delete confirmation
 	let showDeleteConfirm = false;
-	let editingItem: any = null;
 	let deletingItem: any = null;
 	let isLoading = false;
-	let errors: Record<string, string> = {};
-
-	// Form fields
-	let formTitle = '';
-	let formSlug = '';
-	let formStatus: 'draft' | 'published' | 'archived' = 'draft';
-	let formFields: Record<string, any> = {};
-	let formSeoTitle = '';
-	let formSeoDescription = '';
-	let formSeoImage = '';
-	let formShowInCommandPalette = true;
-	let formTagIds: string[] = [];
-
-	// SEO section visibility
-	let showSeoFields = false;
-
-	function getSortedFields() {
-		if (!contentType?.fields) return [];
-		return [...contentType.fields].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-	}
-
-	$: sortedFields = getSortedFields();
-
-	function toggleMultiselectValue(fieldName: string, value: string) {
-		const current: string[] = formFields[fieldName] || [];
-		if (current.includes(value)) {
-			formFields[fieldName] = current.filter((v: string) => v !== value);
-		} else {
-			formFields[fieldName] = [...current, value];
-		}
-	}
-
-	function getDefaultFields(): Record<string, any> {
-		const defaults: Record<string, any> = {};
-		if (contentType?.fields) {
-			for (const field of contentType.fields) {
-				if (field.defaultValue !== undefined) {
-					defaults[field.name] = field.defaultValue;
-				} else if (field.type === 'boolean') {
-					defaults[field.name] = false;
-				} else if (field.type === 'multiselect') {
-					defaults[field.name] = [];
-				} else if (field.type === 'number') {
-					defaults[field.name] = null;
-				} else if (field.type === 'tasklist') {
-					defaults[field.name] = [];
-				} else {
-					defaults[field.name] = '';
-				}
-			}
-		}
-		return defaults;
-	}
-
-	function resetForm() {
-		formTitle = '';
-		formSlug = '';
-		formStatus = 'draft';
-		formFields = getDefaultFields();
-		formSeoTitle = '';
-		formSeoDescription = '';
-		formSeoImage = '';
-		formShowInCommandPalette = true;
-		formTagIds = [];
-		showSeoFields = false;
-		errors = {};
-	}
-
-	function openCreateModal() {
-		resetForm();
-		showCreateModal = true;
-	}
-
-	function openEditModal(item: any) {
-		editingItem = item;
-		formTitle = item.title || '';
-		formSlug = item.slug || '';
-		formStatus = item.status || 'draft';
-		formFields = { ...getDefaultFields(), ...(item.fields || {}) };
-		formSeoTitle = item.seoTitle || '';
-		formSeoDescription = item.seoDescription || '';
-		formSeoImage = item.seoImage || '';
-		formShowInCommandPalette = item.showInCommandPalette !== false;
-		formTagIds = item.tags?.map((t: any) => t.id) || [];
-		showSeoFields = !!(item.seoTitle || item.seoDescription || item.seoImage);
-		errors = {};
-		showEditModal = true;
-	}
-
-	function closeModals() {
-		showCreateModal = false;
-		showEditModal = false;
-		showDeleteConfirm = false;
-		editingItem = null;
-		deletingItem = null;
-	}
+	let deleteError = '';
 
 	async function refreshItems() {
 		try {
@@ -138,7 +38,7 @@
 			if (res.ok) {
 				const d = await res.json();
 				items = d.items || [];
-				totalItems = d.totalItems || 0;
+				totalItems = d.total || 0;
 				totalPages = d.totalPages || 1;
 				currentPage = d.page || 1;
 			}
@@ -160,102 +60,15 @@
 		}
 	}
 
-	async function handleCreate() {
-		errors = {};
-
-		if (!formTitle.trim()) {
-			errors.title = 'Title is required';
-			return;
-		}
-
-		isLoading = true;
-		try {
-			const body: any = {
-				title: formTitle.trim(),
-				status: formStatus,
-				fields: formFields
-			};
-			if (formSlug.trim()) body.slug = formSlug.trim();
-			if (formSeoTitle) body.seoTitle = formSeoTitle;
-			if (formSeoDescription) body.seoDescription = formSeoDescription;
-			if (formSeoImage) body.seoImage = formSeoImage;
-			body.showInCommandPalette = formShowInCommandPalette;
-			if (formTagIds.length > 0) body.tagIds = formTagIds;
-
-			const res = await fetch(`/api/cms/${contentType.slug}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
-			});
-
-			if (!res.ok) {
-				const errData = await res.json();
-				errors.general = errData.message || 'Failed to create item';
-				return;
-			}
-
-			closeModals();
-			await refreshItems();
-			await invalidateAll();
-		} catch (err) {
-			errors.general = 'An unexpected error occurred';
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	async function handleUpdate() {
-		errors = {};
-
-		if (!formTitle.trim()) {
-			errors.title = 'Title is required';
-			return;
-		}
-		if (!editingItem) return;
-
-		isLoading = true;
-		try {
-			const body: any = {
-				title: formTitle.trim(),
-				slug: formSlug.trim(),
-				status: formStatus,
-				fields: formFields
-			};
-			if (contentType.settings?.hasSEO) {
-				body.seoTitle = formSeoTitle || null;
-				body.seoDescription = formSeoDescription || null;
-				body.seoImage = formSeoImage || null;
-			}
-			body.showInCommandPalette = formShowInCommandPalette;
-			if (contentType.settings?.hasTags) {
-				body.tagIds = formTagIds;
-			}
-
-			const res = await fetch(`/api/cms/${contentType.slug}/${editingItem.id}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
-			});
-
-			if (!res.ok) {
-				const errData = await res.json();
-				errors.general = errData.message || 'Failed to update item';
-				return;
-			}
-
-			closeModals();
-			await refreshItems();
-			await invalidateAll();
-		} catch (err) {
-			errors.general = 'An unexpected error occurred';
-		} finally {
-			isLoading = false;
-		}
-	}
-
 	function confirmDelete(item: any) {
 		deletingItem = item;
+		deleteError = '';
 		showDeleteConfirm = true;
+	}
+
+	function closeDelete() {
+		showDeleteConfirm = false;
+		deletingItem = null;
 	}
 
 	async function handleDelete() {
@@ -268,16 +81,15 @@
 			});
 
 			if (!res.ok) {
-				const errData = await res.json();
-				errors.general = errData.message || 'Failed to delete item';
+				const errData = await res.json().catch(() => ({}));
+				deleteError = errData.message || 'Failed to delete item';
 				return;
 			}
 
-			closeModals();
+			closeDelete();
 			await refreshItems();
-			await invalidateAll();
 		} catch (err) {
-			errors.general = 'An unexpected error occurred';
+			deleteError = 'An unexpected error occurred';
 		} finally {
 			isLoading = false;
 		}
@@ -310,14 +122,6 @@
 			});
 		} catch {
 			return dateStr;
-		}
-	}
-
-	function toggleTag(tagId: string) {
-		if (formTagIds.includes(tagId)) {
-			formTagIds = formTagIds.filter((id) => id !== tagId);
-		} else {
-			formTagIds = [...formTagIds, tagId];
 		}
 	}
 
@@ -373,7 +177,7 @@
 					Tags
 				</button>
 			{/if}
-			<button class="btn btn-primary" on:click={openCreateModal}>
+			<a class="btn btn-primary" href="/admin/cms/{contentType.slug}/new">
 				<svg
 					width="16"
 					height="16"
@@ -386,7 +190,7 @@
 					<line x1="5" y1="12" x2="19" y2="12" />
 				</svg>
 				New {contentType.name.replace(/s$/, '')}
-			</button>
+			</a>
 		</div>
 	</div>
 
@@ -453,9 +257,9 @@
 			</svg>
 			<h3>No items yet</h3>
 			<p>Create your first {contentType.name.replace(/s$/, '').toLowerCase()} to get started.</p>
-			<button class="btn btn-primary" on:click={openCreateModal}>
+			<a class="btn btn-primary" href="/admin/cms/{contentType.slug}/new">
 				Create {contentType.name.replace(/s$/, '')}
-			</button>
+			</a>
 		</div>
 	{:else}
 		<div class="items-table-wrap">
@@ -474,10 +278,10 @@
 						<tr>
 							<td class="td-title">
 								<span class="item-title">{item.title}</span>
-								<span class="item-slug"
-									>/{contentType.settings?.routePrefix?.replace(/^\//, '') ||
-										contentType.slug}/{item.slug}</span
-								>
+								<span class="item-slug">
+									/{contentType.settings?.routePrefix?.replace(/^\//, '') ||
+										contentType.slug}/{item.slug}
+								</span>
 							</td>
 							<td>
 								<span class="status-badge" style="--badge-color: {getStatusColor(item.status)}">
@@ -487,7 +291,7 @@
 							<td class="td-date">{formatDate(item.createdAt)}</td>
 							<td class="td-date">{formatDate(item.updatedAt)}</td>
 							<td class="td-actions">
-								<button class="btn-icon" title="Edit" on:click={() => openEditModal(item)}>
+								<a class="btn-icon" title="Edit" href="/admin/cms/{contentType.slug}/{item.id}">
 									<svg
 										width="16"
 										height="16"
@@ -499,7 +303,7 @@
 										<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
 										<path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" />
 									</svg>
-								</button>
+								</a>
 								<button
 									class="btn-icon btn-icon-danger"
 									title="Delete"
@@ -545,317 +349,28 @@
 	{/if}
 </div>
 
-<!-- Create/Edit Modal -->
-{#if showCreateModal || showEditModal}
-	<div
-		class="modal-overlay"
-		on:click|self={closeModals}
-		on:keydown={(e) => e.key === 'Escape' && closeModals()}
-		role="presentation"
-	>
-		<div
-			class="modal"
-			role="dialog"
-			aria-modal="true"
-			aria-label="{showCreateModal ? 'Create' : 'Edit'} {contentType.name.replace(/s$/, '')}"
-		>
-			<div class="modal-header">
-				<h2>{showCreateModal ? 'Create' : 'Edit'} {contentType.name.replace(/s$/, '')}</h2>
-				<button class="btn-close" on:click={closeModals} aria-label="Close modal">&times;</button>
-			</div>
-			<div class="modal-body">
-				{#if errors.general}
-					<div class="error-banner">{errors.general}</div>
-				{/if}
-
-				<!-- Title -->
-				<div class="form-group">
-					<label for="form-title">Title <span class="required">*</span></label>
-					<input
-						id="form-title"
-						type="text"
-						bind:value={formTitle}
-						class:error={errors.title}
-						placeholder="Enter title..."
-					/>
-					{#if errors.title}<span class="error-message">{errors.title}</span>{/if}
-				</div>
-
-				<!-- Slug (optional override) -->
-				<div class="form-group">
-					<label for="form-slug">Slug</label>
-					<input
-						id="form-slug"
-						type="text"
-						bind:value={formSlug}
-						placeholder="auto-generated-from-title"
-					/>
-					<span class="field-help">Leave empty to auto-generate from title</span>
-				</div>
-
-				<!-- Status -->
-				{#if contentType.settings?.hasDrafts !== false}
-					<div class="form-group">
-						<label for="form-status">Status</label>
-						<select id="form-status" bind:value={formStatus}>
-							<option value="draft">Draft</option>
-							<option value="published">Published</option>
-							<option value="archived">Archived</option>
-						</select>
-					</div>
-				{/if}
-
-				<div class="form-group">
-					<label class="checkbox-label" for="form-show-in-command-palette">
-						<input
-							id="form-show-in-command-palette"
-							type="checkbox"
-							bind:checked={formShowInCommandPalette}
-						/>
-						<span>Show in command palette</span>
-					</label>
-					<span class="field-help">Disable this to hide the item from global command search.</span>
-				</div>
-
-				<!-- Custom Fields -->
-				{#if contentType.fields?.length}
-					<div class="form-section">
-						<h3>Content Fields</h3>
-						{#each sortedFields as field}
-							<div class="form-group">
-								<label for="field-{field.name}">
-									{field.label}
-									{#if field.required}<span class="required">*</span>{/if}
-								</label>
-
-								{#if field.type === 'url'}
-									<input
-										id="field-{field.name}"
-										type="url"
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-									/>
-								{:else if field.type === 'email'}
-									<input
-										id="field-{field.name}"
-										type="email"
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-									/>
-								{:else if field.type === 'color'}
-									<input id="field-{field.name}" type="color" bind:value={formFields[field.name]} />
-								{:else if field.type === 'text'}
-									<input
-										id="field-{field.name}"
-										type="text"
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-									/>
-								{:else if field.type === 'number'}
-									<input
-										id="field-{field.name}"
-										type="number"
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-										min={field.validation?.min}
-										max={field.validation?.max}
-									/>
-								{:else if field.type === 'textarea'}
-									<textarea
-										id="field-{field.name}"
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-										rows="3"
-									></textarea>
-								{:else if field.type === 'richtext'}
-									<RichTextEditor
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-									/>
-								{:else if field.type === 'boolean'}
-									<label class="checkbox-label">
-										<input
-											id="field-{field.name}"
-											type="checkbox"
-											bind:checked={formFields[field.name]}
-										/>
-										<span>{field.helpText || 'Enable'}</span>
-									</label>
-								{:else if field.type === 'select'}
-									<select id="field-{field.name}" bind:value={formFields[field.name]}>
-										<option value="">Select...</option>
-										{#each field.options || [] as opt}
-											<option value={opt.value}>{opt.label}</option>
-										{/each}
-									</select>
-								{:else if field.type === 'multiselect'}
-									<div class="multiselect-group">
-										{#each field.options || [] as opt}
-											<label class="checkbox-label">
-												<input
-													type="checkbox"
-													checked={formFields[field.name]?.includes(opt.value)}
-													on:change={() => toggleMultiselectValue(field.name, opt.value)}
-												/>
-												<span>{opt.label}</span>
-											</label>
-										{/each}
-									</div>
-								{:else if field.type === 'date'}
-									<input id="field-{field.name}" type="date" bind:value={formFields[field.name]} />
-								{:else if field.type === 'datetime'}
-									<input
-										id="field-{field.name}"
-										type="datetime-local"
-										bind:value={formFields[field.name]}
-									/>
-								{:else if field.type === 'image'}
-									<input
-										id="field-{field.name}"
-										type="url"
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || 'https://example.com/image.jpg'}
-									/>
-								{:else if field.type === 'json'}
-									<textarea
-										id="field-{field.name}"
-										bind:value={formFields[field.name]}
-										placeholder={'{"key": "value"}'}
-										rows="5"
-										class="json-field"
-									></textarea>
-								{:else if field.type === 'tasklist'}
-									<TaskListField bind:value={formFields[field.name]} />
-								{:else}
-									<input
-										id="field-{field.name}"
-										type="text"
-										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-									/>
-								{/if}
-
-								{#if field.helpText && field.type !== 'boolean' && field.type !== 'richtext'}
-									<span class="field-help">{field.helpText}</span>
-								{/if}
-							</div>
-						{/each}
-					</div>
-				{/if}
-
-				<!-- Tags -->
-				{#if contentType.settings?.hasTags && tags.length > 0}
-					<div class="form-section">
-						<h3>Tags</h3>
-						<div class="tag-select">
-							{#each tags as tag}
-								<button
-									class="tag-toggle"
-									class:selected={formTagIds.includes(tag.id)}
-									on:click={() => toggleTag(tag.id)}
-									type="button"
-								>
-									{tag.name}
-								</button>
-							{/each}
-						</div>
-					</div>
-				{/if}
-
-				<!-- SEO Fields -->
-				{#if contentType.settings?.hasSEO !== false}
-					<div class="form-section">
-						<button
-							class="section-toggle"
-							on:click={() => (showSeoFields = !showSeoFields)}
-							type="button"
-						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								style="transform: rotate({showSeoFields ? 90 : 0}deg); transition: transform 0.2s"
-							>
-								<polyline points="9 18 15 12 9 6" />
-							</svg>
-							SEO Settings
-						</button>
-						{#if showSeoFields}
-							<div class="seo-fields">
-								<div class="form-group">
-									<label for="seo-title">SEO Title</label>
-									<input
-										id="seo-title"
-										type="text"
-										bind:value={formSeoTitle}
-										placeholder="Page title for search engines"
-									/>
-								</div>
-								<div class="form-group">
-									<label for="seo-description">SEO Description</label>
-									<textarea
-										id="seo-description"
-										bind:value={formSeoDescription}
-										placeholder="Brief description for search engine results"
-										rows="2"
-									></textarea>
-								</div>
-								<div class="form-group">
-									<label for="seo-image">SEO Image URL</label>
-									<input
-										id="seo-image"
-										type="url"
-										bind:value={formSeoImage}
-										placeholder="https://example.com/og-image.jpg"
-									/>
-								</div>
-							</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
-			<div class="modal-footer">
-				<button class="btn btn-secondary" on:click={closeModals} disabled={isLoading}>
-					Cancel
-				</button>
-				{#if showCreateModal}
-					<button class="btn btn-primary" on:click={handleCreate} disabled={isLoading}>
-						{isLoading ? 'Creating...' : 'Create'}
-					</button>
-				{:else}
-					<button class="btn btn-primary" on:click={handleUpdate} disabled={isLoading}>
-						{isLoading ? 'Saving...' : 'Save Changes'}
-					</button>
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
-
 <!-- Delete Confirmation Modal -->
 {#if showDeleteConfirm && deletingItem}
 	<div
 		class="modal-overlay"
-		on:click|self={closeModals}
-		on:keydown={(e) => e.key === 'Escape' && closeModals()}
+		on:click|self={closeDelete}
+		on:keydown={(e) => e.key === 'Escape' && closeDelete()}
 		role="presentation"
 	>
 		<div class="modal modal-sm" role="dialog" aria-modal="true" aria-label="Confirm deletion">
 			<div class="modal-header">
 				<h2>Delete {contentType.name.replace(/s$/, '')}</h2>
-				<button class="btn-close" on:click={closeModals} aria-label="Close">&times;</button>
+				<button class="btn-close" on:click={closeDelete} aria-label="Close">&times;</button>
 			</div>
 			<div class="modal-body">
 				<p>
 					Are you sure you want to delete <strong>{deletingItem.title}</strong>? This action cannot
 					be undone.
 				</p>
+				{#if deleteError}<p class="delete-error">{deleteError}</p>{/if}
 			</div>
 			<div class="modal-footer">
-				<button class="btn btn-secondary" on:click={closeModals} disabled={isLoading}>Cancel</button
+				<button class="btn btn-secondary" on:click={closeDelete} disabled={isLoading}>Cancel</button
 				>
 				<button class="btn btn-danger" on:click={handleDelete} disabled={isLoading}>
 					{isLoading ? 'Deleting...' : 'Delete'}
@@ -1173,6 +688,7 @@
 		font-weight: 500;
 		cursor: pointer;
 		border: 1px solid transparent;
+		text-decoration: none;
 		transition: all 0.15s ease;
 	}
 
@@ -1237,7 +753,7 @@
 		color: var(--color-danger, #dc3545);
 	}
 
-	/* Modal */
+	/* Modal (delete confirmation) */
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
@@ -1303,186 +819,18 @@
 		overflow-y: auto;
 	}
 
+	.delete-error {
+		color: var(--color-danger, #dc3545);
+		font-size: 0.875rem;
+		margin-top: var(--spacing-sm);
+	}
+
 	.modal-footer {
 		display: flex;
 		justify-content: flex-end;
 		gap: var(--spacing-sm);
 		padding: var(--spacing-lg);
 		border-top: 1px solid var(--color-border);
-	}
-
-	/* Forms */
-	.form-group {
-		margin-bottom: var(--spacing-md);
-	}
-
-	.form-group label {
-		display: block;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--color-text);
-		margin-bottom: var(--spacing-xs);
-	}
-
-	.form-group input[type='text'],
-	.form-group input[type='url'],
-	.form-group input[type='email'],
-	.form-group input[type='number'],
-	.form-group input[type='date'],
-	.form-group input[type='datetime-local'],
-	.form-group textarea,
-	.form-group select {
-		width: 100%;
-		padding: var(--spacing-sm) var(--spacing-md);
-		background: var(--color-surface);
-		color: var(--color-text);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: 0.875rem;
-		font-family: inherit;
-	}
-
-	.form-group input:focus,
-	.form-group textarea:focus,
-	.form-group select:focus {
-		border-color: var(--color-primary);
-		outline: none;
-	}
-
-	.form-group input.error {
-		border-color: var(--color-danger, #dc3545);
-	}
-
-	.form-group input::placeholder,
-	.form-group textarea::placeholder {
-		color: var(--color-text-secondary);
-	}
-
-	.form-group input[type='color'] {
-		width: 48px;
-		height: 36px;
-		padding: 2px;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		background: var(--color-surface);
-		cursor: pointer;
-	}
-
-	.json-field {
-		font-family: 'Courier New', monospace;
-		font-size: 0.8125rem;
-	}
-
-	.field-help {
-		display: block;
-		font-size: 0.75rem;
-		color: var(--color-text-secondary);
-		margin-top: 0.25rem;
-	}
-
-	.required {
-		color: var(--color-danger, #dc3545);
-	}
-
-	.error-message {
-		display: block;
-		font-size: 0.75rem;
-		color: var(--color-danger, #dc3545);
-		margin-top: 0.25rem;
-	}
-
-	.error-banner {
-		background: color-mix(in srgb, var(--color-danger, #dc3545) 10%, var(--color-surface));
-		border: 1px solid var(--color-danger, #dc3545);
-		color: var(--color-danger, #dc3545);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-radius: var(--radius-md);
-		font-size: 0.875rem;
-		margin-bottom: var(--spacing-md);
-	}
-
-	.form-section {
-		margin-top: var(--spacing-lg);
-		padding-top: var(--spacing-lg);
-		border-top: 1px solid var(--color-border);
-	}
-
-	.form-section h3 {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--color-text);
-		margin-bottom: var(--spacing-md);
-	}
-
-	.section-toggle {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		background: none;
-		border: none;
-		padding: 0;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--color-text);
-		cursor: pointer;
-		margin-bottom: var(--spacing-md);
-	}
-
-	.section-toggle:hover {
-		color: var(--color-primary);
-	}
-
-	.seo-fields {
-		padding-left: var(--spacing-md);
-	}
-
-	.checkbox-label {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		font-size: 0.875rem;
-		color: var(--color-text);
-		cursor: pointer;
-	}
-
-	.checkbox-label input[type='checkbox'] {
-		width: 16px;
-		height: 16px;
-		accent-color: var(--color-primary);
-	}
-
-	.multiselect-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-xs);
-	}
-
-	/* Tag Selection */
-	.tag-select {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-xs);
-	}
-
-	.tag-toggle {
-		padding: 0.25rem var(--spacing-sm);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		background: var(--color-surface);
-		color: var(--color-text-secondary);
-		font-size: 0.8125rem;
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.tag-toggle:hover {
-		border-color: var(--color-primary);
-	}
-
-	.tag-toggle.selected {
-		background: var(--color-primary);
-		color: var(--color-background);
-		border-color: var(--color-primary);
 	}
 
 	/* Responsive */

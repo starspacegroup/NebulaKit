@@ -2,16 +2,12 @@
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { site } from '$lib/site.config';
 
-	type PackageManager = 'bun' | 'npm';
 	type QuickStartLine =
 		| { kind: 'blank' }
 		| { kind: 'comment'; text: string }
 		| { kind: 'command'; bin: string; args: string };
 
-	let selectedPackageManager: PackageManager = 'bun';
-
-	const quickStartCommands: Record<PackageManager, string> = {
-		bun: `# Install dependencies
+	const quickStartCommands = `# Install dependencies
 bun install
 
 # Start development server
@@ -31,29 +27,7 @@ bun run test
 bun run test:coverage
 
 # Deploy to Cloudflare Pages
-bun run deploy`,
-		npm: `# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Apply local D1 migrations
-npm run db:migrate:local
-
-# Build for production
-npm run build
-
-# Type-check and tests
-npm run check
-npm run test
-
-# Coverage report
-npm run test:coverage
-
-# Deploy to Cloudflare Pages
-npm run deploy`
-	};
+bun run deploy`;
 
 	function parseQuickStartLines(commands: string): QuickStartLine[] {
 		return commands.split('\n').map((line) => {
@@ -72,7 +46,7 @@ npm run deploy`
 		});
 	}
 
-	$: highlightedQuickStartLines = parseQuickStartLines(quickStartCommands[selectedPackageManager]);
+	const highlightedQuickStartLines = parseQuickStartLines(quickStartCommands);
 </script>
 
 <SharingMeta
@@ -113,89 +87,48 @@ npm run deploy`
 		<section id="start-here" class="docs-section">
 			<h2>Start Here</h2>
 			<p>
-				If this repo is being used as a template, first complete the customization workflow in
-				<code>docs/INITIAL_CUSTOMIZATION.md</code>. The current repository status file is still set
-				to
-				<code>pending</code>, which means template branding cleanup has not been finished yet.
+				NebulaKit is an independent Cloudflare-native platform. Start locally with an isolated D1
+				database, then connect the production Cloudflare resources only when you are ready to
+				deploy.
 			</p>
 			<ol>
-				<li>Create your repository from the template.</li>
-				<li>Install dependencies and run the app locally.</li>
+				<li>Install the frozen Bun dependency graph.</li>
 				<li>Apply database migrations locally.</li>
+				<li>Run the app and verify the setup, login, CMS, and chat surfaces.</li>
 				<li>Configure OAuth and owner access through the setup flow.</li>
-				<li>Run tests and coverage before shipping changes.</li>
+				<li>Keep every coverage metric at or above the enforced 95% floor.</li>
+				<li>Create project-owned Cloudflare bindings before building or deploying remotely.</li>
 			</ol>
 		</section>
 
 		<section id="quick-start" class="docs-section">
 			<h2>Quick Start</h2>
 
-			<div class="template-button-container">
-				<a
-					href="https://github.com/new?template_name=NebulaKit&template_owner=starspacegroup"
-					class="template-button"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor">
-						<path
-							d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-						/>
-					</svg>
-					Use this template on GitHub
-				</a>
-			</div>
-
-			<p class="template-hint">
-				Then clone your repository, run the commands below, and open http://localhost:4277.
-			</p>
-
 			<p class="quickstart-recommendation">
 				<a href="https://bun.sh" target="_blank" rel="noopener noreferrer">Bun</a> is the recommended
-				default for this repo. Switch to npm commands if your environment requires it.
+				default for this repository. Run the commands below, then open http://localhost:4277.
 			</p>
 
 			<div class="quickstart-shell">
 				<div class="quickstart-toolbar">
 					<div class="quickstart-tags" aria-label="Quick start status">
-						<span class="quickstart-tag quickstart-tag--recommended">Recommended: Bun</span>
-						<span class="quickstart-tag">Showing: {selectedPackageManager}</span>
-					</div>
-					<div class="quickstart-switcher" role="group" aria-label="Quick start package manager">
-						<button
-							type="button"
-							class="switch-button"
-							class:active={selectedPackageManager === 'bun'}
-							aria-pressed={selectedPackageManager === 'bun'}
-							on:click={() => (selectedPackageManager = 'bun')}
-						>
-							Bun
-						</button>
-						<button
-							type="button"
-							class="switch-button"
-							class:active={selectedPackageManager === 'npm'}
-							aria-pressed={selectedPackageManager === 'npm'}
-							on:click={() => (selectedPackageManager = 'npm')}
-						>
-							npm
-						</button>
+						<span class="quickstart-tag quickstart-tag--recommended">Package manager: Bun</span>
 					</div>
 				</div>
 
-				<div class="quickstart-window" data-manager={selectedPackageManager}>
+				<div class="quickstart-window" data-manager="bun">
 					<div class="quickstart-window-header">
 						<div class="window-controls" aria-hidden="true">
-							<span class="window-dot" />
-							<span class="window-dot" />
-							<span class="window-dot" />
+							<span class="window-dot"></span>
+							<span class="window-dot"></span>
+							<span class="window-dot"></span>
 						</div>
-						<p class="quickstart-window-title">terminal {selectedPackageManager}</p>
+						<p class="quickstart-window-title">terminal bun</p>
 					</div>
 					<pre class="quickstart-code"><code
 							>{#each highlightedQuickStartLines as line}
 								{#if line.kind === 'blank'}
-									<span class="quickstart-line quickstart-line--blank" />
+									<span class="quickstart-line quickstart-line--blank"></span>
 								{:else if line.kind === 'comment'}
 									<span class="quickstart-line quickstart-line--comment"
 										><span class="token-comment"># {line.text}</span></span
@@ -216,9 +149,9 @@ npm run deploy`
 		<section id="feature-overview" class="docs-section">
 			<h2>What You Get Out of the Box</h2>
 			<p>
-				This starter already ships with the main product surfaces wired together. The fastest way to
-				understand the repo is to think of it as a Cloudflare-first app shell with auth, theming,
-				content management, and AI entry points already in place.
+				NebulaKit integrates its main product surfaces as one Cloudflare-native application:
+				identity, content management, AI workflows, administration, analytics, and agent-ready
+				publishing.
 			</p>
 			<div class="callout-grid">
 				<div class="callout-card">
@@ -240,10 +173,27 @@ npm run deploy`
 				<div class="callout-card">
 					<h3>Content and AI Surfaces</h3>
 					<ul>
-						<li>CMS-style content routes and admin tooling are included for structured content.</li>
-						<li>Chat route becomes your primary AI surface once a provider is configured.</li>
-						<li>Command palette can expose AI-related navigation when providers are available.</li>
+						<li>
+							Private CMS content types (<code>isPublic: false</code>) return <code>404</code> from
+							public list/item routes and stay out of the sitemap; manage them under
+							<code>/admin/cms</code>.
+						</li>
+						<li>
+							Chat exposes only enabled entries from its known model allowlist. Unknown or disabled
+							models are rejected rather than forwarded to a provider.
+						</li>
+						<li>
+							Voice transcripts and replies persist in the same conversation history as text chat.
+						</li>
 					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Contact Abuse Protection</h3>
+					<p>
+						Turnstile is optional only when both keys are absent. Set
+						<code>TURNSTILE_SITE_KEY</code> and <code>TURNSTILE_SECRET_KEY</code> together to enable it;
+						partial configuration fails closed so the browser and server cannot disagree.
+					</p>
 				</div>
 				<div class="callout-card">
 					<h3>Analytics and Operations</h3>
@@ -282,9 +232,7 @@ npm run deploy`
 					Use <code>/chat</code> for AI interactions, <code>/profile</code> for account settings,
 					and <code>/admin</code> for operator tasks.
 				</li>
-				<li>
-					Use the theme toggle to verify light and dark presentation while you customize branding.
-				</li>
+				<li>Use the theme toggle to verify light, dark, and system-preference presentation.</li>
 			</ol>
 			<div class="callout-grid">
 				<div class="callout-card">
@@ -367,26 +315,26 @@ npm run deploy`
 				<div class="callout-card">
 					<h3>Development</h3>
 					<ul>
-						<li><code>npm run dev</code> runs on host 0.0.0.0, port 4277.</li>
-						<li><code>npm run preview</code> previews the production build on port 4277.</li>
-						<li><code>npm run check</code> runs Svelte sync plus svelte-check.</li>
+						<li><code>bun run dev</code> runs on host 0.0.0.0, port 4277.</li>
+						<li><code>bun run preview</code> previews the production build on port 4277.</li>
+						<li><code>bun run check</code> runs Svelte sync plus svelte-check.</li>
 					</ul>
 				</div>
 				<div class="callout-card">
 					<h3>Testing</h3>
 					<ul>
-						<li><code>npm run test</code> runs Vitest in CI mode.</li>
-						<li><code>npm run test:watch</code> runs Vitest in watch mode.</li>
-						<li><code>npm run test:e2e</code> runs Playwright tests.</li>
-						<li><code>npm run test:all</code> runs unit tests, then E2E tests.</li>
+						<li><code>bun run test</code> runs Vitest in CI mode.</li>
+						<li><code>bun run test:watch</code> runs Vitest in watch mode.</li>
+						<li><code>bun run test:e2e</code> runs Playwright tests.</li>
+						<li><code>bun run test:all</code> runs unit tests, then E2E tests.</li>
 					</ul>
 				</div>
 				<div class="callout-card">
 					<h3>Deploy and Validation</h3>
 					<ul>
-						<li><code>npm run deploy</code> builds then deploys .svelte-kit/cloudflare.</li>
-						<li><code>npm run validate:contrast</code> checks theme contrast.</li>
-						<li><code>npm run validate:all</code> runs check + test + contrast validation.</li>
+						<li><code>bun run deploy</code> builds then deploys .svelte-kit/cloudflare.</li>
+						<li><code>bun run validate:contrast</code> checks theme contrast.</li>
+						<li><code>bun run validate:all</code> runs check + test + contrast validation.</li>
 					</ul>
 				</div>
 			</div>
@@ -415,46 +363,59 @@ npm run deploy`
 			</p>
 			<pre><code
 					># Apply pending migrations to local D1
-npm run db:migrate:local
+bun run db:migrate:local
 
 # Apply pending migrations to remote D1
-npm run db:migrate
+bun run db:migrate
 
 # List migration status
-npm run db:migrate:list</code
+bun run db:migrate:list</code
 				></pre>
 			<p>
 				When schema changes are needed, create a new file with the next sequence number (for
 				example,
-				<code>0006_add_feature_flag.sql</code>) and use ALTER TABLE or new CREATE statements.
+				<code>0012_add_feature_flag.sql</code>) and use ALTER TABLE or new CREATE statements.
 			</p>
 		</section>
 
 		<section id="auth-and-setup" class="docs-section">
 			<h2>Authentication and Setup Flow</h2>
 			<p>
-				Auth uses @auth/sveltekit with a setup-first workflow. The main routes are
-				<code>/setup</code>, <code>/auth/login</code>, and <code>/reset</code>.
+				Authentication is built into this app on a setup-first workflow — no third-party auth
+				library sits in the request path. The browser receives an unsigned opaque session token
+				(random, worthless without its server-side record — its SHA-256 digest is the lookup key),
+				while the revocable session record, identity, and roles are loaded from D1 on every request.
+				Authentication fails closed if D1 or <code>SESSION_SECRET</code> is unavailable.
+			</p>
+			<p>
+				You can sign in with email and password, or with GitHub and Discord once those providers are
+				configured. The main routes are <code>/setup</code>, <code>/auth/login</code>,
+				<code>/auth/signup</code>, and <code>/reset</code>.
 			</p>
 			<div class="callout-grid">
 				<div class="callout-card">
 					<h3>1. Configure</h3>
 					<p>
-						Open <code>/setup</code> and submit GitHub OAuth credentials plus admin GitHub username.
+						Set <code>SESSION_SECRET</code> and <code>SETUP_SECRET</code>, then open
+						<code>/setup</code>
+						and submit the bootstrap secret, GitHub OAuth credentials, and admin GitHub username.
 					</p>
 				</div>
 				<div class="callout-card">
 					<h3>2. Lock Setup</h3>
 					<p>
-						After the admin logs in the first time, setup is locked to prevent accidental
-						reconfiguration.
+						After owner/config state exists, only the authenticated owner can change setup or manage
+						authentication keys. GitHub and Discord validate unexpired one-time state in D1,
+						exchange the provider code, then atomically consume that state before changing accounts
+						or sessions. Discord does not bootstrap ownership; it inherits owner status only when
+						linked or matched to the configured GitHub owner account.
 					</p>
 				</div>
 				<div class="callout-card">
 					<h3>3. Reset When Needed</h3>
 					<p>
-						<code>/reset</code> clears setup-related KV keys and session cookie. Admins can disable reset
-						route access.
+						<code>/reset</code> is owner-only. It clears setup-related KV keys, revokes every active D1
+						session, and clears the browser cookie. The reset route can also be disabled.
 					</p>
 				</div>
 			</div>
@@ -542,24 +503,23 @@ npm run db:migrate:list</code
 			</p>
 			<pre><code
 					># Run all tests
-npm run test
+bun run test
 
 # Run tests in watch mode
-npm run test:watch
+bun run test:watch
 
 # Check coverage
-npm run test:coverage
+bun run test:coverage
 
 # Run E2E tests
-npm run test:e2e
+bun run test:e2e
 
 # Run all tests (unit + E2E)
-npm run test:all</code
+bun run test:all</code
 				></pre>
 			<p>
-				Coverage guidance in repository docs is mixed: several files reference 90 percent, while AI
-				assistant workflow instructions enforce 95 percent as a stricter floor. For new work, target
-				95 percent or higher to satisfy both interpretations safely.
+				Vitest enforces a 95% floor for lines, statements, functions, and branches. A change is not
+				ready when any metric falls below that threshold.
 			</p>
 		</section>
 
@@ -582,7 +542,7 @@ npm run test:all</code
 │   │   ├── setup/          # First-time setup flow
 │   │   └── documentation/  # This page
 │   ├── app.css            # Global styles & theme
-│   └── app.html           # HTML template
+│   └── app.html           # HTML shell and install metadata
 ├── tests/                  # unit/integration/e2e tests
 ├── migrations/             # Immutable D1 migration files
 ├── docs/                   # Extended project docs
@@ -603,7 +563,7 @@ npm run test:all</code
 					>
 					and connect the repository.
 				</li>
-				<li>Use build command <code>npm run build</code>.</li>
+				<li>Use build command <code>bun run build</code>.</li>
 				<li>Use output directory <code>.svelte-kit/cloudflare</code>.</li>
 				<li>Add D1, KV, and R2 bindings to the Pages project settings.</li>
 				<li>Add required environment variables and secrets.</li>
@@ -628,7 +588,7 @@ npm run test:all</code
 					valid.
 				</li>
 				<li>
-					If migrations fail, run <code>npm run db:migrate:list</code> and check migration numbering.
+					If migrations fail, run <code>bun run db:migrate:list</code> and check migration numbering.
 				</li>
 				<li>
 					If command palette entries are missing, verify AI provider status and authentication
@@ -642,7 +602,8 @@ npm run test:all</code
 			<p>
 				This site publishes a machine-readable discovery layer so search crawlers and AI agents can
 				find it, read it efficiently, and understand how to interact with it. Everything below is
-				live and needs no configuration.
+				live without per-domain URL configuration. Placeholder Cloudflare bindings still make
+				<code>/api/health</code> return <code>503</code> until project-owned D1/KV resources are configured.
 			</p>
 			<ul>
 				<li>
@@ -669,6 +630,13 @@ npm run test:all</code
 					<a href="/api/health">/api/health</a> — service health, used as the catalog's status link.
 				</li>
 			</ul>
+			<p>
+				The catalog currently anchors these implemented endpoints:
+				<code>/api/contact-form-submissions</code>, <code>/api/health</code>,
+				<code>/api/cms/types</code>, <code>/api/chat/models</code>, and
+				<code>/api/chat/stream</code>. Their catalog notes distinguish public, Turnstile-gated, and
+				session-authenticated access.
+			</p>
 
 			<h3>Reading pages as Markdown</h3>
 			<p>
@@ -683,17 +651,18 @@ npm run test:all</code
 			<p>
 				When opened by a WebMCP-capable agent, this site registers tools for searching content,
 				listing pages, reading a page as Markdown, navigating, and switching theme. They are
-				read-and-navigate only, restricted to this site's own origin, and run with the visitor's
-				existing permissions.
+				read-and-navigate only and restricted to this site's own origin. The page-reading tool
+				enforces the public sitemap allowlist with browser credentials omitted, so an authenticated
+				visitor cannot expose private/admin pages through WebMCP.
 			</p>
 
 			<h3>Content usage policy</h3>
 			<p>
 				The shipped default is fully permissive — <code>search=yes, ai-input=yes, ai-train=yes</code
 				>
-				— which suits an open template. If you build a site with proprietary content, change
-				<code>CONTENT_SIGNAL</code> in <code>src/lib/agent-discovery.ts</code> before launching; every
-				robots.txt group picks the change up automatically.
+				— which matches NebulaKit's public open-source content. Change
+				<code>CONTENT_SIGNAL</code> in <code>src/lib/agent-discovery.ts</code> before publishing any proprietary
+				content; every robots.txt group picks the change up automatically.
 			</p>
 			<p>
 				DNS-based discovery (DNS-AID) is the one piece that must be added by hand, since DNS records
@@ -728,9 +697,9 @@ npm run test:all</code
 				</li>
 				<li>
 					<a
-						href="https://github.com/starspacegroup/NebulaKit/blob/main/docs/INITIAL_CUSTOMIZATION.md"
+						href="https://github.com/starspacegroup/NebulaKit/blob/main/docs/CLOUDFLARE_SETUP.md"
 						target="_blank"
-						rel="noopener noreferrer">Initial Customization</a
+						rel="noopener noreferrer">Cloudflare Setup</a
 					>
 				</li>
 				<li>
@@ -758,7 +727,7 @@ npm run test:all</code
 			</p>
 			<ul>
 				<li>Write tests before implementation changes.</li>
-				<li>Run npm run check, npm run test, and npm run test:coverage.</li>
+				<li>Run bun run check, bun run test, and bun run test:coverage.</li>
 				<li>Prefer Cloudflare-native services and minimal external dependencies.</li>
 				<li>Do not edit past migration files; create a new one instead.</li>
 			</ul>
@@ -950,44 +919,6 @@ npm run test:all</code
 		text-decoration: underline;
 	}
 
-	.template-button-container {
-		display: flex;
-		justify-content: center;
-		margin-bottom: var(--spacing-md);
-	}
-
-	.template-button {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-sm) var(--spacing-lg);
-		background-color: var(--color-primary);
-		color: var(--color-background) !important;
-		border-radius: var(--radius-md);
-		font-size: 1rem;
-		font-weight: 600;
-		text-decoration: none;
-		transition:
-			background-color var(--transition-fast),
-			transform var(--transition-fast);
-	}
-
-	.template-button:hover {
-		background-color: var(--color-primary-hover);
-		transform: translateY(-1px);
-	}
-
-	.template-button:active {
-		transform: translateY(0);
-	}
-
-	.template-hint {
-		text-align: center;
-		color: var(--color-text-secondary);
-		font-size: 0.875rem;
-		margin-bottom: var(--spacing-lg);
-	}
-
 	.quickstart-recommendation {
 		text-align: center;
 		font-size: 0.9375rem;
@@ -1035,43 +966,6 @@ npm run test:all</code
 		background-color: var(--color-primary);
 		border-color: var(--color-primary);
 		color: var(--color-background);
-	}
-
-	.quickstart-switcher {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		padding: var(--spacing-xs);
-		background-color: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		width: fit-content;
-		box-shadow: var(--shadow-sm);
-	}
-
-	.switch-button {
-		border: none;
-		background-color: transparent;
-		color: var(--color-text-secondary);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		border-radius: var(--radius-sm);
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition:
-			background-color var(--transition-fast),
-			color var(--transition-fast);
-	}
-
-	.switch-button:hover {
-		background-color: var(--color-surface-hover);
-		color: var(--color-text);
-	}
-
-	.switch-button.active {
-		background-color: var(--color-primary);
-		color: var(--color-background);
-		box-shadow: var(--shadow-sm);
 	}
 
 	.quickstart-window {
@@ -1171,15 +1065,6 @@ npm run test:all</code
 		.quickstart-toolbar {
 			align-items: flex-start;
 			flex-direction: column;
-		}
-
-		.quickstart-switcher {
-			width: 100%;
-		}
-
-		.switch-button {
-			flex: 1;
-			text-align: center;
 		}
 	}
 

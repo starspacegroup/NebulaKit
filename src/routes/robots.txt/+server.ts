@@ -6,8 +6,8 @@
  *  1. The `Sitemap:` line and the host it points at are derived from the live
  *     request origin, so this file is correct on localhost, on preview deploys,
  *     and on a custom domain without anyone editing it.
- *  2. `bun run customize` only rewrites .ts/.js/.svelte/.json/.toml/.md/.html —
- *     a static .txt would silently keep the template's URL forever.
+ *  2. Keeping policy in the route avoids duplicating deploy-specific URLs in a
+ *     static file that can drift from the live origin.
  *
  * Policy lives in src/lib/agent-discovery.ts; this module only formats it.
  * Format follows RFC 9309; Content-Signal follows contentsignals.org.

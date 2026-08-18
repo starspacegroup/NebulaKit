@@ -1,14 +1,17 @@
-import { fail } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { createContactFormSubmission } from '$lib/services/contact';
 import { validateContactInput } from '$lib/utils/contact-validation';
-import { verifyTurnstile, turnstileEnabled } from '$lib/server/turnstile';
+import { getTurnstileConfig, verifyTurnstile } from '$lib/server/turnstile';
 
 export const load: PageServerLoad = async ({ platform }) => {
-	// Surface the public Turnstile site key so the widget only renders when
-	// Turnstile is configured. Null => no widget, no verification (optional).
+	const config = getTurnstileConfig(
+		platform?.env?.TURNSTILE_SITE_KEY,
+		platform?.env?.TURNSTILE_SECRET_KEY
+	);
+	if ('error' in config) throw error(500, config.error);
 	return {
-		turnstileSiteKey: platform?.env?.TURNSTILE_SITE_KEY ?? null
+		turnstileSiteKey: config.enabled ? config.siteKey : null
 	};
 };
 
@@ -25,11 +28,15 @@ export const actions: Actions = {
 		});
 		if (!result.ok) return fail(400, { error: result.error });
 
-		const secretKey = platform?.env?.TURNSTILE_SECRET_KEY;
-		if (turnstileEnabled(secretKey)) {
+		const config = getTurnstileConfig(
+			platform?.env?.TURNSTILE_SITE_KEY,
+			platform?.env?.TURNSTILE_SECRET_KEY
+		);
+		if ('error' in config) return fail(503, { error: config.error });
+		if (config.enabled) {
 			const token = form.get('cf-turnstile-response');
 			const ok = await verifyTurnstile({
-				secretKey: secretKey as string,
+				secretKey: config.secretKey,
 				token: typeof token === 'string' ? token : null,
 				remoteIp: request.headers.get('CF-Connecting-IP')
 			});

@@ -92,7 +92,7 @@ describe('Admin CMS Type Management Page Server', () => {
 				ok: true,
 				json: async () => ({
 					items: mockItems,
-					totalItems: 1,
+					total: 1,
 					totalPages: 1,
 					page: 1
 				})

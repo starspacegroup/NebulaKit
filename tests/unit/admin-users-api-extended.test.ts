@@ -27,6 +27,29 @@ describe('Admin Users API - Extended Branch Coverage', () => {
 			}
 		});
 
+		// D1 returns `results: undefined` for an empty set on some paths; the
+		// handler must degrade to an empty list rather than throwing while mapping.
+		it('should return an empty list when the query yields no results array', async () => {
+			const mockEvent = {
+				locals: { user: { id: '1', isOwner: true, isAdmin: true } },
+				cookies: { get: vi.fn().mockReturnValue(undefined) },
+				platform: {
+					env: {
+						DB: {
+							prepare: vi.fn().mockReturnValue({
+								all: vi.fn().mockResolvedValue({})
+							})
+						}
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/admin/users/+server');
+			const response = await GET(mockEvent as any);
+
+			await expect(response.json()).resolves.toEqual({ users: [] });
+		});
+
 		it('should return 500 when database query fails', async () => {
 			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

@@ -2,17 +2,31 @@
  * Cloudflare Turnstile verification (server-side).
  *
  * Greenfield in the kit — there was no prior captcha code. Turnstile is
- * OPTIONAL: it only engages when `TURNSTILE_SECRET_KEY` is configured, matching
- * the kit's zero-env-setup philosophy (a fresh clone with no secret still has a
- * working contact form; add the key to turn on bot protection). The public
- * site key is surfaced to the client separately via `TURNSTILE_SITE_KEY`.
+ * OPTIONAL: it only engages when both Turnstile keys are configured. A partial
+ * configuration is invalid and must fail closed so the browser and server can
+ * never disagree about whether a challenge is required.
  */
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
-/** True when Turnstile is configured and should be enforced. */
-export function turnstileEnabled(secretKey: string | undefined | null): boolean {
-	return Boolean(secretKey);
+export type TurnstileConfig =
+	{ enabled: false; error?: string } | { enabled: true; siteKey: string; secretKey: string };
+
+/** Resolve both keys atomically and report partial operator configuration. */
+export function getTurnstileConfig(
+	siteKey: string | undefined | null,
+	secretKey: string | undefined | null
+): TurnstileConfig {
+	const site = siteKey?.trim();
+	const secret = secretKey?.trim();
+	if (!site && !secret) return { enabled: false };
+	if (!site || !secret) {
+		return {
+			enabled: false,
+			error: 'Turnstile requires both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY.'
+		};
+	}
+	return { enabled: true, siteKey: site, secretKey: secret };
 }
 
 export interface TurnstileVerifyOptions {

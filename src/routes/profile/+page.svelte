@@ -50,9 +50,7 @@
 
 	// Only show providers that are configured
 	$: providers = allProviders.filter(
-		(p) =>
-			configuredProviders[p.id as keyof typeof configuredProviders] ||
-			canSimulateProviders
+		(p) => configuredProviders[p.id as keyof typeof configuredProviders] || canSimulateProviders
 	);
 
 	onMount(() => {

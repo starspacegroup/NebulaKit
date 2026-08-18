@@ -65,8 +65,8 @@ export const GET: RequestHandler = ({ url }) => {
 
 	const linkset: LinksetMember[] = [
 		{
-			// Public, unauthenticated. Turnstile-gated when a secret key is
-			// configured — see src/routes/api/contact-form-submissions/+server.ts.
+			// POST is public and Turnstile-gated when both keys are configured;
+			// GET requires an owner/admin session.
 			anchor: abs('/api/contact-form-submissions'),
 			'service-doc': [docs],
 			describedby: [auth],
@@ -79,16 +79,22 @@ export const GET: RequestHandler = ({ url }) => {
 			status: [status]
 		},
 		{
-			// Session-authenticated. Listed so an agent learns it exists and learns
-			// it needs a session, rather than probing blindly.
-			anchor: abs('/api/cms'),
+			// Owner/admin-session authenticated CMS type management.
+			anchor: abs('/api/cms/types'),
 			'service-doc': [docs],
 			describedby: [auth],
 			status: [status]
 		},
 		{
 			// Session-authenticated LLM chat surface.
-			anchor: abs('/api/chat'),
+			anchor: abs('/api/chat/models'),
+			'service-doc': [docs],
+			describedby: [auth],
+			status: [status]
+		},
+		{
+			// Session-authenticated streaming LLM chat surface.
+			anchor: abs('/api/chat/stream'),
 			'service-doc': [docs],
 			describedby: [auth],
 			status: [status]

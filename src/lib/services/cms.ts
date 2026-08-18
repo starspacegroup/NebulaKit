@@ -7,6 +7,7 @@
  */
 
 import { contentTypeRegistry } from '$lib/cms/registry';
+import { sanitizeContentFields } from '$lib/cms/sanitize';
 import { LockedContentError } from '$lib/cms/types';
 import type {
 	ContentFieldDefinition,
@@ -29,14 +30,14 @@ import {
 	getLockedFieldViolations,
 	parseContentItem,
 	parseContentTag,
-	parseContentType
+	parseContentType,
+	validateFields
 } from '$lib/cms/utils';
 import type { D1Database } from '@cloudflare/workers-types';
 
 interface CommandPaletteContentRow {
 	content_type_slug: string;
 	content_type_name: string;
-	route_prefix: string | null;
 	item_id: string;
 	item_slug: string;
 	item_title: string;
@@ -51,6 +52,23 @@ export interface CommandPaletteContentItem {
 	/** Content type display name, so callers can badge or group without
 	 *  re-parsing it out of `description`. */
 	contentTypeName: string;
+}
+
+export class CmsFieldValidationError extends Error {
+	constructor(public readonly errors: string[]) {
+		super(errors.join(', '));
+		this.name = 'CmsFieldValidationError';
+	}
+}
+
+function prepareContentFields(
+	fields: Record<string, unknown>,
+	definitions: ContentFieldDefinition[]
+): Record<string, unknown> {
+	const sanitized = sanitizeContentFields(fields, definitions);
+	const errors = validateFields(sanitized, definitions);
+	if (errors.length > 0) throw new CmsFieldValidationError(errors);
+	return sanitized;
 }
 
 async function resolveValidAuthorId(
@@ -181,7 +199,8 @@ export async function createContentItem(
 	const id = crypto.randomUUID();
 	const slug = input.slug || generateSlug(input.title);
 	const status = input.status || 'draft';
-	const fieldsJson = JSON.stringify(input.fields);
+	const definitions = JSON.parse(contentType.fields) as ContentFieldDefinition[];
+	const fieldsJson = JSON.stringify(prepareContentFields(input.fields, definitions));
 	const publishedAt = status === 'published' ? new Date().toISOString() : null;
 	const showInCommandPalette = input.showInCommandPalette !== false ? 1 : 0;
 	const authorId = await resolveValidAuthorId(db, input.authorId);
@@ -217,6 +236,9 @@ export async function createContentItem(
 			)
 			.first<ContentItem>();
 
+		if (row && input.tagIds && input.tagIds.length > 0) {
+			await setItemTags(db, row.id, input.tagIds);
+		}
 		return row ? parseContentItem(row) : null;
 	}
 
@@ -413,7 +435,11 @@ export async function updateContentItem(
 	const title = input.title ?? existing.title;
 	const slug = input.slug ?? existing.slug;
 	const status = input.status ?? existing.status;
-	const fields = input.fields ? JSON.stringify(input.fields) : existing.fields;
+	let fields = existing.fields;
+	if (input.fields) {
+		const mergedFields = { ...JSON.parse(existing.fields), ...input.fields };
+		fields = JSON.stringify(prepareContentFields(mergedFields, definitions));
+	}
 	const seoTitle = input.seoTitle !== undefined ? input.seoTitle : existing.seo_title;
 	const seoDescription =
 		input.seoDescription !== undefined ? input.seoDescription : existing.seo_description;
@@ -572,7 +598,6 @@ export async function getCommandPaletteContentItems(
 			`SELECT
 				ct.slug AS content_type_slug,
 				ct.name AS content_type_name,
-				json_extract(ct.settings, '$.routePrefix') AS route_prefix,
 				ci.id AS item_id,
 				ci.slug AS item_slug,
 				ci.title AS item_title,
@@ -580,6 +605,7 @@ export async function getCommandPaletteContentItems(
 			 FROM content_items ci
 			 INNER JOIN content_types ct ON ct.id = ci.content_type_id
 			 WHERE ci.status = 'published'
+			   AND COALESCE(json_extract(ct.settings, '$.isPublic'), 1) = 1
 			   AND COALESCE(ci.show_in_command_palette, 1) = 1
 			   AND COALESCE(json_extract(ct.settings, '$.showInCommandPalette'), 1) = 1
 			 ORDER BY COALESCE(ci.published_at, ci.created_at) DESC, ci.updated_at DESC
@@ -589,8 +615,8 @@ export async function getCommandPaletteContentItems(
 		.all<CommandPaletteContentRow>();
 
 	return (result.results || []).map((row) => {
-		const routePrefix = row.route_prefix || `/${row.content_type_slug}`;
 		const descriptionSuffix = row.item_description ? `: ${row.item_description}` : '';
+		const routePrefix = `/${row.content_type_slug}`;
 
 		return {
 			id: `cms-${row.item_id}`,
@@ -874,8 +900,8 @@ export interface SitemapContentRow {
  * every crawler hit, and fanning out across N types would put N round-trips on
  * a request that has no user waiting behind it but still bills D1 reads.
  *
- * Only `status = 'published'` is returned — the public `[contentType]` routes
- * filter the same way, so drafts and archived items never leak into the index.
+ * Only published items belonging to public content types are returned, matching
+ * the guards on the public `[contentType]` routes.
  *
  * @param limit Hard cap on rows. The sitemap protocol allows 50,000 URLs per
  *   file; the default leaves generous headroom under that ceiling while keeping
@@ -893,6 +919,7 @@ export async function listPublishedContentForSitemap(
 			 FROM content_items i
 			 JOIN content_types t ON t.id = i.content_type_id
 			 WHERE i.status = 'published'
+			   AND COALESCE(json_extract(t.settings, '$.isPublic'), 1) = 1
 			 ORDER BY lastmod DESC
 			 LIMIT ?`
 		)

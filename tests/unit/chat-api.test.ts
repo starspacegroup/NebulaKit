@@ -19,7 +19,8 @@ describe('POST /api/chat/stream - Text Chat Streaming', () => {
 							id: 'key1',
 							provider: 'openai',
 							apiKey: 'sk-test123',
-							enabled: true
+							enabled: true,
+							models: ['gpt-4o']
 						})
 					);
 				}

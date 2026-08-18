@@ -2,7 +2,7 @@
  * HTML → Markdown conversion for `Accept: text/markdown` content negotiation.
  *
  * Written in-house rather than pulling in turndown/jsdom: per AGENTS.md this
- * template keeps dependencies minimal, and the input here is not arbitrary web
+ * app keeps dependencies minimal, and the input here is not arbitrary web
  * HTML — it is this app's own server-rendered output. A small tokenizer plus a
  * tree walk covers it, runs in a Worker with no Node built-ins, and adds
  * nothing to the client bundle.

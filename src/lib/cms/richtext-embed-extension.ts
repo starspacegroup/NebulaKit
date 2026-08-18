@@ -17,6 +17,7 @@ import { getEmbedDefinition } from './embeds/manifest';
 export interface SvelteEmbedOptions {
 	/** Called when the user clicks "Props" on an embed card */
 	onEditProps: (
+		embedName: string,
 		getProps: () => Record<string, unknown>,
 		setProps: (p: Record<string, unknown>) => void
 	) => void;
@@ -115,6 +116,7 @@ export const SvelteEmbed = Node.create<SvelteEmbedOptions>({
 			propsBtn.textContent = 'Props';
 			propsBtn.addEventListener('click', () => {
 				this.options.onEditProps(
+					node.attrs.embedName,
 					() => node.attrs.props ?? {},
 					(newProps) => {
 						const pos = typeof getPos === 'function' ? getPos() : null;

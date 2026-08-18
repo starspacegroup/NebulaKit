@@ -1,3 +1,4 @@
+import { createAuthSession } from '$lib/utils/db';
 import { hashPassword, validatePassword } from '$lib/utils/passwords';
 import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
 import { error, json } from '@sveltejs/kit';
@@ -65,12 +66,14 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 		isOwner: false
 	});
 
+	const sessionId = await createAuthSession(platform.env.DB, sessionUser);
+
 	return json(
 		{ success: true, redirectTo: '/' },
 		{
 			status: 201,
 			headers: {
-				'Set-Cookie': buildSessionCookieHeader(sessionUser, url)
+				'Set-Cookie': buildSessionCookieHeader(sessionId, url)
 			}
 		}
 	);

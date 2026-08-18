@@ -1,16 +1,34 @@
 import { describe, expect, it, vi } from 'vitest';
-import { verifyTurnstile, turnstileEnabled } from './turnstile';
+import { getTurnstileConfig, verifyTurnstile } from './turnstile';
 
 function jsonResponse(body: unknown, ok = true): Response {
 	return { ok, json: async () => body } as unknown as Response;
 }
 
-describe('turnstileEnabled', () => {
-	it('is true only when a secret key is present', () => {
-		expect(turnstileEnabled('secret')).toBe(true);
-		expect(turnstileEnabled('')).toBe(false);
-		expect(turnstileEnabled(undefined)).toBe(false);
-		expect(turnstileEnabled(null)).toBe(false);
+describe('getTurnstileConfig', () => {
+	it('enables Turnstile only when both keys are present', () => {
+		expect(getTurnstileConfig('site', 'secret')).toEqual({
+			enabled: true,
+			siteKey: 'site',
+			secretKey: 'secret'
+		});
+	});
+
+	it('disables Turnstile when both keys are absent', () => {
+		expect(getTurnstileConfig(undefined, null)).toEqual({ enabled: false });
+		expect(getTurnstileConfig('', '  ')).toEqual({ enabled: false });
+	});
+
+	it.each([
+		['site', undefined],
+		[undefined, 'secret']
+	])('fails safely when only one key is configured', (siteKey, secretKey) => {
+		const config = getTurnstileConfig(siteKey, secretKey);
+		expect(config.enabled).toBe(false);
+		expect(config).toHaveProperty(
+			'error',
+			'Turnstile requires both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY.'
+		);
 	});
 });
 

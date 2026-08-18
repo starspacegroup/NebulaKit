@@ -6,6 +6,7 @@
  * there's no cron in this deployment, so this is the manual "check now"
  * equivalent for the capture triggered at first publish.
  */
+import { requireAdmin } from '$lib/server/auth-guards';
 import { getContentTypeRoutePrefix } from '$lib/cms/utils';
 import { getContentItem, getContentTypeBySlug, recordWaybackSnapshot } from '$lib/services/cms';
 import { checkWaybackSnapshot } from '$lib/timestamp/wayback';
@@ -13,12 +14,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ platform, locals, params, url }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {
