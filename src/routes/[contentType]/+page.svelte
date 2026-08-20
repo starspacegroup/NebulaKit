@@ -53,9 +53,17 @@
 				{#each items as item}
 					<article class="cms-blog-card">
 						{#if item.fields.featured_image}
-							<div class="cms-blog-card-image">
+							<!-- The picture is the biggest target on the card, so it goes where
+							     the title goes. Hidden from the accessibility tree because the
+							     heading link beside it already says the same thing. -->
+							<a
+								class="cms-blog-card-image"
+								href="{getRoutePrefix()}/{item.slug}"
+								tabindex="-1"
+								aria-hidden="true"
+							>
 								<img src={String(item.fields.featured_image)} alt={item.title} loading="lazy" />
-							</div>
+							</a>
 						{/if}
 						<div class="cms-blog-card-content">
 							{#if item.fields.category}
@@ -121,7 +129,7 @@
 
 <style>
 	.cms-list-page {
-		max-width: 900px;
+		max-width: 1720px;
 		margin: 0 auto;
 		padding: var(--spacing-xl) var(--spacing-md);
 	}
@@ -170,6 +178,7 @@
 	}
 
 	.cms-blog-card-image {
+		display: block;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
 	}
@@ -299,6 +308,18 @@
 	@media (min-width: 768px) {
 		.cms-blog-grid {
 			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 1100px) {
+		.cms-blog-grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	@media (min-width: 1400px) {
+		.cms-blog-grid {
+			grid-template-columns: repeat(4, 1fr);
 		}
 	}
 </style>
