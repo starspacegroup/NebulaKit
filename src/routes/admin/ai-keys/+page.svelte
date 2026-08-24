@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
@@ -21,6 +22,12 @@
 	}
 
 	let keys = data.keys || [];
+
+	// Site-unique field identifiers so a password manager does not confuse this
+	// secret form with another site built from the same template.
+	const keyNameField = fieldName('ai-key-name');
+	const providerField = fieldName('ai-key-provider');
+	const apiKeyField = fieldName('ai-api-key');
 	let showForm = false;
 	let editingKey: any = null;
 	let formData = {
@@ -542,9 +549,10 @@
 			<div class="modal-body">
 				<div class="form-row">
 					<div class="form-group">
-						<label for="key-name">Key Name</label>
+						<label for={keyNameField}>Key Name</label>
 						<input
-							id="key-name"
+							id={keyNameField}
+							name={keyNameField}
 							type="text"
 							bind:value={formData.name}
 							class:error={errors.name}
@@ -556,8 +564,8 @@
 					</div>
 
 					<div class="form-group">
-						<label for="provider">Provider</label>
-						<select id="provider" bind:value={formData.provider}>
+						<label for={providerField}>Provider</label>
+						<select id={providerField} name={providerField} bind:value={formData.provider}>
 							{#each providers as provider}
 								<option value={provider.value}>{provider.label}</option>
 							{/each}
@@ -566,9 +574,10 @@
 				</div>
 
 				<div class="form-group">
-					<label for="api-key">API Key</label>
+					<label for={apiKeyField}>API Key</label>
 					<input
-						id="api-key"
+						id={apiKeyField}
+						name={apiKeyField}
 						type="password"
 						bind:value={formData.apiKey}
 						class:error={errors.apiKey}

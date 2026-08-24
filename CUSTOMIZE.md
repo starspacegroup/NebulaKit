@@ -28,16 +28,16 @@ bun run customize --dry    # preview every file it would touch, writes nothing
 
 It asks for (or, non-interactively, reads from `customize.config.json`):
 
-| Value                     | Drives                                                            |
-| ------------------------- | ----------------------------------------------------------------- |
-| `name`                    | UI, page titles, OG/Twitter meta                                  |
-| `shortName`               | Tab title, PWA `short_name`                                       |
-| `slug`                    | Cloudflare resource names (`<slug>-db`, `<slug>-files`), pkg name |
-| `devPort`                 | Local dev + preview + Playwright port                             |
-| `tagline` / `description` | Footer/hero copy, meta description                                |
-| `url`                     | Canonical + OG URLs                                               |
-| `repo`                    | GitHub links (`owner/name`)                                       |
-| `author` / `authorUrl`    | Footer attribution                                                |
+| Value                     | Drives                                                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `name`                    | UI, page titles, OG/Twitter meta                                                                            |
+| `shortName`               | Tab title, PWA `short_name`                                                                                 |
+| `slug`                    | Cloudflare resource names (`<slug>-db`, `<slug>-files`), pkg name, credential field ids (`<slug>-password`) |
+| `devPort`                 | Local dev + preview + Playwright port                                                                       |
+| `tagline` / `description` | Footer/hero copy, meta description                                                                          |
+| `url`                     | Canonical + OG URLs                                                                                         |
+| `repo`                    | GitHub links (`owner/name`)                                                                                 |
+| `author` / `authorUrl`    | Footer attribution                                                                                          |
 
 **Non-interactive (agents / CI):** copy `customize.config.example.json` to
 `customize.config.json`, edit it, run `bun run customize`. That file is gitignored
@@ -45,6 +45,12 @@ so it won't land in your product. Delete it afterward.
 
 After it runs: `bun run check` and `bun run test` should still pass (a pure rename
 changes values, not behavior).
+
+The slug is also what keeps this site's credential form fields distinct from every
+other site built from this template — see
+[docs/INITIAL_CUSTOMIZATION.md](docs/INITIAL_CUSTOMIZATION.md) → "Credential Field
+Names Must Be Unique To This Site". If you rename by hand instead of running the
+script, check `site.slug` yourself.
 
 ---
 
@@ -119,6 +125,7 @@ still needs doing.
 - `wrangler.toml` points at **your** Cloudflare resources, not the template's.
 - The docs page and command palette reflect your app, not the starter.
 - Social shares use your own image and metadata.
+- Auth and secret form fields carry your slug (`<slug>-password`), not `nebulakit-*`.
 - `INITIAL_CUSTOMIZATION_STATUS.md` says `status: complete`.
 
 ## What's centralized (so you rarely touch these by hand)
@@ -129,3 +136,5 @@ still needs doing.
 - `SharingMeta.svelte` → `site.name` (default), `+page.svelte` → title/description
 - `Navigation.svelte`, `Footer.svelte` → `site.name`, `repoUrl`, `site.author`
 - `CommandPalette.svelte` → `site.name` in the docs entry
+- `utils/form-fields.ts` → `site.slug`, prefixed onto the auth form field `id`/`name`
+  so two sites from this template never share credential field identifiers

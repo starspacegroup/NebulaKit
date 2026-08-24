@@ -64,6 +64,7 @@
 **Rule:** On first substantial request, check [INITIAL_CUSTOMIZATION_STATUS.md](INITIAL_CUSTOMIZATION_STATUS.md).
 
 - If `status: pending` → Recommend [docs/INITIAL_CUSTOMIZATION.md](docs/INITIAL_CUSTOMIZATION.md) workflow.
+- If `credential_fields_unique: false` → `site.slug` is still the template's, so this site's login field names collide with every other unconfigured site from it. Run `bun run customize`. See §9.
 - If `status: complete` → Proceed normally.
 - After completing customization → Update status to `complete` with real app name.
 
@@ -125,6 +126,27 @@ Tiles and installed-app icons are **static** — they cannot switch on `prefers-
 - **Tempted to rename `[x+2e]well-known`** → Don't. `[x+2e]` is SvelteKit's hex escape for `.`; a literal `.well-known/` directory routes fine but drops out of TypeScript's wildcard includes, so those files silently stop being type-checked.
 
 **Reference:** [docs/AGENT_READINESS.md](docs/AGENT_READINESS.md) — full surface map, the DNS records that must be added by hand, and how to verify.
+
+### 9. Credential Fields Carry A Site-Unique Name
+
+**Failure mode:** Every site built from this template ships `id="password"` and `id="email"` on its login form. A password manager that matches on host rather than origin — two local projects on `localhost`, or sibling subdomains of one registrable domain — reads those forms as the same login and offers the wrong credentials.
+
+**Rule:** Give every credential or secret input an `id`/`name` from `fieldName()` in [src/lib/utils/form-fields.ts](src/lib/utils/form-fields.ts). It prefixes with `site.slug`, so a new site gets unique fields the moment `bun run customize` sets the slug. Covered today: login, signup, the profile password + merge fields, `/setup`, and the admin AI-key and auth-key forms.
+
+```svelte
+const passwordField = fieldName('password');
+<label for={passwordField}>Password</label>
+<input id={passwordField} name={passwordField} type="password" autocomplete="current-password" />
+```
+
+**When this breaks:**
+
+- **New form with an email, password, or key field** → Use `fieldName()` for `id` and `name`, keep `for` on the label in sync, and add the route to `CREDENTIAL_ROUTES` in [tests/unit/auth-field-names.test.ts](tests/unit/auth-field-names.test.ts). That test fails on any hardcoded `id`/`name`/`for` in those files.
+- **Setting up a new site from the template** → The fields are only unique once `site.slug` is yours. `bun run customize` handles it and flips `credential_fields_unique` in [INITIAL_CUSTOMIZATION_STATUS.md](INITIAL_CUSTOMIZATION_STATUS.md); a hand-rename does not — check the slug yourself. See §5.
+- **Tempted to rename the `autocomplete` token too** → Don't. `email`, `name`, `current-password`, and `new-password` are the standard values that make autofill work _correctly_. Prefix the identifiers only.
+- **A field's value is a POST body key** (the contact form action) → Leave it alone. Renaming it breaks the server contract, and address autofill wants the plain `name`/`email` names there.
+
+---
 
 ---
 

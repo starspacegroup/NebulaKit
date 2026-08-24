@@ -20,6 +20,7 @@ Do this before feature work, bug fixes, or content entry. The repository still c
 - [ ] Replace Open Graph, Twitter, and favicon assets.
 - [ ] Generate the full web-app icon set (apple-touch-icon, manifest icons, light/dark favicons) — see below. A tab favicon alone is not enough; phone home-screen tiles need it.
 - [ ] Rewrite the `/documentation` route and its links for your product (replace the content; keep the route).
+- [ ] Confirm `site.slug` is your own slug, so this site's credential field names are unique — see below.
 - [ ] Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) to `status: complete`.
 
 ## High-Value Files To Review
@@ -61,6 +62,30 @@ Tiles and installed-app icons are static and cannot follow `prefers-color-scheme
 - [docs/ZERO_ENV_SETUP.md](./ZERO_ENV_SETUP.md)
 - [docs](.)
 
+### Credential Field Names Must Be Unique To This Site
+
+Every auth and secret form on this template — login, signup, the profile password and
+merge fields, `/setup`, and the admin AI-key and auth-key forms — builds its input
+`id` and `name` from `site.slug` through
+[src/lib/utils/form-fields.ts](../src/lib/utils/form-fields.ts). Two sites that both
+ship `nebulakit-password` are read as the same login by any password manager that
+matches on host rather than origin: two projects on `localhost`, or sibling subdomains
+of one registrable domain. The wrong credentials get offered.
+
+`bun run customize` fixes this as a side effect of setting the slug. If you renamed the
+app by hand instead, check it yourself:
+
+```bash
+grep "slug:" src/lib/site.config.ts     # must be YOUR slug, not 'nebulakit'
+bun run test tests/unit/auth-field-names.test.ts
+```
+
+That test also fails if a new form hardcodes `id="password"` instead of calling
+`fieldName()`. When you add a form that collects a credential or a secret, use
+`fieldName()` and add the route to `CREDENTIAL_ROUTES` in that test. Leave the
+`autocomplete` tokens alone — `email`, `current-password`, and `new-password` are what
+make autofill work correctly.
+
 ## Recommended Workflow
 
 1. Pick the final product name, slug, dev port, and short tagline.
@@ -68,7 +93,8 @@ Tiles and installed-app icons are static and cannot follow `prefers-color-scheme
 3. Point `wrangler.toml` at your own Cloudflare resources (the script renames them but can't create them — see CUSTOMIZE.md Step 2).
 4. Replace the social image and favicon assets with your own files (see the icon-set section above).
 5. Rewrite the `/documentation` route for your app, and curate the command palette with `bun run palette:scan`. **Replace its content — do not delete the route.** From here on it must track every user-visible feature you add; see [DOCUMENTATION_PAGE.md](./DOCUMENTATION_PAGE.md) and AGENTS.md §7.
-6. Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) to `status: complete` when done.
+6. Confirm the credential field names are yours — `grep "slug:" src/lib/site.config.ts` must not say `nebulakit` (see the section above).
+7. Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) to `status: complete` when done.
 
 ## Definition Of Done
 
@@ -76,4 +102,5 @@ Tiles and installed-app icons are static and cannot follow `prefers-color-scheme
 - Social shares use your own image, alt text, and metadata.
 - Users cannot navigate to NebulaKit template documentation from the product UI.
 - `/documentation` still exists, describes your app's real features, and is linked from the footer and command palette.
-- [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) says `status: complete`.
+- Auth and secret form fields carry this site's own slug, not `nebulakit-*`.
+- [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) says `status: complete` and `credential_fields_unique: true`.

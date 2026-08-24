@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
@@ -19,6 +20,13 @@
 	let confirmNewPassword = '';
 	let mergeEmail = '';
 	let mergePassword = '';
+
+	// Site-unique field identifiers so a password manager does not confuse these
+	// credential fields with another site built from the same template.
+	const newPasswordField = fieldName('new-password');
+	const confirmNewPasswordField = fieldName('confirm-new-password');
+	const mergeEmailField = fieldName('merge-email');
+	const mergePasswordField = fieldName('merge-password');
 
 	let connectedAccounts = data.connectedAccounts || [];
 	let hasPassword = data.hasPassword ?? false;
@@ -50,9 +58,7 @@
 
 	// Only show providers that are configured
 	$: providers = allProviders.filter(
-		(p) =>
-			configuredProviders[p.id as keyof typeof configuredProviders] ||
-			canSimulateProviders
+		(p) => configuredProviders[p.id as keyof typeof configuredProviders] || canSimulateProviders
 	);
 
 	onMount(() => {
@@ -333,18 +339,20 @@
 
 				<div class="form-grid">
 					<div class="form-field">
-						<label for="new-password">New Password</label>
+						<label for={newPasswordField}>New Password</label>
 						<input
-							id="new-password"
+							id={newPasswordField}
+							name={newPasswordField}
 							type="password"
 							bind:value={newPassword}
 							autocomplete="new-password"
 						/>
 					</div>
 					<div class="form-field">
-						<label for="confirm-new-password">Confirm New Password</label>
+						<label for={confirmNewPasswordField}>Confirm New Password</label>
 						<input
-							id="confirm-new-password"
+							id={confirmNewPasswordField}
+							name={confirmNewPasswordField}
 							type="password"
 							bind:value={confirmNewPassword}
 							autocomplete="new-password"
@@ -378,13 +386,20 @@
 
 				<div class="form-grid">
 					<div class="form-field">
-						<label for="merge-email">Account Email to Merge</label>
-						<input id="merge-email" type="email" bind:value={mergeEmail} autocomplete="email" />
+						<label for={mergeEmailField}>Account Email to Merge</label>
+						<input
+							id={mergeEmailField}
+							name={mergeEmailField}
+							type="email"
+							bind:value={mergeEmail}
+							autocomplete="email"
+						/>
 					</div>
 					<div class="form-field">
-						<label for="merge-password">Account Password to Merge</label>
+						<label for={mergePasswordField}>Account Password to Merge</label>
 						<input
-							id="merge-password"
+							id={mergePasswordField}
+							name={mergePasswordField}
 							type="password"
 							bind:value={mergePassword}
 							autocomplete="current-password"

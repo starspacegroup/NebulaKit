@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import AuthProviderButtons from '$lib/components/AuthProviderButtons.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
@@ -13,6 +14,13 @@
 	let confirmPassword = '';
 	let isLoading = false;
 	let error = '';
+
+	// Site-unique field identifiers so a password manager does not confuse this
+	// signup with another site built from the same template.
+	const nameField = fieldName('name');
+	const emailField = fieldName('email');
+	const passwordField = fieldName('password');
+	const confirmPasswordField = fieldName('confirm-password');
 
 	const errorMessages: Record<string, string> = {
 		oauth_failed: 'Authentication failed. Please try again.',
@@ -102,9 +110,10 @@
 			{/if}
 
 			<div class="form-group">
-				<label for="name">Name</label>
+				<label for={nameField}>Name</label>
 				<input
-					id="name"
+					id={nameField}
+					name={nameField}
 					type="text"
 					bind:value={name}
 					placeholder="Your name"
@@ -114,9 +123,10 @@
 			</div>
 
 			<div class="form-group">
-				<label for="email">Email</label>
+				<label for={emailField}>Email</label>
 				<input
-					id="email"
+					id={emailField}
+					name={emailField}
 					type="email"
 					bind:value={email}
 					placeholder="you@example.com"
@@ -126,9 +136,10 @@
 			</div>
 
 			<div class="form-group">
-				<label for="password">Password</label>
+				<label for={passwordField}>Password</label>
 				<input
-					id="password"
+					id={passwordField}
+					name={passwordField}
 					type="password"
 					bind:value={password}
 					placeholder="••••••••"
@@ -138,9 +149,10 @@
 			</div>
 
 			<div class="form-group">
-				<label for="confirm-password">Confirm Password</label>
+				<label for={confirmPasswordField}>Confirm Password</label>
 				<input
-					id="confirm-password"
+					id={confirmPasswordField}
+					name={confirmPasswordField}
 					type="password"
 					bind:value={confirmPassword}
 					placeholder="••••••••"

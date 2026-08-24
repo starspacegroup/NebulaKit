@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import AuthProviderButtons from '$lib/components/AuthProviderButtons.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
@@ -13,6 +14,11 @@
 	let isLoading = false;
 	let error = '';
 	let selectedPretendRole: PretendRole = 'user';
+
+	// Site-unique field identifiers so a password manager does not confuse this
+	// login with another site built from the same template.
+	const emailField = fieldName('email');
+	const passwordField = fieldName('password');
 
 	const errorMessages: Record<string, string> = {
 		oauth_failed: 'Authentication failed. Please try again.',
@@ -133,9 +139,10 @@
 			{/if}
 
 			<div class="form-group">
-				<label for="email">Email</label>
+				<label for={emailField}>Email</label>
 				<input
-					id="email"
+					id={emailField}
+					name={emailField}
 					type="email"
 					bind:value={email}
 					placeholder="you@example.com"
@@ -145,9 +152,10 @@
 			</div>
 
 			<div class="form-group">
-				<label for="password">Password</label>
+				<label for={passwordField}>Password</label>
 				<input
-					id="password"
+					id={passwordField}
+					name={passwordField}
 					type="password"
 					bind:value={password}
 					placeholder="••••••••"

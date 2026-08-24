@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
 
 	let formData = {
@@ -14,6 +15,12 @@
 	let hasExistingConfig = false;
 	let hasExistingAdmin = false;
 	let checkingConfig = true;
+
+	// Site-unique field identifiers so a password manager does not confuse these
+	// secret fields with another site built from the same template.
+	const clientIdField = fieldName('client-id');
+	const clientSecretField = fieldName('client-secret');
+	const adminUsernameField = fieldName('admin-github-username');
 
 	// Check for error in URL params
 	$: if ($page.url.searchParams.get('error') === 'oauth_not_configured') {
@@ -193,13 +200,14 @@
 		<form on:submit|preventDefault={handleSubmit} class="setup-form">
 			{#if !hasExistingConfig}
 				<div class="form-group">
-					<label for="clientId">
+					<label for={clientIdField}>
 						GitHub Client ID
 						<span class="required" aria-label="required">*</span>
 					</label>
 					<input
 						type="text"
-						id="clientId"
+						id={clientIdField}
+						name={clientIdField}
 						bind:value={formData.clientId}
 						class:error={errors.clientId}
 						placeholder="Enter your GitHub OAuth Client ID"
@@ -211,13 +219,14 @@
 				</div>
 
 				<div class="form-group">
-					<label for="clientSecret">
+					<label for={clientSecretField}>
 						GitHub Client Secret
 						<span class="required" aria-label="required">*</span>
 					</label>
 					<input
 						type="password"
-						id="clientSecret"
+						id={clientSecretField}
+						name={clientSecretField}
 						bind:value={formData.clientSecret}
 						class:error={errors.clientSecret}
 						placeholder="Enter your GitHub OAuth Client Secret"
@@ -231,10 +240,11 @@
 				<details class="oauth-override">
 					<summary>Update OAuth credentials (optional)</summary>
 					<div class="form-group">
-						<label for="clientId">GitHub Client ID</label>
+						<label for={clientIdField}>GitHub Client ID</label>
 						<input
 							type="text"
-							id="clientId"
+							id={clientIdField}
+							name={clientIdField}
 							bind:value={formData.clientId}
 							placeholder="Leave empty to keep existing"
 							disabled={loading}
@@ -242,10 +252,11 @@
 					</div>
 
 					<div class="form-group">
-						<label for="clientSecret">GitHub Client Secret</label>
+						<label for={clientSecretField}>GitHub Client Secret</label>
 						<input
 							type="password"
-							id="clientSecret"
+							id={clientSecretField}
+							name={clientSecretField}
 							bind:value={formData.clientSecret}
 							placeholder="Leave empty to keep existing"
 							disabled={loading}
@@ -255,13 +266,14 @@
 			{/if}
 
 			<div class="form-group">
-				<label for="adminGithubUsername">
+				<label for={adminUsernameField}>
 					Admin GitHub Username
 					<span class="required" aria-label="required">*</span>
 				</label>
 				<input
 					type="text"
-					id="adminGithubUsername"
+					id={adminUsernameField}
+					name={adminUsernameField}
 					bind:value={formData.adminGithubUsername}
 					class:error={errors.adminGithubUsername}
 					placeholder="e.g. octocat"

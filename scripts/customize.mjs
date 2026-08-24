@@ -239,7 +239,11 @@ function updateStatus(next) {
 	let text = readFileSync(path, 'utf8');
 	text = text
 		.replace(/^app_name:.*$/m, `app_name: ${next.name}`)
-		.replace(/(^-\s*App name:).*$/m, `$1 ${next.name}`);
+		.replace(/(^-\s*App name:).*$/m, `$1 ${next.name}`)
+		// The slug now belongs to this product, so the credential field ids
+		// derived from it no longer collide with other sites from the template.
+		.replace(/^credential_fields_unique:.*$/m, 'credential_fields_unique: true')
+		.replace(/(^-\s*Credential fields unique:).*$/m, '$1 yes');
 	if (!DRY) writeFileSync(path, text);
 }
 
@@ -285,6 +289,10 @@ console.log('  src/lib/site.config.ts (regenerated)');
 for (const f of changed) console.log(`  ${f}`);
 
 console.log(`\n${DRY ? '[dry run complete — nothing written]' : '✓ Mechanical rename done.'}`);
+console.log(
+	`  Auth and secret form fields are now "${next.slug}-*" — unique to this site, so a\n` +
+		'  password manager will not offer another template site\'s credentials here.'
+);
 console.log('\nStill needs a human/agent (see CUSTOMIZE.md → "Semantic steps"):');
 console.log("  • wrangler.toml still has the TEMPLATE's Cloudflare resource IDs —");
 console.log('    run `wrangler d1/kv/r2 create` and paste your own database_id / ids.');

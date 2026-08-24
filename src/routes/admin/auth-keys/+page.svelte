@@ -1,10 +1,18 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { fieldName } from '$lib/utils/form-fields';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
 
 	let keys = data.keys || [];
+
+	// Site-unique field identifiers so a password manager does not confuse this
+	// secret form with another site built from the same template.
+	const keyNameField = fieldName('auth-key-name');
+	const providerField = fieldName('auth-key-provider');
+	const clientIdField = fieldName('auth-client-id');
+	const clientSecretField = fieldName('auth-client-secret');
 	let showForm = false;
 	let editingKey: any = null;
 	let formData = {
@@ -332,9 +340,10 @@
 			</div>
 			<div class="modal-body">
 				<div class="form-group">
-					<label for="key-name">Key Name</label>
+					<label for={keyNameField}>Key Name</label>
 					<input
-						id="key-name"
+						id={keyNameField}
+						name={keyNameField}
 						type="text"
 						bind:value={formData.name}
 						class:error={errors.name}
@@ -346,8 +355,8 @@
 				</div>
 
 				<div class="form-group">
-					<label for="provider">Provider</label>
-					<select id="provider" bind:value={formData.provider}>
+					<label for={providerField}>Provider</label>
+					<select id={providerField} name={providerField} bind:value={formData.provider}>
 						{#each providers as provider}
 							<option value={provider.value}>{provider.label}</option>
 						{/each}
@@ -355,9 +364,10 @@
 				</div>
 
 				<div class="form-group">
-					<label for="client-id">Client ID</label>
+					<label for={clientIdField}>Client ID</label>
 					<input
-						id="client-id"
+						id={clientIdField}
+						name={clientIdField}
 						type="text"
 						bind:value={formData.clientId}
 						class:error={errors.clientId}
@@ -369,9 +379,10 @@
 				</div>
 
 				<div class="form-group">
-					<label for="client-secret">Client Secret</label>
+					<label for={clientSecretField}>Client Secret</label>
 					<input
-						id="client-secret"
+						id={clientSecretField}
+						name={clientSecretField}
 						type="password"
 						bind:value={formData.clientSecret}
 						class:error={errors.clientSecret}
