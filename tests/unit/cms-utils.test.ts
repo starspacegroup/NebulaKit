@@ -70,7 +70,12 @@ describe('CMS Utils', () => {
 			expect(parsed.slug).toBe('blog');
 			expect(parsed.name).toBe('Blog Posts');
 			expect(parsed.fields).toEqual([{ name: 'body', label: 'Body', type: 'richtext' }]);
-			expect(parsed.settings).toEqual({ hasDrafts: true, showInCommandPalette: true });
+			expect(parsed.settings).toEqual({
+				hasDrafts: true,
+				routePrefix: '/blog',
+				isPublic: true,
+				showInCommandPalette: true
+			});
 			expect(parsed.sortOrder).toBe(0);
 		});
 	});
@@ -234,6 +239,29 @@ describe('CMS Utils', () => {
 				definitions
 			);
 			expect(errors).toContain('Website must be a valid URL');
+		});
+
+		it.each(['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', '//evil.example'])(
+			'should reject unsafe URL protocols (%s)',
+			(website) => {
+				const errors = validateFields(
+					{ title: 'Hi', body: 'Long enough text here', website },
+					definitions
+				);
+				expect(errors).toContain('Website must be a valid URL');
+			}
+		);
+
+		it('should apply the stricter image URL policy', () => {
+			const imageDefinition: ContentFieldDefinition[] = [
+				{ name: 'hero', label: 'Hero', type: 'image' }
+			];
+
+			expect(validateFields({ hero: 'https://example.com/hero.png' }, imageDefinition)).toEqual([]);
+			expect(validateFields({ hero: '/images/hero.png' }, imageDefinition)).toEqual([]);
+			expect(validateFields({ hero: 'data:image/svg+xml,<svg />' }, imageDefinition)).toContain(
+				'Hero must be a valid URL'
+			);
 		});
 
 		it('should validate emails', () => {

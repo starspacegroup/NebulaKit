@@ -31,7 +31,7 @@ describe.skip('Home Page Hero', () => {
 
 	it('should render the subtitle with correct text', () => {
 		render(Page);
-		const subtitle = screen.getByText(/A full-stack SvelteKit \+ Cloudflare starter/i);
+		const subtitle = screen.getByText(/independent Cloudflare-native platform/i);
 		expect(subtitle).toBeTruthy();
 	});
 

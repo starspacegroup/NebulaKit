@@ -16,7 +16,7 @@
 	let error = '';
 
 	// Site-unique field identifiers so a password manager does not confuse this
-	// signup with another site built from the same template.
+	// signup with another NebulaKit deployment's.
 	const nameField = fieldName('name');
 	const emailField = fieldName('email');
 	const passwordField = fieldName('password');

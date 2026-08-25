@@ -31,7 +31,12 @@ vi.mock('$lib/utils/usage', async (importOriginal) => {
 	};
 });
 
-import { listCountries, listHourlyViews } from '$lib/utils/page-views';
+import {
+	listCountries,
+	listDailyViews,
+	listDimension,
+	listHourlyViews
+} from '$lib/utils/page-views';
 import { getUsage as getUsageMock } from '$lib/utils/usage';
 import { load } from '../../src/routes/admin/stats/+page.server';
 
@@ -168,6 +173,60 @@ describe('/admin/stats load — shape', () => {
 
 		expect(data.traffic?.countries).toEqual([]);
 		expect(data.traffic?.byPath).toHaveLength(1);
+	});
+
+	it('fails soft when optional count, growth, and audience tables are absent', async () => {
+		const db = {
+			prepare: vi.fn().mockImplementation((query: string) => ({
+				bind: vi.fn().mockReturnThis(),
+				first: vi.fn().mockImplementation(() => {
+					if (query.includes('FROM users') && !query.includes('SUM(CASE')) {
+						return Promise.resolve({ count: query.includes('is_admin') ? 1 : 3 });
+					}
+					return Promise.reject(new Error('optional table missing'));
+				}),
+				all: vi.fn().mockRejectedValue(new Error('growth table missing'))
+			}))
+		};
+		for (let index = 0; index < 5; index += 1) {
+			vi.mocked(listDimension).mockRejectedValueOnce(new Error('audience table missing'));
+		}
+		vi.mocked(listHourlyViews).mockRejectedValueOnce(new Error('hourly table missing'));
+
+		const data = await run(
+			createEvent({
+				platform: { env: { DB: db } },
+				url: new URL('https://example.com/admin/stats?window=1')
+			})
+		);
+
+		expect(data.stats).toMatchObject({
+			totalUsers: 3,
+			totalAdmins: 1,
+			totalContent: 0,
+			totalContactSubmissions: 0,
+			totalChatMessages: 0,
+			contentByStatus: { draft: 0, published: 0, archived: 0 },
+			usersByMonth: [],
+			contentByMonth: []
+		});
+		expect(data.traffic?.audience).toEqual({
+			os: [],
+			browsers: [],
+			devices: [],
+			languages: [],
+			viewports: []
+		});
+		expect(data.traffic?.hourly).toEqual([]);
+	});
+
+	it('removes the traffic panel when a required traffic query fails', async () => {
+		vi.mocked(listDailyViews).mockRejectedValueOnce(new Error('traffic table missing'));
+
+		const data = await run(createEvent());
+
+		expect(data.traffic).toBeNull();
+		expect(data.stats?.totalUsers).toBe(7);
 	});
 
 	it('degrades usage to null when its table is missing', async () => {

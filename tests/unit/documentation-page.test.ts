@@ -32,13 +32,13 @@ describe('Documentation Page', () => {
 
 		expect(screen.getByText(/keyboard-first navigation with command palette/i)).toBeInTheDocument();
 		expect(screen.getByText(/open the command palette with ctrl\/cmd \+ k/i)).toBeInTheDocument();
-		expect(screen.getByText(/chat route becomes your primary ai surface/i)).toBeInTheDocument();
+		expect(screen.getByText(/chat exposes only enabled entries/i)).toBeInTheDocument();
 		expect(
 			screen.getByText(/before expecting sign-in or ai features to work/i)
 		).toBeInTheDocument();
 	});
 
-	it('recommends bun quick start and provides a switchable npm view', () => {
+	it('uses Bun as the sole package manager in quick start', () => {
 		render(Page);
 		const quickStartSection = screen
 			.getByRole('heading', { name: /Quick Start/i })
@@ -49,13 +49,12 @@ describe('Documentation Page', () => {
 		const scoped = within(quickStartSection as HTMLElement);
 
 		expect(scoped.getByText(/is the recommended default for this repo/i)).toBeInTheDocument();
-		expect(scoped.getByRole('button', { name: /bun/i })).toBeInTheDocument();
-		expect(scoped.getByRole('button', { name: /npm/i })).toBeInTheDocument();
 		expect(scoped.getByRole('link', { name: /^bun$/i })).toHaveAttribute('href', 'https://bun.sh');
 		expect(scoped.getByText(/install dependencies/i)).toBeInTheDocument();
 		expect(scoped.getAllByText(/^bun$/i).length).toBeGreaterThan(0);
 		expect(scoped.getByText(/^install$/i)).toBeInTheDocument();
 		expect(scoped.getByText(/^run dev$/i)).toBeInTheDocument();
+		expect(quickStartSection?.textContent).not.toMatch(/\bnpm\b/i);
 	});
 
 	it('explains how to use ai assistance safely in this repository', () => {
@@ -140,6 +139,79 @@ describe('Documentation Page', () => {
 		).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — this page shipped a claim that auth runs on @auth/sveltekit.
+	// It never did: sessions are issued by this app (src/lib/utils/session.ts) and
+	// the OAuth callbacks are hand-written under src/routes/api/auth/. The package
+	// was an unused dependency, so the docs pointed operators at a library that was
+	// not in the request path. Pin the accurate description down.
+	describe('authentication section', () => {
+		it('describes the built-in session auth rather than naming an auth library', () => {
+			render(Page);
+
+			const section = screen
+				.getByRole('heading', { name: /Authentication and Setup Flow/i })
+				.closest('section') as HTMLElement;
+			expect(section).toBeTruthy();
+
+			expect(section.textContent).not.toMatch(/@auth\/sveltekit|Auth\.js/i);
+			expect(within(section).getByText(/built into this app/i)).toBeInTheDocument();
+		});
+
+		it('lists the sign-in methods the app actually implements', () => {
+			render(Page);
+
+			const section = screen
+				.getByRole('heading', { name: /Authentication and Setup Flow/i })
+				.closest('section') as HTMLElement;
+			const scoped = within(section);
+
+			expect(scoped.getByText(/email and password/i)).toBeInTheDocument();
+			expect(scoped.getAllByText(/GitHub and Discord/i).length).toBeGreaterThan(0);
+			expect(scoped.getByText('/auth/signup')).toBeInTheDocument();
+		});
+
+		it('documents opaque sessions and protected setup operations', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /Authentication and Setup Flow/i })
+				.closest('section') as HTMLElement;
+
+			expect(section.textContent).toMatch(/unsigned opaque session token/i);
+			expect(section.textContent).toMatch(/SESSION_SECRET/);
+			expect(section.textContent).toMatch(/SETUP_SECRET/);
+			expect(section.textContent).toMatch(/unexpired one-time state in D1/i);
+			expect(section.textContent).toMatch(/atomically consume that state/i);
+			expect(section.textContent).toMatch(/Discord does not bootstrap ownership/i);
+			expect(section.textContent).toMatch(/owner-only/i);
+			expect(section.textContent).toMatch(/revokes every active D1\s+session/i);
+		});
+	});
+
+	describe('content, AI, and abuse-control contracts', () => {
+		it('documents private CMS behavior and configured model enforcement', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /What You Get Out of the Box/i })
+				.closest('section') as HTMLElement;
+
+			expect(section.textContent).toMatch(/private CMS content types[\s\S]*404/i);
+			expect(section.textContent).toMatch(/enabled[\s\S]*known model allowlist/i);
+			expect(section.textContent).toMatch(/unknown or disabled\s+models are rejected/i);
+		});
+
+		it('documents paired Turnstile configuration and voice history persistence', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /What You Get Out of the Box/i })
+				.closest('section') as HTMLElement;
+
+			expect(section.textContent).toMatch(/TURNSTILE_SITE_KEY/);
+			expect(section.textContent).toMatch(/TURNSTILE_SECRET_KEY/);
+			expect(section.textContent).toMatch(/partial configuration fails closed/i);
+			expect(section.textContent).toMatch(/voice transcripts[\s\S]*same conversation history/i);
+		});
+	});
+
 	// AGENTS.md §8 — the agent-discovery surfaces are user-visible features, so
 	// /documentation has to describe them and keep describing them.
 	describe('agent readiness section', () => {
@@ -173,8 +245,32 @@ describe('Documentation Page', () => {
 
 		it('explains the WebMCP tools and their limits', () => {
 			render(Page);
-			expect(screen.getByRole('heading', { name: /In-browser tools/i })).toBeInTheDocument();
-			expect(screen.getByText(/read-and-navigate only/i)).toBeInTheDocument();
+			const section = screen
+				.getByRole('heading', { name: /Agent Readiness/i })
+				.closest('section') as HTMLElement;
+			expect(
+				within(section).getByRole('heading', { name: /In-browser tools/i })
+			).toBeInTheDocument();
+			expect(within(section).getByText(/read-and-navigate only/i)).toBeInTheDocument();
+			expect(section.textContent).toMatch(/public sitemap allowlist/i);
+			expect(section.textContent).toMatch(/browser credentials omitted/i);
+		});
+
+		it('lists the endpoints published by the API catalog', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /Agent Readiness/i })
+				.closest('section') as HTMLElement;
+
+			for (const endpoint of [
+				'/api/contact-form-submissions',
+				'/api/health',
+				'/api/cms/types',
+				'/api/chat/models',
+				'/api/chat/stream'
+			]) {
+				expect(section.textContent).toContain(endpoint);
+			}
 		});
 
 		it('warns that the shipped content policy allows AI training', () => {
@@ -189,6 +285,18 @@ describe('Documentation Page', () => {
 		it('flags DNS-AID as the step that must be done by hand', () => {
 			render(Page);
 			expect(screen.getByText(/DNS-based discovery \(DNS-AID\)/i)).toBeInTheDocument();
+		});
+
+		it('distinguishes URL discovery from binding-dependent health', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /Agent Readiness/i })
+				.closest('section') as HTMLElement;
+
+			expect(
+				within(section).getByText(/without per-domain URL configuration/i)
+			).toBeInTheDocument();
+			expect(section.textContent).toMatch(/placeholder Cloudflare bindings[\s\S]*503/i);
 		});
 
 		it('is reachable from the section navigation', () => {

@@ -9,7 +9,7 @@
  *
  * URLs are built from the request origin because the sitemap protocol requires
  * every entry to share the sitemap's own host. That also means this file is
- * correct on a preview deploy and on a custom domain without customization.
+ * correct on a preview deploy and on a custom domain without per-domain edits.
  *
  * Degrades cleanly: if D1 is unreachable (fresh clone with placeholder binding
  * IDs, or a transient error) the static routes are still served. A partial

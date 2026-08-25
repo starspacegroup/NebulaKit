@@ -2,10 +2,10 @@
 /**
  * Run D1 migrations against THIS project's database.
  *
- * Why this exists: these scripts used to be hardcoded to `nebulakit-db`, the
- * template's own database name. Every derived project inherited that, so
+ * Why this exists: an earlier NebulaKit release hardcoded these scripts to
+ * `nebulakit-db`. Sibling products inherited that name, so
  * `db:migrate` either failed ("no database named nebulakit-db") or — for anyone
- * who still had the template's leaked id in place — applied the project's
+ * who still had the historical leaked id in place — applied the project's
  * migrations into the SHARED database. That is how one D1 ended up with 28
  * tables and four projects' migrations interleaved. See docs/CLOUDFLARE_SETUP.md.
  *
@@ -34,13 +34,13 @@ if (!['apply', 'list'].includes(action)) {
 
 // `--local` applies migrations to the miniflare SQLite file under .wrangler/ and
 // never contacts Cloudflare, so placeholder ids are harmless there — and must
-// stay harmless, or a fresh clone of this template can't run its own e2e suite
+// stay harmless, or a fresh NebulaKit clone can't run its own e2e suite
 // until someone provisions an account. Remote runs keep the hard guard: that
 // path is the one that writes to whatever the ids point at.
 const LOCAL = rest.includes('--local');
 
-// Run the guard here rather than relying on npm's pre* hooks — bun does not run
-// them, so the hooks alone would leave `bun run db:migrate` unprotected.
+// Run the guard here because migration commands must protect themselves before
+// invoking Wrangler, regardless of how the package script was launched.
 const check = spawnSync(
 	'node',
 	[join(root, 'scripts', 'check-bindings.mjs'), ...(LOCAL ? ['--warn'] : [])],
@@ -74,7 +74,7 @@ if (!name || (/REPLACE_ME/.test(name) && !LOCAL)) {
 
 const args = ['wrangler', 'd1', 'migrations', action, name, ...rest];
 console.log(`db-migrate: ${args.join(' ')}\n`);
-const run = spawnSync('npx', args, {
+const run = spawnSync('bunx', args, {
 	cwd: root,
 	stdio: 'inherit',
 	shell: process.platform === 'win32'

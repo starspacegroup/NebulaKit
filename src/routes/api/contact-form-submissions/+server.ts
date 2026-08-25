@@ -1,3 +1,4 @@
+import { requireAdmin } from '$lib/server/auth-guards';
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
@@ -6,7 +7,7 @@ import {
 	countContactFormSubmissions
 } from '$lib/services/contact';
 import { validateContactInput } from '$lib/utils/contact-validation';
-import { verifyTurnstile, turnstileEnabled } from '$lib/server/turnstile';
+import { getTurnstileConfig, verifyTurnstile } from '$lib/server/turnstile';
 import { isPiiRevealed, maskName, maskEmail, PII_REVEAL_COOKIE } from '$lib/server/pii-mask';
 
 /**
@@ -14,8 +15,7 @@ import { isPiiRevealed, maskName, maskEmail, PII_REVEAL_COOKIE } from '$lib/serv
  * names + emails are masked unless the owner has PII reveal on.
  */
 export const GET: RequestHandler = async ({ locals, platform, url, cookies }) => {
-	if (!locals.user) throw error(401, 'Unauthorized');
-	if (!locals.user.isOwner && !locals.user.isAdmin) throw error(403, 'Forbidden');
+	requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
@@ -52,14 +52,18 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const result = validateContactInput(body);
 	if (!result.ok) throw error(400, result.error);
 
-	const secretKey = platform?.env?.TURNSTILE_SECRET_KEY;
-	if (turnstileEnabled(secretKey)) {
+	const config = getTurnstileConfig(
+		platform?.env?.TURNSTILE_SITE_KEY,
+		platform?.env?.TURNSTILE_SECRET_KEY
+	);
+	if ('error' in config) throw error(503, config.error);
+	if (config.enabled) {
 		const token =
 			typeof body['cf-turnstile-response'] === 'string'
 				? (body['cf-turnstile-response'] as string)
 				: null;
 		const ok = await verifyTurnstile({
-			secretKey: secretKey as string,
+			secretKey: config.secretKey,
 			token,
 			remoteIp: request.headers.get('CF-Connecting-IP')
 		});

@@ -5,10 +5,11 @@
  * POST /api/cms/[type] - Create a new item
  */
 import type { ContentItemFilters } from '$lib/cms/types';
+import { sanitizeRichtextFields } from '$lib/cms/sanitize';
 import { getContentTypeRoutePrefix, validateFields } from '$lib/cms/utils';
 import { runTimestampProofJob } from '$lib/content-proof/proof-job';
 import { createContentItem, getContentTypeBySlug, listContentItems } from '$lib/services/cms';
-import { requireAdmin } from '$lib/server/auth-guard';
+import { requireAdmin } from '$lib/server/auth-guards';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -60,12 +61,7 @@ export const GET: RequestHandler = async ({ platform, locals, params, url }) => 
 };
 
 export const POST: RequestHandler = async ({ platform, locals, params, request, url }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	const user = requireAdmin(locals);
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -83,24 +79,20 @@ export const POST: RequestHandler = async ({ platform, locals, params, request, 
 		if (!body.title) {
 			throw error(400, 'Title is required');
 		}
-
-		// Validate custom fields against type definition
-		const fieldErrors = validateFields(body.fields || {}, contentType.fields);
-		if (fieldErrors.length > 0) {
-			throw error(400, fieldErrors.join(', '));
-		}
-
+		const fields = sanitizeRichtextFields(body.fields || {}, contentType.fields);
+		const fieldErrors = validateFields(fields, contentType.fields);
+		if (fieldErrors.length > 0) throw error(400, fieldErrors.join(', '));
 		const item = await createContentItem(db, {
 			contentTypeSlug: params.type,
 			title: body.title,
 			slug: body.slug,
 			status: body.status,
-			fields: body.fields || {},
+			fields,
 			seoTitle: body.seoTitle,
 			seoDescription: body.seoDescription,
 			seoImage: body.seoImage,
 			showInCommandPalette: body.showInCommandPalette,
-			authorId: locals.user.id,
+			authorId: user.id,
 			tagIds: body.tagIds
 		});
 
@@ -116,6 +108,7 @@ export const POST: RequestHandler = async ({ platform, locals, params, request, 
 
 		return json({ item }, { status: 201 });
 	} catch (err: any) {
+		if (err?.name === 'CmsFieldValidationError') throw error(400, err.message);
 		if (err?.status) throw err;
 		console.error('Failed to create content item:', err);
 		throw error(500, 'Failed to create content item');

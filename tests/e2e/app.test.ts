@@ -13,11 +13,15 @@ test.describe('Homepage', () => {
 		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
 		await expect(commandPaletteBtn).toBeVisible();
 		await page.waitForLoadState('networkidle');
-		await commandPaletteBtn.click();
 
-		// Wait for command palette dialog to appear
+		// `networkidle` does not imply hydration: the button paints server-side, so
+		// a click that lands before Svelte attaches the handler is silently a no-op
+		// and the dialog never appears. Retry the open until it takes.
 		const palette = page.locator('[role="dialog"]');
-		await expect(palette).toBeVisible();
+		await expect(async () => {
+			await commandPaletteBtn.click();
+			await expect(palette).toBeVisible({ timeout: 2000 });
+		}).toPass({ timeout: 20000 });
 
 		// Search for documentation
 		const searchInput = palette.locator('input[placeholder*="Search"]');
@@ -39,12 +43,13 @@ test.describe('Homepage', () => {
 		await expect(commandPaletteBtn).toBeVisible();
 		await page.waitForLoadState('networkidle');
 
-		// Use Ctrl+K keyboard shortcut to open command palette
-		await page.keyboard.press('Control+k');
-
-		// Command palette should be visible
+		// The shortcut is registered in onMount, and `networkidle` does not imply
+		// hydration has run — a keypress before then is dropped with no retry.
 		const palette = page.locator('[role="dialog"]');
-		await expect(palette).toBeVisible();
+		await expect(async () => {
+			await page.keyboard.press('Control+k');
+			await expect(palette).toBeVisible({ timeout: 2000 });
+		}).toPass({ timeout: 20000 });
 	});
 });
 

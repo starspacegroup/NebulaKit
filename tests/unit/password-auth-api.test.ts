@@ -21,11 +21,26 @@ vi.mock('../../src/lib/services/account-merge', () => ({
 	mergeAccounts: vi.fn().mockResolvedValue(undefined)
 }));
 
+vi.mock('../../src/lib/utils/db', async () => {
+	const actual =
+		await vi.importActual<typeof import('../../src/lib/utils/db')>('../../src/lib/utils/db');
+	return {
+		...actual,
+		createSession: vi.fn(async (_db: unknown, userId: string) => ({
+			id: 'stored-session-digest',
+			token: 'opaque-session-token',
+			user_id: userId,
+			expires_at: new Date('2099-01-01T00:00:00.000Z')
+		}))
+	};
+});
+
 describe('Password Auth APIs', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
 		vi.stubGlobal('crypto', webcrypto as Crypto);
+		vi.stubEnv('DEV', true);
 	});
 
 	it('rejects signup when the database is unavailable', async () => {
@@ -136,6 +151,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue({ id: 'existing-user' })
 								})
 							})
@@ -219,6 +235,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockImplementation(() => ({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -290,6 +307,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue({
 										id: 'user-1',
 										email: 'primary@example.com',
@@ -324,6 +342,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockReturnValue({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -360,6 +379,7 @@ describe('Password Auth APIs', () => {
 		const passwordHash = await hashPassword('StrongPass123!');
 		const prepare = vi.fn().mockReturnValue({
 			bind: vi.fn().mockReturnValue({
+				run: vi.fn().mockResolvedValue({ success: true }),
 				first: vi.fn().mockResolvedValue({
 					id: '123',
 					email: 'primary@example.com',
@@ -384,7 +404,8 @@ describe('Password Auth APIs', () => {
 		const payload = await response.json();
 
 		expect(payload.redirectTo).toBe('/admin');
-		expect(prepare).toHaveBeenCalledTimes(1);
+		// One prepare for the user lookup, one for the server-side session INSERT.
+		expect(prepare).toHaveBeenCalledTimes(2);
 	});
 
 	it('logs in as owner when the numeric owner id matches the linked github account', async () => {
@@ -394,6 +415,7 @@ describe('Password Auth APIs', () => {
 		const passwordHash = await hashPassword('StrongPass123!');
 		const prepare = vi.fn().mockImplementation((sql: string) => ({
 			bind: vi.fn().mockReturnValue({
+				run: vi.fn().mockResolvedValue({ success: true }),
 				first: vi.fn().mockResolvedValue(
 					sql.includes('FROM users u')
 						? {
@@ -436,6 +458,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockReturnValue({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -477,6 +500,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockReturnValue({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue({
 									id: 'user-1',
 									email: 'primary@example.com',
@@ -517,6 +541,7 @@ describe('Password Auth APIs', () => {
 		const passwordHash = await hashPassword('StrongPass123!');
 		const prepare = vi.fn().mockImplementation((sql: string) => ({
 			bind: vi.fn().mockReturnValue({
+				run: vi.fn().mockResolvedValue({ success: true }),
 				first: sql.includes('FROM users u')
 					? vi.fn().mockResolvedValue({
 							id: 'user-1',
@@ -558,6 +583,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockImplementation((sql: string) => ({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue(
 										sql.includes('FROM users u')
 											? {
@@ -749,6 +775,7 @@ describe('Password Auth APIs', () => {
 					DB: {
 						prepare: vi.fn().mockImplementation((sql: string) => ({
 							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
 								first: vi.fn().mockResolvedValue(
 									sql.includes('FROM users u')
 										? {
@@ -803,6 +830,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue({
 										id: 'target-user',
 										email: 'target@example.com',
@@ -839,6 +867,7 @@ describe('Password Auth APIs', () => {
 						DB: {
 							prepare: vi.fn().mockReturnValue({
 								bind: vi.fn().mockReturnValue({
+									run: vi.fn().mockResolvedValue({ success: true }),
 									first: vi.fn().mockResolvedValue(null)
 								})
 							})
@@ -919,3 +948,4 @@ describe('Password Auth APIs', () => {
 		});
 	});
 });
+import '../helpers/server-response';

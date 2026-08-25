@@ -129,7 +129,7 @@ describe('Admin CMS [type] Page - Branch Gaps', () => {
 const AUTH_KEYS_OWNER = {
 	user: {
 		id: '72961',
-		login: 'davis9001',
+		login: 'example-user',
 		email: 'owner@example.com',
 		isOwner: true,
 		isAdmin: true

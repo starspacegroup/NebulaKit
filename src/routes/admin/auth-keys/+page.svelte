@@ -8,7 +8,7 @@
 	let keys = data.keys || [];
 
 	// Site-unique field identifiers so a password manager does not confuse this
-	// secret form with another site built from the same template.
+	// secret form with another NebulaKit deployment's.
 	const keyNameField = fieldName('auth-key-name');
 	const providerField = fieldName('auth-key-provider');
 	const clientIdField = fieldName('auth-client-id');

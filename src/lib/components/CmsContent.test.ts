@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The registry ships empty, so a registered embed can only be exercised by
 // standing in for it. Each test sets what getEmbedComponent should resolve.
-const resolve = vi.fn<[string], unknown>(() => null);
+const resolve = vi.fn<(name: string) => unknown>(() => null);
 vi.mock('$lib/cms/embeds', () => ({
 	getEmbedComponent: (name: string) => resolve(name)
 }));
@@ -74,7 +74,7 @@ describe('CmsContent — embeds', () => {
 	});
 
 	it('renders nothing for an embed with no registered component', () => {
-		// The registry ships empty, so this is the template's default state and
+		// The registry ships empty, so this is NebulaKit's default state and
 		// must not leave a stray element or throw.
 		const { container } = render(CmsContent, { html: placeholder('never-registered') });
 

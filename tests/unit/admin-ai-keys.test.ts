@@ -4,7 +4,6 @@ import AIKeysPage from '../../src/routes/admin/ai-keys/+page.svelte';
 
 // Mock fetch
 const mockFetch = vi.fn();
-(globalThis as any).fetch = mockFetch;
 
 // Mock user data
 const mockUser = {
@@ -22,6 +21,7 @@ describe('Admin AI Keys Page', () => {
 		// A clean queue every test: mockClear leaves queued once-values behind,
 		// and a leftover response would be answered to the wrong call.
 		mockFetch.mockReset();
+		vi.stubGlobal('fetch', mockFetch);
 		// The page loads its OpenAI model list on mount (loadOpenAIModels). Answer
 		// that here, so the response each test queues below reaches the call it is
 		// actually testing rather than being spent on the mount-time load. Without
@@ -513,7 +513,7 @@ describe('Admin AI Keys Page', () => {
 	});
 
 	it('should update UI optimistically when toggle is clicked', async () => {
-		mockFetch.mockResolvedValueOnce({
+		mockFetch.mockResolvedValue({
 			ok: true,
 			json: async () => ({ success: true })
 		});

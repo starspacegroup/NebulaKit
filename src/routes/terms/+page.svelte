@@ -4,10 +4,7 @@
 	const lastUpdated = 'January 1, 2026';
 </script>
 
-<SharingMeta
-	title="Terms of Service"
-	description="Terms of Service for NebulaKit"
-/>
+<SharingMeta title="Terms of Service" description="Terms of Service for NebulaKit" />
 
 <main class="legal-page">
 	<div class="legal-container">

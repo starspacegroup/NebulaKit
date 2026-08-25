@@ -21,6 +21,10 @@ declare global {
 				avatarUrl?: string;
 				isOwner: boolean;
 				isAdmin?: boolean;
+				/** Extension point for downstream apps that add a tier ABOVE owner.
+				 *  NebulaKit never sets it; both `auth-guards.ts` and `stats-guard.ts`
+				 *  honour it, and they must agree — see the note in `auth-guards.ts`. */
+				isSuperAdmin?: boolean;
 				canViewStats?: boolean;
 				isPretend?: boolean;
 			};
@@ -38,6 +42,8 @@ declare global {
 				GITHUB_OWNER_ID?: string;
 				DISCORD_CLIENT_ID?: string;
 				DISCORD_CLIENT_SECRET?: string;
+				SESSION_SECRET?: string;
+				SETUP_SECRET?: string;
 				DEV_AUTH_BYPASS?: string;
 				/** Shared bearer secret for /api/cron/* scheduler endpoints. */
 				CRON_SECRET?: string;

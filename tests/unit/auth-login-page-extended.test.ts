@@ -62,7 +62,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			expect(result.configuredProviders.github).toBe(true);
 		});
@@ -80,7 +80,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			expect(result.configuredProviders.discord).toBe(true);
 		});
@@ -107,7 +107,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			expect(result.configuredProviders.github).toBe(true);
 		});
@@ -134,7 +134,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			expect(result.configuredProviders.discord).toBe(true);
 		});
@@ -160,7 +160,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			expect(result.configuredProviders.github).toBe(false);
 		});
@@ -186,7 +186,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			expect(result.configuredProviders.discord).toBe(false);
 		});
@@ -210,7 +210,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			// Should return false, not throw
 			expect(result.configuredProviders.github).toBe(false);
@@ -235,7 +235,7 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			// Should return false, not throw
 			expect(result.configuredProviders.discord).toBe(false);
@@ -249,11 +249,10 @@ describe('Auth Login Page Server - Extended Coverage', () => {
 			};
 
 			const { load } = await import('../../src/routes/auth/login/+page.server');
-			const result = await load(mockEvent as any) as any;
+			const result = (await load(mockEvent as any)) as any;
 
 			expect(result.configuredProviders.github).toBe(false);
 			expect(result.configuredProviders.discord).toBe(false);
 		});
 	});
 });
-

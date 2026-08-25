@@ -2,32 +2,14 @@
 
 ## Prerequisites
 
-- Node.js 18+ installed
-- npm or pnpm
+- Bun 1.3.14+ installed
+- Node.js 22+ for Node-based utility scripts
 - Cloudflare account (for deployment)
-- Wrangler CLI installed: `npm install -g wrangler`
+- Git
 
 ## Installation
 
-### Option 1: Use the GitHub Template (Recommended)
-
-The easiest way to get started is to use the **"Use this template"** button on GitHub:
-
-1. Go to the [NebulaKit repository](https://github.com/starspacegroup/NebulaKit)
-2. Click the green **"Use this template"** button
-3. Choose one of:
-   - **Create a new repository** - Creates your own copy of NebulaKit in your GitHub account
-   - **Open in a codespace** - Instantly spin up a cloud development environment
-4. If you created a new repository, clone it:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
-```
-
-### Option 2: Clone the Repository
-
-Alternatively, clone the repository directly:
+Clone the NebulaKit product repository directly:
 
 ```bash
 git clone https://github.com/starspacegroup/NebulaKit.git
@@ -45,14 +27,14 @@ bun install
 2. Create **this project's own** Cloudflare resources:
 
 ```bash
-npx wrangler login
+bunx wrangler login
 bun run setup:cf
 ```
 
 That creates a D1 database, a KV namespace and its preview namespace, and
 writes their ids into `wrangler.toml`. Never paste ids from another project —
 Cloudflare binds D1 and KV by **id**, not by name, so a copied id attaches your
-app to somebody else's data and every query succeeds. The template ships
+app to somebody else's data and every query succeeds. The repository ships
 `REPLACE_ME_*` placeholders and a guard that fails the build until they are
 real. See [docs/CLOUDFLARE_SETUP.md](docs/CLOUDFLARE_SETUP.md).
 
@@ -62,8 +44,19 @@ real. See [docs/CLOUDFLARE_SETUP.md](docs/CLOUDFLARE_SETUP.md).
 bun run db:migrate
 ```
 
-4. Optional extras:
-   - R2 bucket, if you use file storage: `npx wrangler r2 bucket create <project>-files`
+4. Configure separate authentication secrets before using `/setup`:
+
+```bash
+# Generate two different high-entropy values and place them in .dev.vars locally
+openssl rand -base64 32
+openssl rand -base64 32
+```
+
+Use one value for `SESSION_SECRET` and the other for `SETUP_SECRET`. The first signs opaque session
+tokens whose digests are stored in D1; the second authorizes initial owner bootstrap only.
+
+5. Optional extras:
+   - R2 bucket, if you use file storage: `bunx wrangler r2 bucket create nebulakit-files`
    - Turnstile, at https://dash.cloudflare.com/
 
 ## Development
@@ -71,7 +64,7 @@ bun run db:migrate
 Start the development server:
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 The app will be available at `http://localhost:4277`
@@ -81,13 +74,13 @@ The app will be available at `http://localhost:4277`
 Build for production:
 
 ```bash
-npm run build
+bun run build
 ```
 
 Preview the production build:
 
 ```bash
-npm run preview
+bun run preview
 ```
 
 ## Deployment to Cloudflare Pages
@@ -95,13 +88,13 @@ npm run preview
 1. Authenticate with Wrangler:
 
 ```bash
-wrangler login
+bunx wrangler login
 ```
 
 2. Deploy to Cloudflare Pages:
 
 ```bash
-npm run deploy
+bun run deploy
 ```
 
 Or connect your GitHub repository to Cloudflare Pages for automatic deployments.
@@ -114,20 +107,20 @@ Apply database migrations:
 
 ```bash
 # Apply migrations to remote D1
-npm run db:migrate
+bun run db:migrate
 
 # Apply migrations to local D1 (for development)
-npm run db:migrate:local
+bun run db:migrate:local
 
 # Check which migrations have been applied
-npm run db:migrate:list
+bun run db:migrate:list
 ```
 
 D1 automatically tracks which migrations have been applied and skips them on subsequent runs. See `migrations/README.md` for details on creating new migrations.
 
 ### KV Namespace
 
-Used for caching and session storage. No additional setup required.
+Used for runtime configuration and feature flags. Revocable session records live in D1, not KV.
 
 ### R2 Bucket
 
@@ -145,19 +138,23 @@ Used for file uploads. Configure CORS if needed:
 
 ### Queues
 
-Configure background job processing. Messages are automatically processed by the worker.
+Queue bindings are disabled in the shipped configuration. Do not claim queue processing unless a
+producer and consumer are intentionally implemented and configured.
 
 ### Turnstile
 
 1. Create a Turnstile site at https://dash.cloudflare.com/
-2. Add the site key to your frontend
-3. Add the secret key to `wrangler.toml` or environment variables
+2. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` together
+3. Leave both absent to disable Turnstile; setting only one is invalid and fails closed
 
 ## Environment Variables
 
-Create a `.env` file for local development:
+Create `.dev.vars` for local development:
 
-```
+```env
+SESSION_SECRET=generate-a-high-entropy-session-secret
+SETUP_SECRET=generate-a-different-bootstrap-secret
+TURNSTILE_SITE_KEY=your-site-key
 TURNSTILE_SECRET_KEY=your-secret-key
 ```
 
@@ -175,9 +172,10 @@ NebulaKit/
 │   │   ├── types/          # TypeScript types
 │   │   └── utils/          # Utility functions
 │   ├── routes/             # SvelteKit routes
+│   │   ├── admin/         # Protected operator surfaces
 │   │   ├── auth/          # Authentication pages
 │   │   ├── chat/          # Chat interface
-│   │   └── demo/          # Feature demos
+│   │   └── documentation/ # Shipped operator guide
 │   ├── app.css            # Global styles
 │   ├── app.html           # HTML template
 │   └── app.d.ts           # Type definitions
@@ -188,8 +186,8 @@ NebulaKit/
 
 ## Next Steps
 
-- Configure authentication providers in your auth flow
-- Connect the chat UI to your LLM API
-- Customize the theme system
-- Add your database schema and migrations
-- Set up CI/CD with GitHub Actions
+- Configure authentication providers through `/setup` or environment secrets
+- Configure enabled chat/voice models under `/admin/ai-keys`
+- Review the theme system
+- Extend the database only through a new immutable migration
+- Review the included GitHub Actions checks before deployment

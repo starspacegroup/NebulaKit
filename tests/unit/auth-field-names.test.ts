@@ -25,9 +25,9 @@ const layoutData = {
 };
 
 /**
- * Two sites built from this template must not share credential field
- * identifiers, or a password manager that matches on host rather than origin
- * (localhost, or sibling subdomains of one domain) offers the wrong login.
+ * Two deployments of this codebase must not share credential field identifiers,
+ * or a password manager that matches on host rather than origin (localhost, or
+ * sibling subdomains of one domain) offers the wrong login.
  */
 describe('Credential field identifiers are site-unique', () => {
 	beforeEach(() => {

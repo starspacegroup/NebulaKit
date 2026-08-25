@@ -17,8 +17,8 @@ Thank you for your interest in contributing to NebulaKit! This guide will help y
 
 ### Prerequisites
 
-- Node.js 18+
-- npm 9+
+- Bun 1.3.14+
+- Node.js 22+ for Node-based utility scripts
 - Git
 
 ### Setup
@@ -29,10 +29,10 @@ git clone https://github.com/starspacegroup/NebulaKit.git
 cd NebulaKit
 
 # Install dependencies
-npm install
+bun install --frozen-lockfile
 
 # Run development server (must work!)
-npm run dev
+bun run dev
 ```
 
 Visit `http://localhost:4277` to verify everything works.
@@ -41,33 +41,33 @@ Visit `http://localhost:4277` to verify everything works.
 
 ### Coverage Requirements
 
-- **Minimum 90% code coverage** across all modules
-- **100% coverage** on critical paths (auth, payments, data mutations)
+- **Minimum 95% code coverage** across all modules — lines, functions, branches, and statements, enforced by vitest `thresholds` in `vite.config.ts`
+- Focused tests are required for critical paths; every enforced metric must remain at least 95%
 - All tests must pass before submitting a PR
 
 ### Running Tests
 
 ```bash
 # Run unit and integration tests
-npm run test
+bun run test
 
 # Run tests in watch mode
-npm run test:watch
+bun run test:watch
 
-# Check coverage (must be ≥90%)
-npm run test:coverage
+# Check coverage (hard floor: 95%)
+bun run test:coverage
 
 # Run tests with UI
-npm run test:ui
+bun run test:ui
 
 # Run E2E tests
-npm run test:e2e
+bun run test:e2e
 
 # Run E2E tests with UI
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # Run all tests
-npm run test:all
+bun run test:all
 ```
 
 ### Test Structure
@@ -249,16 +249,16 @@ docs(readme): update setup instructions
 
 ```bash
 # 1. Run all tests
-npm run test
+bun run test
 
 # 2. Check coverage
-npm run test:coverage
+bun run test:coverage
 
 # 3. Type checking
-npm run check
+bun run check
 
 # 4. Verify dev environment
-npm run dev
+bun run dev
 ```
 
 ## 📋 Pull Request Process
@@ -266,10 +266,10 @@ npm run dev
 ### PR Checklist
 
 - [ ] Tests written **before** implementation (TDD)
-- [ ] All tests passing (`npm run test:all`)
-- [ ] Coverage ≥ 90% (`npm run test:coverage`)
-- [ ] TypeScript checks pass (`npm run check`)
-- [ ] Dev environment works (`npm run dev`)
+- [ ] All tests passing (`bun run test:all`)
+- [ ] Coverage ≥ 95% (`bun run test:coverage`)
+- [ ] TypeScript checks pass (`bun run check`)
+- [ ] Dev environment works (`bun run dev`)
 - [ ] No new external dependencies (or justified in PR description)
 - [ ] Code follows style guidelines
 - [ ] `/documentation` route updated for any user-visible change (or "internal only" noted below)
@@ -310,7 +310,7 @@ Why is this change needed?
 - [ ] Integration tests added/updated
 - [ ] E2E tests added/updated
 - [ ] All tests passing
-- [ ] Coverage ≥ 90%
+- [ ] Coverage ≥ 95%
 
 ## Screenshots (if applicable)
 
@@ -325,7 +325,7 @@ Why is this change needed?
 4. ❌ **Not testing locally** - Always verify dev environment works
 5. ❌ **Hardcoding values** - Use environment variables
 6. ❌ **Using Node.js APIs** - Use Web APIs for Cloudflare Workers
-7. ❌ **Committing without coverage check** - Must maintain 90%+
+7. ❌ **Committing without coverage check** - Must maintain 95%+
 8. ❌ **Shipping a feature without updating `/documentation`** - In-app docs are part of the feature
 
 ## 🎨 UI/UX Standards

@@ -22,7 +22,7 @@
 	let mergePassword = '';
 
 	// Site-unique field identifiers so a password manager does not confuse these
-	// credential fields with another site built from the same template.
+	// credential fields with another NebulaKit deployment's.
 	const newPasswordField = fieldName('new-password');
 	const confirmNewPasswordField = fieldName('confirm-new-password');
 	const mergeEmailField = fieldName('merge-email');

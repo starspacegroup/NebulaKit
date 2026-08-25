@@ -31,8 +31,14 @@ function layout(): BoardWidget[] {
 
 function boardWith(widgets: BoardWidget[], props: Record<string, unknown> = {}) {
 	const changes: BoardWidget[][] = [];
-	const view = render(WidgetBoard, { props: { widgets, columns, ...props } });
-	view.component.$on('change', (event) => changes.push(event.detail.widgets));
+	// Svelte 5 removed `component.$on`; legacy dispatched events come in through
+	// mount's `events` option, which testing-library forwards.
+	const view = render(WidgetBoard, {
+		props: { widgets, columns, ...props },
+		events: {
+			change: (event: CustomEvent<{ widgets: BoardWidget[] }>) => changes.push(event.detail.widgets)
+		}
+	});
 	return { ...view, changes };
 }
 
@@ -182,12 +188,14 @@ describe('WidgetBoard live values', () => {
 		];
 		const live: Array<{ id: string; value: string }> = [];
 		const view = render(WidgetBoard, {
-			props: { widgets, columns, live: { clock: '12:00:00' } }
+			props: { widgets, columns, live: { clock: '12:00:00' } },
+			events: {
+				live: (event: CustomEvent<{ id: string; value: string }>) => live.push(event.detail)
+			}
 		});
-		view.component.$on('live', (event) => live.push(event.detail));
 
 		// A tick is a prop change on the widget, never a change to the layout.
-		view.component.$set({
+		await view.rerender({
 			widgets: [{ ...widgets[0], props: { value: 'tock' } }]
 		});
 		await tick();

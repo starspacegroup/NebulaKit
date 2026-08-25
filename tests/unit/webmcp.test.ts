@@ -134,7 +134,10 @@ describe('list_site_pages', () => {
 			);
 		const text = await run('list_site_pages', createDeps({ fetch: fetchMock }));
 		expect(text).toBe(`${ORIGIN}/\n${ORIGIN}/terms`);
-		expect(fetchMock).toHaveBeenCalledWith(`${ORIGIN}/sitemap.xml`, expect.anything());
+		expect(fetchMock).toHaveBeenCalledWith(`${ORIGIN}/sitemap.xml`, {
+			headers: { Accept: 'application/xml' },
+			credentials: 'omit'
+		});
 	});
 
 	it('reports a failed fetch', async () => {
@@ -146,17 +149,37 @@ describe('list_site_pages', () => {
 		const fetchMock = vi.fn().mockResolvedValue(new Response('<urlset></urlset>', { status: 200 }));
 		expect(await run('list_site_pages', createDeps({ fetch: fetchMock }))).toContain('no URLs');
 	});
+
+	it('uses the browser fetch when no fetch dependency is supplied', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response('<urlset></urlset>', { status: 200 }));
+		vi.stubGlobal('fetch', fetchMock);
+		const deps = createDeps();
+		delete deps.fetch;
+
+		expect(await run('list_site_pages', deps)).toContain('no URLs');
+		expect(fetchMock).toHaveBeenCalledWith(`${ORIGIN}/sitemap.xml`, expect.any(Object));
+	});
 });
 
 describe('read_page_as_markdown', () => {
-	it('requests markdown for a same-origin path', async () => {
-		const fetchMock = vi.fn().mockResolvedValue(new Response('# Title', { status: 200 }));
+	it('requests markdown without visitor credentials for a sitemap-listed path', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response(`<urlset><url><loc>${ORIGIN}/docs</loc></url></urlset>`, { status: 200 })
+			)
+			.mockResolvedValueOnce(new Response('# Title', { status: 200 }));
 		const text = await run('read_page_as_markdown', createDeps({ fetch: fetchMock }), {
 			path: '/docs'
 		});
 		expect(text).toBe('# Title');
-		expect(fetchMock).toHaveBeenCalledWith(`${ORIGIN}/docs`, {
-			headers: { Accept: 'text/markdown' }
+		expect(fetchMock).toHaveBeenNthCalledWith(1, `${ORIGIN}/sitemap.xml`, {
+			headers: { Accept: 'application/xml' },
+			credentials: 'omit'
+		});
+		expect(fetchMock).toHaveBeenNthCalledWith(2, `${ORIGIN}/docs`, {
+			headers: { Accept: 'text/markdown' },
+			credentials: 'omit'
 		});
 	});
 
@@ -169,11 +192,56 @@ describe('read_page_as_markdown', () => {
 		expect(text).toContain('a path on this site');
 	});
 
+	it('refuses private and undiscovered paths without fetching them', async () => {
+		const fetchMock = vi.fn().mockResolvedValueOnce(
+			new Response(`<urlset><url><loc>${ORIGIN}/documentation</loc></url></urlset>`, {
+				status: 200
+			})
+		);
+		const text = await run('read_page_as_markdown', createDeps({ fetch: fetchMock }), {
+			path: '/admin/users'
+		});
+		expect(text).toContain('not listed as public');
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('fails closed when the public sitemap cannot be read', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 503 }));
+		const text = await run('read_page_as_markdown', createDeps({ fetch: fetchMock }), {
+			path: '/documentation'
+		});
+		expect(text).toContain('public page index');
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
 	it('reports a non-OK status', async () => {
-		const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 404 }));
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response(`<urlset><url><loc>${ORIGIN}/nope</loc></url></urlset>`, { status: 200 })
+			)
+			.mockResolvedValueOnce(new Response('', { status: 404 }));
 		expect(
 			await run('read_page_as_markdown', createDeps({ fetch: fetchMock }), { path: '/nope' })
 		).toContain('HTTP 404');
+	});
+
+	it('ignores malformed and foreign sitemap locations', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response(
+					`<urlset><url><loc>not a URL</loc></url><url><loc>https://other.test/docs</loc></url></urlset>`,
+					{ status: 200 }
+				)
+			);
+
+		const text = await run('read_page_as_markdown', createDeps({ fetch: fetchMock }), {
+			path: '/docs'
+		});
+
+		expect(text).toContain('not listed as public');
+		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 });
 
@@ -228,6 +296,11 @@ describe('registerWebMcpTools', () => {
 
 	it('does nothing on a browser without WebMCP', () => {
 		// Which is almost every browser today — this must never throw.
+		expect(registerWebMcpTools(createDeps())).toBe(false);
+	});
+
+	it('does nothing outside a browser', () => {
+		vi.stubGlobal('navigator', undefined);
 		expect(registerWebMcpTools(createDeps())).toBe(false);
 	});
 

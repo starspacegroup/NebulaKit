@@ -16,7 +16,7 @@
 	let selectedPretendRole: PretendRole = 'user';
 
 	// Site-unique field identifiers so a password manager does not confuse this
-	// login with another site built from the same template.
+	// login with another NebulaKit deployment's.
 	const emailField = fieldName('email');
 	const passwordField = fieldName('password');
 

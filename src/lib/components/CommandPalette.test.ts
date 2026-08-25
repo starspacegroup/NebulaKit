@@ -4,13 +4,10 @@ import { get } from 'svelte/store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CommandPalette from './CommandPalette.svelte';
 
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+
 describe('CommandPalette', () => {
 	beforeEach(() => {
-		// Mock goto function
-		vi.mock('$app/navigation', () => ({
-			goto: vi.fn()
-		}));
-
 		// Reset theme stores
 		themePreference.set('system');
 		systemTheme.set('light');

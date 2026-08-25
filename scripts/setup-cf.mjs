@@ -3,11 +3,11 @@
  * Create this project's own Cloudflare resources and write their ids into
  * wrangler.toml.
  *
- * Why this exists: the template ships `REPLACE_ME_*` placeholders because it
- * once shipped REAL ids, and six derived projects inherited them — one D1 and
- * one KV shared between all of them, including OAuth secrets and a GitHub PAT.
+ * Why this exists: NebulaKit now ships `REPLACE_ME_*` placeholders because an
+ * earlier release shipped REAL ids, and six sibling products inherited them —
+ * one D1 and one KV shared between all of them, including OAuth secrets and a GitHub PAT.
  * See docs/CLOUDFLARE_SETUP.md. The remaining risk after placeholders is the
- * human step: creating four resources and pasting four ids into the right four
+ * human step: creating three resources and pasting three ids into the right
  * lines. That is what this automates, so nobody hand-copies an id into the
  * wrong binding again.
  *
@@ -96,7 +96,7 @@ for (const step of steps) {
 		continue;
 	}
 	process.stdout.write(`  ${step.label}: ${printable}\n`);
-	const run = spawnSync('npx', ['wrangler', ...step.argv], {
+	const run = spawnSync('bunx', ['wrangler', ...step.argv], {
 		cwd: root,
 		encoding: 'utf8',
 		shell: process.platform === 'win32'
@@ -106,7 +106,7 @@ for (const step of steps) {
 		console.error(`\n  ✗ ${printable} failed:\n`);
 		console.error(output.trim() || '    (no output)');
 		console.error('\n  wrangler.toml was NOT modified. Fix the above and re-run.');
-		if (/not logged in|auth|login/i.test(output)) console.error('  Hint: npx wrangler login\n');
+		if (/not logged in|auth|login/i.test(output)) console.error('  Hint: bunx wrangler login\n');
 		process.exit(1);
 	}
 	const id = soleMatch(output, step.shape);
@@ -155,7 +155,7 @@ console.log(`
     bun run db:migrate      # create the tables
     bun run dev             # http://localhost:4277
 
-  R2 (only if you use it):  npx wrangler r2 bucket create ${slug}-files
+  R2 (only if you use it):  bunx wrangler r2 bucket create ${slug}-files
 `);
 
 function readName(text) {

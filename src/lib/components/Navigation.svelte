@@ -39,6 +39,8 @@
 		avatarUrl?: string;
 		isOwner: boolean;
 		isAdmin?: boolean;
+		/** Downstream tier above owner; see auth-guards.ts. NebulaKit never sets it. */
+		isSuperAdmin?: boolean;
 		isPretend?: boolean;
 	} | null = null;
 
@@ -211,7 +213,7 @@
 					<div class="mobile-menu-content">
 						<div class="mobile-menu-items">
 							{#if user}
-								{#if user.isOwner || user.isAdmin}
+								{#if user.isOwner || user.isAdmin || user.isSuperAdmin}
 									<a
 										href="/admin"
 										class:active={$page.url.pathname.startsWith('/admin')}

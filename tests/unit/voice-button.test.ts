@@ -192,14 +192,14 @@ describe('VoiceButton', () => {
 
 	describe('State Transitions', () => {
 		it('should update display when state changes from idle to listening', async () => {
-			const { component } = render(VoiceButton, { isActive: true, state: 'idle' });
+			const { rerender } = render(VoiceButton, { isActive: true, state: 'idle' });
 
 			// Initially should show stop icon
 			let button = screen.getByRole('button');
 			expect(button.innerHTML).toContain('rect');
 
 			// Update to listening state
-			await component.$set({ state: 'listening' });
+			await rerender({ isActive: true, state: 'listening' });
 
 			// Should now show wave bars
 			const waveContainer = document.querySelector('.wave-container');
@@ -207,29 +207,29 @@ describe('VoiceButton', () => {
 		});
 
 		it('should update label when state changes', async () => {
-			const { component } = render(VoiceButton, { isActive: true, state: 'listening' });
+			const { rerender } = render(VoiceButton, { isActive: true, state: 'listening' });
 
 			let button = screen.getByRole('button');
 			expect(button.getAttribute('aria-label')).toBe('Listening to your voice');
 
-			await component.$set({ state: 'processing' });
+			await rerender({ isActive: true, state: 'processing' });
 			expect(button.getAttribute('aria-label')).toBe('Processing your message');
 
-			await component.$set({ state: 'speaking' });
+			await rerender({ isActive: true, state: 'speaking' });
 			expect(button.getAttribute('aria-label')).toBe('AI is responding');
 		});
 
 		it('should update classes when state changes', async () => {
-			const { component } = render(VoiceButton, { isActive: true, state: 'listening' });
+			const { rerender } = render(VoiceButton, { isActive: true, state: 'listening' });
 
 			let button = screen.getByRole('button');
 			expect(button.classList.contains('listening')).toBe(true);
 
-			await component.$set({ state: 'processing' });
+			await rerender({ isActive: true, state: 'processing' });
 			expect(button.classList.contains('listening')).toBe(false);
 			expect(button.classList.contains('processing')).toBe(true);
 
-			await component.$set({ state: 'speaking' });
+			await rerender({ isActive: true, state: 'speaking' });
 			expect(button.classList.contains('processing')).toBe(false);
 			expect(button.classList.contains('speaking')).toBe(true);
 		});

@@ -413,5 +413,28 @@ describe('Profile Page Server - Extended Coverage', () => {
 			// Should not have created any accounts
 			expect(result.connectedAccounts).toHaveLength(0);
 		});
+
+		it('does not restore a numeric legacy identity without a github_login marker', async () => {
+			const mockEvent = {
+				locals: { user: { id: '12345', login: 'legacy', email: 'legacy@example.com' } },
+				platform: {
+					env: {
+						DB: {
+							prepare: vi.fn().mockImplementation((sql: string) => ({
+								bind: vi.fn(() =>
+									sql.includes('oauth_accounts WHERE user_id')
+										? { all: vi.fn().mockResolvedValue({ results: [] }) }
+										: { first: vi.fn().mockResolvedValue({ github_login: null }) }
+								)
+							}))
+						}
+					}
+				}
+			};
+			const { load } = await import('../../src/routes/profile/+page.server');
+
+			const result = (await load(mockEvent as any)) as any;
+			expect(result.connectedAccounts).toEqual([]);
+		});
 	});
 });

@@ -95,7 +95,6 @@
 	let typeSlug = '';
 	let typeDescription = '';
 	let typeIcon = 'document';
-	let typeRoutePrefix = '';
 	let typeHasDrafts = true;
 	let typeHasTags = false;
 	let typeHasSEO = true;
@@ -126,7 +125,6 @@
 		typeSlug = '';
 		typeDescription = '';
 		typeIcon = 'document';
-		typeRoutePrefix = '';
 		typeHasDrafts = true;
 		typeHasTags = false;
 		typeHasSEO = true;
@@ -146,7 +144,6 @@
 		typeSlug = ct.slug;
 		typeDescription = ct.description || '';
 		typeIcon = ct.icon;
-		typeRoutePrefix = ct.settings?.routePrefix || `/${ct.slug}`;
 		typeHasDrafts = ct.settings?.hasDrafts !== false;
 		typeHasTags = ct.settings?.hasTags === true;
 		typeHasSEO = ct.settings?.hasSEO !== false;
@@ -255,7 +252,7 @@
 				hasTags: typeHasTags,
 				hasSEO: typeHasSEO,
 				hasAuthor: typeHasAuthor,
-				routePrefix: typeRoutePrefix || `/${typeSlug}`,
+				routePrefix: `/${typeSlug}`,
 				isPublic: typeIsPublic,
 				showInCommandPalette: typeShowInCommandPalette
 			};
@@ -404,9 +401,7 @@
 							{/if}
 							<span class="cms-type-card-meta">
 								{ct.fields.length} field{ct.fields.length !== 1 ? 's' : ''}
-								{#if ct.settings?.routePrefix}
-									&middot; {ct.settings.routePrefix}
-								{/if}
+								&middot; /{ct.slug}
 							</span>
 						</div>
 						<div class="cms-type-card-arrow">
@@ -455,7 +450,7 @@
 		<div class="modal-content" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>{editingTypeId ? 'Edit' : 'New'} Content Type</h2>
-				<button class="modal-close" on:click={closeEditor}>
+				<button class="modal-close" on:click={closeEditor} aria-label="Close content type editor">
 					<svg
 						width="20"
 						height="20"
@@ -510,8 +505,8 @@
 						</label>
 						<label class="form-field">
 							<span>URL Prefix</span>
-							<input type="text" bind:value={typeRoutePrefix} placeholder="/{typeSlug || 'slug'}" />
-							<span class="form-hint">Public URL path, e.g. /blog or /faq</span>
+							<input type="text" value="/{typeSlug || 'slug'}" disabled />
+							<span class="form-hint">Public URL path is derived from the content type slug.</span>
 						</label>
 					</div>
 				</section>

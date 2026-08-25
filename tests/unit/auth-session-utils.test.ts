@@ -47,42 +47,28 @@ describe('Auth Session Utilities', () => {
 		expect(sessionUser.isAdmin).toBe(false);
 	});
 
-	it('decodes valid session cookies and rejects invalid payloads', async () => {
-		const { decodeSessionCookie, encodeSession } = await import('../../src/lib/utils/session');
+	it('puts only the opaque session id in the cookie, never the user payload', async () => {
+		const { buildSessionCookieHeader } = await import('../../src/lib/utils/session');
 
-		const encoded = encodeSession({
-			id: 'user-1',
-			login: 'octocat',
-			email: 'primary@example.com',
-			name: 'Primary User',
-			isOwner: false,
-			isAdmin: true,
-			githubLogin: 'octocat'
-		});
+		// The value is the id from createAuthSession; the trusted payload lives in
+		// the database, so nothing about the user can be read from or forged in the
+		// cookie. Guards the fix for the unsigned-base64-JSON auth bypass.
+		const header = buildSessionCookieHeader('opaque-session-id-123', new URL('https://x/profile'));
 
-		expect(decodeSessionCookie(encoded)?.login).toBe('octocat');
-		expect(decodeSessionCookie()).toBeNull();
-		expect(decodeSessionCookie('not-valid-base64')).toBeNull();
+		expect(header).toContain('session=opaque-session-id-123');
+		expect(header).toContain('HttpOnly');
+		expect(header).not.toMatch(/isOwner|isAdmin|eyJ/); // no JSON/base64 payload
 	});
 
 	it('adds the Secure attribute for https cookies only', async () => {
 		const { buildSessionCookieHeader } = await import('../../src/lib/utils/session');
 
-		const sessionUser = {
-			id: 'user-1',
-			login: 'octocat',
-			email: 'primary@example.com',
-			name: 'Primary User',
-			isOwner: false,
-			isAdmin: false
-		};
-
-		expect(buildSessionCookieHeader(sessionUser, new URL('https://localhost/profile'))).toContain(
+		expect(buildSessionCookieHeader('sid', new URL('https://localhost/profile'))).toContain(
 			'Secure'
 		);
-		expect(
-			buildSessionCookieHeader(sessionUser, new URL('http://localhost/profile'))
-		).not.toContain('Secure');
+		expect(buildSessionCookieHeader('sid', new URL('http://localhost/profile'))).not.toContain(
+			'Secure'
+		);
 	});
 });
 

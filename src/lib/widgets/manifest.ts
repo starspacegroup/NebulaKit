@@ -6,7 +6,8 @@
  * Add entries here and a matching component in ./index.ts to register a widget
  * type for your project. Registering a widget never means editing the board.
  *
- * Ships empty on purpose: a template should not force its widgets on a project.
+ * Ships empty on purpose: the board is the feature, the widgets belong to the app
+ * that mounts it.
  */
 
 export interface WidgetDefinition {

@@ -23,13 +23,37 @@ describe('Admin Users Page', () => {
 	});
 
 	it('should render the page title', () => {
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const title = screen.getByText('User Management');
 		expect(title).toBeTruthy();
 	});
 
 	it('should render an empty state when no users exist', () => {
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const emptyMessage = screen.getByText(/No users yet/i);
 		expect(emptyMessage).toBeTruthy();
 	});
@@ -56,7 +80,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 
 		expect(screen.getByText('User One')).toBeTruthy();
 		expect(screen.getByText('User Two')).toBeTruthy();
@@ -74,12 +110,36 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		expect(screen.getByText(/Registered Users \(1\)/i)).toBeTruthy();
 	});
 
 	it('should show search input for GitHub users', () => {
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const searchInput = screen.getByPlaceholderText(/Search GitHub username/i);
 		expect(searchInput).toBeTruthy();
 	});
@@ -99,7 +159,19 @@ describe('Admin Users Page', () => {
 			})
 		});
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const searchInput = screen.getByPlaceholderText(/Search GitHub username/i);
 
 		await fireEvent.input(searchInput, { target: { value: 'octocat' } });
@@ -130,7 +202,19 @@ describe('Admin Users Page', () => {
 			})
 		});
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const searchInput = screen.getByPlaceholderText(/Search GitHub username/i);
 
 		await fireEvent.input(searchInput, { target: { value: 'octocat' } });
@@ -158,7 +242,19 @@ describe('Admin Users Page', () => {
 			})
 		});
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: true,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const searchInput = screen.getByPlaceholderText(/Search GitHub username/i);
 
 		await fireEvent.input(searchInput, { target: { value: 'octocat' } });
@@ -193,7 +289,19 @@ describe('Admin Users Page', () => {
 			})
 		});
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: true,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const searchInput = screen.getByPlaceholderText(/Search GitHub username/i);
 
 		await fireEvent.input(searchInput, { target: { value: 'octocat' } });
@@ -232,7 +340,19 @@ describe('Admin Users Page', () => {
 			})
 		});
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: [] } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: true,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: []
+				}
+			}
+		});
 		const searchInput = screen.getByPlaceholderText(/Search GitHub username/i);
 
 		await fireEvent.input(searchInput, { target: { value: 'octocat' } });
@@ -289,7 +409,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		expect(screen.getByText('Admin')).toBeTruthy();
 	});
 
@@ -305,7 +437,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const userBadges = screen.getAllByText('User');
 		expect(userBadges.length).toBeGreaterThan(0);
 	});
@@ -322,7 +466,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const githubLink = screen.getByText('@githubuser');
 		expect(githubLink).toBeTruthy();
 		expect(githubLink.closest('a')?.href).toContain('github.com/githubuser');
@@ -340,7 +496,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const promoteButton = screen.getByLabelText(/Promote to admin/i);
 		expect(promoteButton).toBeTruthy();
 	});
@@ -357,7 +525,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const demoteButton = screen.getByLabelText(/Demote from admin/i);
 		expect(demoteButton).toBeTruthy();
 	});
@@ -374,7 +554,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const deleteButton = screen.getByLabelText(/Delete user/i);
 		expect(deleteButton).toBeTruthy();
 	});
@@ -391,7 +583,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: true,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const promoteButton = screen.getByLabelText(/Demote from admin/i);
 		expect(promoteButton).toBeTruthy();
 		expect(promoteButton.hasAttribute('disabled')).toBe(true);
@@ -410,7 +614,19 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: true,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const deleteButton = screen.getByLabelText(/Delete user/i);
 		expect(deleteButton).toBeTruthy();
 		expect(deleteButton.hasAttribute('disabled')).toBe(true);
@@ -429,13 +645,96 @@ describe('Admin Users Page', () => {
 			}
 		];
 
-		render(UsersPage, { props: { data: { user: mockUser, canRevealPii: false, canViewStats: false, piiRevealed: false, hasAIProviders: false, cmsPaletteItems: [], users: mockUsers } } });
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: true,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
 		const promoteButton = screen.getByLabelText(/Promote to admin/i);
 		const deleteButton = screen.getByLabelText(/Delete user/i);
 
 		expect(promoteButton.hasAttribute('disabled')).toBe(false);
 		expect(deleteButton.hasAttribute('disabled')).toBe(false);
 	});
+
+	// The list masks ids while PII is hidden, so a mutation sent with one would
+	// target a nonexistent row (404) and the "not yourself" comparison could never
+	// match. The page gates the actions on reveal rather than letting them fire.
+	it('should gate row actions behind PII reveal, since masked ids are not valid targets', () => {
+		const mockUsers = [
+			{
+				id: 'ot****er', // as returned by the API while masked
+				name: 'O**** U***',
+				email: 'o****@test.com',
+				github_login: 'ot******er',
+				is_admin: 0,
+				created_at: '2024-01-01'
+			}
+		];
+
+		render(UsersPage, {
+			props: {
+				data: {
+					user: mockUser,
+					canRevealPii: true,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
+
+		const promoteButton = screen.getByLabelText(/Promote to admin/i);
+		const deleteButton = screen.getByLabelText(/Delete user/i);
+
+		expect(promoteButton.hasAttribute('disabled')).toBe(true);
+		expect(deleteButton.hasAttribute('disabled')).toBe(true);
+		expect(promoteButton.getAttribute('title')).toContain('Reveal identifiers');
+		expect(deleteButton.getAttribute('title')).toContain('Reveal identifiers');
+	});
+
+	it('should show role and deletion controls as owner-only for administrators', () => {
+		const adminViewer = { ...mockUser, id: 'admin-viewer', isOwner: false, isAdmin: true };
+		const mockUsers = [
+			{
+				id: 'other-user',
+				name: 'Other User',
+				email: 'other@test.com',
+				github_login: 'otheruser',
+				is_admin: 0,
+				created_at: '2024-01-01'
+			}
+		];
+
+		render(UsersPage, {
+			props: {
+				data: {
+					user: adminViewer,
+					canRevealPii: false,
+					canViewStats: false,
+					piiRevealed: false,
+					hasAIProviders: false,
+					cmsPaletteItems: [],
+					users: mockUsers
+				}
+			}
+		});
+
+		const promoteButton = screen.getByLabelText(/Promote to admin/i);
+		const deleteButton = screen.getByLabelText(/Delete user/i);
+		expect(promoteButton).toBeDisabled();
+		expect(deleteButton).toBeDisabled();
+		expect(promoteButton).toHaveAttribute('title', 'Owner access required');
+		expect(deleteButton).toHaveAttribute('title', 'Owner access required');
+	});
 });
-
-

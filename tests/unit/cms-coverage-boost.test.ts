@@ -718,7 +718,7 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 		it('should return item on success', async () => {
 			const { GET } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 			const mockDB = createMockDB();
-			mockDB._firstQueue.push(mockContentItemRow);
+			mockDB._firstQueue.push(mockContentTypeRow, mockContentItemRow);
 
 			const response = await GET(
 				createMockEvent({
@@ -792,8 +792,7 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 		it('should return 404 when item not found for update', async () => {
 			const { PUT } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 			const mockDB = createMockDB();
-			// updateContentItem: get existing item
-			mockDB._firstQueue.push(null);
+			mockDB._firstQueue.push(mockContentTypeRow, null);
 
 			try {
 				await PUT(
@@ -907,6 +906,7 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 			const { DELETE } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 			const mockDB = createMockDB();
 			mockDB._runResult = { meta: { changes: 0 } };
+			mockDB._firstQueue.push(mockContentTypeRow, null);
 
 			try {
 				await DELETE(
@@ -926,6 +926,10 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 			const { DELETE } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 			const mockDB = createMockDB();
 			mockDB._runResult = { meta: { changes: 1 } };
+			mockDB._firstQueue.push(mockContentTypeRow, mockContentItemRow, {
+				published_at: null,
+				settings: '{}'
+			});
 
 			const response = await DELETE(
 				createMockEvent({
@@ -943,6 +947,10 @@ describe('CMS API /api/cms/[type]/[id] - Branch Coverage', () => {
 		it('should handle internal errors in DELETE', async () => {
 			const { DELETE } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 			const mockDB = createMockDB();
+			mockDB._firstQueue.push(mockContentTypeRow, mockContentItemRow, {
+				published_at: null,
+				settings: '{}'
+			});
 			mockDB.run.mockRejectedValueOnce(new Error('DB fail'));
 
 			try {
@@ -1552,7 +1560,7 @@ describe('CMS API /api/cms/types/[id] - Coverage', () => {
 						description: 'Updated desc',
 						icon: 'star',
 						fields: [{ name: 'body', label: 'Body', type: 'text' }],
-						settings: { routePrefix: '/updated' }
+						settings: { routePrefix: '/updated-slug' }
 					},
 					db: mockDB
 				})

@@ -7,7 +7,7 @@
 Apply database migrations to create all required tables:
 
 ```bash
-wrangler d1 execute nebulakit-db --local --file=migrations/schema.sql
+bun run db:migrate:local
 ```
 
 This creates:
@@ -20,7 +20,7 @@ This creates:
 Verify tables were created:
 
 ```bash
-wrangler d1 execute nebulakit-db --local --command="SELECT name FROM sqlite_master WHERE type='table';"
+bunx wrangler d1 execute nebulakit-db --local --command="SELECT name FROM sqlite_master WHERE type='table';"
 ```
 
 ## KV Namespace Setup
@@ -31,10 +31,10 @@ For local development with persistent KV storage, you need to create a preview K
 
 ```bash
 # Create production KV namespace
-wrangler kv:namespace create "KV"
+bunx wrangler kv namespace create "KV"
 
 # Create preview KV namespace for local dev
-wrangler kv:namespace create "KV" --preview
+bunx wrangler kv namespace create "KV" --preview
 ```
 
 ### 2. Update wrangler.toml
@@ -67,7 +67,7 @@ preview_id = "xyz789..."   # Your preview KV ID for local dev
 Run the dev server:
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Now when you save GitHub OAuth credentials via `/setup`, they'll be stored in your local preview KV namespace and persist across dev server restarts!
@@ -80,9 +80,11 @@ Now when you save GitHub OAuth credentials via `/setup`, they'll be stored in yo
 4. Try logging in with GitHub - it should work!
 5. Restart the dev server - your credentials are still there!
 
-## Alternative: Use .dev.vars
+## Environment-backed authentication
 
-If you prefer not to set up KV, you can still use environment variables:
+OAuth credentials can come from environment variables instead of the KV-backed setup form. The
+project-owned KV binding remains required for runtime configuration, and D1 stores revocable
+sessions.
 
 Create `.dev.vars` in the project root:
 
@@ -90,6 +92,8 @@ Create `.dev.vars` in the project root:
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
 GITHUB_OWNER_ID=your_github_user_id
+SESSION_SECRET=generate_a_high_entropy_session_secret
+SETUP_SECRET=generate_a_different_bootstrap_secret
 ```
 
 The app will check environment variables first, then fall back to KV storage.
@@ -100,10 +104,12 @@ For production on Cloudflare Pages/Workers:
 
 ```bash
 # Set secrets (more secure than environment variables)
-wrangler secret put GITHUB_CLIENT_ID
-wrangler secret put GITHUB_CLIENT_SECRET
-wrangler secret put GITHUB_OWNER_ID
+bunx wrangler secret put GITHUB_CLIENT_ID
+bunx wrangler secret put GITHUB_CLIENT_SECRET
+bunx wrangler secret put SESSION_SECRET
+bunx wrangler secret put SETUP_SECRET
 ```
 
-Or use the `/setup` page in production - credentials will be saved to your production KV namespace.
-
+Set `GITHUB_OWNER_ID` as a production variable. Alternatively, use `/setup` with `SETUP_SECRET`;
+provider credentials are saved to the production KV namespace, and only the authenticated owner can
+change them after bootstrap.

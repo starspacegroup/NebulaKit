@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 
 	let formData = {
+		setupSecret: '',
 		clientId: '',
 		clientSecret: '',
 		adminGithubUsername: ''
@@ -17,7 +18,8 @@
 	let checkingConfig = true;
 
 	// Site-unique field identifiers so a password manager does not confuse these
-	// secret fields with another site built from the same template.
+	// secret fields with another NebulaKit deployment's.
+	const setupSecretField = fieldName('setup-secret');
 	const clientIdField = fieldName('client-id');
 	const clientSecretField = fieldName('client-secret');
 	const adminUsernameField = fieldName('admin-github-username');
@@ -48,6 +50,10 @@
 
 		// Only require OAuth credentials if they don't already exist
 		if (!hasExistingConfig) {
+			if (!formData.setupSecret) {
+				errors.setupSecret = 'Bootstrap secret is required';
+			}
+
 			if (!formData.clientId.trim()) {
 				errors.clientId = 'Client ID is required';
 			}
@@ -96,7 +102,8 @@
 			const response = await fetch('/api/setup', {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					...(formData.setupSecret ? { Authorization: `Bearer ${formData.setupSecret}` } : {})
 				},
 				body: JSON.stringify(requestBody)
 			});
@@ -199,6 +206,26 @@
 
 		<form on:submit|preventDefault={handleSubmit} class="setup-form">
 			{#if !hasExistingConfig}
+				<div class="form-group">
+					<label for={setupSecretField}>
+						Bootstrap Secret
+						<span class="required" aria-label="required">*</span>
+					</label>
+					<input
+						type="password"
+						id={setupSecretField}
+						name={setupSecretField}
+						bind:value={formData.setupSecret}
+						class:error={errors.setupSecret}
+						placeholder="Enter the configured SETUP_SECRET"
+						autocomplete="off"
+						disabled={loading}
+					/>
+					{#if errors.setupSecret}
+						<span class="error-text">{errors.setupSecret}</span>
+					{/if}
+				</div>
+
 				<div class="form-group">
 					<label for={clientIdField}>
 						GitHub Client ID

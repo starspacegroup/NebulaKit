@@ -7,6 +7,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { sanitizeCmsUrl } from '$lib/cms/sanitize';
 
 	export let data: PageData;
 
@@ -25,14 +26,11 @@
 	}
 
 	function getRoutePrefix(): string {
-		return contentType.settings.routePrefix || `/${contentType.slug}`;
+		return `/${contentType.slug}`;
 	}
 </script>
 
-<SharingMeta
-	title={contentType.name}
-	description={contentType.description || ''}
-/>
+<SharingMeta title={contentType.name} description={contentType.description || ''} />
 
 <div class="cms-list-page">
 	<header class="cms-list-header">
@@ -52,7 +50,7 @@
 			<div class="cms-blog-grid">
 				{#each items as item}
 					<article class="cms-blog-card">
-						{#if item.fields.featured_image}
+						{#if sanitizeCmsUrl(String(item.fields.featured_image ?? ''), true)}
 							<!-- The picture is the biggest target on the card, so it goes where
 							     the title goes. Hidden from the accessibility tree because the
 							     heading link beside it already says the same thing. -->
@@ -62,7 +60,11 @@
 								tabindex="-1"
 								aria-hidden="true"
 							>
-								<img src={String(item.fields.featured_image)} alt={item.title} loading="lazy" />
+								<img
+									src={sanitizeCmsUrl(String(item.fields.featured_image), true)}
+									alt={item.title}
+									loading="lazy"
+								/>
 							</a>
 						{/if}
 						<div class="cms-blog-card-content">

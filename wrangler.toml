@@ -11,9 +11,9 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 # *name* is loud (`d1 migrations apply <name>` fails fast); a wrong *id* binds
 # cleanly to somebody else's database and looks perfectly healthy.
 #
-# This template used to ship real ids. Six derived projects inherited them and
-# all read/wrote one D1 + one KV — including shared OAuth secrets and a GitHub
-# PAT. Hence placeholders that fail loudly. See docs/CLOUDFLARE_SETUP.md.
+# An earlier NebulaKit release shipped real ids. Six sibling products inherited
+# them and all read/wrote one D1 + one KV — including shared OAuth secrets and a
+# GitHub PAT. Hence placeholders that fail loudly. See docs/CLOUDFLARE_SETUP.md.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # D1 Database — create with: wrangler d1 create <your-project>-db
