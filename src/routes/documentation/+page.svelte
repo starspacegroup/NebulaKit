@@ -88,11 +88,17 @@ bun run deploy`;
 		<section id="start-here" class="docs-section">
 			<h2>Start Here</h2>
 			<p>
-				NebulaKit is an independent Cloudflare-native platform. Start locally with an isolated D1
-				database, then connect the production Cloudflare resources only when you are ready to
-				deploy.
+				NebulaKit is a SvelteKit starter template for Cloudflare. Create your own repository with
+				<strong>Use this template</strong>, then run <code>bun run customize</code> to rename the
+				app, the slug, the dev port, and the Cloudflare resource names in one pass —
+				<code>CUSTOMIZE.md</code> covers the steps a script cannot do.
+			</p>
+			<p>
+				Start locally with an isolated D1 database, then connect the production Cloudflare resources
+				only when you are ready to deploy.
 			</p>
 			<ol>
+				<li>Create your repository from the template and run the customization pass.</li>
 				<li>Install the frozen Bun dependency graph.</li>
 				<li>Apply database migrations locally.</li>
 				<li>Run the app and verify the setup, login, CMS, and chat surfaces.</li>

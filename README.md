@@ -1,11 +1,15 @@
-[![NebulaKit — independent Cloudflare-native platform](./static/og-image.png)](https://github.com/starspacegroup/NebulaKit)
+[![NebulaKit — a cosmic-grade SvelteKit starter](./static/og-image.png)](https://github.com/starspacegroup/NebulaKit)
 
 # NebulaKit
 
-NebulaKit is an independent Cloudflare-native platform for publishing structured content,
-managing authenticated users, operating AI-assisted workflows, and observing the application
-without third-party analytics. It is built with SvelteKit and runs on Cloudflare Pages with D1,
-KV, and R2 bindings.
+NebulaKit is a cosmic-grade SvelteKit starter template powered by Cloudflare's full stack.
+Publishing structured content, managing authenticated users, operating AI-assisted workflows,
+and observing the app without third-party analytics are all wired up and tested before you
+write a line. It runs on Cloudflare Pages with D1, KV, and R2 bindings.
+
+**Click "Use this template"** to create your own repository, then follow
+[CUSTOMIZE.md](./CUSTOMIZE.md) — one script renames the app, the slug, the dev port, and the
+Cloudflare resource names, and tells you what is left to do by hand.
 
 [![SvelteKit](https://img.shields.io/badge/SvelteKit-4%2F5-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev/docs/kit)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/pages/)
@@ -28,7 +32,7 @@ KV, and R2 bindings.
   gesture has a keyboard equivalent.
 
 NebulaKit does **not** advertise an OAuth authorization server or an MCP server. Its discovery
-metadata lists only routes implemented by this repository.
+metadata lists only routes implemented by this repository — keep that honest in your own app.
 
 Planned additions — including capabilities already proven in NebulaKit-derived projects — are tracked in [ROADMAP.md](./ROADMAP.md).
 
@@ -41,6 +45,17 @@ Planned additions — including capabilities already proven in NebulaKit-derived
 The repository deliberately contains placeholder D1/KV identifiers. Builds fail until real,
 project-owned resources are configured; this prevents accidental access to another deployment's
 data.
+
+## Make it yours
+
+```bash
+bun run customize          # interactive rename: name, slug, dev port, repo, URL
+bun run customize --dry    # preview every file it would touch, writes nothing
+```
+
+The full ordered path — including the parts a script cannot do — is
+[CUSTOMIZE.md](./CUSTOMIZE.md). Track whether it is finished in
+[INITIAL_CUSTOMIZATION_STATUS.md](./INITIAL_CUSTOMIZATION_STATUS.md).
 
 ## Local development
 
@@ -143,6 +158,7 @@ Important boundaries:
 
 ## Documentation
 
+- [Customizing a new app](./CUSTOMIZE.md) and its [deep reference](./docs/INITIAL_CUSTOMIZATION.md)
 - [Local setup](./docs/LOCAL_SETUP.md)
 - [Cloudflare setup](./docs/CLOUDFLARE_SETUP.md)
 - [Agent readiness](./docs/AGENT_READINESS.md)

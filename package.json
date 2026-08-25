@@ -4,6 +4,7 @@
 	"private": true,
 	"scripts": {
 		"prepare": "svelte-kit sync",
+		"customize": "bun scripts/customize.mjs",
 		"check:bindings": "node scripts/check-bindings.mjs",
 		"setup:cf": "node scripts/setup-cf.mjs",
 		"palette:scan": "bun scripts/palette-scan.mjs",

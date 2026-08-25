@@ -31,6 +31,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Local customization input (see CUSTOMIZE.md) — never commit into your product
+customize.config.json
+
 # IDE
 .vscode/
 .idea/

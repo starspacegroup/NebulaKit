@@ -13,10 +13,10 @@ export const site = {
 	/** Short name for tight spaces (browser tab, PWA `short_name`). */
 	shortName: 'NebulaKit',
 	/** One-line tagline for the footer and hero. */
-	tagline: 'An independent Cloudflare-native platform for content, AI, and operations.',
+	tagline: "A cosmic-grade SvelteKit starter powered by Cloudflare's full stack.",
 	/** Longer description for the meta description and OG/Twitter cards. */
 	description:
-		'NebulaKit is an independent Cloudflare-native platform for content management, authentication, AI chat, first-party analytics, and agent-ready publishing.',
+		'NebulaKit is a production-ready SvelteKit starter template for Cloudflare. Content management, authentication, AI chat, first-party analytics, and agent-ready publishing are wired up and tested from day one.',
 	/**
 	 * URL-safe slug. Drives the Cloudflare resource names in wrangler.toml
 	 * (`<slug>-db`, `<slug>-files`, `<slug>-queue`).

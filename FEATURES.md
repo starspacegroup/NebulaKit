@@ -1,7 +1,8 @@
 # NebulaKit feature map
 
-This document maps NebulaKit's shipped product surfaces to their implementation. It describes the
-independent application in this repository; it is not a catalog of hypothetical integrations.
+This document maps what the starter template ships to where it is implemented. Everything below is
+working code in this repository, inherited by any app created from it with "Use this template"; it
+is not a catalog of hypothetical integrations.
 
 ## Content platform
 

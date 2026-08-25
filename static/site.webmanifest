@@ -1,7 +1,7 @@
 {
 	"name": "NebulaKit",
 	"short_name": "NebulaKit",
-	"description": "An independent Cloudflare-native platform for content, AI, and operations.",
+	"description": "A cosmic-grade SvelteKit starter powered by Cloudflare's full stack.",
 	"start_url": "/",
 	"display": "standalone",
 	"background_color": "#0b1026",

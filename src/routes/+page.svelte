@@ -392,7 +392,7 @@
 						fill="#FAAD3F"
 					/>
 				</svg>
-				Cloudflare-native platform for content operations, secure accounts, command-driven navigation,
+				Cloudflare-native starter for content operations, secure accounts, command-driven navigation,
 				themes, and
 				<svg
 					class="ai-icon"
@@ -601,7 +601,7 @@
 		<div class="features-header">
 			<h2 class="features-title">Built for the Modern Web</h2>
 			<p class="features-subtitle">
-				An independent platform for publishing, administration, AI workflows, and operations
+				A complete starting point for publishing, administration, AI workflows, and operations
 			</p>
 		</div>
 

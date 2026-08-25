@@ -14,8 +14,10 @@ the command list, repository map, and architecture explanation.
 - Use theme tokens from `src/app.css`, not hardcoded colors. Add light and dark values together and
   run contrast validation. See `docs/THEME_SYSTEM.md`.
 - Put logs, generated analysis, debug traces, and temporary files in ignored `.llm-outputs/`.
-- NebulaKit is an independent product, not a starter template. Do not restore customization scripts,
-  placeholder-branding ledgers, or downstream-app instructions.
+- NebulaKit is a starter template; apps are created from it with "Use this template". Keep the
+  customization path working — `bun run customize`, `CUSTOMIZE.md`,
+  `INITIAL_CUSTOMIZATION_STATUS.md`, and `docs/INITIAL_CUSTOMIZATION.md` — and keep the branding
+  ledger honest rather than deleting it.
 - Preserve the complete logo-derived install set: Apple touch icon, 192/512 manifest icons,
   `site.webmanifest`, light/dark tab favicons, and the declarations in `src/app.html`. Installed-app
   icons are static; only tab favicons switch theme.
@@ -55,9 +57,11 @@ the command list, repository map, and architecture explanation.
 - Keep `src/lib/site.config.ts` dependency-free because Vite and Playwright import it directly.
 - Credential and secret inputs take their `id`/`name` from `fieldName()` in
   `src/lib/utils/form-fields.ts`, which prefixes `site.slug`. Bare identifiers let a password
-  manager that matches on host — `localhost`, or a sibling subdomain — offer another deployment's
-  credentials. Keep the standard `autocomplete` tokens. `tests/unit/auth-field-names.test.ts`
-  fails on a hardcoded `id`, `name`, or `for` in a credential route.
+  manager that matches on host — `localhost`, or a sibling subdomain — offer another site's
+  credentials. The fields are only unique once the slug is the downstream app's, which
+  `bun run customize` sets; it also flips `credential_fields_unique` in the branding ledger. Keep
+  the standard `autocomplete` tokens. `tests/unit/auth-field-names.test.ts` fails on a hardcoded
+  `id`, `name`, or `for` in a credential route.
 - Match surrounding Svelte syntax unless a tested Svelte 5 migration is explicitly in scope.
 - Add dependencies only when their security, runtime, bundle, and maintenance costs are justified.
 

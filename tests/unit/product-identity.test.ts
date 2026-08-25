@@ -2,12 +2,13 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { site } from '../../src/lib/site.config';
 
 const root = resolve(import.meta.dirname, '../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 
 describe('NebulaKit product identity', () => {
-	it('describes NebulaKit as an independent product', () => {
+	it('presents NebulaKit as a starter template, consistently', () => {
 		const publicSurfaces = [
 			read('README.md'),
 			read('FEATURES.md'),
@@ -15,11 +16,15 @@ describe('NebulaKit product identity', () => {
 			read('src/routes/documentation/+page.svelte')
 		].join('\n');
 
-		expect(publicSurfaces).not.toMatch(/starter (?:kit|template)|use this template/i);
-		expect(publicSurfaces).toMatch(/independent Cloudflare-native platform/i);
+		expect(publicSurfaces).toMatch(/starter template/i);
+		expect(publicSurfaces).toMatch(/use this template/i);
+		// The marketing site sells NebulaKit as a template. If this repository ever
+		// describes itself as a finished product instead, the two disagree and a
+		// visitor who follows the site to the repo is told the opposite thing.
+		expect(publicSurfaces).not.toMatch(/independent Cloudflare-native platform/i);
 	});
 
-	it('does not ship the retired template customization workflow', () => {
+	it('ships a working customization workflow', () => {
 		for (const path of [
 			'CUSTOMIZE.md',
 			'INITIAL_CUSTOMIZATION_STATUS.md',
@@ -27,41 +32,19 @@ describe('NebulaKit product identity', () => {
 			'docs/INITIAL_CUSTOMIZATION.md',
 			'scripts/customize.mjs'
 		]) {
-			expect(existsSync(resolve(root, path)), `${path} should be removed`).toBe(false);
+			expect(existsSync(resolve(root, path)), `${path} should exist`).toBe(true);
 		}
 
 		const manifest = JSON.parse(read('package.json')) as { scripts?: Record<string, string> };
-		expect(manifest.scripts).not.toHaveProperty('customize');
+		expect(manifest.scripts?.customize).toBe('bun scripts/customize.mjs');
 
-		const alignedDocs = [
-			'CLAUDE.md',
-			'docs/AGENT_READINESS.md',
-			'docs/DOCUMENTATION_PAGE.md',
-			'src/lib/agent-discovery.ts',
-			'src/routes/robots.txt/+server.ts'
-		]
-			.map(read)
-			.join('\n');
-		expect(alignedDocs).not.toMatch(/INITIAL_CUSTOMIZATION|bun run customize/i);
-		expect(read('.gitignore')).not.toMatch(/customiz/i);
+		// The config a non-interactive run reads must never be committed into a
+		// downstream product.
+		expect(read('.gitignore')).toMatch(/^customize\.config\.json$/m);
 
-		const currentOperationalSurfaces = [
-			'src/routes/auth.md/+server.ts',
-			'src/routes/sitemap.xml/+server.ts',
-			'wrangler.toml',
-			'vite.config.ts',
-			'scripts/setup-cf.mjs',
-			'scripts/check-bindings.mjs',
-			'scripts/db-migrate.mjs',
-			'src/lib/components/CmsContent.svelte'
-		]
-			.map(read)
-			.join('\n');
-		expect(currentOperationalSurfaces).not.toMatch(
-			/this template|fresh clone of this template|template's (?:own|leaked|default)|derived project/i
-		);
-		expect(currentOperationalSurfaces).not.toMatch(/CUSTOMIZE:/i);
-		expect(read('src/lib/server/html-to-markdown.ts')).not.toMatch(/this template/i);
+		// The entry points a new user is pointed at must actually name the script.
+		expect(read('README.md')).toMatch(/bun run customize/);
+		expect(read('CUSTOMIZE.md')).toMatch(/bun run customize/);
 	});
 
 	it('uses Bun for package-script orchestration', () => {
@@ -94,7 +77,7 @@ describe('NebulaKit product identity', () => {
 		expect(html).toContain('name="theme-color"');
 		expect(manifest.name).toBe('NebulaKit');
 		expect(manifest.short_name).toBe('NebulaKit');
-		expect(manifest.description).toMatch(/independent Cloudflare-native platform/i);
+		expect(manifest.description).toBe(site.tagline);
 		expect(manifest.display).toBe('standalone');
 		expect(manifest.start_url).toBe('/');
 		expect(manifest.background_color).toBe('#0b1026');
