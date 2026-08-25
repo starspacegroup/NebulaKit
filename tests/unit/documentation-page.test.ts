@@ -139,6 +139,37 @@ describe('Documentation Page', () => {
 		).toBeInTheDocument();
 	});
 
+	// The widget board shipped without a word about it here, and the nav had no way
+	// to reach it. Every anchor in the nav must land on a real section, or the page
+	// promises content it does not have.
+	describe('drag and drop section', () => {
+		it('documents the board, its keyboard control, and the inert-state rule', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^drag and drop$/i })
+				.closest('section') as HTMLElement;
+
+			expect(section).toBeTruthy();
+			expect(section.id).toBe('drag-and-drop');
+			expect(section.textContent).toMatch(/WidgetBoard/);
+			expect(section.textContent).toMatch(/use:draggable/);
+			expect(section.textContent).toMatch(/arrow up and down/i);
+			expect(section.textContent).toMatch(/must never be written into/i);
+		});
+
+		it('points every navigation anchor at a section that exists', () => {
+			render(Page);
+			const nav = screen.getByRole('navigation', { name: /documentation navigation/i });
+			const anchors = Array.from(nav.querySelectorAll('a[href^="#"]'));
+
+			expect(anchors.length).toBeGreaterThan(0);
+			for (const anchor of anchors) {
+				const id = anchor.getAttribute('href')!.slice(1);
+				expect(document.getElementById(id), `#${id} has no section`).toBeTruthy();
+			}
+		});
+	});
+
 	// AGENTS.md §7 — this page shipped a claim that auth runs on @auth/sveltekit.
 	// It never did: sessions are issued by this app (src/lib/utils/session.ts) and
 	// the OAuth callbacks are hand-written under src/routes/api/auth/. The package

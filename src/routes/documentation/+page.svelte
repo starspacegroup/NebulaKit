@@ -69,6 +69,7 @@ bun run deploy`;
 			<a href="#quick-start">Quick Start</a>
 			<a href="#feature-overview">Feature Overview</a>
 			<a href="#how-to-use">How To Use</a>
+			<a href="#drag-and-drop">Drag and Drop</a>
 			<a href="#ai-workflow">AI Workflow</a>
 			<a href="#commands">Commands</a>
 			<a href="#cloudflare-bindings">Cloudflare Bindings</a>
@@ -160,6 +161,10 @@ bun run deploy`;
 						<li>Keyboard-first navigation with command palette for fast route switching.</li>
 						<li>Theme system with persistent light and dark preferences.</li>
 						<li>Responsive layout, navigation, footer, and shared metadata components.</li>
+						<li>
+							A columned widget board with pointer, touch, and keyboard dragging — see
+							<a href="#drag-and-drop">Drag and Drop</a>.
+						</li>
 					</ul>
 				</div>
 				<div class="callout-card">
@@ -259,6 +264,53 @@ bun run deploy`;
 					</ul>
 				</div>
 			</div>
+		</section>
+
+		<section id="drag-and-drop" class="docs-section">
+			<h2>Drag and Drop</h2>
+			<p>
+				<code>&lt;WidgetBoard&gt;</code> takes a layout and a list of columns, and reports a new
+				layout through <code>on:change</code>. It stores nothing itself, so where a layout is saved
+				stays your decision.
+			</p>
+			<pre><code
+					>{`<WidgetBoard bind:widgets {columns} on:change={(e) => save(e.detail.widgets)} />`}</code
+				></pre>
+			<p>
+				Registering a widget takes three edits and none of them is the board: an entry in
+				<code>src/lib/widgets/manifest.ts</code>, a line in
+				<code>src/lib/widgets/index.ts</code>, and the component itself. The registry ships empty on
+				purpose. The two actions underneath the board — <code>use:draggable</code> and
+				<code>use:dropzone</code> — work on any markup, so a sortable list or a nav reorder needs no board
+				at all.
+			</p>
+			<h3>Keyboard control</h3>
+			<p>
+				Every pointer gesture has a keyboard equivalent, announced through a live region. Focus a
+				drag handle, then:
+			</p>
+			<ul>
+				<li><strong>Space or Enter</strong> — pick the widget up, and put it down again.</li>
+				<li><strong>Arrow up and down</strong> — move it within its column.</li>
+				<li><strong>Arrow left and right</strong> — move it to the column either side.</li>
+				<li><strong>Escape</strong> — cancel, returning it to where it started.</li>
+			</ul>
+			<p>
+				On a touchscreen, hold a handle briefly before dragging — a swipe stays a swipe, so the page
+				still scrolls. Dragging near the top or bottom edge scrolls the page with you.
+			</p>
+			<h3>The rule that will bite you</h3>
+			<p>
+				A widget's stored state must be inert. A value that changes on a timer — a price, a clock, a
+				connection count — goes out through the widget's <code>live</code> event and comes back in
+				through the board's <code>live</code> prop; it must never be written into
+				<code>widget.title</code>, which is persisted. Ignoring this is how a dashboard rewrites its
+				whole layout every thirty seconds and burns a day's storage quota from one open tab.
+			</p>
+			<p>
+				Full reference, including the reorder contract and the component checklist:
+				<code>docs/WIDGET_BOARD.md</code>.
+			</p>
 		</section>
 
 		<section id="ai-workflow" class="docs-section">

@@ -45,6 +45,7 @@ section rather than appending to the end:
 | `quick-start`         | Bun install/dev/build/deploy commands                               |
 | `feature-overview`    | "What you get" — one bullet per user-visible capability             |
 | `how-to-use`          | Task-oriented walkthroughs for using features                       |
+| `drag-and-drop`       | The widget board, its keyboard control, and the inert-state rule    |
 | `ai-workflow`         | How to work with AI assistants in this repo                         |
 | `commands`            | Full script/command reference                                       |
 | `cloudflare-bindings` | D1, KV, R2, Queues, Workers AI, and any new binding                 |
