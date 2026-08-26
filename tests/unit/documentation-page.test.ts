@@ -90,6 +90,12 @@ describe('Documentation Page', () => {
 		).toBeInTheDocument();
 		expect(scoped.getAllByText(/can_view_stats/i).length).toBeGreaterThan(0);
 		expect(scoped.getAllByText(/CRON_SECRET/i).length).toBeGreaterThan(0);
+		// content_view_daily is the only counter that grows with the catalogue, so
+		// an operator has to be told before they turn it on, not after.
+		expect(scoped.getAllByText(/Top content/i).length).toBeGreaterThan(0);
+		expect(
+			scoped.getByText(/grows with your catalogue rather than with a fixed list/i)
+		).toBeInTheDocument();
 	});
 
 	it('lists analytics among the out-of-the-box capabilities', () => {

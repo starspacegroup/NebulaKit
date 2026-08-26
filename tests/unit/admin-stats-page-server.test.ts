@@ -11,7 +11,10 @@ vi.mock('$lib/utils/page-views', async (importOriginal) => {
 		listViewsByPath: vi.fn().mockResolvedValue([{ pathKey: '/blog', views: 5, signedIn: 2 }]),
 		listReferrers: vi.fn().mockResolvedValue([{ referrerHost: '(direct)', views: 5 }]),
 		listCountries: vi.fn().mockResolvedValue([{ country: 'US', views: 5 }]),
-		listDimension: vi.fn().mockResolvedValue([{ value: 'Chrome', views: 5 }])
+		listDimension: vi.fn().mockResolvedValue([{ value: 'Chrome', views: 5 }]),
+		listTopContent: vi
+			.fn()
+			.mockResolvedValue([{ contentId: 'item-1', views: 9, title: 'Hello', path: '/blog/hello' }])
 	};
 });
 
@@ -35,7 +38,8 @@ import {
 	listCountries,
 	listDailyViews,
 	listDimension,
-	listHourlyViews
+	listHourlyViews,
+	listTopContent
 } from '$lib/utils/page-views';
 import { getUsage as getUsageMock } from '$lib/utils/usage';
 import { load } from '../../src/routes/admin/stats/+page.server';
@@ -164,6 +168,25 @@ describe('/admin/stats load — shape', () => {
 
 		await run(createEvent({ url: new URL('https://example.com/admin/stats?window=1') }));
 		expect(listHourlyViews).toHaveBeenCalledTimes(1);
+	});
+
+	it('loads the most-viewed content for the window', async () => {
+		const data = await run(createEvent());
+
+		expect(data.traffic?.topContent).toEqual([
+			{ contentId: 'item-1', views: 9, title: 'Hello', path: '/blog/hello' }
+		]);
+	});
+
+	it('drops only the top-content panel when its table is absent', async () => {
+		// A database that has not run migration 0014 must lose one card, not the
+		// Traffic panel.
+		vi.mocked(listTopContent).mockRejectedValueOnce(new Error('no such table'));
+
+		const data = await run(createEvent());
+
+		expect(data.traffic?.topContent).toEqual([]);
+		expect(data.traffic?.byPath).toHaveLength(1);
 	});
 
 	it('keeps the rest of the traffic panel when an optional query fails', async () => {

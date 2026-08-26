@@ -147,6 +147,7 @@ export const pageViewsHandler: Handle = async ({ event, resolve }) => {
 			hour: utcHour(now),
 			pathKey: routeId,
 			signedIn: Boolean(event.locals.user),
+			contentId: event.locals.viewedContentId,
 			referrerHost: referrerHostFrom(headers.get('referer'), event.url.hostname) ?? undefined,
 			// Edge-provided country code only — no IP is read or stored.
 			country: event.platform?.cf?.country,

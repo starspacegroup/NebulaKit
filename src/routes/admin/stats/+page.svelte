@@ -59,6 +59,7 @@
 	// card's biggest row", so every table doubles as a bar chart.
 	const maxOf = (values: number[]) => Math.max(1, ...values);
 	$: byPathMax = traffic ? maxOf(traffic.byPath.map((r) => r.views)) : 1;
+	$: topContentMax = traffic ? maxOf((traffic.topContent ?? []).map((r) => r.views)) : 1;
 	$: referrersMax = traffic ? maxOf(traffic.referrers.map((r) => r.views)) : 1;
 	$: countriesMax = traffic ? maxOf(traffic.countries.map((r) => r.views)) : 1;
 
@@ -384,6 +385,43 @@
 						</PagedRows>
 					{/if}
 				</article>
+
+				{#if (traffic.topContent ?? []).length > 0}
+					<article class="card">
+						<h3>Top content</h3>
+						<p class="empty-note card-note">
+							Which CMS items were read, rather than which routes were hit — every item shares one
+							route, so the table above cannot separate them.
+						</p>
+						<PagedRows items={traffic.topContent} noun="items" let:shown>
+							<table class="stat-table">
+								<thead>
+									<tr><th>Item</th><th class="num">Views</th></tr>
+								</thead>
+								<tbody>
+									{#each shown as row (row.contentId)}
+										<tr>
+											<td title={row.path ?? row.contentId}>
+												<span class="cell-label">
+													{#if row.path}
+														<a href={row.path}>{row.title ?? row.path}</a>
+													{:else}
+														<!-- Deleted since the views were counted; the counts are still
+														     real, so show them against the id rather than dropping them. -->
+														<code>{row.contentId}</code>
+														<span class="cell-hint">deleted</span>
+													{/if}
+												</span>
+												<span class="meter" style={meterStyle(row.views, topContentMax)}></span>
+											</td>
+											<td class="num">{row.views.toLocaleString()}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</PagedRows>
+					</article>
+				{/if}
 
 				<article class="card">
 					<h3>Referrers</h3>
@@ -742,6 +780,20 @@
 
 	.cell-label code {
 		font-size: 0.78rem;
+	}
+
+	.card-note {
+		margin: -0.25rem 0 var(--spacing-sm);
+		max-width: 60ch;
+	}
+
+	/* An item deleted since its views were counted. */
+	.cell-hint {
+		margin-left: 0.4rem;
+		font-size: 0.72rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
 	}
 
 	.glyph {

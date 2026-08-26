@@ -266,7 +266,10 @@
 		}
 
 		.admin-content {
-			width: min(100%, 1200px);
+			/* Fills the grid column. A 1200px cap used to live here, which left a
+			   wide monitor mostly empty — the admin tables and stat panels are
+			   auto-fit grids that use the room, not prose that needs a measure. */
+			width: 100%;
 			padding: var(--spacing-xl) clamp(var(--spacing-lg), 3vw, var(--spacing-2xl))
 				var(--spacing-2xl);
 		}

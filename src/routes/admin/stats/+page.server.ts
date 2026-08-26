@@ -5,6 +5,7 @@ import {
 	listDimension,
 	listHourlyViews,
 	listReferrers,
+	listTopContent,
 	listViewsByPath,
 	utcDay,
 	utcHourKey
@@ -110,7 +111,10 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
 			listDimension(db, 'device', sinceDay).catch(() => []),
 			listDimension(db, 'language', sinceDay).catch(() => []),
 			listDimension(db, 'viewport', sinceDay).catch(() => []),
-			trafficWindow === 1 ? listHourlyViews(db, sinceHour).catch(() => []) : Promise.resolve([])
+			trafficWindow === 1 ? listHourlyViews(db, sinceHour).catch(() => []) : Promise.resolve([]),
+			// Empty on a site with no CMS traffic, and missing entirely before
+			// migration 0014 — either way the panel just doesn't render.
+			listTopContent(db, sinceDay).catch(() => [])
 		]).then(
 			([
 				daily,
@@ -122,11 +126,13 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
 				devices,
 				languages,
 				viewports,
-				hourly
+				hourly,
+				topContent
 			]) => ({
 				daily,
 				hourly,
 				byPath,
+				topContent,
 				referrers,
 				countries,
 				audience: { os, browsers, devices, languages, viewports }

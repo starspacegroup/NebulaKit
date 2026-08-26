@@ -8,6 +8,7 @@ import {
 	listDimension,
 	listHourlyViews,
 	listReferrers,
+	listTopContent,
 	listViewsByPath,
 	normalizeCountry,
 	osBucket,
@@ -313,6 +314,67 @@ describe('page-view queries', () => {
 		await expect(listDimension(ctl.db, 'device', '2026-06-16')).resolves.toEqual([]);
 	});
 
+	it('counts a content view only when the route carried an item id', async () => {
+		const ctl = createMockDb();
+		await recordPageView(ctl.db, {
+			day: '2026-08-26',
+			hour: 9,
+			pathKey: '/[contentType]/[slug]',
+			signedIn: false,
+			contentId: 'item-1'
+		});
+
+		const contentUpsert = ctl.batches[0].find((st) => st.query.includes('content_view_daily'));
+		expect(contentUpsert?.binds).toEqual(['2026-08-26', 'item-1']);
+	});
+
+	it('writes no content row for a route with no item id', async () => {
+		const ctl = createMockDb();
+		await recordPageView(ctl.db, {
+			day: '2026-08-26',
+			hour: 9,
+			pathKey: '/about',
+			signedIn: false
+		});
+
+		// A site with no CMS traffic must never touch the unbounded table.
+		expect(ctl.batches[0].some((st) => st.query.includes('content_view_daily'))).toBe(false);
+	});
+
+	it('lists top content with its public path', async () => {
+		const ctl = createMockDb();
+		ctl.allQueue.push({
+			results: [
+				{
+					content_id: 'item-1',
+					views: 12,
+					title: '  Hello  ',
+					slug: 'hello',
+					type_slug: 'blog'
+				}
+			]
+		});
+
+		const rows = await listTopContent(ctl.db, '2026-08-01');
+
+		expect(rows).toEqual([{ contentId: 'item-1', views: 12, title: 'Hello', path: '/blog/hello' }]);
+		expect(ctl.calls[0].query).toContain('LEFT JOIN content_items');
+		expect(ctl.calls[0].binds).toEqual(['2026-08-01', 20]);
+	});
+
+	it('keeps the counts of an item deleted since the views were recorded', async () => {
+		const ctl = createMockDb();
+		ctl.allQueue.push({
+			results: [{ content_id: 'gone', views: 4, title: null, slug: null, type_slug: null }]
+		});
+
+		const rows = await listTopContent(ctl.db, '2026-08-01');
+
+		// Dropping the row would understate the period's traffic; the id is what
+		// is left to show.
+		expect(rows).toEqual([{ contentId: 'gone', views: 4, title: null, path: null }]);
+	});
+
 	it('records a viewport sample as a single upsert', async () => {
 		const ctl = createMockDb();
 		await recordViewportSample(ctl.db, '2026-07-18', 'under-640');
@@ -329,14 +391,17 @@ describe('page-view queries', () => {
 		// A table missing here would grow forever, so the list is asserted whole.
 		// platform_usage_daily was missing until 2026-08-01 — this assertion passed
 		// the whole time because it only ever described what the code already did.
-		expect(batch).toHaveLength(6);
+		expect(batch).toHaveLength(7);
 		expect(batch.map((s) => s.query.match(/FROM (\w+)/)?.[1])).toEqual([
 			'page_view_daily',
 			'page_view_hourly',
 			'referrer_daily',
 			'country_view_daily',
 			'view_dimension_daily',
-			'platform_usage_daily'
+			'platform_usage_daily',
+			// The only table here whose size grows with the catalogue rather than
+			// with a fixed vocabulary, so it is the one that most needs the cron.
+			'content_view_daily'
 		]);
 		for (const stmt of batch) expect(stmt.binds).toEqual(['2025-06-01']);
 	});

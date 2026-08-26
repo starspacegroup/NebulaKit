@@ -14,7 +14,7 @@ import {
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, platform }) => {
+export const load: PageServerLoad = async ({ params, platform, locals }) => {
 	const typeSlug = params.contentType;
 	const itemSlug = params.slug;
 
@@ -49,6 +49,10 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 	if (item.status !== 'published') {
 		throw error(404, 'Content not found');
 	}
+
+	// Attribute this view to the item. pageViewsHandler runs after the load and
+	// reads it back, so counting a read costs no extra query.
+	locals.viewedContentId = item.id;
 
 	// Get tags if the type supports them
 	let tags: any[] = [];

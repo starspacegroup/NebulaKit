@@ -28,6 +28,11 @@ declare global {
 				canViewStats?: boolean;
 				isPretend?: boolean;
 			};
+			/** Set by the CMS content route so the page-view hook can attribute the
+			 *  view to an item without a second lookup. Unset on every other route,
+			 *  which is what keeps `content_view_daily` empty on a site with no CMS
+			 *  traffic. */
+			viewedContentId?: string;
 		}
 		interface Platform {
 			env: {

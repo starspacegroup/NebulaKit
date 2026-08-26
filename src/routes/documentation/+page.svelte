@@ -483,8 +483,9 @@ bun run db:migrate:list</code
 			<h2>Admin Analytics</h2>
 			<p>
 				<code>/admin/stats</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day
-				window, views by route, referrers, countries, an audience breakdown, and user and content growth
-				over time. It is first-party — there is no third-party script, no account, and no API key to provision.
+				window, views by route, the most-read CMS items, referrers, countries, an audience breakdown,
+				and user and content growth over time. It is first-party — there is no third-party script, no
+				account, and no API key to provision.
 			</p>
 			<p>
 				Everything collected is a daily aggregate counter in D1. There are
@@ -499,7 +500,8 @@ bun run db:migrate:list</code
 					<h3>Turning It On</h3>
 					<ol>
 						<li>
-							Apply migrations <code>0007</code> through <code>0009</code> with
+							Apply migrations <code>0007</code> through <code>0009</code>, plus
+							<code>0014</code> for the Top content table, with
 							<code>db:migrate:local</code> (or <code>db:migrate</code> for remote).
 						</li>
 						<li>
@@ -509,6 +511,11 @@ bun run db:migrate:list</code
 						<li>
 							Country stays <code>(unknown)</code> in local development — it is supplied by the Cloudflare
 							edge.
+						</li>
+						<li>
+							<strong>Top content</strong> appears once a published CMS item is read. It is the only counter
+							whose row count grows with your catalogue rather than with a fixed list, so on a large catalogue
+							watch it — the retention cron is what keeps it in hand.
 						</li>
 					</ol>
 				</div>

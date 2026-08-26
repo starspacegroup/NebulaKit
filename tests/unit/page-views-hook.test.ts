@@ -57,6 +57,32 @@ describe('page views hook', () => {
 		);
 	});
 
+	it('carries the viewed content id set by the CMS route', async () => {
+		const resolve = vi.fn().mockResolvedValue(htmlResponse());
+		const event = createEvent({
+			route: { id: '/[contentType]/[slug]' },
+			locals: { viewedContentId: 'item-1' }
+		});
+
+		await pageViewsHandler({ event, resolve });
+
+		expect(recordPageView).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ pathKey: '/[contentType]/[slug]', contentId: 'item-1' })
+		);
+	});
+
+	it('leaves the content id undefined on a route that did not set one', async () => {
+		const resolve = vi.fn().mockResolvedValue(htmlResponse());
+
+		await pageViewsHandler({ event: createEvent(), resolve });
+
+		expect(recordPageView).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ contentId: undefined })
+		);
+	});
+
 	it('stamps the UTC day and hour so the hourly counters line up', async () => {
 		const resolve = vi.fn().mockResolvedValue(htmlResponse());
 		vi.useFakeTimers();

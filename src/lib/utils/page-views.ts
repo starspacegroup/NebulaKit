@@ -19,6 +19,10 @@ export interface PageViewRecord {
 	hour: number; // 0-23 (UTC) — backs the hourly "1 day" traffic window
 	pathKey: string; // SvelteKit route id
 	signedIn: boolean;
+	/** CMS item this view was of, when the route was a content item. Set by the
+	 *  content route into `locals.viewedContentId`, so attributing a view costs
+	 *  no second lookup. */
+	contentId?: string;
 	referrerHost?: string;
 	country?: string; // ISO 3166-1 alpha-2 from the edge; never derived from IP by us
 	os?: string;
@@ -54,6 +58,15 @@ export interface ReferrerViews {
 export interface CountryViews {
 	country: string;
 	views: number;
+}
+
+export interface ContentViews {
+	contentId: string;
+	views: number;
+	/** Null when the item has been deleted since the views were counted. */
+	title: string | null;
+	/** Public path, or null when the item or its type is gone. */
+	path: string | null;
 }
 
 export type ViewDimension = 'os' | 'browser' | 'device' | 'language' | 'viewport';
@@ -217,6 +230,21 @@ export async function recordPageView(db: D1Database, view: PageViewRecord): Prom
 			.bind(view.day, normalizeCountry(view.country))
 	];
 
+	// Only content-item routes carry an id, so a site with no CMS content never
+	// writes a row here — the one unbounded table stays empty until it is earning
+	// its keep.
+	if (view.contentId) {
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO content_view_daily (day, content_id, views)
+					 VALUES (?, ?, 1)
+					 ON CONFLICT (day, content_id) DO UPDATE SET views = views + 1`
+				)
+				.bind(view.day, view.contentId)
+		);
+	}
+
 	const dimensions: Array<[ViewDimension, string | undefined]> = [
 		['os', view.os],
 		['browser', view.browser],
@@ -328,6 +356,44 @@ export async function listCountries(
 	return (result.results ?? []).map((r) => ({ country: r.country, views: r.views }));
 }
 
+/**
+ * Most-viewed CMS items in the window.
+ *
+ * LEFT JOIN, not INNER: an item deleted since the views were counted still has
+ * a row here until the retention cron catches up, and dropping it would quietly
+ * understate the period's traffic. Those rows come back with a null title and
+ * path, and the UI shows the id.
+ */
+export async function listTopContent(
+	db: D1Database,
+	sinceDay: string,
+	limit = 20
+): Promise<ContentViews[]> {
+	const result = await db
+		.prepare(
+			`SELECT v.content_id, SUM(v.views) AS views, i.title, i.slug, t.slug AS type_slug
+			 FROM content_view_daily v
+			 LEFT JOIN content_items i ON i.id = v.content_id
+			 LEFT JOIN content_types t ON t.id = i.content_type_id
+			 WHERE v.day >= ?
+			 GROUP BY v.content_id ORDER BY views DESC LIMIT ?`
+		)
+		.bind(sinceDay, limit)
+		.all<{
+			content_id: string;
+			views: number;
+			title: string | null;
+			slug: string | null;
+			type_slug: string | null;
+		}>();
+	return (result.results ?? []).map((r) => ({
+		contentId: r.content_id,
+		views: r.views,
+		title: r.title?.trim() || null,
+		path: r.type_slug && r.slug ? `/${r.type_slug}/${r.slug}` : null
+	}));
+}
+
 export async function listDimension(
 	db: D1Database,
 	dimension: ViewDimension,
@@ -375,6 +441,7 @@ export async function pruneViewStats(db: D1Database, beforeDay: string): Promise
 		db.prepare('DELETE FROM referrer_daily WHERE day < ?').bind(beforeDay),
 		db.prepare('DELETE FROM country_view_daily WHERE day < ?').bind(beforeDay),
 		db.prepare('DELETE FROM view_dimension_daily WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM platform_usage_daily WHERE day < ?').bind(beforeDay)
+		db.prepare('DELETE FROM platform_usage_daily WHERE day < ?').bind(beforeDay),
+		db.prepare('DELETE FROM content_view_daily WHERE day < ?').bind(beforeDay)
 	]);
 }

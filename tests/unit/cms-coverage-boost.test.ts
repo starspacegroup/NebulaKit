@@ -351,14 +351,19 @@ describe('[contentType]/[slug] page server load', () => {
 		// getItemTags: tags (hasTags is true in settings)
 		mockDB._allQueue.push({ results: [mockTagRow] });
 
+		// SvelteKit always supplies locals; the load writes the viewed item id
+		// there for pageViewsHandler to read back.
+		const locals: Record<string, unknown> = {};
 		const result = (await load({
 			params: { contentType: 'blog', slug: 'hello-world' },
-			platform: { env: { DB: mockDB } }
+			platform: { env: { DB: mockDB } },
+			locals
 		} as any)) as any;
 
 		expect(result.contentType).toBeTruthy();
 		expect(result.item).toBeTruthy();
 		expect(result.tags).toHaveLength(1);
+		expect(locals.viewedContentId).toBe(result.item.id);
 	});
 
 	it('should skip tag loading when hasTags is false', async () => {
@@ -379,7 +384,8 @@ describe('[contentType]/[slug] page server load', () => {
 
 		const result = (await load({
 			params: { contentType: 'blog', slug: 'hello-world' },
-			platform: { env: { DB: mockDB } }
+			platform: { env: { DB: mockDB } },
+			locals: {}
 		} as any)) as any;
 
 		expect(result.tags).toEqual([]);

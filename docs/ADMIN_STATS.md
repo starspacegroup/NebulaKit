@@ -62,6 +62,11 @@ matched route id, `GET`, status 200, `text/html`, not an `/admin`, `/api` or
 `/setup` route, and not a bot UA. It runs last in the sequence so `locals.user`
 is populated and the signed-in count is accurate.
 
+When the request was for a CMS item, the content route has already put that
+item's id in `locals.viewedContentId`, and the hook reads it back — so
+attributing a view to a post costs no extra query. Any route can opt in the same
+way; nothing else in the pipeline changes.
+
 **`usageHandler`** records a _billable Function invocation_ — a strictly larger
 set including bots, `/api/*`, redirects, 404s and non-GET. It runs first so
 nothing that returns early goes uncounted.
@@ -89,7 +94,7 @@ and it is usually bot traffic.
 
 ## Schema
 
-Five page-view counter tables plus the usage meter, all upserted on
+Six page-view counter tables plus the usage meter, all upserted on
 `PRIMARY KEY (day, …)`:
 
 ```yaml
@@ -98,6 +103,7 @@ page_view_hourly: { day, hour, views, signed_in } # totals only — 24 rows/day
 referrer_daily: { day, referrer_host, views }
 country_view_daily: { day, country, views }
 view_dimension_daily: { day, dimension, value, views } # os|browser|device|language|viewport
+content_view_daily: { day, content_id, views } # per CMS item — see the warning below
 platform_usage_daily: { day, requests, not_found, bot, updated_at }
 ```
 
@@ -108,6 +114,16 @@ so adding a dimension is a new `dimension` value rather than a migration.
 is what keeps it at 24 rows per day instead of 24× the daily table. It exists
 because the 1-day traffic window would otherwise render as two fat bars
 (yesterday and today-so-far).
+
+**`content_view_daily` is the one table whose size is not bounded by
+construction.** Every other counter here is keyed on a fixed route table or a
+closed bucket vocabulary, so its row count has a ceiling you can name in
+advance. This one grows with your catalogue — up to one row per published item
+per day — because that is what "which posts do people actually read" costs. It
+is pruned by the same retention cron as the rest, and on a site with no CMS
+traffic it is never written to at all: only the content-item route sets an id.
+If you run a large catalogue with a long retention window, this is the table to
+watch.
 
 ---
 
