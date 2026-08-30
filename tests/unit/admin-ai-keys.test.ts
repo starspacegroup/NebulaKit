@@ -41,9 +41,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}
@@ -59,9 +61,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}
@@ -82,9 +86,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -101,9 +107,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}
@@ -119,9 +127,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}
@@ -141,9 +151,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}
@@ -170,9 +182,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}
@@ -208,9 +222,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -237,9 +253,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -278,9 +296,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -307,9 +327,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -329,9 +351,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}
@@ -367,9 +391,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -403,9 +429,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -440,9 +468,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -487,9 +517,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -534,9 +566,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: mockKeys
 				}
 			}
@@ -566,9 +600,11 @@ describe('Admin AI Keys Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					keys: []
 				}
 			}

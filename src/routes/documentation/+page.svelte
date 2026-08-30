@@ -557,6 +557,29 @@ bun run db:migrate:list</code
 						authoritative.
 					</p>
 				</div>
+				<div class="callout-card">
+					<h3>Connecting Google Analytics</h3>
+					<p>
+						Optional, and off until you turn it on. The owner opens
+						<code>/admin/analytics</code>, pastes either the GA4 Measurement ID (<code
+							>G-ABCD123456</code
+						>) or the whole <code>gtag.js</code> snippet — the ID is read out of it — and saves. A toggle
+						pauses the tag without discarding the ID, and Disconnect removes it entirely.
+					</p>
+					<p>
+						The tag loads on public pages only. <code>/admin</code>, <code>/api</code>, and
+						<code>/setup</code> are excluded, so your own admin traffic stays out of the numbers, and
+						page views are sent on every client-side navigation rather than by gtag's automatic tracking,
+						which would count only the first page of a visit.
+					</p>
+					<p>
+						This is additive: the built-in stats keep working, and reports are read in Google's own
+						console. Google Analytics sets cookies and collects per-visitor data, which is a
+						different privacy posture from the built-in counters — review your privacy policy and
+						add a consent banner where your jurisdiction requires one. Only the owner can change the
+						connection.
+					</p>
+				</div>
 			</div>
 		</section>
 

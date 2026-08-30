@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import GoogleAnalytics from '$lib/components/GoogleAnalytics.svelte';
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { goto } from '$app/navigation';
 	import { showCommandPalette, toggleCommandPalette } from '$lib/stores/commandPalette';
@@ -102,6 +103,9 @@
 	{/if}
 
 	<CommandPalette {...commandPaletteProps} bind:show={$showCommandPalette} />
+
+	<!-- Optional GA4 tag; renders nothing unless an owner connected one. -->
+	<GoogleAnalytics measurementId={data.gaMeasurementId ?? null} />
 </div>
 
 <style>

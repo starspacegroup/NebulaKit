@@ -5,7 +5,8 @@ import LoginPage from '../../src/routes/auth/login/+page.svelte';
 const layoutData = {
 	user: null,
 	hasAIProviders: false,
-	cmsPaletteItems: []
+	cmsPaletteItems: [],
+	gaMeasurementId: null
 };
 
 describe('Auth Login Page UI', () => {

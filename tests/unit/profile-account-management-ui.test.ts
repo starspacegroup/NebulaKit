@@ -17,6 +17,7 @@ vi.mock('$app/stores', () => ({
 const layoutData = {
 	hasAIProviders: false,
 	cmsPaletteItems: [],
+	gaMeasurementId: null,
 	devAuthSimulationEnabled: false
 };
 

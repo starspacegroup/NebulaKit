@@ -6,6 +6,7 @@ const layoutData = {
 	user: null,
 	hasAIProviders: false,
 	cmsPaletteItems: [],
+	gaMeasurementId: null,
 	simulatedProviders: { github: false, discord: false },
 	devAuthSimulationEnabled: false
 };

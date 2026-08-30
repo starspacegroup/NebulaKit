@@ -29,9 +29,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -47,9 +49,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -86,9 +90,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -116,9 +122,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -133,9 +141,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -165,9 +175,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -208,9 +220,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -248,9 +262,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -295,9 +311,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -346,9 +364,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: []
 				}
 			}
@@ -415,9 +435,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -443,9 +465,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -472,9 +496,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -502,9 +528,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -531,9 +559,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -560,9 +590,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -589,9 +621,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -620,9 +654,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -651,9 +687,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: true,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -686,9 +724,11 @@ describe('Admin Users Page', () => {
 					user: mockUser,
 					canRevealPii: true,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}
@@ -722,9 +762,11 @@ describe('Admin Users Page', () => {
 					user: adminViewer,
 					canRevealPii: false,
 					canViewStats: false,
+					canManageAnalytics: false,
 					piiRevealed: false,
 					hasAIProviders: false,
 					cmsPaletteItems: [],
+					gaMeasurementId: null,
 					users: mockUsers
 				}
 			}

@@ -77,6 +77,14 @@ The implementation does not store raw IP addresses or raw User-Agent strings and
 third-party analytics script. Operators need `can_view_stats`. See
 [docs/ADMIN_STATS.md](./docs/ADMIN_STATS.md).
 
+## Optional Google Analytics connection
+
+An owner can connect a GA4 property at `/admin/analytics` by entering the Measurement ID or pasting
+the whole `gtag.js` snippet. It is off until connected, additive to the first-party counters, and
+excluded from `/admin`, `/api`, and `/setup`. Owner-only on every verb; a paused connection stops
+the tag loading rather than hiding it. Implementation: `src/lib/utils/analytics.ts`,
+`src/lib/server/analytics-config.ts`, `src/routes/api/admin/settings/analytics/`.
+
 ## Agent-ready publishing
 
 | Surface                                      | Purpose                                                 |

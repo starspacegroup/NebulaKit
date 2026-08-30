@@ -8,11 +8,15 @@
 
 	export let data: LayoutData;
 
-	// Stats is gated on the per-admin `can_view_stats` grant. The route enforces
-	// it as well; hiding the link just avoids offering a 403.
+	// Stats is gated on the per-admin `can_view_stats` grant, Analytics on owner
+	// (`canManageStatsConnection`). Both routes enforce it as well; hiding the
+	// links just avoids offering a 403.
 	$: navItems = [
 		{ path: '/admin', label: 'Dashboard', icon: 'home' },
 		...(data.canViewStats ? [{ path: '/admin/stats', label: 'Stats', icon: 'chart' }] : []),
+		...(data.canManageAnalytics
+			? [{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' }]
+			: []),
 		{ path: '/admin/users', label: 'Users', icon: 'users' },
 		{ path: '/admin/auth-keys', label: 'Auth Keys', icon: 'key' },
 		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
@@ -150,6 +154,18 @@
 							<rect x="5" y="12" width="3.5" height="6" />
 							<rect x="10.25" y="7" width="3.5" height="11" />
 							<rect x="15.5" y="14" width="3.5" height="4" />
+						</svg>
+					{:else if item.icon === 'activity'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
 						</svg>
 					{/if}
 					<span>{item.label}</span>

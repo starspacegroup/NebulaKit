@@ -7,6 +7,10 @@ front of.
 
 Live at **`/admin/stats`**, gated on the per-admin `can_view_stats` grant.
 
+An optional Google Analytics tag can be connected alongside it at
+**`/admin/analytics`** — off unless an owner turns it on. See
+[Google Analytics (optional)](#google-analytics-optional).
+
 | Panel                 | Answers                                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------------------- |
 | **Overview**          | Users, admins, content items, contact forms, chat messages                                        |
@@ -178,6 +182,57 @@ revoking it takes effect without waiting for a re-login.
 
 ---
 
+## Google Analytics (optional)
+
+Nothing third-party loads until an owner connects it. `/admin/analytics` takes
+**either** a GA4 Measurement ID (`G-ABCD123456`) **or** the whole pasted
+`gtag.js` snippet — Google hands people one form in some places and the other
+elsewhere, and `parseMeasurementId()` reads the ID out of both. A GTM container
+ID and a legacy `UA-` ID are each rejected with the specific reason, rather than
+falling through to "invalid".
+
+The connection is one KV key, `analytics_config`:
+
+```yaml
+provider: ga4
+measurementId: G-ABCD123456
+enabled: true
+updatedAt: 2026-08-28T10:00:00.000Z
+```
+
+Four properties are load-bearing:
+
+- **Owner-only, on every verb.** `canManageStatsConnection` — the same policy
+  that already governed a connected analytics account. An admin holding
+  `can_view_stats` reads the built-in numbers but does not get to point this
+  site's visitors at a third party.
+- **The stored ID is re-validated on read.** `readAnalyticsConfig` rejects
+  anything failing `GA4_MEASUREMENT_ID` and resolves to "not connected". The
+  write path is owner-only, but a value edited straight into KV must never reach
+  a `<script src>`.
+- **`enabled: false` stops the tag loading**, it does not merely hide it in the
+  admin UI. `getActiveMeasurementId` returns `null`, so the root layout hands the
+  client nothing.
+- **Page views are sent by the app, not by gtag.** `installGtag` configures the
+  tag with `send_page_view: false` and `GoogleAnalytics.svelte` sends a
+  `page_view` per `$page` change. SvelteKit routes on the client, so gtag's own
+  automatic tracking would count the first document of a visit and nothing after
+  it.
+
+`ANALYTICS_EXCLUDED_PREFIXES` (`/admin`, `/api`, `/setup`) mirrors the
+`pageViewsHandler` exclusions, so the owner's own admin traffic skews neither set
+of numbers. The exclusion is applied **client-side**: the root layout's server
+load does not re-run on client-side navigation, so it returns the ID for every
+path and the component decides per route.
+
+This is additive and does not change the built-in stack's posture — but GA
+itself sets cookies and collects per-visitor data, which is a different posture
+from the counters above. Connecting it is the point at which a consent banner
+may become your problem. Reports are read in Google's own console; the kit
+renders no GA data.
+
+---
+
 ## Fail-soft rules
 
 The load function holds three rules, and they're worth preserving if you extend
@@ -210,20 +265,25 @@ contrast. Re-validate if you change one.
 
 ## Files
 
-| Path                                      | What                                   |
-| ----------------------------------------- | -------------------------------------- |
-| `migrations/0007_page_view_stats.sql`     | The five page-view counter tables      |
-| `migrations/0008_platform_usage.sql`      | The usage meter table                  |
-| `migrations/0009_user_can_view_stats.sql` | The per-admin grant                    |
-| `src/hooks.server.ts`                     | `pageViewsHandler`, `usageHandler`     |
-| `src/lib/utils/page-views.ts`             | Bucketing + counter reads/writes       |
-| `src/lib/utils/usage.ts`                  | Buffered request counting + projection |
-| `src/lib/utils/stats-timeseries.ts`       | Gap-filling + SVG chart geometry       |
-| `src/lib/server/stats-guard.ts`           | Access policy                          |
-| `src/lib/components/StatBarChart.svelte`  | The bar chart                          |
-| `src/routes/admin/stats/`                 | The page                               |
-| `src/routes/api/stats/viewport/`          | Viewport beacon                        |
-| `src/routes/api/cron/prune-view-stats/`   | Retention                              |
+| Path                                        | What                                   |
+| ------------------------------------------- | -------------------------------------- |
+| `migrations/0007_page_view_stats.sql`       | The five page-view counter tables      |
+| `migrations/0008_platform_usage.sql`        | The usage meter table                  |
+| `migrations/0009_user_can_view_stats.sql`   | The per-admin grant                    |
+| `src/hooks.server.ts`                       | `pageViewsHandler`, `usageHandler`     |
+| `src/lib/utils/page-views.ts`               | Bucketing + counter reads/writes       |
+| `src/lib/utils/usage.ts`                    | Buffered request counting + projection |
+| `src/lib/utils/stats-timeseries.ts`         | Gap-filling + SVG chart geometry       |
+| `src/lib/server/stats-guard.ts`             | Access policy                          |
+| `src/lib/components/StatBarChart.svelte`    | The bar chart                          |
+| `src/routes/admin/stats/`                   | The page                               |
+| `src/routes/api/stats/viewport/`            | Viewport beacon                        |
+| `src/lib/utils/analytics.ts`                | GA parsing, exclusions, gtag loader    |
+| `src/lib/server/analytics-config.ts`        | GA connection in KV                    |
+| `src/lib/components/GoogleAnalytics.svelte` | The optional GA4 tag                   |
+| `src/routes/admin/analytics/`               | The connect/pause/disconnect page      |
+| `src/routes/api/admin/settings/analytics/`  | Owner-only connection API              |
+| `src/routes/api/cron/prune-view-stats/`     | Retention                              |
 
 ---
 

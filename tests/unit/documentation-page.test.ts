@@ -98,6 +98,29 @@ describe('Documentation Page', () => {
 		).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
+	// documentation has to describe it and keep describing it.
+	it('documents the optional Google Analytics connection', () => {
+		render(Page);
+
+		const scoped = within(
+			screen.getByRole('heading', { name: /Admin Analytics/i }).closest('section') as HTMLElement
+		);
+
+		expect(scoped.getAllByText('/admin/analytics').length).toBeGreaterThan(0);
+		expect(scoped.getByText(/Optional, and off until you turn it on/i)).toBeInTheDocument();
+		// Both accepted inputs, because the whole point of the field is that the
+		// admin does not have to know which one Google gave them.
+		expect(scoped.getAllByText('G-ABCD123456').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('gtag.js').length).toBeGreaterThan(0);
+		// The exclusions and the privacy consequence are the two things an
+		// operator gets wrong if nobody tells them.
+		expect(scoped.getByText(/loads on public pages only/i)).toBeInTheDocument();
+		expect(
+			scoped.getByText(/review your privacy policy and add\s+a consent banner/i)
+		).toBeInTheDocument();
+	});
+
 	it('lists analytics among the out-of-the-box capabilities', () => {
 		render(Page);
 

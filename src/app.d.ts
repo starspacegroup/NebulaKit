@@ -62,6 +62,15 @@ declare global {
 			caches: CacheStorage & { default: Cache };
 		}
 	}
+
+	/** Google Analytics globals, present only after the optional GA tag is
+	 *  installed by `src/lib/components/GoogleAnalytics.svelte`. Declared here so
+	 *  `installGtag`/`sendPageView` can take the real `window` without a cast —
+	 *  see `src/lib/utils/analytics.ts`. */
+	interface Window {
+		dataLayer?: unknown[];
+		gtag?: (...args: unknown[]) => void;
+	}
 }
 
 export {};
