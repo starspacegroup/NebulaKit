@@ -1,5 +1,6 @@
 import { systemTheme, themePreference } from '$lib/stores/theme';
 import { fireEvent, render } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { get } from 'svelte/store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CommandPalette from './CommandPalette.svelte';
@@ -180,6 +181,32 @@ describe('CommandPalette', () => {
 		// Simulate arrow up
 		await fireEvent.keyDown(window, { key: 'ArrowUp' });
 		expect(commands[0].classList.contains('selected')).toBe(true);
+	});
+
+	it('should scroll the selected command into view when navigating with arrow keys', async () => {
+		const scrollIntoView = vi.fn();
+		const original = Element.prototype.scrollIntoView;
+		Element.prototype.scrollIntoView = scrollIntoView;
+
+		try {
+			const { container } = render(CommandPalette, { props: { show: true } });
+
+			await fireEvent.keyDown(window, { key: 'ArrowDown' });
+			await tick();
+
+			const commands = container.querySelectorAll('.command');
+			expect(scrollIntoView).toHaveBeenCalledTimes(1);
+			expect(scrollIntoView.mock.instances[0]).toBe(commands[1]);
+			expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+
+			await fireEvent.keyDown(window, { key: 'ArrowUp' });
+			await tick();
+
+			expect(scrollIntoView).toHaveBeenCalledTimes(2);
+			expect(scrollIntoView.mock.instances[1]).toBe(commands[0]);
+		} finally {
+			Element.prototype.scrollIntoView = original;
+		}
 	});
 
 	it('should close on backdrop click', async () => {

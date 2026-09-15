@@ -9,7 +9,7 @@ The Command Palette is a keyboard-first interface for quickly navigating and exe
   - Press `Ctrl+Shift+P` to open/toggle
   - Press `Esc` to toggle open/close (including from the root page)
 - **Fuzzy Search**: Filter commands by typing
-- **Keyboard Navigation**: Use arrow keys to navigate, Enter to execute
+- **Keyboard Navigation**: Use arrow keys to navigate, Enter to execute. The list scrolls to keep the selected command in view.
 - **Quick Actions**: Navigate to any page or execute commands instantly
 - **Accessible**: Full ARIA support and keyboard accessibility
 
