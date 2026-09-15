@@ -159,7 +159,7 @@
 	}
 
 	.legal-container {
-		max-width: 800px;
+		max-width: var(--layout-prose-max-width);
 		margin: 0 auto;
 	}
 

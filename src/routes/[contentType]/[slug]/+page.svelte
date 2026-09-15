@@ -143,7 +143,7 @@
 
 <style>
 	.cms-item-page {
-		max-width: 780px;
+		max-width: var(--layout-prose-max-width);
 		margin: 0 auto;
 		padding: var(--spacing-xl) var(--spacing-md);
 	}

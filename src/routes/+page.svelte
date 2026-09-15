@@ -2281,6 +2281,14 @@
 		}
 	}
 
+	/* Ultra-wide: a fourth column, so the extra room holds more cards instead of
+	   stretching three of them. Twelve cards divide evenly either way. */
+	@media (min-width: 1920px) {
+		.features-grid {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
 	/* Mobile: 1 column (base styles) */
 	@media (max-width: 768px) {
 		.features {

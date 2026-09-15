@@ -430,7 +430,7 @@
 
 <style>
 	.auth-keys-page {
-		max-width: 1000px;
+		max-width: var(--layout-page-max-width);
 	}
 
 	.page-header {

@@ -110,6 +110,29 @@ Apply `data-theme="dark"` to `<html>` or any container:
 --spacing-2xl: 3rem; /* 48px */
 ```
 
+### Layout Widths
+
+```css
+--layout-page-max-width: 2560px; /* page shell: fills the viewport up to a 2K screen */
+--layout-prose-max-width: 900px; /* reading measure for long-form text */
+--layout-feature-grid-max-width: var(--layout-page-max-width);
+--layout-chrome-max-width: var(--layout-page-max-width);
+```
+
+`.container`, the admin page shells, and the CMS list page use the page width, so a
+wide monitor is filled rather than left with a narrow column down the middle. Long-form
+surfaces — `/documentation`, `/privacy`, `/terms`, and CMS item pages — use the prose
+width and stay centred inside that wider shell; running body text to 2560px is
+unreadable. Form cards (auth, setup, profile) keep their own card widths for the same
+reason.
+
+Give a new page one of the two tokens rather than a fresh pixel value.
+`tests/unit/layout-width.test.ts` fails if a shell goes back to a hardcoded cap.
+
+Grids that fill the shell need a column step for the extra room — the home feature grid
+and the CMS list grid each add one at `min-width: 1920px`, so cards multiply instead of
+stretching.
+
 ### Border Radius
 
 ```css

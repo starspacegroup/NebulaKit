@@ -50,8 +50,13 @@
 	/* Typography */
 	--font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	--font-mono: 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace;
-	--layout-feature-grid-max-width: 1380px;
-	--layout-chrome-max-width: 1500px;
+	/* Layout widths. The page shell fills the viewport up to a 2560px (2K)
+	   screen and centres beyond it; long-form text keeps its own measure
+	   inside that shell rather than running the full width. */
+	--layout-page-max-width: 2560px;
+	--layout-prose-max-width: 900px;
+	--layout-feature-grid-max-width: var(--layout-page-max-width);
+	--layout-chrome-max-width: var(--layout-page-max-width);
 
 	/* Transitions */
 	--transition-fast: 150ms ease;
@@ -189,7 +194,7 @@ button {
 /* Utility classes */
 .container {
 	width: 100%;
-	max-width: 1280px;
+	max-width: var(--layout-page-max-width);
 	margin: 0 auto;
 	padding: 0 var(--spacing-md);
 }
@@ -203,6 +208,14 @@ button {
 @media (min-width: 1024px) {
 	.container {
 		padding: 0 var(--spacing-xl);
+	}
+}
+
+/* Past the old 1280px cap the shell keeps growing, so the gutter grows with it
+   and content never runs into the screen edge. */
+@media (min-width: 1440px) {
+	.container {
+		padding: 0 clamp(var(--spacing-xl), 3vw, 4rem);
 	}
 }
 

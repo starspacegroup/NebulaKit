@@ -413,7 +413,7 @@
 <style>
 	/* Page Layout */
 	.cms-manage {
-		max-width: 1000px;
+		max-width: var(--layout-page-max-width);
 	}
 
 	.page-header {

@@ -457,7 +457,7 @@
 <style>
 	.users-page {
 		padding: var(--spacing-xl);
-		max-width: 1400px;
+		max-width: var(--layout-page-max-width);
 		margin: 0 auto;
 	}
 
