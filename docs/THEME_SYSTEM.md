@@ -121,10 +121,14 @@ Apply `data-theme="dark"` to `<html>` or any container:
 
 `.container`, the admin page shells, and the CMS list page use the page width, so a
 wide monitor is filled rather than left with a narrow column down the middle. Long-form
-surfaces — `/documentation`, `/privacy`, `/terms`, and CMS item pages — use the prose
-width and stay centred inside that wider shell; running body text to 2560px is
-unreadable. Form cards (auth, setup, profile) keep their own card widths for the same
-reason.
+surfaces — `/privacy`, `/terms`, and CMS item pages — use the prose width and stay
+centred inside that wider shell; running body text to 2560px is unreadable. Form cards
+(auth, setup, profile) keep their own card widths for the same reason.
+
+`/documentation` is a mixed page and does both: the shell takes the page width so its
+callout grids, nav and terminal block use the room, while `.docs-section > p`, `> ul`,
+`> ol` and `> pre` take the prose width. The child combinator matters — text inside a
+callout card must fill its grid track, not stop at 900px.
 
 Give a new page one of the two tokens rather than a fresh pixel value.
 `tests/unit/layout-width.test.ts` fails if a shell goes back to a hardcoded cap.

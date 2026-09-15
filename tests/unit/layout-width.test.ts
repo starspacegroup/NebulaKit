@@ -59,11 +59,18 @@ describe('layout widths', () => {
 		expect(declarations).toContain('max-width: var(--layout-page-max-width)');
 	});
 
+	it('the documentation page fills the shell but caps its own body text', () => {
+		expect(block(docsPage, '.docs-container')).toContain('max-width: var(--layout-page-max-width)');
+		// Child combinators, so text inside a callout card still fills its track.
+		expect(docsPage).toMatch(
+			/\.docs-section > p,\n\t\.docs-section > ul,\n\t\.docs-section > ol,\n\t\.docs-section > pre \{\n\t\tmax-width: var\(--layout-prose-max-width\);/
+		);
+	});
+
 	it.each([
 		['terms', termsPage, '.legal-container'],
 		['privacy', privacyPage, '.legal-container'],
-		['cms item', cmsItemPage, '.cms-item-page'],
-		['documentation', docsPage, '.docs-container']
+		['cms item', cmsItemPage, '.cms-item-page']
 	])('the %s page keeps a reading measure', (_name, source, selector) => {
 		const declarations = block(source, selector);
 		expect(declarations, `${selector} block not found`).not.toBe('');

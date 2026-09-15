@@ -844,7 +844,7 @@ bun run test:all</code
 	}
 
 	.docs-container {
-		max-width: var(--layout-prose-max-width);
+		max-width: var(--layout-page-max-width);
 		margin: 0 auto;
 	}
 
@@ -937,6 +937,16 @@ bun run test:all</code
 		line-height: 1.6;
 	}
 
+	/* The shell fills the screen; body text does not. Only the section's own
+	   paragraphs, lists and code blocks are capped — the child combinator leaves
+	   text inside callout cards to fill its grid track. */
+	.docs-section > p,
+	.docs-section > ul,
+	.docs-section > ol,
+	.docs-section > pre {
+		max-width: var(--layout-prose-max-width);
+	}
+
 	.docs-section code {
 		font-family: var(--font-mono);
 		font-size: 0.875rem;
@@ -973,6 +983,15 @@ bun run test:all</code
 		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 		gap: var(--spacing-lg);
 		margin-top: var(--spacing-lg);
+	}
+
+	/* Past this width an auto-fit 1fr track stretches a two-card section into two
+	   1200px cards. Cap the track and align the row with the text beside it. */
+	@media (min-width: 1400px) {
+		.callout-grid {
+			grid-template-columns: repeat(auto-fit, minmax(250px, 480px));
+			justify-content: start;
+		}
 	}
 
 	.callout-card {
@@ -1018,7 +1037,9 @@ bun run test:all</code
 
 	.quickstart-shell {
 		max-width: 980px;
-		margin: 0 auto;
+		/* Left-aligned rather than centred: on a wide shell the terminal belongs
+		   under its heading, not floating mid-page. Below 980px it fills anyway. */
+		margin: 0 auto 0 0;
 		padding: var(--spacing-md);
 		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-border);
