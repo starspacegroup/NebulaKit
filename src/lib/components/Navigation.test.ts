@@ -64,6 +64,33 @@ describe('Navigation', () => {
 		expect(menu?.classList.contains('open')).toBe(false);
 	});
 
+	it('opens the command palette from the mobile menu and closes the menu first', async () => {
+		let opened = 0;
+		const { container } = render(Navigation, {
+			props: {
+				user: adminUser,
+				onCommandPaletteClick: () => {
+					opened += 1;
+				}
+			}
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }));
+		await tick();
+
+		const menu = container.querySelector('.nav-links');
+		const paletteItem = screen.getByRole('button', { name: /search & commands/i });
+
+		await fireEvent.click(paletteItem);
+		await tick();
+		await tick();
+
+		expect(opened).toBe(1);
+		expect(menu?.classList.contains('open')).toBe(false);
+		// The palette sets its own scroll lock; the menu must not leave one behind.
+		expect(document.body.style.overflow).toBe('');
+	});
+
 	it('renders logged-in account controls directly in the mobile nav', async () => {
 		render(Navigation, {
 			props: {

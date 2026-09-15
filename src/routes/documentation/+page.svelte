@@ -238,7 +238,10 @@ bun run deploy`;
 					Sign in through <code>/auth/login</code> or create an account through
 					<code>/auth/signup</code>.
 				</li>
-				<li>Open the command palette with Ctrl/Cmd + K to move between major routes quickly.</li>
+				<li>
+					Open the command palette with Ctrl/Cmd + K to move between major routes quickly. On a
+					phone, tap the search icon in the navbar or choose "Search &amp; commands" in the menu.
+				</li>
 				<li>
 					Use <code>/chat</code> for AI interactions, <code>/profile</code> for account settings,
 					and <code>/admin</code> for operator tasks.

@@ -49,6 +49,19 @@ describe('Navigation mobile layout styles', () => {
 		);
 	});
 
+	it('keeps the command palette button reachable on mobile as an icon-only tap target', () => {
+		expect(NavigationSource).toMatch(/\.command-palette-btn\s*\{[\s\S]*?display:\s*flex;/);
+		expect(NavigationSource).toMatch(
+			/@media \(max-width:\s*767px\)\s*\{[\s\S]*?\.command-palette-btn\s*\{[\s\S]*?width:\s*40px;[\s\S]*?height:\s*40px;/
+		);
+		expect(NavigationSource).toMatch(
+			/@media \(max-width:\s*767px\)\s*\{[\s\S]*?\.command-palette-prompt-icon,\s*\.command-palette-kbd\s*\{[\s\S]*?display:\s*none;/
+		);
+		expect(NavigationSource).toMatch(
+			/@media \(max-width:\s*767px\)\s*\{[\s\S]*?\.nav-actions\s*\{[\s\S]*?margin-left:\s*auto;/
+		);
+	});
+
 	it('resets the mobile menu wrapper sizing on desktop so controls stay inside the navbar', () => {
 		expect(NavigationSource).toMatch(
 			/@media \(min-width:\s*768px\)\s*\{[\s\S]*?\.mobile-menu-content\s*\{[\s\S]*?display:\s*block;[\s\S]*?flex:\s*none;[\s\S]*?min-height:\s*auto;/

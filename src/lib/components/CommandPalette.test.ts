@@ -183,6 +183,15 @@ describe('CommandPalette', () => {
 		expect(commands[0].classList.contains('selected')).toBe(true);
 	});
 
+	it('should offer a close control for touch screens, which have no Escape key', async () => {
+		const { component, getByLabelText } = render(CommandPalette, { props: { show: true } });
+
+		await fireEvent.click(getByLabelText('Close command palette'));
+		await tick();
+
+		expect(component.show).toBe(false);
+	});
+
 	it('should scroll the selected command into view when navigating with arrow keys', async () => {
 		const scrollIntoView = vi.fn();
 		const original = Element.prototype.scrollIntoView;

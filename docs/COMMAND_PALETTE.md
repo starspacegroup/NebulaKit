@@ -11,6 +11,9 @@ The Command Palette is a keyboard-first interface for quickly navigating and exe
 - **Fuzzy Search**: Filter commands by typing
 - **Keyboard Navigation**: Use arrow keys to navigate, Enter to execute. The list scrolls to keep the selected command in view.
 - **Quick Actions**: Navigate to any page or execute commands instantly
+- **Reachable on touch**: below 768px the navbar shows a search icon button, and the
+  mobile menu carries a "Search & commands" entry. The palette then shows a close
+  button in place of the keyboard hints.
 - **Accessible**: Full ARIA support and keyboard accessibility
 
 ## Usage
@@ -20,7 +23,12 @@ The Command Palette is a keyboard-first interface for quickly navigating and exe
 1. **Keyboard**:
    - Press `Ctrl+K` (Windows/Linux) or `Cmd+K` (Mac)
    - Press `Ctrl+Shift+P`
-2. **Toggle/Close**: Press `Escape` (opens if closed, closes if open) or click outside the palette
+2. **Pointer or touch**:
+   - Tap the search icon in the navbar (it is icon-only below 768px, where there is no
+     keyboard shortcut to show)
+   - Open the mobile menu and choose **Search & commands**
+3. **Toggle/Close**: Press `Escape` (opens if closed, closes if open), click outside the
+   palette, or tap the close button shown on small screens
 
 ### Navigation
 

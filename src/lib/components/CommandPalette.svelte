@@ -353,6 +353,17 @@
 					placeholder={hasAIProviders ? 'Search commands or ask AI anything...' : 'Search/Commands'}
 					class="search-input"
 				/>
+				<button
+					type="button"
+					class="palette-close"
+					on:click={closeCommandPalette}
+					aria-label="Close command palette"
+				>
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<line x1="18" y1="6" x2="6" y2="18"></line>
+						<line x1="6" y1="6" x2="18" y2="18"></line>
+					</svg>
+				</button>
 			</div>
 
 			<div class="commands" bind:this={commandsContainer}>
@@ -549,6 +560,27 @@
 		color: var(--color-text);
 	}
 
+	/* Touch screens have no Escape key, and the hint footer below is written for
+	   one. Both swap at the same breakpoint. */
+	.palette-close {
+		display: none;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 36px;
+		height: 36px;
+		background: transparent;
+		border: none;
+		border-radius: var(--radius-md);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+	}
+
+	.palette-close:hover {
+		background: var(--color-surface-hover);
+		color: var(--color-text);
+	}
+
 	.search-input::placeholder {
 		color: var(--color-text-secondary);
 	}
@@ -642,5 +674,15 @@
 		padding: 0.125rem 0.375rem;
 		font-family: var(--font-mono);
 		font-size: 0.7rem;
+	}
+
+	@media (max-width: 767px) {
+		.palette-close {
+			display: flex;
+		}
+
+		.footer {
+			display: none;
+		}
 	}
 </style>
