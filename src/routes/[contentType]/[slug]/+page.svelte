@@ -146,6 +146,15 @@
 		max-width: var(--layout-prose-max-width);
 		margin: 0 auto;
 		padding: var(--spacing-xl) var(--spacing-md);
+		/* The layout's <main> is a column flex container, so this is a flex item
+		   with auto cross-axis margins — which disables stretch and sizes it
+		   fit-content. Without a definite width, one <pre> wider than the phone
+		   becomes the article's min-content floor: the page grows past the
+		   viewport and every paragraph scrolls sideways with it, while the pre's
+		   own overflow-x never engages. width: 100% makes the width definite, so
+		   wide content overflows the pre instead of the page. */
+		width: 100%;
+		min-width: 0;
 	}
 
 	.cms-back-link {
