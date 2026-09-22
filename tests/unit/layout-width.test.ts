@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import aiKeysPage from '../../src/routes/admin/ai-keys/+page.svelte?raw';
 import authKeysPage from '../../src/routes/admin/auth-keys/+page.svelte?raw';
@@ -75,5 +75,74 @@ describe('layout widths', () => {
 		const declarations = block(source, selector);
 		expect(declarations, `${selector} block not found`).not.toBe('');
 		expect(declarations).toContain('max-width: var(--layout-prose-max-width)');
+	});
+
+	/**
+	 * Filling the page is the DEFAULT, and this is what keeps it that way.
+	 *
+	 * A shell with no max-width fills, so a new page is wide unless someone
+	 * writes a cap. Writing one is allowed — a sign-in card and a column of
+	 * hero copy both want a measure — but it has to be a decision somebody
+	 * made on purpose, with the reason here, rather than a number that
+	 * arrived with a snippet and quietly left a 2K monitor half empty.
+	 *
+	 * This matters more in the template than anywhere: every app generated
+	 * from it inherits whatever these pages do.
+	 *
+	 * Add a page with a hardcoded shell cap and this fails until it is listed.
+	 */
+	const NARROW_ON_PURPOSE: Record<string, string> = {
+		'+page.svelte': 'Centred hero copy. Full-width headline and subtitle would be unreadable.',
+		'auth/login/+page.svelte': 'A single sign-in card; a 2K-wide login form is not a login form.',
+		'auth/signup/+page.svelte': 'Same card as the sign-in page.',
+		'documentation/+page.svelte': 'The quickstart card alone; .docs-container fills the shell.',
+		'profile/+page.svelte': 'One settings card. Stretching it to 2K would strand every label.'
+	};
+
+	/** A class named like a page shell rather than a card or a control. */
+	const SHELLISH = /^\.[a-zA-Z0-9_-]*(container|shell|wrap|layout|grid|page)[a-zA-Z0-9_-]*$/;
+
+	function pageFiles(dir: string, root: string, out: string[] = []): string[] {
+		for (const entry of readdirSync(dir, { withFileTypes: true })) {
+			const full = join(dir, entry.name);
+			if (entry.isDirectory()) pageFiles(full, root, out);
+			else if (entry.name === '+page.svelte') out.push(relative(root, full));
+		}
+		return out;
+	}
+
+	function hardcodedShellCaps(source: string): string[] {
+		const found: string[] = [];
+		for (const rule of source.matchAll(/\n\t(\.[a-zA-Z0-9_-]+)\s*\{([\s\S]*?)\n\t\}/g)) {
+			const [, selector, body] = rule;
+			if (!SHELLISH.test(selector)) continue;
+			const width = body.match(/max-width:\s*([^;]+);/);
+			if (width && !width[1].includes('var(--layout-'))
+				found.push(`${selector} = ${width[1].trim()}`);
+		}
+		return found;
+	}
+
+	it('caps a page shell only where someone wrote down why', () => {
+		const root = resolve(process.cwd(), 'src/routes');
+		const offenders: string[] = [];
+
+		for (const file of pageFiles(root, root)) {
+			const caps = hardcodedShellCaps(readFileSync(join(root, file), 'utf-8'));
+			if (caps.length && !NARROW_ON_PURPOSE[file]) offenders.push(`${file} — ${caps.join('; ')}`);
+		}
+
+		expect(offenders, 'hardcoded shell width with no reason in NARROW_ON_PURPOSE').toEqual([]);
+	});
+
+	it('keeps the narrow list honest about what is still narrow', () => {
+		// The other direction: a page that has since been widened should drop off
+		// the list rather than sit there implying a cap that is no longer in it.
+		const root = resolve(process.cwd(), 'src/routes');
+		for (const [file, reason] of Object.entries(NARROW_ON_PURPOSE)) {
+			expect(reason.length, `${file} needs a real reason`).toBeGreaterThan(20);
+			const caps = hardcodedShellCaps(readFileSync(join(root, file), 'utf-8'));
+			expect(caps, `${file} is listed as narrow but caps nothing`).not.toEqual([]);
+		}
 	});
 });

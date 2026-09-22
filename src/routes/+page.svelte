@@ -112,7 +112,6 @@
 						<stop offset="100%" style="stop-color: var(--color-primary); stop-opacity: 0" />
 					</radialGradient>
 
-
 					<!-- Glow effect. PERF: one blur, not a blur plus two composites and a
 					     merge. The ellipses this runs on are already filled with a radial
 					     gradient that ends at transparent, so the stacked composites were
@@ -255,7 +254,7 @@
 		<div class="comet"></div>
 	</div>
 
-	<div class="container">
+	<div class="hero-shell">
 		<div class="hero-content" class:mounted>
 			<!-- Main Title -->
 			<h1 class="main-title">{site.name}</h1>
@@ -1449,7 +1448,13 @@
 	}
 
 	/* Content */
-	.container {
+	/* The hero's reading measure — NOT the shared `.container`, which this used
+	   to be called. app.css defines a global `.container` at
+	   --layout-page-max-width (2560px), and Svelte's scoping quietly shadowed it
+	   here with 960px, so anyone reading `class="container"` in this file got
+	   the opposite of the width that name means everywhere else. The 960px is
+	   right for centred hero copy; only the name was wrong. */
+	.hero-shell {
 		position: relative;
 		z-index: 1;
 		width: 100%;
