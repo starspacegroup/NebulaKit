@@ -63,6 +63,12 @@ the command list, repository map, and architecture explanation.
   the standard `autocomplete` tokens. `tests/unit/auth-field-names.test.ts` fails on a hardcoded
   `id`, `name`, or `for` in a credential route.
 - Match surrounding Svelte syntax unless a tested Svelte 5 migration is explicitly in scope.
+- The hero decoration in `src/routes/+page.svelte` animates `transform` and `opacity` only, and its
+  nebula SVG is softened by one `filter: blur()` on `.nebula-waves-svg` rather than per-path filters.
+  Both rules are load-bearing: a `border-radius` in `@keyframes blob-float` repaints two blurred
+  500x600 elements every frame, and `preserveAspectRatio="slice"` scales the 400-unit viewBox ~4x, so
+  a per-path `stdDeviation` of 40 rasterizes as a ~160px kernel. Either one alone cost ~10s of total
+  blocking time and took the page from Lighthouse 100 to 60.
 - Add dependencies only when their security, runtime, bundle, and maintenance costs are justified.
 
 ## Verification
