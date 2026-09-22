@@ -9,5 +9,6 @@
 	"url": "https://acme.pages.dev",
 	"repo": "your-org/acme",
 	"author": "Your Name",
-	"authorUrl": "https://example.com"
+	"authorUrl": "https://example.com",
+	"showBuiltWithBadge": true
 }

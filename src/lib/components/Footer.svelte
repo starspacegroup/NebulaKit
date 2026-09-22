@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { site, repoUrl } from '$lib/site.config';
+	import BuiltWithNebulaKit from './BuiltWithNebulaKit.svelte';
 
 	const currentYear = new Date().getFullYear();
 </script>
@@ -31,6 +32,11 @@
 					</svg>
 					<span>Powered by Cloudflare</span>
 				</div>
+				{#if site.showBuiltWithBadge}
+					<!-- A courtesy, not a condition. `showBuiltWithBadge: false` in
+					     site.config removes it; see CUSTOMIZE.md. -->
+					<BuiltWithNebulaKit />
+				{/if}
 			</div>
 
 			<!-- Navigation Links -->

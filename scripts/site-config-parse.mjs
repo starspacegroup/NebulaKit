@@ -17,6 +17,14 @@ export function parseSiteConfig(src) {
 	};
 	/** @param {string} key */
 	const num = (key) => Number(src.match(new RegExp(`${key}:\\s*(\\d+)`))?.[1]);
+	/**
+	 * A boolean that defaults to `true` when the key is absent — an older
+	 * config predates the field, and dropping the badge on upgrade would be a
+	 * surprising thing for a rename script to do on its own.
+	 *
+	 * @param {string} key
+	 */
+	const bool = (key) => src.match(new RegExp(`${key}:\\s*(true|false)`))?.[1] !== 'false';
 	return {
 		name: str('name'),
 		shortName: str('shortName'),
@@ -27,6 +35,7 @@ export function parseSiteConfig(src) {
 		url: str('url'),
 		repo: str('repo'),
 		author: str('author'),
-		authorUrl: str('authorUrl')
+		authorUrl: str('authorUrl'),
+		showBuiltWithBadge: bool('showBuiltWithBadge')
 	};
 }

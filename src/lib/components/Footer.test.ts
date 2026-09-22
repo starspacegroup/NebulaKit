@@ -12,7 +12,11 @@ describe('Footer', () => {
 
 	it('should display the app brand', () => {
 		render(Footer);
-		expect(screen.getByText(site.name)).toBeInTheDocument();
+		// Scoped to the logo. A plain getByText(site.name) matched twice in this
+		// repo once the "Proudly built with NebulaKit" badge landed, because the
+		// template's own name is the brand the badge names. A generated app would
+		// not collide, but the template has to pass its own suite.
+		expect(document.querySelector('.footer-logo .logo-text')).toHaveTextContent(site.name);
 	});
 
 	it('should display the tagline', () => {
@@ -121,5 +125,22 @@ describe('Footer', () => {
 	it('should render Cloudflare badge', () => {
 		render(Footer);
 		expect(screen.getByText('Powered by Cloudflare')).toBeInTheDocument();
+	});
+
+	it('should render the "Proudly built with NebulaKit" badge', () => {
+		render(Footer);
+		const badge = screen.getByRole('link', { name: /proudly built with nebulakit/i });
+		expect(badge).toHaveAttribute('href', 'https://nebulakit.starspace.group');
+		expect(badge).toHaveAttribute('target', '_blank');
+		expect(badge).toHaveAttribute('rel', 'noopener noreferrer');
+	});
+
+	it('should gate that badge on site.showBuiltWithBadge', () => {
+		// The badge is a courtesy, not a condition — NebulaKit is MIT-licensed.
+		// This asserts the switch exists and that the footer reads it, so a
+		// product that turns it off does not find it wired in somewhere else.
+		render(Footer);
+		const badge = screen.queryByRole('link', { name: /proudly built with nebulakit/i });
+		expect(Boolean(badge)).toBe(site.showBuiltWithBadge);
 	});
 });

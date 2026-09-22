@@ -130,6 +130,9 @@ build/deploy. See [docs/CLOUDFLARE_SETUP.md](./docs/CLOUDFLARE_SETUP.md).
   announcement for every move
 - A columned widget board over a registry-driven widget catalogue, and a pure
   `reorder()` engine usable on its own
+- A "Proudly built with NebulaKit" footer badge, on by default and removed with
+  one `false` in `site.config.ts` — MIT-licensed, so it is a courtesy rather
+  than a condition
 
 See [docs/THEME_SYSTEM.md](./docs/THEME_SYSTEM.md),
 [docs/COMMAND_PALETTE.md](./docs/COMMAND_PALETTE.md), and

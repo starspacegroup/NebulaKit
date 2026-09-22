@@ -53,4 +53,17 @@ describe('customize config parsing', () => {
 
 		expect(parsed.tagline).toBeUndefined();
 	});
+
+	it('reads the badge switch both ways', () => {
+		expect(parseSiteConfig(`showBuiltWithBadge: true`).showBuiltWithBadge).toBe(true);
+		expect(parseSiteConfig(`showBuiltWithBadge: false`).showBuiltWithBadge).toBe(false);
+	});
+
+	it('keeps the badge when the config predates the switch', () => {
+		// The string fields return undefined when absent, but a missing boolean
+		// has to resolve to something. Defaulting to `false` would have a rename
+		// script quietly strip the badge out of an older app it was asked only to
+		// rename — so absence means "on", the shipped default.
+		expect(parseSiteConfig(`name: 'Acme',`).showBuiltWithBadge).toBe(true);
+	});
 });

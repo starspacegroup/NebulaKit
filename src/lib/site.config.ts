@@ -31,7 +31,16 @@ export const site = {
 	/** Attribution shown in the footer. */
 	author: '*Space',
 	/** URL for the footer attribution link. */
-	authorUrl: 'https://starspace.group'
+	authorUrl: 'https://starspace.group',
+	/**
+	 * Show the "Proudly built with NebulaKit" badge in the footer.
+	 *
+	 * On by default, and a courtesy rather than a condition — NebulaKit is
+	 * MIT-licensed and nothing here checks this value but the footer. Set it to
+	 * `false` and the badge goes, with no hard feelings. Other wordings and every
+	 * other form of the badge live at https://nebulakit.starspace.group/badge.
+	 */
+	showBuiltWithBadge: true
 } as const;
 
 /** Full GitHub URL, derived from {@link site.repo}. */

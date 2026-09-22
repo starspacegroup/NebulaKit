@@ -57,6 +57,12 @@ The full ordered path — including the parts a script cannot do — is
 [CUSTOMIZE.md](./CUSTOMIZE.md). Track whether it is finished in
 [INITIAL_CUSTOMIZATION_STATUS.md](./INITIAL_CUSTOMIZATION_STATUS.md).
 
+Your app's footer ships a **"Proudly built with NebulaKit"** badge. Keeping it
+helps other people find the template; `showBuiltWithBadge: false` in
+`src/lib/site.config.ts` removes it, and the licence does not care either way.
+Other wordings and every other form of the badge — image, web component,
+React/Svelte/Vue — are at <https://nebulakit.starspace.group/badge>.
+
 ## Local development
 
 ```bash

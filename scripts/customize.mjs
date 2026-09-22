@@ -56,7 +56,14 @@ const SKIP_FILES = new Set([
 	'docs/INITIAL_CUSTOMIZATION.md',
 	'INITIAL_CUSTOMIZATION_STATUS.md',
 	'src/lib/site.config.ts',
-	'bun.lock'
+	'bun.lock',
+	// The badge names NebulaKit on purpose. Without these two entries the
+	// rename would turn "Proudly built with NebulaKit" into "Proudly built with
+	// Acme" pointing at acme.starspace.group — a badge for a thing that does not
+	// exist. Turn the badge off in site.config instead; it is a courtesy, not a
+	// condition.
+	'src/lib/components/BuiltWithNebulaKit.svelte',
+	'src/lib/components/BuiltWithNebulaKit.test.ts'
 ]);
 
 /** Only these extensions are treated as text and rewritten. */
@@ -89,6 +96,15 @@ function ask(label, current) {
 	return trimmed === '' ? current : trimmed;
 }
 
+/** Same as {@link ask}, for a yes/no value. Anything but a leading "n" keeps
+ *  the current setting's meaning, so a stray keystroke cannot silently flip it. */
+function askYesNo(label, current) {
+	const shown = current ? 'yes' : 'no';
+	const answer = (prompt(`${label} [${shown}]:`, shown) ?? '').trim().toLowerCase();
+	if (answer === '') return current;
+	return !answer.startsWith('n');
+}
+
 function gatherNext(current) {
 	const configPath = join(ROOT, 'customize.config.json');
 	if (existsSync(configPath)) {
@@ -108,6 +124,10 @@ function gatherNext(current) {
 	next.repo = ask('GitHub repo (owner/name)', current.repo);
 	next.author = ask('Footer author', current.author);
 	next.authorUrl = ask('Footer author URL', current.authorUrl);
+	next.showBuiltWithBadge = askYesNo(
+		'Keep the "Proudly built with NebulaKit" badge in the footer?',
+		current.showBuiltWithBadge
+	);
 	return next;
 }
 
@@ -218,7 +238,16 @@ export const site = {
 	/** Attribution shown in the footer. */
 	author: ${q(c.author)},
 	/** URL for the footer attribution link. */
-	authorUrl: ${q(c.authorUrl)}
+	authorUrl: ${q(c.authorUrl)},
+	/**
+	 * Show the "Proudly built with NebulaKit" badge in the footer.
+	 *
+	 * A courtesy rather than a condition — NebulaKit is MIT-licensed and nothing
+	 * here checks this value but the footer. Set it to \`false\` and the badge
+	 * goes, with no hard feelings. Other wordings and every other form of the
+	 * badge live at https://nebulakit.starspace.group/badge.
+	 */
+	showBuiltWithBadge: ${c.showBuiltWithBadge === false ? 'false' : 'true'}
 } as const;
 
 /** Full GitHub URL, derived from {@link site.repo}. */

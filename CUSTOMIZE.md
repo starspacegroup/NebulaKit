@@ -109,6 +109,37 @@ Assets to replace: `static/og-image.{png,svg}`, `static/favicon*.png`,
 
 ---
 
+## Step 5b — The badge (optional, 10 seconds)
+
+Your app's footer carries a **"Proudly built with NebulaKit"** badge. It is a
+courtesy, not a condition: NebulaKit is MIT-licensed, nothing checks it, and
+nothing about your app changes if it goes.
+
+Keeping it helps other people find the template. If you would rather not:
+
+```ts
+// src/lib/site.config.ts
+showBuiltWithBadge: false;
+```
+
+`bun run customize` also asks, and carries your answer through the regenerated
+config.
+
+Other wordings — "Built with", "Powered by" — and the badge as an image, a web
+component, or a React/Svelte/Vue snippet live at
+<https://nebulakit.starspace.group/badge>. Pass `variant` to change the wording
+in place:
+
+```svelte
+<BuiltWithNebulaKit variant="built" />
+```
+
+`src/lib/components/BuiltWithNebulaKit.svelte` is the one file the rename pass
+deliberately skips — it names NebulaKit on purpose, and rewriting it would
+produce a badge for a product that does not exist.
+
+---
+
 ## Step 6 — Mark it done
 
 Set `status: complete` in
@@ -120,7 +151,9 @@ still needs doing.
 
 ## Definition of done
 
-- No user-facing surface calls itself NebulaKit (unless that's your app name).
+- No user-facing surface calls itself NebulaKit (unless that's your app name) —
+  with one deliberate exception, the footer badge from Step 5b, which either
+  says NebulaKit or is switched off entirely.
 - `bun run check` and `bun run test` pass.
 - `wrangler.toml` points at **your** Cloudflare resources, not the template's.
 - The docs page and command palette reflect your app, not the starter.
@@ -135,6 +168,8 @@ still needs doing.
 - `vite.config.ts`, `playwright.config.ts` → `site.devPort`
 - `SharingMeta.svelte` → `site.name` (default), `+page.svelte` → title/description
 - `Navigation.svelte`, `Footer.svelte` → `site.name`, `repoUrl`, `site.author`
+- `Footer.svelte` → `site.showBuiltWithBadge`, the one switch on the "Proudly
+  built with NebulaKit" badge
 - `CommandPalette.svelte` → `site.name` in the docs entry
 - `utils/form-fields.ts` → `site.slug`, prefixed onto the auth form field `id`/`name`
   so two sites from this template never share credential field identifiers
