@@ -138,6 +138,17 @@ See [docs/THEME_SYSTEM.md](./docs/THEME_SYSTEM.md),
 [docs/COMMAND_PALETTE.md](./docs/COMMAND_PALETTE.md), and
 [docs/WIDGET_BOARD.md](./docs/WIDGET_BOARD.md).
 
+## Performance monitoring
+
+- Lighthouse scores for your own public pages, measured through Google's
+  PageSpeed Insights — no browser, no CI, no build step
+- `/admin/lighthouse` lists every audited page worst-first, with the specific
+  audits that failed and what Lighthouse said about each
+- Scheduled through the same `/api/cron/*` shared-secret convention as the
+  other background jobs, or run on demand from the admin page
+
+See [docs/LIGHTHOUSE_MONITORING.md](./docs/LIGHTHOUSE_MONITORING.md).
+
 ## Quality contract
 
 - Svelte/TypeScript check with zero errors

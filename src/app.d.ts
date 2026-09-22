@@ -52,6 +52,9 @@ declare global {
 				DEV_AUTH_BYPASS?: string;
 				/** Shared bearer secret for /api/cron/* scheduler endpoints. */
 				CRON_SECRET?: string;
+				/** Optional PageSpeed Insights API key. Without one PSI still answers,
+				 *  at a much lower rate limit. See src/lib/server/lighthouse.ts. */
+				PAGESPEED_API_KEY?: string;
 			};
 			/** Cloudflare request metadata. `cf.country` is the edge-provided ISO
 			 *  3166-1 alpha-2 code used by page-view stats — undefined locally. */

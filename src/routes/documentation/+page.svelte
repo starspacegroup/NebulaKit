@@ -76,6 +76,7 @@ bun run deploy`;
 			<a href="#database-migrations">Database Migrations</a>
 			<a href="#auth-and-setup">Auth and Setup</a>
 			<a href="#admin-analytics">Admin Analytics</a>
+			<a href="#lighthouse">Lighthouse</a>
 			<a href="#agent-readiness">Agent Readiness</a>
 			<a href="#testing">Testing</a>
 			<a href="#project-structure">Structure</a>
@@ -686,6 +687,42 @@ bun run test:all</code
 					state.
 				</li>
 			</ul>
+		</section>
+
+		<section id="lighthouse" class="docs-section">
+			<h2>Lighthouse Monitoring</h2>
+			<p>
+				<code>/admin/lighthouse</code> shows Lighthouse scores for your own public pages, worst
+				first, with the specific audits that failed underneath each one. Press
+				<strong>Run now</strong> to audit on demand.
+			</p>
+			<h3>How it measures without a browser</h3>
+			<p>
+				Lighthouse drives a real Chrome. A Cloudflare Worker has no browser, and this project
+				deploys to Pages, which has no Cron Triggers either. So the scores come from Google's
+				PageSpeed Insights API, which runs Lighthouse on Google's infrastructure and returns the
+				report over HTTP — the audit is a <code>fetch</code>.
+			</p>
+			<p>
+				The catch is that PSI can only reach a <strong>public URL</strong>. It cannot audit
+				localhost or anything before your first deploy, so <code>site.url</code> has to be real. Until
+				it is, the admin page says so rather than showing an empty table.
+			</p>
+			<h3>Scheduling it</h3>
+			<p>
+				There is no cron in a Pages deployment, so an external scheduler calls the endpoint — a Cron
+				Trigger Worker, a GitHub Actions <code>schedule:</code>, or anything that can POST. It uses
+				the same shared secret as the other background jobs:
+			</p>
+			<pre><code
+					>{`curl -X POST https://your-app.example/api/cron/lighthouse \\
+  -H "Authorization: Bearer $CRON_SECRET"`}</code
+				></pre>
+			<p>
+				Daily is plenty — PSI's keyless rate limit will not tolerate much more, and these scores do
+				not move hourly. <code>PAGESPEED_API_KEY</code> is optional and only raises that limit. Full
+				notes in <code>docs/LIGHTHOUSE_MONITORING.md</code>.
+			</p>
 		</section>
 
 		<section id="agent-readiness" class="docs-section">
