@@ -11,9 +11,12 @@
 	--color-text: #1a1a1a;
 	--color-text-secondary: #5a6169; /* Updated from #6c757d for better contrast (5.95:1 on surface) */
 	--color-border: #dee2e6;
-	--color-error: #dc3545;
+	/* Darkened from #dc3545/#28a745 so they clear 4.5:1 as TEXT on --color-surface
+	   (#f8f9fa), not just on white — the old green was 2.97:1. White still clears
+	   4.5:1 on top of them, so badge and button backgrounds are unaffected. */
+	--color-error: #c92a35;
 	--color-danger: #dc2626; /* destructive accents (callouts, delete affordances); 4.8:1 on white */
-	--color-success: #28a745;
+	--color-success: #1a7f37;
 	--color-warning: #ffc107;
 
 	/* Chart series (admin stats). A fixed categorical order — a series keeps its

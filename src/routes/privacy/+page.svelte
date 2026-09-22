@@ -243,13 +243,16 @@
 		line-height: 1.6;
 	}
 
+	/* Underlined at rest, not only on hover: colour alone cannot carry a link
+	   inside a block of prose (WCAG 1.4.1 Use of Colour). */
 	.legal-section a {
 		color: var(--color-primary);
-		text-decoration: none;
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
 	}
 
 	.legal-section a:hover {
-		text-decoration: underline;
+		text-decoration-thickness: 2px;
 	}
 
 	@media (min-width: 768px) {

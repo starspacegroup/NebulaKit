@@ -36,7 +36,7 @@
 			<!-- Navigation Links -->
 			<nav class="footer-nav" aria-label="Footer navigation">
 				<div class="footer-section">
-					<h3 class="footer-heading">Navigation</h3>
+					<h2 class="footer-heading">Navigation</h2>
 					<ul class="footer-links">
 						<li><a href="/">Home</a></li>
 						<li><a href="/chat">Chat</a></li>
@@ -46,7 +46,7 @@
 				</div>
 
 				<div class="footer-section">
-					<h3 class="footer-heading">Resources</h3>
+					<h2 class="footer-heading">Resources</h2>
 					<ul class="footer-links">
 						<li>
 							<a href="/documentation">Documentation</a>
@@ -58,7 +58,7 @@
 				</div>
 
 				<div class="footer-section">
-					<h3 class="footer-heading">Legal</h3>
+					<h2 class="footer-heading">Legal</h2>
 					<ul class="footer-links">
 						<li><a href="/privacy">Privacy Policy</a></li>
 						<li><a href="/terms">Terms of Service</a></li>

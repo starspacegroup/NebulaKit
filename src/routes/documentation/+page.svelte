@@ -974,6 +974,15 @@ bun run test:all</code
 		text-decoration: none;
 	}
 
+	/* Links inside prose carry an underline at rest — colour alone cannot mark a
+	   link in a block of text (WCAG 1.4.1). Button-like links sit outside p/li
+	   and keep their undecorated look. */
+	.docs-section p a,
+	.docs-section li a {
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+	}
+
 	.docs-section a:hover {
 		text-decoration: underline;
 	}
@@ -1023,6 +1032,12 @@ bun run test:all</code
 	.docs-footer a {
 		color: var(--color-primary);
 		text-decoration: none;
+	}
+
+	/* Prose link in the footer sentence — underlined at rest (WCAG 1.4.1). */
+	.docs-footer p a {
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
 	}
 
 	.docs-footer a:hover {

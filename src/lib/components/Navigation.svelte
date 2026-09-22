@@ -121,8 +121,10 @@
 				<button
 					class="command-palette-btn"
 					on:click={onCommandPaletteClick}
-					aria-label="Open command palette"
 				>
+					<!-- The visible text is the shortcut hint, so the accessible name has to
+					     contain it (WCAG 2.5.3 Label in Name). A bare aria-label replaced it. -->
+					<span class="sr-only">Open command palette,</span>
 					<svg
 						class="command-palette-prompt-icon"
 						width="16"

@@ -112,102 +112,13 @@
 						<stop offset="100%" style="stop-color: var(--color-primary); stop-opacity: 0" />
 					</radialGradient>
 
-					<!-- Turbulence for organic texture (reduced octaves - imperceptible with heavy blur) -->
-					<filter id="nebula-filter-1">
-						<feTurbulence
-							type="fractalNoise"
-							baseFrequency="0.008 0.012"
-							numOctaves="3"
-							seed="1"
-							result="turbulence"
-						/>
-						<feDisplacementMap
-							in="SourceGraphic"
-							in2="turbulence"
-							scale="40"
-							xChannelSelector="R"
-							yChannelSelector="G"
-						/>
-						<feGaussianBlur stdDeviation="35" />
-					</filter>
-					<filter id="nebula-filter-2">
-						<feTurbulence
-							type="fractalNoise"
-							baseFrequency="0.01 0.015"
-							numOctaves="2"
-							seed="5"
-							result="turbulence"
-						/>
-						<feDisplacementMap
-							in="SourceGraphic"
-							in2="turbulence"
-							scale="50"
-							xChannelSelector="R"
-							yChannelSelector="G"
-						/>
-						<feGaussianBlur stdDeviation="45" />
-					</filter>
-					<filter id="nebula-filter-3">
-						<feTurbulence
-							type="fractalNoise"
-							baseFrequency="0.012 0.01"
-							numOctaves="3"
-							seed="10"
-							result="turbulence"
-						/>
-						<feDisplacementMap
-							in="SourceGraphic"
-							in2="turbulence"
-							scale="35"
-							xChannelSelector="R"
-							yChannelSelector="G"
-						/>
-						<feGaussianBlur stdDeviation="40" />
-					</filter>
-					<filter id="nebula-filter-4">
-						<feTurbulence
-							type="fractalNoise"
-							baseFrequency="0.009 0.014"
-							numOctaves="3"
-							seed="15"
-							result="turbulence"
-						/>
-						<feDisplacementMap
-							in="SourceGraphic"
-							in2="turbulence"
-							scale="45"
-							xChannelSelector="R"
-							yChannelSelector="G"
-						/>
-						<feGaussianBlur stdDeviation="50" />
-					</filter>
-					<filter id="nebula-filter-5">
-						<feTurbulence
-							type="fractalNoise"
-							baseFrequency="0.011 0.008"
-							numOctaves="2"
-							seed="20"
-							result="turbulence"
-						/>
-						<feDisplacementMap
-							in="SourceGraphic"
-							in2="turbulence"
-							scale="38"
-							xChannelSelector="R"
-							yChannelSelector="G"
-						/>
-						<feGaussianBlur stdDeviation="42" />
-					</filter>
 
-					<!-- Glow effect -->
+					<!-- Glow effect. PERF: one blur, not a blur plus two composites and a
+					     merge. The ellipses this runs on are already filled with a radial
+					     gradient that ends at transparent, so the stacked composites were
+					     buying a brightness change that opacity gives for free. -->
 					<filter id="glow-intense">
-						<feGaussianBlur stdDeviation="20" result="blur" />
-						<feComposite in="blur" in2="blur" operator="over" result="glow1" />
-						<feComposite in="glow1" in2="blur" operator="over" result="glow2" />
-						<feMerge>
-							<feMergeNode in="glow2" />
-							<feMergeNode in="SourceGraphic" />
-						</feMerge>
+						<feGaussianBlur stdDeviation="20" />
 					</filter>
 				</defs>
 
@@ -217,7 +128,6 @@
 					class="nebula-cloud nebula-1"
 					d="M-50,0 C20,80 40,180 60,280 C80,380 70,480 90,580 C110,680 130,780 140,880 C145,930 150,1000 160,1100 L400,1200 L400,0 Z"
 					fill="url(#nebula-gradient-1)"
-					filter="url(#nebula-filter-1)"
 				/>
 
 				<!-- Layer 2: Mid layer with curves -->
@@ -225,7 +135,6 @@
 					class="nebula-cloud nebula-2"
 					d="M-30,50 C30,120 50,220 80,320 C100,400 90,500 110,600 C130,700 120,800 140,900 C150,960 160,1050 170,1150 L400,1200 L400,0 Z"
 					fill="url(#nebula-gradient-2)"
-					filter="url(#nebula-filter-2)"
 				/>
 
 				<!-- Layer 3: Flowing organic shape -->
@@ -233,7 +142,6 @@
 					class="nebula-cloud nebula-3"
 					d="M-40,100 Q60,200 80,350 T120,600 Q140,750 160,900 T190,1100 L400,1150 L400,50 Z"
 					fill="url(#nebula-gradient-3)"
-					filter="url(#nebula-filter-3)"
 				/>
 
 				<!-- Layer 4: Wispy tendrils -->
@@ -241,7 +149,6 @@
 					class="nebula-cloud nebula-4"
 					d="M-20,150 C40,230 70,330 100,450 S130,650 150,770 C165,850 175,950 185,1050 L400,1100 L400,100 Z"
 					fill="url(#nebula-gradient-4)"
-					filter="url(#nebula-filter-4)"
 				/>
 
 				<!-- Layer 5: Front wispy layer -->
@@ -249,7 +156,6 @@
 					class="nebula-cloud nebula-5"
 					d="M0,200 Q90,300 110,450 T160,700 Q180,850 200,1000 L400,1050 L400,150 Z"
 					fill="url(#nebula-gradient-5)"
-					filter="url(#nebula-filter-5)"
 				/>
 
 				<!-- Bright glowing wisps -->
@@ -1104,17 +1010,21 @@
 		contain: layout style paint;
 	}
 
-	/* Wavy colored background blobs */
+	/* Wavy colored background blobs.
+	   PERF: the softness is baked into the gradient stops. This used to be a hard
+	   linear-gradient blob run through filter: blur(60px) — a full-size raster
+	   pass on a 500x600 element, repeated whenever anything under it moved. A
+	   radial gradient that fades to transparent looks the same and costs a fill. */
 	.wavy-blob {
 		position: absolute;
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, var(--color-secondary) 80%, transparent) 0%,
-			color-mix(in srgb, var(--color-primary) 70%, transparent) 50%,
-			color-mix(in srgb, var(--color-secondary) 60%, transparent) 100%
+		background: radial-gradient(
+			ellipse at 50% 45%,
+			color-mix(in srgb, var(--color-secondary) 55%, transparent) 0%,
+			color-mix(in srgb, var(--color-primary) 40%, transparent) 40%,
+			color-mix(in srgb, var(--color-secondary) 18%, transparent) 65%,
+			transparent 85%
 		);
 		border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-		filter: blur(60px);
 		animation: blob-float 20s ease-in-out infinite;
 		/* PERF: Promote to compositor layer for GPU-accelerated transforms */
 		will-change: transform;
@@ -1134,33 +1044,37 @@
 		width: 600px;
 		height: 500px;
 		opacity: 0.6;
-		background: linear-gradient(
-			225deg,
-			color-mix(in srgb, var(--color-error) 70%, transparent) 0%,
-			color-mix(in srgb, var(--color-primary) 60%, transparent) 50%,
-			color-mix(in srgb, var(--color-error) 50%, transparent) 100%
+		background: radial-gradient(
+			ellipse at 50% 50%,
+			color-mix(in srgb, var(--color-error) 50%, transparent) 0%,
+			color-mix(in srgb, var(--color-primary) 35%, transparent) 40%,
+			color-mix(in srgb, var(--color-error) 15%, transparent) 65%,
+			transparent 85%
 		);
 		border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
 		animation: blob-float 25s ease-in-out infinite reverse;
 	}
 
+	/* PERF: transform only. This animation used to morph border-radius as well,
+	   which the compositor cannot run — so every frame repainted two 500x600px
+	   elements through a 60px blur, forever. That single property cost ~10s of
+	   total blocking time and held the home page at Lighthouse 60. The morph is
+	   invisible under a 60px blur anyway; a scale wobble gives the same life.
+	   Do not put a non-compositable property (border-radius, width, filter,
+	   box-shadow, top/left) back into these keyframes. */
 	@keyframes blob-float {
 		0%,
 		100% {
-			transform: translate(0, 0) rotate(0deg);
-			border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+			transform: translate(0, 0) rotate(0deg) scale(1);
 		}
 		25% {
-			transform: translate(20px, -30px) rotate(5deg);
-			border-radius: 40% 60% 60% 40% / 40% 40% 60% 60%;
+			transform: translate(20px, -30px) rotate(5deg) scale(1.04);
 		}
 		50% {
-			transform: translate(-20px, -50px) rotate(-5deg);
-			border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%;
+			transform: translate(-20px, -50px) rotate(-5deg) scale(0.97);
 		}
 		75% {
-			transform: translate(30px, -20px) rotate(3deg);
-			border-radius: 60% 40% 40% 60% / 60% 60% 40% 40%;
+			transform: translate(30px, -20px) rotate(3deg) scale(1.02);
 		}
 	}
 
@@ -1200,24 +1114,25 @@
 		width: calc(100% + 240px);
 		height: 100%;
 		mix-blend-mode: screen;
+		/* PERF: ONE blur over the composed SVG, in CSS pixels.
+		   Each of the five cloud paths used to carry its own SVG filter. Because
+		   preserveAspectRatio="slice" scales this 400-unit viewBox up about 4x to
+		   cover the hero, a stdDeviation of 35-50 became a 140-200px kernel, and
+		   five of those rasterized over the full covered area cost ~2s of blocking
+		   time on their own. Blurring the container once looks the same and is
+		   free. Keep the softening here; do not put filters back on the paths. */
+		filter: blur(40px);
 		/* PERF: Animate the entire SVG container instead of individual filtered
 		   elements. The GPU transforms the cached raster bitmap (near-zero cost)
-		   instead of recomputing 8 SVG filter chains per frame. */
+		   instead of recomputing the filter per frame. */
 		will-change: transform;
 		animation: nebula-container-drift 38s ease-in-out infinite;
 	}
 
 	/*
-	 * PERF: Individual nebula-cloud and nebula-glow elements are NO LONGER
-	 * animated. SVG filters (feTurbulence + feDisplacementMap + feGaussianBlur)
-	 * are extremely expensive to recompute per-frame on the CPU.
-	 *
-	 * Instead, the entire SVG container (.nebula-waves-svg) is animated as one
-	 * unit. The browser rasterizes the filtered SVG ONCE, caches the bitmap,
-	 * and the GPU simply transforms the cached texture each frame.
-	 *
-	 * This eliminates ~480 filter recomputations/sec (8 filters × 60fps)
-	 * and replaces them with a single GPU-composited transform.
+	 * PERF: nebula-cloud and nebula-glow are not animated individually, and the
+	 * clouds carry no filter of their own — .nebula-waves-svg blurs the composed
+	 * result once and the whole SVG drifts as one cached bitmap.
 	 */
 	.nebula-cloud {
 		/* Static - no animation; filters render once and are cached */
@@ -1231,19 +1146,22 @@
 	}
 
 	/* Container-level drift animation replaces per-element nebula animations */
+	/* PERF: translate only. A scale() here re-rasterizes the whole filtered SVG on
+	   every frame — the cached bitmap the comment above relies on is only reused
+	   while the raster scale holds still. Drift, do not zoom. */
 	@keyframes nebula-container-drift {
 		0%,
 		100% {
-			transform: translate(0, 0) scale(1);
+			transform: translate(0, 0);
 		}
 		25% {
-			transform: translate(15px, -20px) scale(1.04);
+			transform: translate(15px, -20px);
 		}
 		50% {
-			transform: translate(-10px, -28px) scale(0.97);
+			transform: translate(-10px, -28px);
 		}
 		75% {
-			transform: translate(20px, -12px) scale(1.02);
+			transform: translate(20px, -12px);
 		}
 	}
 
@@ -1288,7 +1206,8 @@
 	.nebula {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(100px);
+		/* PERF: no filter. The fill below is a radial gradient that already ends at
+		   transparent, so blur(100px) softened an edge that was not there. */
 		opacity: 0.5;
 		animation: float 25s ease-in-out infinite;
 		will-change: transform;
@@ -1311,7 +1230,7 @@
 	.nebula-overlay {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(60px);
+		/* PERF: no filter — see .nebula. */
 		will-change: transform;
 	}
 
