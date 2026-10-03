@@ -63,6 +63,14 @@ describe('Footer', () => {
 		expect(signupLink).toHaveAttribute('href', '/auth/signup');
 	});
 
+	it('links the component catalog', () => {
+		render(Footer);
+		expect(screen.getByRole('link', { name: /^components$/i })).toHaveAttribute(
+			'href',
+			'/components'
+		);
+	});
+
 	it('should contain documentation link pointing to /documentation', () => {
 		render(Footer);
 		const docsLink = screen.getByRole('link', { name: /documentation/i });

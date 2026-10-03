@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Toaster } from '$lib/ui';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -103,6 +104,9 @@
 	{/if}
 
 	<CommandPalette {...commandPaletteProps} bind:show={$showCommandPalette} />
+
+	<!-- Toasts raised anywhere with toast.*() from $lib/ui. -->
+	<Toaster />
 
 	<!-- Optional GA4 tag; renders nothing unless an owner connected one. -->
 	<GoogleAnalytics measurementId={data.gaMeasurementId ?? null} />

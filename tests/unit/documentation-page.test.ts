@@ -186,6 +186,13 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/must never be written into/i);
 		});
 
+		it('says the kit ships standard widgets, shown at /components', () => {
+			render(Page);
+			const section = document.getElementById('drag-and-drop') as HTMLElement;
+			expect(section.textContent).not.toMatch(/ships empty/i);
+			expect(section.textContent).toMatch(/clock.*checklist.*meter/is);
+		});
+
 		it('points every navigation anchor at a section that exists', () => {
 			render(Page);
 			const nav = screen.getByRole('navigation', { name: /documentation navigation/i });
@@ -366,6 +373,19 @@ describe('Documentation Page', () => {
 				'href',
 				'#agent-readiness'
 			);
+		});
+	});
+
+	describe('UI kit section', () => {
+		it('documents the import, the toaster, and the live catalog', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^ui kit$/i })
+				.closest('section') as HTMLElement;
+			expect(section.id).toBe('ui-kit');
+			expect(section.textContent).toMatch(/\$lib\/ui/);
+			expect(section.textContent).toMatch(/<Toaster \/>/);
+			expect(section.querySelector('a[href="/components"]')).toBeTruthy();
 		});
 	});
 });

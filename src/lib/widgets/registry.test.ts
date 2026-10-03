@@ -3,8 +3,24 @@ import { getWidgetComponent } from './index';
 import { getWidgetDefinition, widgetManifest } from './manifest';
 
 describe('widget manifest', () => {
-	it('ships empty, so a project brings its own widgets', () => {
-		expect(widgetManifest).toEqual([]);
+	it('ships the standard set', () => {
+		expect(widgetManifest.map((widget) => widget.name)).toEqual([
+			'notes',
+			'stat',
+			'clock',
+			'checklist',
+			'meter',
+			'links'
+		]);
+	});
+
+	it('gives every widget the metadata a picker would need', () => {
+		for (const widget of widgetManifest) {
+			expect(widget.name).toMatch(/^[a-z0-9-]+$/);
+			expect(widget.label).toBeTruthy();
+			expect(widget.description).toBeTruthy();
+			expect(widget.defaultProps).toBeTypeOf('object');
+		}
 	});
 
 	it('returns nothing for an unregistered type', () => {
@@ -12,22 +28,17 @@ describe('widget manifest', () => {
 	});
 
 	it('finds a registered definition by name', () => {
-		widgetManifest.push({
-			name: 'notes',
-			label: 'Notes',
-			description: 'A scratch pad.',
-			defaultProps: { text: '' }
-		});
-
-		try {
-			expect(getWidgetDefinition('notes')?.label).toBe('Notes');
-		} finally {
-			widgetManifest.length = 0;
-		}
+		expect(getWidgetDefinition('notes')?.label).toBe('Notes');
 	});
 });
 
 describe('widget component registry', () => {
+	it('has a component for every manifest entry, and no orphans', () => {
+		for (const widget of widgetManifest) {
+			expect(getWidgetComponent(widget.name)).not.toBeNull();
+		}
+	});
+
 	it('returns null for an unregistered type', () => {
 		expect(getWidgetComponent('nope')).toBeNull();
 	});
