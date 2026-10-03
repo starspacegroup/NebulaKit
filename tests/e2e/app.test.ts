@@ -9,8 +9,9 @@ test.describe('Homepage', () => {
 	test('should navigate to documentation page via command palette', async ({ page }) => {
 		await page.goto('/');
 
-		// Open command palette
-		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
+		// Open command palette. The name comes from visually-hidden text, not an
+		// aria-label, so match by role and accessible name.
+		const commandPaletteBtn = page.getByRole('button', { name: /open command palette/i });
 		await expect(commandPaletteBtn).toBeVisible();
 		await page.waitForLoadState('networkidle');
 
@@ -39,7 +40,7 @@ test.describe('Homepage', () => {
 		await page.goto('/');
 
 		// Wait for hydration so the keyboard handler from onMount is registered
-		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
+		const commandPaletteBtn = page.getByRole('button', { name: /open command palette/i });
 		await expect(commandPaletteBtn).toBeVisible();
 		await page.waitForLoadState('networkidle');
 
