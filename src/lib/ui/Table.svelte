@@ -20,12 +20,13 @@
 	/** Shown in place of the body when there are no rows. */
 	export let empty = 'Nothing here yet.';
 
+	// Focusable so a keyboard can scroll a wide table (axe: scrollable-region-focusable).
+	$: frame = { role: 'region', 'aria-label': caption || 'Table', tabindex: 0 };
+
 	$: shown = sort ? sortRows(rows, sort.key, sort.direction) : rows;
 </script>
 
-<!-- Focusable so a keyboard can scroll a wide table (axe: scrollable-region-focusable). -->
-<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div class="table-frame" role="region" aria-label={caption || 'Table'} tabindex="0">
+<div class="table-frame" {...frame}>
 	<table>
 		{#if caption}<caption>{caption}</caption>{/if}
 		<thead>

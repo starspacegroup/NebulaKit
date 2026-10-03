@@ -32,8 +32,15 @@
 		dispatch('close');
 	}
 
-	function onClick(event: MouseEvent) {
-		if (event.target === dialog) open = false;
+	// A click on the dialog element itself, not its panel, is a click on the
+	// backdrop. Attached as an action: Escape already closes it natively, so a
+	// key handler beside this would be noise.
+	function backdrop(node: HTMLDialogElement) {
+		const onClick = (event: MouseEvent) => {
+			if (event.target === node) open = false;
+		};
+		node.addEventListener('click', onClick);
+		return { destroy: () => node.removeEventListener('click', onClick) };
 	}
 </script>
 
@@ -42,8 +49,8 @@
 	class="dialog"
 	aria-labelledby="{id}-title"
 	aria-describedby={description ? `${id}-description` : undefined}
+	use:backdrop
 	on:close={onClose}
-	on:click={onClick}
 >
 	<div class="dialog__panel">
 		<header class="dialog__header">

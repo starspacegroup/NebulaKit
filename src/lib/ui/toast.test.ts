@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from './toast';
 
 describe('toast', () => {
-	beforeEach(() => vi.useFakeTimers());
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
 	afterEach(() => {
 		toast.clear();
 		vi.useRealTimers();

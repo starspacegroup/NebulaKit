@@ -39,12 +39,63 @@
 		gap: var(--spacing-md);
 	}
 
+	/* Drawn here rather than left to the browser: the native track is a light
+	   grey that disappears on the dark theme's surface. */
 	input {
 		flex: 1;
+		height: 1.5rem;
+		margin: 0;
 		padding: 0;
 		border: 0;
 		background: transparent;
-		accent-color: var(--color-primary-solid);
+		appearance: none;
+		cursor: pointer;
+	}
+
+	input::-webkit-slider-runnable-track {
+		height: 0.375rem;
+		border-radius: 999px;
+		background: var(--color-border);
+	}
+
+	input::-moz-range-track {
+		height: 0.375rem;
+		border-radius: 999px;
+		background: var(--color-border);
+	}
+
+	input::-moz-range-progress {
+		height: 0.375rem;
+		border-radius: 999px;
+		background: var(--color-primary-solid);
+	}
+
+	input::-webkit-slider-thumb {
+		width: 1.125rem;
+		height: 1.125rem;
+		margin-top: -0.375rem;
+		border: 2px solid var(--color-background);
+		border-radius: 50%;
+		background: var(--color-primary-solid);
+		appearance: none;
+	}
+
+	input::-moz-range-thumb {
+		width: 1.125rem;
+		height: 1.125rem;
+		border: 2px solid var(--color-background);
+		border-radius: 50%;
+		background: var(--color-primary-solid);
+	}
+
+	input:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
+	}
+
+	input:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
 	}
 
 	output {

@@ -67,7 +67,6 @@
 		line-height: 1.35;
 		pointer-events: none;
 		transform: translate(-50%, 0);
-		transition: opacity var(--transition-fast);
 	}
 
 	.tooltip--top .tooltip__bubble {
@@ -84,20 +83,7 @@
 		opacity: 1;
 	}
 
-	@starting-style {
-		.tooltip:hover .tooltip__bubble,
-		.tooltip:focus-within .tooltip__bubble {
-			opacity: 0;
-		}
-	}
-
 	.tooltip--hidden .tooltip__bubble {
 		display: none !important;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.tooltip__bubble {
-			transition: none;
-		}
 	}
 </style>

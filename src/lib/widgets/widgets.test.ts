@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import Harness from '../../../tests/fixtures/UiKitHarness.svelte';
 import ChecklistWidget from './ChecklistWidget.svelte';
 import ClockWidget from './ClockWidget.svelte';
 import LinksWidget from './LinksWidget.svelte';
@@ -100,9 +101,12 @@ describe('ClockWidget', () => {
 	it('reports a live title instead of writing one to state', async () => {
 		vi.useFakeTimers();
 		const live = vi.fn();
-		render(ClockWidget, {
-			props: { timeZone: 'UTC' },
-			events: { live: (event: CustomEvent<string>) => live(event.detail) }
+		render(Harness, {
+			props: {
+				which: 'clock',
+				props: { timeZone: 'UTC' },
+				onEvent: (_: string, d: string) => live(d)
+			}
 		});
 
 		await vi.advanceTimersByTimeAsync(1000);

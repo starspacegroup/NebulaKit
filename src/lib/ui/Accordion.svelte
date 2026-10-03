@@ -10,11 +10,19 @@
 	export let exclusive = false;
 
 	const group = uid('accordion');
+	// An action rather than a `name` attribute: Svelte 4's element typings do not
+	// know <details name>, and a spread would turn `open` into a property write.
+	function grouped(node: HTMLDetailsElement, name: string | null) {
+		const apply = (value: string | null) =>
+			value ? node.setAttribute('name', value) : node.removeAttribute('name');
+		apply(name);
+		return { update: apply };
+	}
 </script>
 
 <div class="accordion">
 	{#each items as item, i (i)}
-		<details name={exclusive ? group : undefined} open={item.open}>
+		<details use:grouped={exclusive ? group : null} open={item.open}>
 			<summary>{item.title}</summary>
 			<div class="accordion__content">
 				<slot {item} index={i}>{item.content ?? ''}</slot>

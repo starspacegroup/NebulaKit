@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Harness from '../../../tests/fixtures/UiKitHarness.svelte';
@@ -44,7 +44,9 @@ describe('Button', () => {
 
 	it('swallows clicks while loading, and says it is busy', async () => {
 		const onClick = vi.fn();
-		const { container } = render(Button, { props: { loading: true }, events: { click: onClick } });
+		const { container } = render(Harness, {
+			props: { which: 'button', props: { loading: true }, onEvent: onClick }
+		});
 		const button = container.querySelector('button')!;
 		expect(button.getAttribute('aria-busy')).toBe('true');
 		await fireEvent.click(button);
@@ -53,7 +55,7 @@ describe('Button', () => {
 
 	it('forwards clicks when idle', async () => {
 		const onClick = vi.fn();
-		const { container } = render(Button, { events: { click: onClick } });
+		const { container } = render(Harness, { props: { which: 'button', onEvent: onClick } });
 		await fireEvent.click(container.querySelector('button')!);
 		expect(onClick).toHaveBeenCalledOnce();
 	});
@@ -202,8 +204,8 @@ describe('feedback', () => {
 		await tick();
 		expect(screen.getByText('Saved')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-		await tick();
-		expect(screen.queryByText('Saved')).toBeNull();
+		// Svelte 4 keeps the element through its exit transition.
+		await waitFor(() => expect(screen.queryByText('Saved')).toBeNull());
 	});
 });
 
@@ -245,9 +247,11 @@ describe('navigation', () => {
 
 	it('Pagination marks the current page, moves, and stops at the ends', async () => {
 		const onChange = vi.fn();
-		render(Pagination, {
-			props: { page: 1, total: 20 },
-			events: { change: (e: CustomEvent) => onChange(e.detail.page) }
+		render(Harness, {
+			props: {
+				which: 'pagination',
+				onEvent: (_: string, detail: { page: number }) => onChange(detail.page)
+			}
 		});
 		expect(screen.getByRole('button', { name: 'Page 1' }).getAttribute('aria-current')).toBe(
 			'page'
@@ -277,16 +281,18 @@ describe('navigation', () => {
 
 	it('Menu opens to its first item, moves with arrows, picks, and closes on Escape', async () => {
 		const onSelect = vi.fn();
-		render(Menu, {
+		render(Harness, {
 			props: {
-				label: 'Actions',
-				items: [
-					{ id: 'edit', label: 'Edit' },
-					{ id: 'archive', label: 'Archive', disabled: true },
-					{ id: 'delete', label: 'Delete', danger: true }
-				]
-			},
-			events: { select: (e: CustomEvent) => onSelect(e.detail.id) }
+				which: 'menu',
+				props: {
+					items: [
+						{ id: 'edit', label: 'Edit' },
+						{ id: 'archive', label: 'Archive', disabled: true },
+						{ id: 'delete', label: 'Delete', danger: true }
+					]
+				},
+				onEvent: (_: string, detail: { id: string }) => onSelect(detail.id)
+			}
 		});
 		const trigger = screen.getByRole('button', { name: /Actions/ });
 		await fireEvent.click(trigger);
@@ -325,10 +331,10 @@ describe('navigation', () => {
 
 describe('overlays', () => {
 	it('Dialog opens and closes with its bound state', async () => {
-		const view = render(Harness, { props: { which: 'dialog' } });
+		render(Harness, { props: { which: 'dialog' } });
 		const dialog = document.querySelector('dialog')!;
 		expect(dialog.open).toBe(false);
-		await view.rerender({ which: 'dialog', open: true });
+		await fireEvent.click(screen.getByRole('button', { name: 'Open' }));
 		await tick();
 		expect(dialog.open).toBe(true);
 		expect(screen.getByRole('heading', { name: 'Delete file?' }).id).toBe(
@@ -339,7 +345,7 @@ describe('overlays', () => {
 		dialog.dispatchEvent(new Event('close'));
 		await tick();
 		expect(screen.getByTestId('state').textContent).toBe('false');
-		await view.rerender({ which: 'dialog', open: true });
+		await fireEvent.click(screen.getByRole('button', { name: 'Open' }));
 		await tick();
 		await fireEvent.click(dialog);
 		await tick();

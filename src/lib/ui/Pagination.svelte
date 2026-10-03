@@ -17,11 +17,16 @@
 
 	$: items = pageRange(page, total, siblings);
 
-	function go(event: MouseEvent, to: number) {
+	function go(event: Event, to: number) {
 		if (to < 1 || to > total || to === page) return;
 		if (!href) event.preventDefault();
 		page = to;
 		dispatch('change', { page: to });
+	}
+
+	// Without an href these are role="button", so Enter has to work as a click does.
+	function key(event: KeyboardEvent, to: number) {
+		if (event.key === 'Enter' && !href) go(event, to);
 	}
 </script>
 
@@ -35,7 +40,7 @@
 					tabindex={page > 1 ? 0 : -1}
 					aria-disabled={page <= 1 || undefined}
 					on:click={(e) => go(e, page - 1)}
-					on:keydown={(e) => e.key === 'Enter' && !href && go(e as unknown as MouseEvent, page - 1)}
+					on:keydown={(e) => key(e, page - 1)}
 				>
 					<span aria-hidden="true">‹</span> Previous
 				</a>
@@ -52,7 +57,7 @@
 							aria-label="Page {item}"
 							aria-current={item === page ? 'page' : undefined}
 							on:click={(e) => go(e, item)}
-							on:keydown={(e) => e.key === 'Enter' && !href && go(e as unknown as MouseEvent, item)}
+							on:keydown={(e) => key(e, item)}
 						>
 							{item}
 						</a>
@@ -66,7 +71,7 @@
 					tabindex={page < total ? 0 : -1}
 					aria-disabled={page >= total || undefined}
 					on:click={(e) => go(e, page + 1)}
-					on:keydown={(e) => e.key === 'Enter' && !href && go(e as unknown as MouseEvent, page + 1)}
+					on:keydown={(e) => key(e, page + 1)}
 				>
 					Next <span aria-hidden="true">›</span>
 				</a>
