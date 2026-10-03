@@ -89,7 +89,7 @@
 		<h1>Analytics</h1>
 		<p>
 			Connect a Google Analytics 4 property. This is optional and additive — the built-in
-			<a href="/admin/stats">Stats</a> page keeps working either way.
+			<a href="/admin">Dashboard</a> stats keep working either way.
 		</p>
 	</header>
 

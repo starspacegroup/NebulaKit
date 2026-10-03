@@ -87,7 +87,7 @@ describe('Credential field identifiers are site-unique', () => {
 		'src/routes/profile/+page.svelte',
 		'src/routes/setup/+page.svelte',
 		'src/routes/admin/ai-keys/+page.svelte',
-		'src/routes/admin/auth-keys/+page.svelte'
+		'src/routes/admin/settings/+page.svelte'
 	];
 
 	it.each(CREDENTIAL_ROUTES)('%s hardcodes no field identifier', (route) => {

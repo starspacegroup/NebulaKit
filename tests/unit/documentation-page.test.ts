@@ -82,7 +82,7 @@ describe('Documentation Page', () => {
 
 		const scoped = within(statsSection as HTMLElement);
 
-		expect(scoped.getAllByText(/\/admin\/stats/i).length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('/admin').length).toBeGreaterThan(0);
 		// The privacy posture is the reason this ships instead of a GA tag, so it
 		// has to be stated on the page users actually read.
 		expect(
@@ -96,6 +96,19 @@ describe('Documentation Page', () => {
 		expect(
 			scoped.getByText(/grows with your catalogue rather than with a fixed list/i)
 		).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — the admin landing page and the settings page are user-visible
+	// admin routes, so the documentation has to say where each lives.
+	it('documents the admin dashboard and settings pages', () => {
+		render(Page);
+
+		const card = screen.getByRole('heading', { name: 'Account and Admin Flow' }).parentElement;
+		const scoped = within(card as HTMLElement);
+
+		expect(scoped.getByText('/admin/settings')).toBeInTheDocument();
+		expect(scoped.getByText(/opens on the stats dashboard/i)).toBeInTheDocument();
+		expect(scoped.getByText(/OAuth authentication\s+keys/i)).toBeInTheDocument();
 	});
 
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
@@ -129,9 +142,7 @@ describe('Documentation Page', () => {
 		expect(
 			screen.getByText((_content, element) => {
 				if (element?.tagName !== 'LI') return false;
-				return /first-party, cookie-free analytics at\s*\/admin\/stats/i.test(
-					element.textContent ?? ''
-				);
+				return /first-party, cookie-free analytics at\s*\/admin\b/i.test(element.textContent ?? '');
 			})
 		).toBeInTheDocument();
 	});

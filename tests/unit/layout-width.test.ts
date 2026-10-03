@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import aiKeysPage from '../../src/routes/admin/ai-keys/+page.svelte?raw';
-import authKeysPage from '../../src/routes/admin/auth-keys/+page.svelte?raw';
+import settingsPage from '../../src/routes/admin/settings/+page.svelte?raw';
 import cmsDashboard from '../../src/routes/admin/cms/+page.svelte?raw';
 import cmsManage from '../../src/routes/admin/cms/[type]/+page.svelte?raw';
 import usersPage from '../../src/routes/admin/users/+page.svelte?raw';
@@ -52,7 +52,7 @@ describe('layout widths', () => {
 		['cms dashboard', cmsDashboard, '.cms-dashboard'],
 		['cms manage', cmsManage, '.cms-manage'],
 		['ai keys', aiKeysPage, '.ai-keys-page'],
-		['auth keys', authKeysPage, '.auth-keys-page']
+		['admin settings', settingsPage, '.settings-page']
 	])('the %s shell fills the page width', (_name, source, selector) => {
 		const declarations = block(source, selector);
 		expect(declarations, `${selector} block not found`).not.toBe('');

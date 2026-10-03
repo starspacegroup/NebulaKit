@@ -1,10 +1,20 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import AuthKeysPage from '../../src/routes/admin/auth-keys/+page.svelte';
+import SettingsPage from '../../src/routes/admin/settings/+page.svelte';
 
 // Mock fetch
 const mockFetch = vi.fn();
 (globalThis as any).fetch = mockFetch;
+
+// The settings page also renders the setup summary; the key tests ignore it.
+const setupInfo = {
+	hasOAuthConfig: false,
+	oauthProvider: null,
+	oauthClientId: null,
+	adminId: null,
+	adminUsername: null,
+	resetRouteDisabled: true
+};
 
 // Mock user data
 const mockUser = {
@@ -16,13 +26,13 @@ const mockUser = {
 	isOwner: true
 };
 
-describe('Admin Auth Keys Page', () => {
+describe('Admin Settings Page — auth keys', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it('should render the page title', () => {
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -33,6 +43,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: []
 				}
 			}
@@ -42,7 +53,7 @@ describe('Admin Auth Keys Page', () => {
 	});
 
 	it('should render an empty state when no keys exist', () => {
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -53,6 +64,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: []
 				}
 			}
@@ -67,7 +79,7 @@ describe('Admin Auth Keys Page', () => {
 			{ id: '2', name: 'Google OAuth', provider: 'google', type: 'oauth', createdAt: '2024-01-02' }
 		];
 
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -78,6 +90,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: mockKeys
 				}
 			}
@@ -88,7 +101,7 @@ describe('Admin Auth Keys Page', () => {
 	});
 
 	it('should show add key button', () => {
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -99,6 +112,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: []
 				}
 			}
@@ -108,7 +122,7 @@ describe('Admin Auth Keys Page', () => {
 	});
 
 	it('should open add key form when add button is clicked', async () => {
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -119,6 +133,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: []
 				}
 			}
@@ -132,7 +147,7 @@ describe('Admin Auth Keys Page', () => {
 	});
 
 	it('should validate required fields when adding a key', async () => {
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -143,6 +158,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: []
 				}
 			}
@@ -172,7 +188,7 @@ describe('Admin Auth Keys Page', () => {
 			})
 		});
 
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -183,6 +199,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: []
 				}
 			}
@@ -216,7 +233,7 @@ describe('Admin Auth Keys Page', () => {
 			{ id: '1', name: 'GitHub OAuth', provider: 'github', type: 'oauth', createdAt: '2024-01-01' }
 		];
 
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -227,6 +244,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: mockKeys
 				}
 			}
@@ -249,7 +267,7 @@ describe('Admin Auth Keys Page', () => {
 			{ id: '1', name: 'GitHub OAuth', provider: 'github', type: 'oauth', createdAt: '2024-01-01' }
 		];
 
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -260,6 +278,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: mockKeys
 				}
 			}
@@ -294,7 +313,7 @@ describe('Admin Auth Keys Page', () => {
 			}
 		];
 
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -305,6 +324,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: mockKeys
 				}
 			}
@@ -326,7 +346,7 @@ describe('Admin Auth Keys Page', () => {
 			}
 		];
 
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -337,6 +357,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: mockKeys
 				}
 			}
@@ -350,7 +371,7 @@ describe('Admin Auth Keys Page', () => {
 	});
 
 	it('should include Discord in provider options', async () => {
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -361,6 +382,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: []
 				}
 			}
@@ -388,7 +410,7 @@ describe('Admin Auth Keys Page', () => {
 			}
 		];
 
-		render(AuthKeysPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -399,6 +421,7 @@ describe('Admin Auth Keys Page', () => {
 					hasAIProviders: false,
 					cmsPaletteItems: [],
 					gaMeasurementId: null,
+					setupInfo,
 					keys: mockKeys
 				}
 			}

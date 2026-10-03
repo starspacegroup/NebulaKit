@@ -5,7 +5,7 @@ NebulaKit ships its own analytics rather than a third-party tag. Everything is a
 identifiers, no IP addresses, and therefore nothing to put a consent banner in
 front of.
 
-Live at **`/admin/stats`**, gated on the per-admin `can_view_stats` grant.
+Live on the admin dashboard, **`/admin`**, gated on the per-admin `can_view_stats` grant. Admins without the grant still land on `/admin`, but see no stats. The old `/admin/stats` URL redirects there.
 
 An optional Google Analytics tag can be connected alongside it at
 **`/admin/analytics`** — off unless an owner turns it on. See
@@ -30,7 +30,7 @@ An optional Google Analytics tag can be connected alongside it at
    bun run db:migrate:local     # or db:migrate for remote
    ```
 
-2. **Grant yourself access.** The owner sees Stats automatically. Any other admin
+2. **Grant yourself access.** The owner sees the dashboard stats automatically. Any other admin
    needs `can_view_stats`:
 
    ```sql
@@ -171,10 +171,10 @@ canViewStats             = isOwner || isSuperAdmin || can_view_stats grant
 canManageStatsConnection = isOwner || isSuperAdmin
 ```
 
-`assertCanViewStats()` throws 403 on the route itself as defence in depth — the
-admin layout guard already blocks non-admins, so this only ever _narrows_. The
-sidebar hides the Stats link for admins without the grant, but the route is what
-enforces it.
+The `/admin` page load checks `canViewStats()` itself, as defence in depth — the
+admin layout guard already blocks non-admins, so this only ever _narrows_.
+`/admin` is every admin's landing page, so an admin without the grant gets the
+page without stats data rather than a 403. The query never runs for them.
 
 `can_view_stats` defaults to 0 so existing admins don't silently gain access on
 upgrade. It is refreshed from the database on every request by the auth hook, so
@@ -276,7 +276,7 @@ contrast. Re-validate if you change one.
 | `src/lib/utils/stats-timeseries.ts`         | Gap-filling + SVG chart geometry       |
 | `src/lib/server/stats-guard.ts`             | Access policy                          |
 | `src/lib/components/StatBarChart.svelte`    | The bar chart                          |
-| `src/routes/admin/stats/`                   | The page                               |
+| `src/routes/admin/+page.*`                  | The page (the admin dashboard)         |
 | `src/routes/api/stats/viewport/`            | Viewport beacon                        |
 | `src/lib/utils/analytics.ts`                | GA parsing, exclusions, gtag loader    |
 | `src/lib/server/analytics-config.ts`        | GA connection in KV                    |

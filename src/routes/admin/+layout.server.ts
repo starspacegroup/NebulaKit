@@ -33,10 +33,9 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 		user: locals.user,
 		canRevealPii,
 		piiRevealed,
-		// Drives the Stats nav entry. The route enforces this itself too — this
-		// only keeps a link the admin can't open out of the sidebar.
+		// Whether the Dashboard shows stats. The page load checks this itself too.
 		canViewStats: computeCanViewStats(locals.user),
-		// Same idea for the owner-only Google Analytics connection.
+		// Drives the owner-only Google Analytics nav entry.
 		canManageAnalytics: canManageStatsConnection(locals.user)
 	};
 };

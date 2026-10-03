@@ -8,17 +8,17 @@
 
 	export let data: LayoutData;
 
-	// Stats is gated on the per-admin `can_view_stats` grant, Analytics on owner
-	// (`canManageStatsConnection`). Both routes enforce it as well; hiding the
-	// links just avoids offering a 403.
+	// The Dashboard shows stats only to admins with the `can_view_stats` grant
+	// (it degrades for the rest). Analytics is owner-only
+	// (`canManageStatsConnection`); the route enforces it as well, and hiding the
+	// link just avoids offering a 403.
 	$: navItems = [
 		{ path: '/admin', label: 'Dashboard', icon: 'home' },
-		...(data.canViewStats ? [{ path: '/admin/stats', label: 'Stats', icon: 'chart' }] : []),
+		{ path: '/admin/settings', label: 'Settings', icon: 'settings' },
 		...(data.canManageAnalytics
 			? [{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' }]
 			: []),
 		{ path: '/admin/users', label: 'Users', icon: 'users' },
-		{ path: '/admin/auth-keys', label: 'Auth Keys', icon: 'key' },
 		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
 		{ path: '/admin/cms', label: 'Content', icon: 'document' },
 		{ path: '/admin/contact-form-submissions', label: 'Contact Forms', icon: 'mail' },
@@ -86,7 +86,7 @@
 							<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
 							<path d="M16 3.13a4 4 0 0 1 0 7.75" />
 						</svg>
-					{:else if item.icon === 'key'}
+					{:else if item.icon === 'settings'}
 						<svg
 							class="nav-icon"
 							width="20"
@@ -96,8 +96,9 @@
 							stroke="currentColor"
 							stroke-width="2"
 						>
+							<circle cx="12" cy="12" r="3" />
 							<path
-								d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+								d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
 							/>
 						</svg>
 					{:else if item.icon === 'sparkles'}

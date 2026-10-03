@@ -26,8 +26,8 @@ describe('admin responsive layout contracts', () => {
 		expect(source).toContain('align-items: stretch;');
 	});
 
-	it('adds a dedicated mobile layout fallback for the auth keys page', () => {
-		const source = readSource('src/routes/admin/auth-keys/+page.svelte');
+	it('adds a dedicated mobile layout fallback for the settings page auth keys', () => {
+		const source = readSource('src/routes/admin/settings/+page.svelte');
 
 		expect(source).toContain('@media (max-width: 768px)');
 		expect(source).toContain('.key-header');

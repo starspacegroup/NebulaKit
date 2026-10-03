@@ -180,6 +180,11 @@ bun run deploy`;
 					<ul>
 						<li>Setup-first authentication flow for owner configuration.</li>
 						<li>Login, signup, profile, reset, and admin routes are already scaffolded.</li>
+						<li>
+							<code>/admin</code> opens on the stats dashboard. <code>/admin/settings</code> holds
+							the configuration summary, the <code>/reset</code> route switch, and the OAuth authentication
+							keys.
+						</li>
 						<li>Cloudflare D1 and KV are used for setup state and application data.</li>
 					</ul>
 				</div>
@@ -212,8 +217,8 @@ bun run deploy`;
 					<h3>Analytics and Operations</h3>
 					<ul>
 						<li>
-							First-party, cookie-free analytics at <code>/admin/stats</code> — traffic, audience, and
-							growth, with no third-party script.
+							First-party, cookie-free analytics at <code>/admin</code> — traffic, audience, and growth,
+							with no third-party script.
 						</li>
 						<li>
 							A Cloudflare plan-limit meter that projects whether today's traffic will exhaust your
@@ -531,10 +536,10 @@ bun run db:migrate:list</code
 		<section id="admin-analytics" class="docs-section">
 			<h2>Admin Analytics</h2>
 			<p>
-				<code>/admin/stats</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day
-				window, views by route, the most-read CMS items, referrers, countries, an audience breakdown,
-				and user and content growth over time. It is first-party — there is no third-party script, no
-				account, and no API key to provision.
+				<code>/admin</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day window,
+				views by route, the most-read CMS items, referrers, countries, an audience breakdown, and user
+				and content growth over time. It is first-party — there is no third-party script, no account,
+				and no API key to provision.
 			</p>
 			<p>
 				Everything collected is a daily aggregate counter in D1. There are
@@ -571,8 +576,11 @@ bun run db:migrate:list</code
 				<div class="callout-card">
 					<h3>Granting Access</h3>
 					<p>
-						The owner always sees Stats. Any other admin needs the <code>can_view_stats</code> flag, which
-						defaults to off so existing admins do not gain access on upgrade:
+						The owner always sees the dashboard stats. Any other admin needs the <code
+							>can_view_stats</code
+						>
+						flag, which defaults to off so existing admins do not gain access on upgrade. Without it,
+						an admin still lands on <code>/admin</code> but sees no stats:
 					</p>
 					<pre><code>UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';</code
 						></pre>
