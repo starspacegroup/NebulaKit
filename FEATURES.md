@@ -128,13 +128,20 @@ build/deploy. See [docs/CLOUDFLARE_SETUP.md](./docs/CLOUDFLARE_SETUP.md).
 - Open Graph, Twitter, canonical, and article metadata
 - Pointer, touch, and keyboard dragging built on Pointer Events, with a live-region
   announcement for every move
-- A columned widget board over a registry-driven widget catalogue, and a pure
-  `reorder()` engine usable on its own
+- A UI kit of 27 standard elements in `$lib/ui` — buttons, menus, every form
+  control, alerts, toasts, progress, dialogs, tooltips, tabs, accordion,
+  breadcrumbs, pagination, cards, sortable tables and more — themed with CSS
+  variables and usable by keyboard
+- A live catalog of every element and widget, with code, at `/components`
+- A columned widget board over a registry-driven widget catalogue, six standard
+  widgets (stat, clock, checklist, meter, notes, links), and a pure `reorder()`
+  engine usable on its own
 - A "Proudly built with NebulaKit" footer badge, on by default and removed with
   one `false` in `site.config.ts` — MIT-licensed, so it is a courtesy rather
   than a condition
 
 See [docs/THEME_SYSTEM.md](./docs/THEME_SYSTEM.md),
+[docs/UI_KIT.md](./docs/UI_KIT.md),
 [docs/COMMAND_PALETTE.md](./docs/COMMAND_PALETTE.md), and
 [docs/WIDGET_BOARD.md](./docs/WIDGET_BOARD.md).
 
