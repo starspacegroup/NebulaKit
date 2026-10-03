@@ -398,5 +398,26 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/<Toaster \/>/);
 			expect(section.querySelector('a[href="/components"]')).toBeTruthy();
 		});
+
+		it('lists every group of the kit, including the larger components', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^ui kit$/i })
+				.closest('section') as HTMLElement;
+			for (const name of [
+				'Command',
+				'Combobox',
+				'DatePicker',
+				'Sheet',
+				'Sidebar',
+				'Resizable',
+				'DataTable',
+				'LineChart'
+			]) {
+				expect(section.textContent).toContain(name);
+			}
+			expect(section.textContent).toMatch(/Layout/);
+			expect(section.textContent).toMatch(/MIT-licensed/);
+		});
 	});
 });

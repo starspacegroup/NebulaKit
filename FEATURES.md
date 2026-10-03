@@ -128,10 +128,13 @@ build/deploy. See [docs/CLOUDFLARE_SETUP.md](./docs/CLOUDFLARE_SETUP.md).
 - Open Graph, Twitter, canonical, and article metadata
 - Pointer, touch, and keyboard dragging built on Pointer Events, with a live-region
   announcement for every move
-- A UI kit of 27 standard elements in `$lib/ui` — buttons, menus, every form
-  control, alerts, toasts, progress, dialogs, tooltips, tabs, accordion,
-  breadcrumbs, pagination, cards, sortable tables and more — themed with CSS
-  variables and usable by keyboard
+- A UI kit of 67 standard elements in `$lib/ui` — everything shadcn/ui ships and
+  more: buttons, dropdown and context menus, a command palette, every form
+  control including combobox, calendar, date picker, one-time code, tag input
+  and file drop, dialogs, sheets, popovers, hover cards, tabs, menubar, sidebar,
+  stepper, layout primitives, a full data table, SVG bar, line and donut charts,
+  carousel, timeline and more — themed with CSS variables, usable by keyboard,
+  free and dependency-free
 - A live catalog of every element and widget, with code, at `/components`
 - A columned widget board over a registry-driven widget catalogue, six standard
   widgets (stat, clock, checklist, meter, notes, links), and a pure `reorder()`

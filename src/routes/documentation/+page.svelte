@@ -294,24 +294,42 @@ bun run deploy`;
 				></pre>
 			<ul>
 				<li>
-					<strong>Actions</strong> — Button (four variants, three sizes, link form, loading state) and
-					Menu.
+					<strong>Actions</strong> — Button (four variants, three sizes, link form, loading state),
+					ButtonGroup, Menu, DropdownMenu (checkbox and radio items), Command (a filterable command
+					palette, inline or as a <kbd>Ctrl</kbd>+<kbd>K</kbd> dialog), Toggle and ToggleGroup.
 				</li>
 				<li>
-					<strong>Forms</strong> — TextInput, Textarea, Select, Checkbox, RadioGroup, Switch and Slider,
-					all built on Field, which wires the label, hint and error to the control.
+					<strong>Forms</strong> — TextInput, Textarea, Select, Checkbox, RadioGroup, Switch,
+					Slider, Combobox, Calendar, DatePicker, InputOTP, InputGroup, NumberInput, TagInput and
+					FileDrop, all wired the way Field wires them: a real label, the hint and error in
+					<code>aria-describedby</code>.
 				</li>
 				<li>
 					<strong>Feedback</strong> — Alert, toasts, Badge, Progress, Spinner and Skeleton.
 				</li>
 				<li>
-					<strong>Overlays</strong> — Dialog (native <code>&lt;dialog&gt;</code>) and Tooltip.
+					<strong>Overlays</strong> — Dialog and AlertDialog (native <code>&lt;dialog&gt;</code>),
+					Sheet (from any side, so also a drawer), Popover, HoverCard, Tooltip and ContextMenu.
 				</li>
-				<li><strong>Navigation</strong> — Tabs, Accordion, Breadcrumbs and Pagination.</li>
 				<li>
-					<strong>Data display</strong> — Card, Table (sortable), Avatar, Kbd and EmptyState.
+					<strong>Navigation</strong> — Tabs, Accordion, Breadcrumbs, Pagination, Menubar, NavigationMenu,
+					Sidebar and Stepper.
+				</li>
+				<li>
+					<strong>Layout</strong> — Container, Stack, Separator, AspectRatio, ScrollArea, Resizable and
+					Collapsible.
+				</li>
+				<li>
+					<strong>Data display</strong> — Card, Item, Table, DataTable (search, sort, paging, selection),
+					BarChart, LineChart and DonutChart (plain SVG, each with a hidden data table for screen readers),
+					Stat, Carousel, Timeline, Avatar, AvatarGroup, Kbd, CodeBlock, Prose and EmptyState.
 				</li>
 			</ul>
+			<p>
+				That is every element shadcn/ui ships, and more. None of it needs a dependency beyond
+				Svelte, and none of it is a paid add-on: the kit is MIT-licensed with the rest of the
+				project.
+			</p>
 			<p>
 				Toasts need one <code>{'<Toaster />'}</code>, which the root layout already renders. Raise
 				one from anywhere with <code>toast.success('Saved')</code>; pass <code>0</code> as the duration

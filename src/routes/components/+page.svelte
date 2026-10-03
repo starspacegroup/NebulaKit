@@ -13,6 +13,7 @@
 	import DataDisplay from './groups/DataDisplay.svelte';
 	import Feedback from './groups/Feedback.svelte';
 	import Forms from './groups/Forms.svelte';
+	import Layout from './groups/Layout.svelte';
 	import Navigation from './groups/Navigation.svelte';
 	import Overlays from './groups/Overlays.svelte';
 	import Widgets from './groups/Widgets.svelte';
@@ -24,6 +25,7 @@
 		Feedback,
 		Overlays,
 		Navigation,
+		Layout,
 		'Data display': DataDisplay,
 		Widgets
 	};
@@ -34,7 +36,7 @@
 
 <SharingMeta
 	title="Components"
-	description={`Every standard element and widget in ${site.name}, running: forms, buttons, dialogs, tabs, tables, toasts and dashboard widgets, with the code for each.`}
+	description={`Every standard element and widget in ${site.name}, running and free: forms, date pickers, a command palette, dialogs, sheets, data tables, charts, layout and dashboard widgets, with the code for each.`}
 	url={`${site.url}/components`}
 />
 
@@ -47,6 +49,10 @@
 			{inGroup('Widgets').length} widgets, all themed with CSS variables, all usable by keyboard, all
 			in light and dark. Import from <code>$lib/ui</code>; register widgets in
 			<code>$lib/widgets</code>.
+		</p>
+		<p class="lede lede--free">
+			Every one of them is free. No pro tier, no paid blocks, no dependency beyond Svelte: the whole
+			kit ships MIT-licensed with {site.name}.
 		</p>
 		<nav aria-label="Catalog sections" class="catalog__nav">
 			{#each CATALOG_GROUPS as group (group)}
@@ -109,10 +115,16 @@
 	}
 
 	.lede {
-		margin: 0 0 var(--spacing-lg);
+		margin: 0 0 var(--spacing-md);
 		color: var(--color-text-secondary);
 		font-size: 1.125rem;
 		line-height: 1.6;
+	}
+
+	.lede--free {
+		margin-bottom: var(--spacing-lg);
+		color: var(--color-text);
+		font-weight: 600;
 	}
 
 	.catalog__nav {
