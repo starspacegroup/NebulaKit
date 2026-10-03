@@ -7,8 +7,17 @@
  * behind the kit.
  */
 
-export type CatalogGroup =
-	'Actions' | 'Forms' | 'Feedback' | 'Overlays' | 'Navigation' | 'Data display' | 'Widgets';
+export const CATALOG_GROUPS = [
+	'Actions',
+	'Forms',
+	'Feedback',
+	'Overlays',
+	'Navigation',
+	'Data display',
+	'Widgets'
+] as const;
+
+export type CatalogGroup = (typeof CATALOG_GROUPS)[number];
 
 export interface CatalogEntry {
 	/** Anchor id on the page, and the key the demo is looked up by. */
@@ -19,16 +28,6 @@ export interface CatalogEntry {
 	summary: string;
 	code: string;
 }
-
-export const CATALOG_GROUPS: CatalogGroup[] = [
-	'Actions',
-	'Forms',
-	'Feedback',
-	'Overlays',
-	'Navigation',
-	'Data display',
-	'Widgets'
-];
 
 const ui = (names: string) => `import { ${names} } from '$lib/ui';\n\n`;
 

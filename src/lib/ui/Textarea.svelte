@@ -12,6 +12,20 @@
 	export let disabled = false;
 	export let maxlength: number | undefined = undefined;
 	export let id: string | undefined = undefined;
+
+	// Reactive, so a change to any prop re-spreads. One spread keeps the tag on one
+	// line, which both Prettier versions in use
+	// format the same way; the kit is shared byte for byte with the site.
+	$: attrs = (describedBy: string | undefined, invalid: boolean) => ({
+		rows,
+		placeholder,
+		required,
+		disabled,
+		maxlength,
+		'aria-describedby': describedBy,
+		'aria-invalid': invalid || undefined,
+		...$$restProps
+	});
 </script>
 
 <Field
@@ -24,19 +38,7 @@
 	let:describedBy
 	let:invalid
 >
-	<textarea
-		id={fieldId}
-		bind:value
-		{rows}
-		{placeholder}
-		{required}
-		{disabled}
-		{maxlength}
-		aria-describedby={describedBy}
-		aria-invalid={invalid || undefined}
-		on:input
-		on:change
-		{...$$restProps}></textarea>
+	<textarea id={fieldId} bind:value {...attrs(describedBy, invalid)} on:input on:change></textarea>
 	{#if maxlength}
 		<p class="count" aria-live="polite">{value.length} / {maxlength}</p>
 	{/if}
