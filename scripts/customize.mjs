@@ -319,6 +319,7 @@ console.log('\nStill needs a human/agent (see CUSTOMIZE.md → "Semantic steps")
 console.log("  • wrangler.toml still has the TEMPLATE's Cloudflare resource IDs —");
 console.log('    run `wrangler d1/kv/r2 create` and paste your own database_id / ids.');
 console.log('  • Rewrite src/routes/documentation/+page.svelte to describe YOUR app.');
+console.log('  • Make the home hero yours — words, motif, rules — per docs/HERO.md.');
 console.log('  • Curate the command palette — run `bun run palette:scan` for suggestions.');
 console.log('  • Replace brand assets (og-image, favicons, icon set) per CUSTOMIZE.md.');
 console.log('  • Set INITIAL_CUSTOMIZATION_STATUS.md → status: complete when finished.');

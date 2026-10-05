@@ -110,6 +110,7 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | Command palette + per-item visibility                  | `COMMAND_PALETTE.md`                                        |
 | `/documentation` route (kept in sync per AGENTS.md §7) | `DOCUMENTATION_PAGE.md`                                     |
 | GitHub OAuth pair                                      | `GITHUB_AUTH.md`                                            |
+| Home page hero, and replacing it downstream            | `HERO.md`                                                   |
 | Local dev, `.dev.vars`                                 | `LOCAL_SETUP.md`                                            |
 | Payments / purchasing-power pricing                    | `PAYMENTS_AND_PPP.md`                                       |
 | TDD expectations behind the coverage gate              | `TDD_WORKFLOW.md`                                           |

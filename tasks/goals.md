@@ -1,5 +1,14 @@
 # Goals
 
+## New sites get a hero made for them
+
+status: in-progress
+
+- Every site created from the template should leave the NebulaKit space hero behind and have one that fits its own product, by following an easy guide during customization.
+- Done 2026-10-05: [docs/HERO.md](../docs/HERO.md) — words first, a motif from the product, what to keep and replace, the performance and theme rules, an optional live-field pattern, tests. Wired into the set path as Step 3b of `CUSTOMIZE.md`, the `INITIAL_CUSTOMIZATION.md` checklist, the definition of done, and a `hero_replaced` flag in `INITIAL_CUSTOMIZATION_STATUS.md`.
+- `bun run customize` now lists the hero among the steps still needing a human or agent.
+- Still open: nothing checks it. A downstream site can mark `status: complete` with the template hero still in place. Candidate: a test (like `product-identity.test.ts`) that fails once `site.slug` is not `nebulakit` while `.cosmic-bg` remains in `src/routes/+page.svelte`.
+
 ## Complete the NebulaKit quality and security pass
 
 status: blocked

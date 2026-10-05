@@ -3,6 +3,7 @@ status: pending
 app_name: NebulaKit
 branding_updated: false
 share_assets_updated: false
+hero_replaced: false
 template_documentation_removed: false
 credential_fields_unique: false
 last_updated: 2026-04-11
@@ -18,6 +19,7 @@ This file is the shared source of truth for humans and AI assistants.
 - App name: NebulaKit
 - Branding updated: no
 - Share assets updated: no
+- Hero replaced: no
 - Template documentation removed or replaced: no
 - Credential fields unique: no
 
