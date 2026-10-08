@@ -336,6 +336,19 @@ export async function listContentItems(
 		params.push(searchTerm, searchTerm);
 	}
 
+	// ?tag=<slug> on the public listing. Tags are scoped per content type, so the
+	// slug is matched within this item's type; a slug no tag has returns nothing.
+	if (filters.tagSlug) {
+		conditions.push(
+			`EXISTS (SELECT 1 FROM content_item_tags it
+			 JOIN content_tags t ON t.id = it.content_tag_id
+			 WHERE it.content_item_id = content_items.id
+			   AND t.content_type_id = content_items.content_type_id
+			   AND t.slug = ?)`
+		);
+		params.push(filters.tagSlug);
+	}
+
 	const whereClause = conditions.join(' AND ');
 
 	// Get total count
