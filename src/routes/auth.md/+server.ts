@@ -80,8 +80,15 @@ tools running on the page — see below). There is no headless credential flow.
 
 ## Bearer tokens
 
-Not supported. No endpoint on this site accepts an \`Authorization: Bearer\`
-header. Sending one has no effect.
+Not offered to agents. There is no endpoint that issues one. Two operator-held
+secrets travel as \`Authorization: Bearer\` headers, and both are set or issued
+by the site owner out of band, never through an API an agent can call:
+
+- \`CRON_SECRET\`, which only \`POST ${origin}/api/cron/prune-view-stats\` accepts.
+- The stats token, which only \`GET ${origin}/api/stats/summary\` accepts and
+  which the owner issues on the admin analytics page for their own dashboard.
+
+Every other endpoint ignores the header.
 
 ## In-browser tools (WebMCP)
 

@@ -111,6 +111,24 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/OAuth authentication\s+keys/i)).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — the stats token and /api/stats/summary are a user-visible
+	// admin and integration surface, so the documentation has to say how an
+	// external dashboard gets in and that the token is shown once.
+	it('documents the stats token and the summary endpoint', () => {
+		render(Page);
+
+		const scoped = within(
+			screen.getByRole('heading', { name: /Admin Analytics/i }).closest('section') as HTMLElement
+		);
+
+		expect(
+			scoped.getByRole('heading', { name: /Reading Stats From a Dashboard/i })
+		).toBeInTheDocument();
+		expect(scoped.getAllByText(/\/api\/stats\/summary/).length).toBeGreaterThan(0);
+		expect(scoped.getByText(/it is shown once, and only its hash is stored/i)).toBeInTheDocument();
+		expect(scoped.getByText(/never issued one answers 401/i)).toBeInTheDocument();
+	});
+
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
 	// documentation has to describe it and keep describing it.
 	it('documents the optional Google Analytics connection', () => {

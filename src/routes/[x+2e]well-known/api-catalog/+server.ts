@@ -98,6 +98,14 @@ export const GET: RequestHandler = ({ url }) => {
 			'service-doc': [docs],
 			describedby: [auth],
 			status: [status]
+		},
+		{
+			// Read-only stats summary for an external dashboard. Bearer-authenticated
+			// with the owner-issued stats token (/auth.md says where it comes from).
+			anchor: abs('/api/stats/summary'),
+			'service-doc': [docs],
+			describedby: [auth],
+			status: [status]
 		}
 	];
 

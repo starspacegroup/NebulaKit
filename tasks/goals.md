@@ -1,5 +1,13 @@
 # Goals
 
+## Stats readable by the StarSpace Dashboard
+
+status: done 2026-10-10
+
+- A site built from the template can hand its owner's dashboard a read-only view of the admin stats: the owner issues a stats token on `/admin/analytics`, the dashboard reads `GET /api/stats/summary` with it as a bearer token, and gets the same object `/admin` renders.
+- The assembly moved out of the admin page load into `src/lib/server/stats-summary.ts` so both readers share it. The token lives hashed in KV (`stats_api_token`), is shown once at issue, and is owner-only to issue, rotate or revoke. `/auth.md` and the API catalog say so.
+- The consumer is the NebulaKit widget in the StarSpace Dashboard (`~/_Projects/StarSpace/Dashboard`). `nebulakit-site` is a diverged copy of this template and needs the same server pieces ported before its stats show up there.
+
 ## New sites get a hero made for them
 
 status: in-progress

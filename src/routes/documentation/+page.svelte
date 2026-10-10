@@ -633,6 +633,24 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Reading Stats From a Dashboard</h3>
+					<p>
+						An external dashboard can read the same numbers as JSON. The owner issues a
+						<strong>stats token</strong> under "Dashboard access" on
+						<code>/admin/analytics</code>; it is shown once, and only its hash is stored. The
+						dashboard then sends it as a bearer token:
+					</p>
+					<pre><code
+							>curl https://your-app/api/stats/summary?window=7 \
+  -H "Authorization: Bearer nks_…"</code
+						></pre>
+					<p>
+						The response is read-only and aggregate-only — exactly what <code>/admin</code> shows. Rotate
+						replaces the token; Revoke cuts the dashboard off on its next read. A site that has never
+						issued one answers 401 to every request.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>Connecting Google Analytics</h3>
 					<p>
 						Optional, and off until you turn it on. The owner opens

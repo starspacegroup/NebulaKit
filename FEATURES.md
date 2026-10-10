@@ -74,8 +74,9 @@ NebulaKit stores bounded aggregate counters in D1:
 - Cloudflare request-plan projections
 
 The implementation does not store raw IP addresses or raw User-Agent strings and does not require a
-third-party analytics script. Operators need `can_view_stats`. See
-[docs/ADMIN_STATS.md](./docs/ADMIN_STATS.md).
+third-party analytics script. Operators need `can_view_stats`. The owner can issue a stats token on
+`/admin/analytics` so an external dashboard reads the same numbers as JSON from
+`/api/stats/summary`. See [docs/ADMIN_STATS.md](./docs/ADMIN_STATS.md).
 
 ## Optional Google Analytics connection
 
