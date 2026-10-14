@@ -78,7 +78,7 @@
 <style>
 	.catalog {
 		width: 100%;
-		max-width: 80rem;
+		max-width: var(--layout-page-max-width);
 		margin: 0 auto;
 		padding: var(--spacing-2xl) var(--spacing-md);
 		box-sizing: border-box;
