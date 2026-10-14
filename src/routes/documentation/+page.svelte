@@ -70,6 +70,7 @@ bun run deploy`;
 			<a href="#feature-overview">Feature Overview</a>
 			<a href="#how-to-use">How To Use</a>
 			<a href="#ui-kit">UI Kit</a>
+			<a href="#modules">Modules</a>
 			<a href="#drag-and-drop">Drag and Drop</a>
 			<a href="#ai-workflow">AI Workflow</a>
 			<a href="#commands">Commands</a>
@@ -339,6 +340,46 @@ bun run deploy`;
 				The catalog is checked: a test fails when a component is added to <code>src/lib/ui</code>,
 				or a widget is registered, without an entry in <code>src/lib/ui/catalog.ts</code>. Full
 				reference: <code>docs/UI_KIT.md</code>.
+			</p>
+		</section>
+
+		<section id="modules" class="docs-section">
+			<h2>Modules</h2>
+			<p>
+				Where the UI kit gives you elements, modules give you the blocks every app ends up building.
+				They live in <code>src/lib/modules</code>, are built from <code>$lib/ui</code>, and are
+				shown running, with the accessibility behaviour each one keeps, at
+				<a href="/modules">/modules</a>.
+			</p>
+			<pre><code
+					>{`import { SignInForm, PricingTable, DataGrid, KanbanBoard } from '$lib/modules';`}</code
+				></pre>
+			<ul>
+				<li>
+					<strong>Account</strong> &mdash; sign-in, sign-up, password reset, profile, sessions, two-factor.
+				</li>
+				<li>
+					<strong>Settings</strong> &mdash; appearance, notifications, API keys, webhooks, cookie consent,
+					privacy.
+				</li>
+				<li>
+					<strong>Marketing</strong> &mdash; hero, pricing, comparison, FAQ, testimonials, footer, contact.
+				</li>
+				<li>
+					<strong>App shell</strong> &mdash; app shell, notification center, global search, wizard, error
+					states.
+				</li>
+				<li>
+					<strong>Data &amp; teams</strong> &mdash; data grid, kanban, comments, files, calendar, tree,
+					audit log.
+				</li>
+				<li>
+					<strong>Commerce</strong> &mdash; billing, invoices, checkout, cart, reviews, status page, changelog.
+				</li>
+			</ul>
+			<p>
+				Each module takes its data and copy as props, emits events, and never fetches. All are
+				mobile first from 320px, use CSS variables only, and work by keyboard and screen reader.
 			</p>
 		</section>
 

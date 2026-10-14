@@ -405,6 +405,28 @@ describe('Documentation Page', () => {
 		});
 	});
 
+	describe('Modules section', () => {
+		it('documents the import, every group, and the live gallery', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^modules$/i })
+				.closest('section') as HTMLElement;
+			expect(section.id).toBe('modules');
+			expect(section.textContent).toMatch(/\$lib\/modules/);
+			expect(section.querySelector('a[href="/modules"]')).toBeTruthy();
+			for (const group of [
+				'Account',
+				'Settings',
+				'Marketing',
+				'App shell',
+				'Data & teams',
+				'Commerce'
+			]) {
+				expect(section.textContent).toContain(group);
+			}
+		});
+	});
+
 	describe('UI kit section', () => {
 		it('documents the import, the toaster, and the live catalog', () => {
 			render(Page);
