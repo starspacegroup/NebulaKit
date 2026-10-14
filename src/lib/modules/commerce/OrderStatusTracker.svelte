@@ -218,4 +218,9 @@
 			color: HighlightText;
 		}
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	time {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

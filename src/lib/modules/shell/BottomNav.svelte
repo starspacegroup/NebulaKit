@@ -9,7 +9,7 @@
 	it the bar sticks to the bottom of its container.
 -->
 <script lang="ts">
-	import { formatCountBadge, isNavCurrent, navItemName } from './logic';
+	import { formatCountBadge, isNavCurrent } from './logic';
 
 	export let items: {
 		id: string;
@@ -49,12 +49,13 @@
 					class="item"
 					class:item--current={isCurrent}
 					aria-current={isCurrent ? 'page' : undefined}
-					aria-label={text ? navItemName(item.label, text, badgeWord) : undefined}
 				>
 					<span class="item__icon" aria-hidden="true"
 						>{item.icon}{#if text}<span class="item__badge">{text}</span>{/if}</span
 					>
-					<span class="item__label">{item.label}</span>
+					<span class="item__label">{item.label}</span>{#if text}<span class="sr-only"
+							>{text}{badgeWord ? ` ${badgeWord}` : ''}</span
+						>{/if}
 				</a>
 			</li>
 		{/each}
@@ -154,5 +155,10 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.item__badge {
+		font-variant-numeric: tabular-nums;
 	}
 </style>

@@ -250,10 +250,10 @@
 								class:cal__day--selected={day.key === selected}
 								data-day={day.key}
 								tabindex={day.key === focused ? 0 : -1}
-								aria-label={dayCellLabel(day.key, list.length, locale)}
 								aria-current={day.key === today ? 'date' : undefined}
 								on:click={() => pick(day.key)}
 							>
+								<span class="sr-only">{dayCellLabel(day.key, list.length, locale)}</span>
 								<span class="cal__num" aria-hidden="true">{day.day}</span>
 								{#if list.length > 0}
 									<span class="cal__chips" aria-hidden="true">

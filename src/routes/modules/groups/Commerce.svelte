@@ -343,7 +343,7 @@
 	});
 </script>
 
-<ModuleItem id="billing-overview">
+<ModuleItem id="billing-overview" wide>
 	<BillingOverview
 		plan={{ name: 'Pro', priceCents: 2900, interval: 'month' }}
 		renewsAt="2026-11-01T00:00:00Z"
@@ -358,10 +358,10 @@
 </ModuleItem>
 
 <ModuleItem id="usage-meters">
-	<UsageMeters {meters} resetsAt="2026-11-01T00:00:00Z" {now} />
+	<UsageMeters {meters} heading="Plan usage" resetsAt="2026-11-01T00:00:00Z" {now} />
 </ModuleItem>
 
-<ModuleItem id="invoice-list">
+<ModuleItem id="invoice-list" wide>
 	<InvoiceList
 		{invoices}
 		pageSize={4}
@@ -455,7 +455,7 @@
 	<ProductGallery images={galleryImages} bind:index={galleryIndex} />
 </ModuleItem>
 
-<ModuleItem id="reviews-ratings">
+<ModuleItem id="reviews-ratings" wide>
 	<ReviewsRatings
 		{reviews}
 		canWrite
@@ -509,7 +509,7 @@
 	<p>Use an address starting with "fail" to see the error state.</p>
 </ModuleItem>
 
-<ModuleItem id="coupon-banner">
+<ModuleItem id="coupon-banner" wide>
 	<div class="stack">
 		{#if liveEnds}
 			<CouponBanner message="Flash sale: 20% off today" code="FLASH20" endsAt={liveEnds} />

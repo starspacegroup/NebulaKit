@@ -79,7 +79,11 @@
 			<div class="stat">
 				<dt class="stat__label">{stat.label}</dt>
 				<dd class="stat__value">
-					<span aria-hidden={animating ? 'true' : undefined}>{shown(stat, animating, elapsed)}</span
+					<!-- The finished figure holds the width, so counting up never nudges the row. -->
+					<span class="stat__sizer" aria-hidden="true" data-final={shown(stat, false, elapsed)}
+					></span>
+					<span class="stat__now" aria-hidden={animating ? 'true' : undefined}
+						>{shown(stat, animating, elapsed)}</span
 					>
 					{#if animating}<span class="sr-only">{shown(stat, false, elapsed)}</span>{/if}
 				</dd>
@@ -111,11 +115,26 @@
 	}
 
 	.stat__value {
+		display: grid;
 		margin: 0;
 		font-size: clamp(1.75rem, 6vw, 2.75rem);
 		font-variant-numeric: tabular-nums;
 		font-weight: 800;
 		line-height: 1.1;
+	}
+
+	.stat__sizer,
+	.stat__now {
+		grid-area: 1 / 1;
+		text-align: center;
+	}
+
+	.stat__sizer {
+		visibility: hidden;
+	}
+
+	.stat__sizer::before {
+		content: attr(data-final);
 	}
 
 	.stat__label {

@@ -3,11 +3,22 @@
 	import { moduleEntry } from '$lib/modules/catalog';
 
 	export let id: string;
+	/** Takes a whole row on desktop; the rest sit two or three to a row. */
+	export let wide = false;
 
 	$: entry = moduleEntry(id);
+
+	// A code block that scrolls sideways must take the keyboard to be reachable. Spread, because
+	// the compiler's lint would flag a literal tabindex on a non-interactive element.
+	const scrollable = { tabindex: 0 };
 </script>
 
-<article class="item" id={entry.id} aria-labelledby="{entry.id}-name">
+<article
+	class="item"
+	class:module-item--wide={wide}
+	id={entry.id}
+	aria-labelledby="{entry.id}-name"
+>
 	<header>
 		<h3 id="{entry.id}-name"><a href="#{entry.id}">{entry.name}</a></h3>
 		<p>{entry.summary}</p>
@@ -16,7 +27,8 @@
 	<p class="a11y"><strong>Accessibility.</strong> {entry.a11y}</p>
 	<details>
 		<summary>Code</summary>
-		<pre><code>{entry.code}</code></pre>
+		<pre role="region" aria-label="{entry.name} code" {...scrollable}><code>{entry.code}</code
+			></pre>
 	</details>
 </article>
 
@@ -39,6 +51,8 @@
 	}
 
 	h3 a {
+		display: inline-block;
+		min-height: 1.5rem;
 		color: var(--color-text);
 		text-decoration: none;
 	}

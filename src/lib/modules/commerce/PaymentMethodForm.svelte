@@ -365,8 +365,8 @@
 	}
 
 	.pmf__default input {
-		width: 1.25rem;
-		height: 1.25rem;
+		width: 1.5rem;
+		height: 1.5rem;
 		accent-color: var(--color-primary-solid);
 	}
 

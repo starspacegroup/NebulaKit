@@ -37,7 +37,7 @@
 	export let copy: Partial<typeof DEFAULT_COPY> = {};
 
 	const DEFAULT_COPY = {
-		title: 'Notifications',
+		title: 'Notification preferences',
 		caption: 'Choose how you hear about each event',
 		everything: 'Select every notification',
 		all: 'All',
@@ -335,8 +335,8 @@
 	}
 
 	.notify__check input {
-		inline-size: 1.25rem;
-		block-size: 1.25rem;
+		inline-size: 1.5rem;
+		block-size: 1.5rem;
 		margin: 0;
 		accent-color: var(--color-primary-solid);
 		cursor: pointer;
@@ -393,5 +393,10 @@
 		background: var(--color-background);
 		color: var(--color-text);
 		font: inherit;
+	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.quiet__times {
+		font-variant-numeric: tabular-nums;
 	}
 </style>

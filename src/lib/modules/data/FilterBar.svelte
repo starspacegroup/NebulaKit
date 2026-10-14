@@ -290,4 +290,9 @@
 		color: var(--color-text-secondary);
 		font-size: 0.875rem;
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.filterbar__count {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

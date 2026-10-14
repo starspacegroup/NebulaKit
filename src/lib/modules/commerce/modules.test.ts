@@ -742,7 +742,7 @@ describe('ProductCard', () => {
 
 	it('adds to cart and confirms', async () => {
 		const { onEvent } = mount('product', { product });
-		await fireEvent.click(screen.getByRole('button', { name: 'Add Mug to cart' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Add to cart, Mug' }));
 		expect(onEvent).toHaveBeenCalledWith('add', { id: 'p1' });
 		expect(screen.getByText('Mug added to cart.')).toBeInTheDocument();
 	});
@@ -765,7 +765,7 @@ describe('ProductCard', () => {
 		expect(screen.queryByRole('link')).toBeNull();
 		expect(screen.queryByText(/out of 5/)).toBeNull();
 		expect(screen.queryByText('Sale price:')).toBeNull();
-		expect(screen.getByRole('button', { name: 'Add Pin to cart' })).toHaveAttribute(
+		expect(screen.getByRole('button', { name: 'Add to cart, Pin' })).toHaveAttribute(
 			'aria-busy',
 			'true'
 		);

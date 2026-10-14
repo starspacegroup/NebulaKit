@@ -729,8 +729,8 @@
 
 	.grid__check input,
 	.grid__cardall input {
-		width: 1.125rem;
-		height: 1.125rem;
+		width: 1.5rem;
+		height: 1.5rem;
 		accent-color: var(--color-primary-solid);
 	}
 
@@ -839,5 +839,11 @@
 		text-align: start;
 		font-weight: 700;
 		padding: var(--spacing-sm) var(--spacing-md);
+	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.grid__count,
+	.grid__size {
+		font-variant-numeric: tabular-nums;
 	}
 </style>

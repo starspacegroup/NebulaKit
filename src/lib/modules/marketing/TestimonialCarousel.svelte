@@ -95,7 +95,7 @@
 >
 	<div id={slidesId} class="slides" aria-live={rotating ? 'off' : 'polite'} aria-atomic="false">
 		{#each items as item, i (i)}
-			<figure
+			<div
 				class="slide"
 				role="group"
 				aria-roledescription="slide"
@@ -105,14 +105,14 @@
 				<blockquote class="slide__quote">
 					<p>{item.quote}</p>
 				</blockquote>
-				<figcaption class="slide__who">
+				<div class="slide__who">
 					<Avatar name={item.name} src={item.avatar} />
 					<span>
 						<strong>{item.name}</strong>
 						{#if item.role}<span class="slide__role">{item.role}</span>{/if}
 					</span>
-				</figcaption>
-			</figure>
+				</div>
+			</div>
 		{/each}
 	</div>
 
@@ -162,12 +162,21 @@
 		background: var(--color-surface);
 	}
 
+	.slides {
+		display: grid;
+	}
+
 	.slide {
+		grid-area: 1 / 1;
 		margin: 0;
 	}
 
+	/* Every slide shares one cell, so the box is as tall as the tallest quote and
+	   changing slides never moves what is below. A hidden slide is invisible to
+	   everyone, including screen readers and the tab key. */
 	.slide[hidden] {
-		display: none;
+		display: block;
+		visibility: hidden;
 	}
 
 	.slide__quote {

@@ -38,7 +38,9 @@
 	const dispatch = createEventDispatcher<{ action: { id: string; pressed?: boolean } }>();
 	const id = uid('toolbar');
 	const GAP = 4;
-	const RESERVE = 48;
+	// The More button, "⋯ More" with its padding, and the bar's own padding and border.
+	const RESERVE = 76;
+	const FRAME = 10;
 
 	let bar: HTMLElement;
 	let barWidth = 0;
@@ -58,7 +60,7 @@
 		horizontal && measuredFor === signature
 			? fitToolbarCount(
 					flat.map((i) => widths[i.id] ?? 0),
-					barWidth,
+					barWidth - FRAME,
 					RESERVE,
 					GAP
 				)

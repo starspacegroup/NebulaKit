@@ -552,7 +552,7 @@
 	];
 </script>
 
-<ModuleItem id="data-grid">
+<ModuleItem id="data-grid" wide>
 	<div class="stack">
 		<div class="row">
 			<button type="button" on:click={() => simulate('loading')}>Simulate loading</button>
@@ -588,7 +588,7 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="filter-bar">
+<ModuleItem id="filter-bar" wide>
 	<div class="stack">
 		<FilterBar defs={orderDefs} bind:active={activeFilters} count={matchingOrders.length} />
 		<ul class="plain">
@@ -599,7 +599,7 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="kanban-board">
+<ModuleItem id="kanban-board" wide>
 	<KanbanBoard
 		label="Sprint board"
 		columns={boardColumns}
@@ -623,11 +623,11 @@
 	<CommentThread bind:comments currentUser={me} now={NOW} maxLength={280} />
 </ModuleItem>
 
-<ModuleItem id="team-members">
+<ModuleItem id="team-members" wide>
 	<TeamMembers bind:members bind:invites currentUserId="u1" now={NOW} />
 </ModuleItem>
 
-<ModuleItem id="file-manager">
+<ModuleItem id="file-manager" wide>
 	<FileManager
 		label="Project files"
 		bind:entries
@@ -638,7 +638,7 @@
 	/>
 </ModuleItem>
 
-<ModuleItem id="calendar-schedule">
+<ModuleItem id="calendar-schedule" wide>
 	<CalendarSchedule label="Team calendar" bind:events={calendarEvents} now={NOW} weekStart={1} />
 </ModuleItem>
 
@@ -654,7 +654,7 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="audit-log">
+<ModuleItem id="audit-log" wide>
 	<AuditLog label="Security events" events={auditEvents} pageSize={6} />
 </ModuleItem>
 

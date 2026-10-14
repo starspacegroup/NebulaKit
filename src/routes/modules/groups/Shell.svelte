@@ -260,7 +260,7 @@
 </script>
 
 <div class="groups">
-	<ModuleItem id="app-shell">
+	<ModuleItem id="app-shell" wide>
 		<div class="row" role="group" aria-label="Preview width">
 			<Button
 				size="sm"
@@ -276,7 +276,12 @@
 			>
 		</div>
 		<div class="box" class:box--phone={shellWidth === 'phone'}>
-			<AppShell bind:collapsed={shellCollapsed} height="22rem" navLabel="Demo navigation">
+			<AppShell
+				bind:collapsed={shellCollapsed}
+				height="22rem"
+				navLabel="Demo navigation"
+				landmark={false}
+			>
 				<strong slot="brand">Acme</strong>
 				<UserMenu slot="header" {user} items={[]} />
 				<ul slot="nav" class="shell-nav">
@@ -301,7 +306,7 @@
 		</div>
 	</ModuleItem>
 
-	<ModuleItem id="page-header">
+	<ModuleItem id="page-header" wide>
 		<PageHeader
 			title="Projects"
 			level={3}
@@ -491,13 +496,8 @@
 		<p class="log" role="status">{confirmResult}</p>
 	</ModuleItem>
 
-	<ModuleItem id="tabs-page-nav">
-		<TabsPageNav
-			items={tabItems}
-			current={tabsCurrent}
-			label="Settings sections"
-			badgeWord="alerts"
-		/>
+	<ModuleItem id="tabs-page-nav" wide>
+		<TabsPageNav items={tabItems} current={tabsCurrent} label="Account pages" badgeWord="alerts" />
 		<div class="row">
 			<Button size="sm" variant="secondary" on:click={() => (tabsCurrent = '/settings/general')}
 				>Go to General</Button
@@ -508,7 +508,7 @@
 		</div>
 	</ModuleItem>
 
-	<ModuleItem id="action-toolbar">
+	<ModuleItem id="action-toolbar" wide>
 		<Toolbar
 			bind:groups={toolbarGroups}
 			label="Editor toolbar"
@@ -518,7 +518,7 @@
 		<p class="log" role="status">{toolbarLog}</p>
 	</ModuleItem>
 
-	<ModuleItem id="bottom-nav">
+	<ModuleItem id="bottom-nav" wide>
 		<Alert tone="info"
 			>On a phone this sits at the bottom of the screen and hides on wider ones. It is kept visible
 			here so you can see it.</Alert

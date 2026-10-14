@@ -118,6 +118,11 @@
 		line-height: 1.6;
 	}
 
+	.lede a {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
 	.lede--free {
 		margin-bottom: var(--spacing-lg);
 		color: var(--color-text);
@@ -169,11 +174,28 @@
 		font-size: 1.5rem;
 	}
 
-	/* Modules are wide by nature: one per row, each free to use the full width. */
+	/* One per row on a phone. */
 	.list {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--spacing-xl);
+	}
+
+	/* Wide modules keep a whole row; the compact ones sit two, then three, to a row. */
+	@media (min-width: 64rem) {
+		.list {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.list :global(.module-item--wide) {
+			grid-column: 1 / -1;
+		}
+	}
+
+	@media (min-width: 100rem) {
+		.list {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
 	}
 
 	.list :global(.stack) {

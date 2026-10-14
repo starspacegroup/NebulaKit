@@ -27,8 +27,8 @@
 	}
 
 	.check input {
-		width: 1.125rem;
-		height: 1.125rem;
+		width: 1.5rem;
+		height: 1.5rem;
 		margin: 0.15rem 0 0;
 		padding: 0;
 		accent-color: var(--color-primary-solid);

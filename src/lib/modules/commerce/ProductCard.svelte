@@ -32,7 +32,7 @@
 
 	const defaults = {
 		add: 'Add to cart',
-		addFor: 'Add {name} to cart',
+		addFor: 'Add to cart, {name}',
 		soldOut: 'Sold out',
 		sale: 'Sale',
 		salePrice: 'Sale price',

@@ -475,7 +475,7 @@ describe('StatsStrip', () => {
 			props: { stats: [stats[0]], reducedMotion: false, duration: 1000 }
 		});
 		await tick();
-		const value = () => container.querySelector('dd span[aria-hidden]')?.textContent;
+		const value = () => container.querySelector('dd .stat__now[aria-hidden]')?.textContent;
 		expect(value()).toBe('0+');
 		expect(container.querySelector('dd .sr-only')?.textContent).toBe('12,000+');
 		observe([{ isIntersecting: false }]);
@@ -488,7 +488,7 @@ describe('StatsStrip', () => {
 		expect(value()).toBe('10,500+');
 		frames[1](2000);
 		await tick();
-		expect(container.querySelector('dd span[aria-hidden]')).toBeNull();
+		expect(container.querySelector('dd .stat__now[aria-hidden]')).toBeNull();
 		expect(screen.getByText('12,000+')).toBeInTheDocument();
 		expect(disconnect).toHaveBeenCalled();
 	});

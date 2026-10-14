@@ -308,4 +308,10 @@
 			grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 		}
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.plan__amount,
+	.plan__price {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

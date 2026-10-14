@@ -498,4 +498,9 @@
 			padding-block-end: var(--spacing-sm);
 		}
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.kanban__count {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

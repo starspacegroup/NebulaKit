@@ -13,6 +13,8 @@
 	import { isOffCanvas, uid } from '$lib/ui';
 	import { trackWidth } from './dom';
 
+	/** Off, the content is a plain div, for a shell shown inside a page that already has a main landmark. */
+	export let landmark = true;
 	/** Names the sidebar navigation landmark. */
 	export let navLabel = 'Main navigation';
 	export let skipLabel = 'Skip to main content';
@@ -148,9 +150,15 @@
 		</svelte:element>
 
 		<div class="shell__content">
-			<main id="{id}-main" class="shell__main" tabindex="-1" bind:this={main}>
+			<svelte:element
+				this={landmark ? 'main' : 'div'}
+				id="{id}-main"
+				class="shell__main"
+				tabindex="-1"
+				bind:this={main}
+			>
 				<slot />
-			</main>
+			</svelte:element>
 			{#if $$slots.footer}
 				<footer class="shell__footer"><slot name="footer" /></footer>
 			{/if}

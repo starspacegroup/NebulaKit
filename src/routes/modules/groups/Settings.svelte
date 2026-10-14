@@ -221,8 +221,8 @@
 	}
 
 	const sections = [
-		{ id: 'profile', label: 'Profile', description: 'How you appear to others.' },
-		{ id: 'notifications', label: 'Notifications', description: 'What reaches you, and when.' },
+		{ id: 'profile', label: 'Public profile', description: 'How you appear to others.' },
+		{ id: 'notifications', label: 'Alerts', description: 'What reaches you, and when.' },
 		{ id: 'security', label: 'Security', description: 'Keep your account yours.' },
 		{ id: 'billing', label: 'Billing' }
 	];
@@ -233,7 +233,7 @@
 	<AppearanceSettings bind:value={appearance} level={4} />
 </ModuleItem>
 
-<ModuleItem id="notification-preferences">
+<ModuleItem id="notification-preferences" wide>
 	<NotificationPreferences
 		{events}
 		{channels}
@@ -243,7 +243,7 @@
 	/>
 </ModuleItem>
 
-<ModuleItem id="api-keys-manager">
+<ModuleItem id="api-keys-manager" wide>
 	<ApiKeysManager
 		{keys}
 		{scopes}
@@ -257,7 +257,7 @@
 	/>
 </ModuleItem>
 
-<ModuleItem id="webhooks-manager">
+<ModuleItem id="webhooks-manager" wide>
 	<WebhooksManager
 		{endpoints}
 		events={hookEvents}
@@ -272,7 +272,7 @@
 	/>
 </ModuleItem>
 
-<ModuleItem id="cookie-consent">
+<ModuleItem id="cookie-consent" wide>
 	<CookieConsent
 		bind:visible={consentVisible}
 		placement="inline"
@@ -305,7 +305,7 @@
 	<LanguageRegionSettings bind:value={region} now={NOW} level={4} />
 </ModuleItem>
 
-<ModuleItem id="integrations-list">
+<ModuleItem id="integrations-list" wide>
 	<IntegrationsList
 		{integrations}
 		{busyId}
@@ -316,7 +316,7 @@
 	/>
 </ModuleItem>
 
-<ModuleItem id="settings-layout">
+<ModuleItem id="settings-layout" wide>
 	<SettingsLayout
 		{sections}
 		bind:active

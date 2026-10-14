@@ -1022,8 +1022,8 @@ describe('BottomNav', () => {
 		const nav = screen.getByRole('navigation', { name: 'Primary' });
 		const links = within(nav).getAllByRole('link');
 		expect(links.map((l) => l.getAttribute('aria-current'))).toEqual([null, 'page', null, null]);
-		expect(screen.getByRole('link', { name: 'Inbox, 99+ new' })).toBeTruthy();
-		expect(screen.getByRole('link', { name: 'News, new new' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Inbox 99+ new' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'News new new' })).toBeTruthy();
 		expect(screen.getByRole('link', { name: /Home/ }).textContent).toContain('Home');
 	});
 

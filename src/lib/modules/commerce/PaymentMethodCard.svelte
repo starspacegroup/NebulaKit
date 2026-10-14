@@ -113,6 +113,7 @@
 
 	.pm__main {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: flex-start;
 		gap: var(--spacing-md);
 		min-width: 0;
@@ -132,7 +133,9 @@
 		letter-spacing: 0.04em;
 	}
 
+	/* On a narrow card the details drop under the brand instead of being squeezed beside it. */
 	.pm__text {
+		flex: 1 1 10rem;
 		min-width: 0;
 	}
 

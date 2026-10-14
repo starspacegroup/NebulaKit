@@ -229,9 +229,14 @@
 			<Button type="submit" block {loading}>{verifyLabel}</Button>
 			<div class="row">
 				<Button variant="secondary" disabled={remaining > 0 || loading} on:click={resend}>
-					{remaining > 0
-						? resendWaitLabel.replace('{time}', formatCountdown(remaining))
-						: resendLabel}
+					<span
+						class="resend"
+						data-size={resendWaitLabel.replace('{time}', formatCountdown(resendSeconds))}
+					>
+						{remaining > 0
+							? resendWaitLabel.replace('{time}', formatCountdown(remaining))
+							: resendLabel}
+					</span>
 				</Button>
 				<Button variant="ghost" on:click={back}>{backLabel}</Button>
 			</div>
@@ -272,6 +277,21 @@
 </section>
 
 <style>
+	/* The button is as wide as its longest label, so the countdown never resizes it. */
+	.resend {
+		display: inline-grid;
+		justify-items: center;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.resend::after {
+		content: attr(data-size);
+		grid-area: 1 / 1;
+		height: 0;
+		overflow: hidden;
+		visibility: hidden;
+	}
+
 	.reset {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);

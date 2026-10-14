@@ -324,8 +324,8 @@
 	}
 
 	.audit__check input {
-		width: 1.125rem;
-		height: 1.125rem;
+		width: 1.5rem;
+		height: 1.5rem;
 		accent-color: var(--color-primary-solid);
 	}
 

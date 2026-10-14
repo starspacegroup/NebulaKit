@@ -204,7 +204,7 @@
 	];
 </script>
 
-<ModuleItem id="hero">
+<ModuleItem id="hero" wide>
 	<div class="stack">
 		<label class="pick">
 			Layout
@@ -231,13 +231,13 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="feature-grid">
+<ModuleItem id="feature-grid" wide>
 	<FeatureGrid title="Why teams choose us" level={4} {features}>
 		<span slot="icon">★</span>
 	</FeatureGrid>
 </ModuleItem>
 
-<ModuleItem id="pricing-table">
+<ModuleItem id="pricing-table" wide>
 	<div class="stack">
 		<PricingTable
 			title="Simple pricing"
@@ -250,7 +250,7 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="comparison-table">
+<ModuleItem id="comparison-table" wide>
 	<ComparisonTable
 		caption="Compare plans"
 		plans={comparePlans}
@@ -266,11 +266,11 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="logo-cloud">
+<ModuleItem id="logo-cloud" wide>
 	<LogoCloud level={4} {logos} />
 </ModuleItem>
 
-<ModuleItem id="stats-strip">
+<ModuleItem id="stats-strip" wide>
 	<StatsStrip {stats} />
 </ModuleItem>
 
@@ -305,7 +305,7 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="cta-banner">
+<ModuleItem id="cta-banner" wide>
 	<CtaBanner
 		level={4}
 		title="Ready to build?"
@@ -315,7 +315,7 @@
 	/>
 </ModuleItem>
 
-<ModuleItem id="site-footer">
+<ModuleItem id="site-footer" wide>
 	<SiteFooter
 		level={4}
 		brand="Acme"
@@ -333,7 +333,7 @@
 	/>
 </ModuleItem>
 
-<ModuleItem id="announcement-bar">
+<ModuleItem id="announcement-bar" wide>
 	<div class="stack">
 		<AnnouncementBar
 			bind:open={announceOpen}
@@ -348,7 +348,7 @@
 	</div>
 </ModuleItem>
 
-<ModuleItem id="team-grid">
+<ModuleItem id="team-grid" wide>
 	<TeamGrid title="Meet the team" level={4} members={team} />
 </ModuleItem>
 

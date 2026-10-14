@@ -481,4 +481,10 @@
 			grid-template-columns: minmax(0, 2fr) minmax(8rem, 1fr) auto;
 		}
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.team__count,
+	time {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

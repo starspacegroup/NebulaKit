@@ -304,4 +304,9 @@
 	.wizard__actions :global(.btn) {
 		min-height: 44px;
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.wizard__progress {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

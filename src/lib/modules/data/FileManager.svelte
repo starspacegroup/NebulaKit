@@ -809,8 +809,8 @@
 
 	.files__check input,
 	.files__all input {
-		width: 1.125rem;
-		height: 1.125rem;
+		width: 1.5rem;
+		height: 1.5rem;
 		accent-color: var(--color-primary-solid);
 	}
 
@@ -909,5 +909,10 @@
 		.files__list--list .files__item {
 			padding-inline: var(--spacing-md);
 		}
+	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.files__count {
+		font-variant-numeric: tabular-nums;
 	}
 </style>

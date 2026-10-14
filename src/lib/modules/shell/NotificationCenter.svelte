@@ -352,4 +352,11 @@
 		margin: 0;
 		color: var(--color-text-secondary);
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.bell__badge,
+	.row__time,
+	time {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

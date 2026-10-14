@@ -108,11 +108,11 @@
 		aria-haspopup="menu"
 		aria-expanded={open}
 		aria-controls={id}
-		aria-label="{buttonLabel} {user.name}"
 		on:click={() => (open ? hide() : show())}
 		on:keydown={onTriggerKeydown}
 	>
-		<Avatar name={user.name} src={user.avatarSrc} size="sm" />
+		<span aria-hidden="true"><Avatar name={user.name} src={user.avatarSrc} size="sm" /></span>
+		<span class="sr-only">{buttonLabel} {user.name}</span>
 	</button>
 
 	{#if open}

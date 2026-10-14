@@ -343,6 +343,16 @@ describe('InputOTP', () => {
 		expect(cells()[2].getAttribute('aria-label')).toBe('Digit 3 of 6');
 	});
 
+	it('is a single tab stop that follows the code, so Tab can leave it', async () => {
+		const { state } = mount('otp');
+		const stops = () => cells().map((c) => c.tabIndex);
+		expect(stops()).toEqual([0, -1, -1, -1, -1, -1]);
+		await fireEvent.input(cells()[0], { target: { value: '4' } });
+		await tick();
+		expect(state().value).toBe('4');
+		expect(stops()).toEqual([-1, 0, -1, -1, -1, -1]);
+	});
+
 	it('advances as you type and rejects what does not fit', async () => {
 		const { state } = mount('otp');
 		await fireEvent.input(cells()[0], { target: { value: '4' } });

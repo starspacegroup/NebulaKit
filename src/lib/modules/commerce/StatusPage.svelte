@@ -442,4 +442,10 @@
 			background: LinkText;
 		}
 	}
+
+	/* Digits that change keep their width, so a live count or time never nudges what is beside it. */
+	.status__updated,
+	time {
+		font-variant-numeric: tabular-nums;
+	}
 </style>

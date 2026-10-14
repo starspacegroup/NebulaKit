@@ -259,8 +259,8 @@
 
 	.terms__row input {
 		flex: none;
-		inline-size: 1.25rem;
-		block-size: 1.25rem;
+		inline-size: 1.5rem;
+		block-size: 1.5rem;
 		margin-block-start: 0.125rem;
 		accent-color: var(--color-primary-solid);
 	}

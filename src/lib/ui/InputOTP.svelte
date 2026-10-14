@@ -27,6 +27,9 @@
 	$: cells = otpCells(value, length);
 	$: describedBy =
 		[hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
+	// One cell is a tab stop: the first empty one. Tab moves on past the code, and the arrow
+	// keys walk the cells. Were every cell a stop, Tab into an empty cell would be sent back.
+	$: tabStop = Math.min(value.length, length - 1);
 	$: noun = mode === 'numeric' ? 'Digit' : 'Character';
 
 	async function update(next: string[], focusAt: number) {
@@ -128,6 +131,7 @@
 				aria-label="{noun} {i + 1} of {length}"
 				aria-invalid={error ? true : undefined}
 				value={cell}
+				tabindex={i === tabStop ? 0 : -1}
 				{disabled}
 				on:input={(e) => onInput(i, e)}
 				on:keydown={(e) => onKeydown(i, e)}

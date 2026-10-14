@@ -213,6 +213,8 @@
 
 	.cookie__body a {
 		color: var(--color-primary);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
 	}
 
 	.cookie__actions {
