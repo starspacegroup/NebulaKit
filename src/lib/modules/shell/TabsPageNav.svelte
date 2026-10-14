@@ -39,10 +39,13 @@
 	$: (items, current, tick().then(measure));
 
 	onMount(() => {
-		scroller.querySelector('[aria-current="page"]')?.scrollIntoView?.({
-			block: 'nearest',
-			inline: 'center'
-		});
+		// Scroll the row itself, not the page: scrollIntoView would also move the
+		// whole document to wherever this nav sits, which on a long page is a jump.
+		const here = scroller.querySelector<HTMLElement>('[aria-current="page"]');
+		if (here) {
+			const centred = here.offsetLeft - (scroller.clientWidth - here.offsetWidth) / 2;
+			scroller.scrollLeft = Math.max(0, centred);
+		}
 		measure();
 		const observer = new ResizeObserver(measure);
 		observer.observe(scroller);
