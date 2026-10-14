@@ -16,6 +16,7 @@
 	import Marketing from './groups/Marketing.svelte';
 	import Settings from './groups/Settings.svelte';
 	import Shell from './groups/Shell.svelte';
+	import ModulesSidebar from './ModulesSidebar.svelte';
 
 	// One demo file per group, so each keeps its own state and imports.
 	const demos: Record<ModuleGroup, typeof Account> = {
@@ -36,6 +37,11 @@
 			.replace(/[^a-z0-9]+/g, '-')
 			.replace(/^-|-$/g, '');
 	const inGroup = (group: string) => moduleCatalog.filter((e) => e.group === group);
+	const sidebarGroups = MODULE_GROUPS.map((g) => ({
+		id: groupId(g),
+		title: g,
+		items: inGroup(g).map((e) => ({ id: e.id, name: e.name }))
+	}));
 </script>
 
 <SharingMeta
@@ -65,14 +71,19 @@
 		</nav>
 	</header>
 
-	{#each MODULE_GROUPS as group (group)}
-		<section class="group" id={groupId(group)} aria-labelledby="{groupId(group)}-title">
-			<h2 id="{groupId(group)}-title">{group}</h2>
-			<div class="list">
-				<svelte:component this={demos[group]} />
-			</div>
-		</section>
-	{/each}
+	<div class="catalog__body">
+		<ModulesSidebar groups={sidebarGroups} />
+		<div class="catalog__main">
+			{#each MODULE_GROUPS as group (group)}
+				<section class="group" id={groupId(group)} aria-labelledby="{groupId(group)}-title">
+					<h2 id="{groupId(group)}-title">{group}</h2>
+					<div class="list">
+						<svelte:component this={demos[group]} />
+					</div>
+				</section>
+			{/each}
+		</div>
+	</div>
 </div>
 
 <style>
@@ -162,6 +173,22 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	.catalog__body {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.catalog__main {
+		min-width: 0;
+	}
+
+	@media (min-width: 64rem) {
+		.catalog__body {
+			grid-template-columns: 16rem minmax(0, 1fr);
+			gap: var(--spacing-xl);
+		}
+	}
+
 	.group {
 		margin-bottom: var(--spacing-2xl);
 		scroll-margin-top: 5rem;
@@ -181,7 +208,7 @@
 		gap: var(--spacing-xl);
 	}
 
-	/* Wide modules keep a whole row; the compact ones sit two, then three, to a row. */
+	/* Wide modules keep a whole row; the compact ones sit two, then three on very wide screens, to a row. */
 	@media (min-width: 64rem) {
 		.list {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -192,7 +219,7 @@
 		}
 	}
 
-	@media (min-width: 100rem) {
+	@media (min-width: 120rem) {
 		.list {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
