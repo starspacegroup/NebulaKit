@@ -66,6 +66,20 @@ const SKIP_FILES = new Set([
 	'src/lib/components/BuiltWithNebulaKit.test.ts'
 ]);
 
+/** Repo-relative directories never walked: kit-owned code a site tracks from
+ *  upstream. `packages/` holds @nebulakit/commerce, builder and security; a
+ *  rename there would break every import and make each later update a merge
+ *  conflict on every client site. */
+const SKIP_PATHS = new Set(['packages']);
+
+/**
+ * Text that names the kit rather than the product, masked before the rename
+ * and restored after. Without this a site called "Acme" would import
+ * `@acme/commerce`, which does not exist. Found 2026-10-18 by provisioning a
+ * client site from Ammoura and reading its first commit.
+ */
+const PROTECTED = [/@nebulakit\//g, /\.nebulakit\.updateChannel\b/g, /name: 'nebulakit'/g];
+
 /** Only these extensions are treated as text and rewritten. */
 const TEXT_EXT = new Set([
 	'.ts',
@@ -175,13 +189,17 @@ function buildReplacements(old, next) {
 }
 
 function applyReplacements(text, replacements) {
+	const kept = [];
 	let out = text;
+	for (const pattern of PROTECTED) {
+		out = out.replace(pattern, (match) => `\u0000${kept.push(match) - 1}\u0000`);
+	}
 	for (const [from, to, mode] of replacements) {
 		const escaped = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		const pattern = mode === 'word' ? `\\b${escaped}\\b` : escaped;
 		out = out.replace(new RegExp(pattern, 'g'), to);
 	}
-	return out;
+	return out.replace(/\u0000(\d+)\u0000/g, (_, i) => kept[Number(i)]);
 }
 
 function walk(dir, files = []) {
@@ -189,7 +207,7 @@ function walk(dir, files = []) {
 		const full = join(dir, entry);
 		const rel = relative(ROOT, full);
 		if (statSync(full).isDirectory()) {
-			if (!SKIP_DIRS.has(entry)) walk(full, files);
+			if (!SKIP_DIRS.has(entry) && !SKIP_PATHS.has(rel)) walk(full, files);
 		} else if (TEXT_EXT.has(extname(entry)) && !SKIP_FILES.has(rel)) {
 			files.push(full);
 		}
