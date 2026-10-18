@@ -84,6 +84,7 @@ const PROTECTED = [
 	/BuiltWithNebulaKit/g,
 	// The badge keeps naming NebulaKit (its component is skipped), so its test must too.
 	/built with nebulakit/gi,
+	/https:\/\/nebulakit\.starspace\.group/g,
 	/\.nebulakit\.updateChannel\b/g,
 	/name: 'nebulakit'/g
 ];
