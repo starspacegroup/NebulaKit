@@ -82,6 +82,8 @@ const PROTECTED = [
 	/@nebulakit\//g,
 	// A component identifier: a multi-word name ("Acme Prints") would make it invalid code.
 	/BuiltWithNebulaKit/g,
+	// The badge keeps naming NebulaKit (its component is skipped), so its test must too.
+	/built with nebulakit/gi,
 	/\.nebulakit\.updateChannel\b/g,
 	/name: 'nebulakit'/g
 ];

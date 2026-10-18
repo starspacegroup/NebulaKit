@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { D1Database } from '@cloudflare/workers-types';
 import { createApiKey, sha256Hex, type ApiScope } from '@nebulakit/security';
 import { createSqliteD1 } from '../helpers/sqlite-d1';
+import { PACKAGE_VERSIONS } from '../../src/lib/server/site-info';
 import * as site from '../../src/routes/api/v1/site/+server';
 import * as updates from '../../src/routes/api/v1/site/updates/+server';
 import * as products from '../../src/routes/api/v1/products/+server';
@@ -111,11 +112,8 @@ describe('site API authentication', () => {
 		expect(res.status).toBe(200);
 		expect(res.json).toMatchObject({
 			template: { name: 'nebulakit' },
-			packages: {
-				'@nebulakit/commerce': '0.1.0',
-				'@nebulakit/builder': '0.1.0',
-				'@nebulakit/security': '0.1.0'
-			},
+			// Not pinned: a forced security bump must not fail every site's tests.
+			packages: PACKAGE_VERSIONS,
 			updates: { autoApplyFeatures: false, optedIn: [], updatedAt: null }
 		});
 		const logged = await db.prepare('SELECT * FROM api_key_calls').all();
