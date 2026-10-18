@@ -80,9 +80,16 @@ tools running on the page — see below). There is no headless credential flow.
 
 ## Bearer tokens
 
-Not offered to agents. There is no endpoint that issues one. Two operator-held
-secrets travel as \`Authorization: Bearer\` headers, and both are set or issued
-by the site owner out of band, never through an API an agent can call:
+The site API under \`${origin}/api/v1\` (described at
+[${origin}/api/v1/openapi.json](${origin}/api/v1/openapi.json)) accepts
+\`Authorization: Bearer nk_…\` API keys. There is no endpoint that issues one:
+the site owner creates each key on the admin API-keys page, picks its scopes and
+expiry, and can revoke it at any time. A key is shown once and stored hashed.
+Reading active products, published pages, and placing an order at
+\`POST ${origin}/api/v1/checkout\` need no key.
+
+Two other operator-held secrets travel as bearer headers, also set or issued by
+the owner out of band:
 
 - \`CRON_SECRET\`, which only \`POST ${origin}/api/cron/prune-view-stats\` accepts.
 - The stats token, which only \`GET ${origin}/api/stats/summary\` accepts and

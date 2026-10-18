@@ -1,5 +1,13 @@
 # Goals
 
+## Builder, shop and site API as packages (Ammoura's sites run on NebulaKit)
+
+status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-builder-site-api`)
+
+- Direction: `~/_Projects/StarSpace/NebulaKit/planning/BUILDER_AND_COMMERCE.md` and Ammoura's `plans/ammoura-as-orchestrator.md`. Every client gets their own NebulaKit site; Ammoura drives it through the site API.
+- Done: `@nebulakit/commerce` (pricing, cart repricing, orders, Stripe checkout + webhook signature, Printful), `@nebulakit/security` (API keys), `@nebulakit/builder` MVP (page document, editor, renderer), `/api/v1` with OpenAPI, `/admin/api-keys`, `/admin/pages`, `/p/[slug]`. Migrations 0016–0018. Local gates only; nothing deployed.
+- Open: storefront cart UI, shop admin screens (products/orders), regional pricing settings, Printful relay on payment, package distribution to forks, the forced-update bot.
+
 ## Stats readable by the StarSpace Dashboard
 
 status: done 2026-10-10

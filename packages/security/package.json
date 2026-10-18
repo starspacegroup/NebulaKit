@@ -4,6 +4,10 @@
 	"description": "Site API keys and the security surface every NebulaKit site takes as a forced update.",
 	"private": true,
 	"type": "module",
-	"exports": { ".": "./src/index.ts" },
-	"nebulakit": { "updateChannel": "forced" }
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"nebulakit": {
+		"updateChannel": "forced"
+	}
 }

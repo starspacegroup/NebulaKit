@@ -4,6 +4,10 @@
 	"description": "Products, cart pricing, checkout, orders, Printful and payments for a NebulaKit site.",
 	"private": true,
 	"type": "module",
-	"exports": { ".": "./src/index.ts" },
-	"nebulakit": { "updateChannel": "opt-in" }
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"nebulakit": {
+		"updateChannel": "opt-in"
+	}
 }

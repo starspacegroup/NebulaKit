@@ -78,6 +78,7 @@ bun run deploy`;
 			<a href="#database-migrations">Database Migrations</a>
 			<a href="#auth-and-setup">Auth and Setup</a>
 			<a href="#admin-analytics">Admin Analytics</a>
+			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
 			<a href="#lighthouse">Lighthouse</a>
 			<a href="#agent-readiness">Agent Readiness</a>
 			<a href="#testing">Testing</a>
@@ -715,6 +716,54 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 			</div>
+		</section>
+
+		<section id="shop-pages-api" class="docs-section">
+			<h2>Shop, Pages and the Site API</h2>
+			<p>
+				Three packages live in <code>packages/</code>, each versioned on its own:
+				<code>@nebulakit/commerce</code> (products, cart pricing, checkout, orders, Stripe,
+				Printful),
+				<code>@nebulakit/builder</code> (drag-and-drop pages stored as data), and
+				<code>@nebulakit/security</code> (API keys). Security updates are forced to every site; the other
+				two are opt-in.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Pages</h3>
+					<p>
+						Build pages at <code>/admin/pages</code>: drag blocks from the palette, reorder them,
+						edit each block's fields, and publish. Published pages are served at
+						<code>/p/[slug]</code> and listed in the sitemap. A page is a JSON document, never code.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>API keys</h3>
+					<p>
+						The owner manages access at <code>/admin/api-keys</code>: create a key with scopes and
+						an expiry, see when it was last used, revoke it in one click, and read the call log. A
+						key is shown once and stored hashed.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>The site API</h3>
+					<p>
+						Everything is reachable under <code>/api/v1</code>, described at
+						<code>/api/v1/openapi.json</code>. Send keys as <code>Authorization: Bearer nk_…</code>.
+						Checkout (<code>POST /api/v1/checkout</code>) is public and prices every line from the
+						catalog.
+					</p>
+				</div>
+			</div>
+			<p>
+				Shop settings are environment variables, never request fields:
+				<code>COMMERCE_TAX_RATE_PERCENT</code>, <code>COMMERCE_PRICES_INCLUDE_TAX</code>,
+				<code>COMMERCE_FLAT_SHIPPING_CENTS</code>, <code>STRIPE_SECRET_KEY</code> and
+				<code>STRIPE_WEBHOOK_SECRET</code> (webhook URL <code>/api/v1/webhooks/stripe</code>).
+				Without a Stripe key, orders wait for a manual payment. <code>ORCHESTRATOR_KEY_SHA256</code>
+				connects the Ammoura control room. Apply migrations <code>0016</code>–<code>0018</code> with
+				<code>bun run db:migrate:local</code>.
+			</p>
 		</section>
 
 		<section id="testing" class="docs-section">

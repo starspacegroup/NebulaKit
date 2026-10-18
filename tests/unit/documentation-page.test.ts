@@ -129,6 +129,30 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/never issued one answers 401/i)).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — /admin/pages, /admin/api-keys, /p/[slug] and /api/v1 are
+	// user-visible routes, and the shop's env vars are bindings an operator sets.
+	it('documents the shop, the page builder, API keys and the site API', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of [
+			'/admin/pages',
+			'/admin/api-keys',
+			'/p/[slug]',
+			'/api/v1/openapi.json',
+			'POST /api/v1/checkout',
+			'COMMERCE_TAX_RATE_PERCENT',
+			'STRIPE_WEBHOOK_SECRET',
+			'ORCHESTRATOR_KEY_SHA256'
+		]) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/Security updates are forced to every site/i)).toBeInTheDocument();
+	});
+
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
 	// documentation has to describe it and keep describing it.
 	it('documents the optional Google Analytics connection', () => {

@@ -67,7 +67,8 @@ export const SITEMAP_EXCLUDED_ROUTES: Readonly<Record<string, string>> = {
 	reset: 'Destructive maintenance route — must never be crawled or surfaced.',
 	setup: 'One-time install wizard; meaningless (and risky) once the site is live.',
 	media: 'R2 binary passthrough, not an HTML page.',
-	'[contentType]': 'Enumerated dynamically from the CMS at request time.'
+	'[contentType]': 'Enumerated dynamically from the CMS at request time.',
+	p: 'Builder pages — published ones are enumerated dynamically at request time.'
 };
 
 /**

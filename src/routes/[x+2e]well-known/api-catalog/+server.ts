@@ -106,6 +106,24 @@ export const GET: RequestHandler = ({ url }) => {
 			'service-doc': [docs],
 			describedby: [auth],
 			status: [status]
+		},
+		{
+			// The site API: shop, pages, site settings. Products, pages and checkout
+			// read/POST are public; everything else needs an owner-issued API key
+			// with the right scope (/admin/api-keys) or an admin session. Anchored on
+			// its identity endpoint (site:read) because the honesty test requires a
+			// concrete handler; the OpenAPI document lists the rest.
+			anchor: abs('/api/v1/site'),
+			'service-desc': [
+				{
+					href: abs('/api/v1/openapi.json'),
+					type: 'application/openapi+json',
+					title: 'Site API (OpenAPI 3.1)'
+				}
+			],
+			'service-doc': [docs],
+			describedby: [auth],
+			status: [status]
 		}
 	];
 

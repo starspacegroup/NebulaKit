@@ -21,6 +21,11 @@
 		{ path: '/admin/users', label: 'Users', icon: 'users' },
 		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
 		{ path: '/admin/cms', label: 'Content', icon: 'document' },
+		{ path: '/admin/pages', label: 'Pages', icon: 'layout' },
+		// Owner-only, like Analytics: a key can carry site:admin.
+		...(data.user?.isOwner || data.user?.isSuperAdmin
+			? [{ path: '/admin/api-keys', label: 'API Keys', icon: 'key' }]
+			: []),
 		{ path: '/admin/contact-form-submissions', label: 'Contact Forms', icon: 'mail' },
 		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart' }
 	];
@@ -70,6 +75,33 @@
 						>
 							<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
 							<polyline points="9 22 9 12 15 12 15 22" />
+						</svg>
+					{:else if item.icon === 'layout'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<rect x="3" y="3" width="18" height="18" rx="2" />
+							<line x1="3" y1="9" x2="21" y2="9" />
+							<line x1="9" y1="21" x2="9" y2="9" />
+						</svg>
+					{:else if item.icon === 'key'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="7.5" cy="15.5" r="4.5" />
+							<path d="M10.7 12.3 21 2M16 7l3 3M18 5l2 2" />
 						</svg>
 					{:else if item.icon === 'users'}
 						<svg
