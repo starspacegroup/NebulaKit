@@ -31,7 +31,7 @@ function event(
 	return { locals: { user }, platform: { env }, ...extra } as never;
 }
 
-async function status(promise: Promise<unknown>) {
+async function status(promise: unknown) {
 	try {
 		await promise;
 		return 'resolved';
