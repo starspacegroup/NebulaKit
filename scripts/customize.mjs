@@ -78,7 +78,13 @@ const SKIP_PATHS = new Set(['packages']);
  * `@acme/commerce`, which does not exist. Found 2026-10-18 by provisioning a
  * client site from Ammoura and reading its first commit.
  */
-const PROTECTED = [/@nebulakit\//g, /\.nebulakit\.updateChannel\b/g, /name: 'nebulakit'/g];
+const PROTECTED = [
+	/@nebulakit\//g,
+	// A component identifier: a multi-word name ("Acme Prints") would make it invalid code.
+	/BuiltWithNebulaKit/g,
+	/\.nebulakit\.updateChannel\b/g,
+	/name: 'nebulakit'/g
+];
 
 /** Only these extensions are treated as text and rewritten. */
 const TEXT_EXT = new Set([
