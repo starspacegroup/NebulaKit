@@ -288,3 +288,17 @@ export async function transitionOrder(
 	}
 	return getOrder(db, id);
 }
+
+/** Record the provider's reference (e.g. a Stripe session id) without moving the order. */
+export async function setPaymentReference(
+	db: D1Database,
+	id: string,
+	reference: string
+): Promise<void> {
+	await db
+		.prepare(
+			"UPDATE commerce_orders SET payment_reference = ?, updated_at = datetime('now') WHERE id = ?"
+		)
+		.bind(reference, id)
+		.run();
+}

@@ -64,7 +64,8 @@ export function stripePayments(
 			// Tax and shipping were priced by the site (priceCart), so they go to
 			// Stripe as their own lines rather than being recomputed there.
 			// Inclusive tax is already inside the item prices, so only exclusive tax gets a line.
-			const taxIsAdded = order.totalCents === order.subtotalCents + order.shippingCents + order.taxCents;
+			const taxIsAdded =
+				order.totalCents === order.subtotalCents + order.shippingCents + order.taxCents;
 			const extras: Array<[string, number]> = [
 				['Shipping', order.shippingCents],
 				['Tax', taxIsAdded ? order.taxCents : 0]
