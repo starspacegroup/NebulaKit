@@ -32,7 +32,7 @@ const doc: PageDocument = {
 describe('page store', () => {
 	let db: D1Database;
 	beforeEach(() => {
-		db = createSqliteD1(['0017_builder_pages.sql']);
+		db = createSqliteD1(['0017_builder_pages.sql', '0019_builder_page_revisions.sql']);
 	});
 
 	it('creates, replaces, lists and deletes pages', async () => {

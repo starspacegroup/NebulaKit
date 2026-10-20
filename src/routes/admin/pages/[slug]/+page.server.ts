@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getPage } from '@nebulakit/builder';
+import { getPage, listRevisions } from '@nebulakit/builder';
 import { requireAdmin } from '$lib/server/auth-guards';
 import type { PageServerLoad } from './$types';
 
@@ -10,5 +10,5 @@ export const load: PageServerLoad = async ({ locals, platform, params }) => {
 	if (!db) throw error(503, 'The site database is not available');
 	const page = await getPage(db, params.slug);
 	if (!page) throw error(404, 'Page not found');
-	return { page };
+	return { page, revisions: (await listRevisions(db, params.slug)) ?? [] };
 };

@@ -13,7 +13,7 @@ export const GET = siteApi(null, async ({ db, event, can }) => {
  * `{ title, document, published }`. The document is validated and rebuilt
  * from known fields before it is stored (packages/builder/src/schema.ts).
  */
-export const PUT = siteApi('pages:write', async ({ db, event }) => {
+export const PUT = siteApi('pages:write', async ({ db, event, principal }) => {
 	const slug = event.params.slug as string;
 	const body = (await readJson(event)) as Record<string, unknown> | null;
 	const errors: string[] = [];
@@ -29,7 +29,8 @@ export const PUT = siteApi('pages:write', async ({ db, event }) => {
 		slug,
 		title,
 		document: document.value,
-		published: published as boolean
+		published: published as boolean,
+		author: principal?.name
 	});
 	return apiJson({ page }, created ? 201 : 200);
 });

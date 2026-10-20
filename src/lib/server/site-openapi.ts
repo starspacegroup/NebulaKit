@@ -58,6 +58,13 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 		put: { summary: 'Create or replace a page', scope: 'pages:write', body: 'PageInput' },
 		delete: { summary: 'Delete a page', scope: 'pages:write' }
 	},
+	'/api/v1/pages/{slug}/revisions': {
+		get: { summary: "A page's saved revisions, newest first", scope: 'pages:read' }
+	},
+	'/api/v1/pages/{slug}/revisions/{id}': {
+		get: { summary: 'One revision with its document', scope: 'pages:read' },
+		post: { summary: 'Put a revision back as the page', scope: 'pages:write' }
+	},
 	'/api/v1/webhooks/stripe': {
 		post: { summary: 'Stripe checkout events (Stripe-Signature, not an API key)', scope: null }
 	}

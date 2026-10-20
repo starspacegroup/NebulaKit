@@ -738,8 +738,10 @@ bun run db:migrate:list</code
 						keyboard all work: every drag has Add, Move up/down, Move in and Move out buttons, plus
 						Alt+Arrow keys, and Undo and Redo (Ctrl/⌘+Z) cover every edit. A check list flags images
 						without a description, skipped heading levels and vague link text. Published pages are
-						served at <code>/p/[slug]</code> and listed in the sitemap. A page is a JSON document (format
-						version 2: a tree of blocks), never code.
+						served at <code>/p/[slug]</code> and listed in the sitemap. Every save that changes a
+						page keeps a revision (the newest 50), listed under History in the editor and at
+						<code>/api/v1/pages/[slug]/revisions</code>; restoring one is itself saved, so it can be
+						undone. A page is a JSON document (format version 2: a tree of blocks), never code.
 					</p>
 				</div>
 				<div class="callout-card">

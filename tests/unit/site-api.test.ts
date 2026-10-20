@@ -13,6 +13,8 @@ import * as order from '../../src/routes/api/v1/orders/[id]/+server';
 import * as checkout from '../../src/routes/api/v1/checkout/+server';
 import * as pages from '../../src/routes/api/v1/pages/+server';
 import * as page from '../../src/routes/api/v1/pages/[slug]/+server';
+import * as revisions from '../../src/routes/api/v1/pages/[slug]/revisions/+server';
+import * as revision from '../../src/routes/api/v1/pages/[slug]/revisions/[id]/+server';
 import * as stripeHook from '../../src/routes/api/v1/webhooks/stripe/+server';
 import * as openapi from '../../src/routes/api/v1/openapi.json/+server';
 
@@ -547,6 +549,86 @@ describe('pages API', () => {
 	});
 });
 
+describe('page revisions API', () => {
+	const doc = (text: string) => ({
+		version: 2,
+		blocks: [{ id: 'h', type: 'heading', props: { text, level: 1, align: 'start' } }]
+	});
+
+	it('records each changed save, lists them, and restores one', async () => {
+		const writer = await key('pages:write', 'pages:read');
+		const put = (title: string, text: string, published = false) =>
+			call(page.PUT, {
+				method: 'PUT',
+				key: writer,
+				params: { slug: 'about' },
+				body: { title, document: doc(text), published }
+			});
+		await put('About', 'One');
+		await put('About', 'One'); // same content: no new revision
+		await put('About', 'Two', true);
+
+		const list = await call(revisions.GET, { key: writer, params: { slug: 'about' } });
+		expect(list.status).toBe(200);
+		expect(list.json.revisions).toHaveLength(2);
+		expect(list.json.revisions[0]).toMatchObject({ title: 'About', blocks: 1, author: 'test' });
+		expect(list.json.revisions[0].document).toBeUndefined();
+
+		const oldest = list.json.revisions[1].id as string;
+		const one = await call(revision.GET, { key: writer, params: { slug: 'about', id: oldest } });
+		expect(one.json.revision.document).toEqual(doc('One'));
+
+		const restored = await call(revision.POST, {
+			method: 'POST',
+			key: writer,
+			params: { slug: 'about', id: oldest }
+		});
+		expect(restored.status).toBe(200);
+		expect(restored.json.page.document).toEqual(doc('One'));
+		expect(restored.json.page.published).toBe(true); // visibility is not rewound
+
+		const after = await call(revisions.GET, { key: writer, params: { slug: 'about' } });
+		expect(after.json.revisions).toHaveLength(3);
+	});
+
+	it('keeps the newest 50 and removes them with the page', async () => {
+		const writer = await key('pages:write', 'pages:read');
+		for (let i = 0; i < 53; i++) {
+			await call(page.PUT, {
+				method: 'PUT',
+				key: writer,
+				params: { slug: 'busy' },
+				body: { title: 'Busy', document: doc(`v${i}`) }
+			});
+		}
+		const list = await call(revisions.GET, { key: writer, params: { slug: 'busy' } });
+		expect(list.json.revisions).toHaveLength(50);
+		await call(page.DELETE, { method: 'DELETE', key: writer, params: { slug: 'busy' } });
+		const left = await db
+			.prepare('SELECT COUNT(*) AS n FROM builder_page_revisions')
+			.first<{ n: number }>();
+		expect(left?.n).toBe(0);
+	});
+
+	it('needs scopes and finds nothing for an unknown page or revision', async () => {
+		const reader = await key('pages:read');
+		const writer = await key('pages:write');
+		expect((await call(revisions.GET, { params: { slug: 'x' } })).status).toBe(401);
+		expect((await call(revisions.GET, { key: reader, params: { slug: 'none' } })).status).toBe(404);
+		expect(
+			(await call(revision.GET, { key: reader, params: { slug: 'none', id: 'zz' } })).status
+		).toBe(404);
+		expect(
+			(await call(revision.POST, { method: 'POST', key: reader, params: { slug: 'a', id: 'b' } }))
+				.status
+		).toBe(403);
+		expect(
+			(await call(revision.POST, { method: 'POST', key: writer, params: { slug: 'a', id: 'b' } }))
+				.status
+		).toBe(404);
+	});
+});
+
 describe('OpenAPI document', () => {
 	it('is served publicly and names the scope of each operation', async () => {
 		const response = await openapi.GET();
@@ -555,5 +637,8 @@ describe('OpenAPI document', () => {
 		expect(doc.paths['/api/v1/orders'].get['x-required-scope']).toBe('orders:read');
 		expect(doc.paths['/api/v1/checkout'].post.security).toEqual([]);
 		expect(doc.paths['/api/v1/pages/{slug}'].put.requestBody).toBeDefined();
+		expect(doc.paths['/api/v1/pages/{slug}/revisions/{id}'].post['x-required-scope']).toBe(
+			'pages:write'
+		);
 	});
 });
