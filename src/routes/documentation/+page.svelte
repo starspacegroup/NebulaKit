@@ -745,6 +745,16 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Storefront</h3>
+					<p>
+						Shoppers browse <code>/shop</code> and <code>/shop/[slug]</code>, add products to a cart
+						kept in their browser, and check out at <code>/cart</code>. Prices, tax and shipping are
+						always worked out on the server from the catalog; the cart only remembers what to ask
+						for. Physical products ask for a shipping address. With Stripe configured the shopper
+						goes on to pay; without it the order waits for a manual payment.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>API keys</h3>
 					<p>
 						The owner manages access at <code>/admin/api-keys</code>: create a key with scopes and

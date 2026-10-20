@@ -40,6 +40,7 @@ import { GET as skillsIndexGet } from '../../src/routes/[x+2e]well-known/agent-s
 import { GET as skillDocGet } from '../../src/routes/[x+2e]well-known/agent-skills/[skill]/SKILL.md/+server';
 
 import { emptyPage, savePage } from '@nebulakit/builder';
+import { createProduct } from '@nebulakit/commerce';
 import { createSqliteD1 } from '../helpers/sqlite-d1';
 
 const ORIGIN = 'https://example.test';
@@ -142,6 +143,16 @@ describe('sitemap.xml', () => {
 		).text();
 		expect(body).toContain(`<loc>${ORIGIN}/p/about</loc>`);
 		expect(body).not.toContain('/p/secret');
+	});
+
+	it('includes active products', async () => {
+		const db = createSqliteD1();
+		await createProduct(db, { slug: 'tee', name: 'Tee', priceCents: 2500 });
+		const body = await (
+			await sitemapGet(event('/sitemap.xml', { platform: { env: { DB: db } } }))
+		).text();
+		expect(body).toContain(`<loc>${ORIGIN}/shop/tee</loc>`);
+		expect(body).not.toContain('/cart');
 	});
 
 	it('includes published CMS items and their type list pages', async () => {

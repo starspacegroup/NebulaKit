@@ -46,8 +46,8 @@ export const POST = siteApi(null, async ({ db, event }) => {
 	// A provider failure (PaymentProviderError, 502) leaves the order `pending`
 	// with no reference: visible to the owner, harmless, and the shopper retries.
 	const payment = await provider.createPayment(order, {
-		successUrl: `${event.url.origin}/?order=${order.id}`,
-		cancelUrl: `${event.url.origin}/`
+		successUrl: `${event.url.origin}/cart?order=${order.id}`,
+		cancelUrl: `${event.url.origin}/cart`
 	});
 	await setPaymentReference(db, order.id, payment.reference);
 

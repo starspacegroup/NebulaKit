@@ -18,6 +18,7 @@
 import { SITEMAP_ROUTES, absoluteUrl, escapeXml } from '$lib/agent-discovery';
 import { listPublishedContentForSitemap } from '$lib/services/cms';
 import { listPages } from '@nebulakit/builder';
+import { listProducts } from '@nebulakit/commerce';
 import type { RequestHandler } from './$types';
 
 /** A single `<url>` entry before serialization. */
@@ -115,6 +116,22 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 			}
 		} catch (error) {
 			console.error('sitemap: failed to read builder pages', error);
+		}
+	}
+
+	if (db) {
+		try {
+			// Active products (/shop/tee).
+			for (const product of await listProducts(db, { limit: 500 })) {
+				entries.push({
+					loc: absoluteUrl(origin, `/shop/${product.slug}`),
+					lastmod: toW3CDate(product.updatedAt),
+					changefreq: 'weekly',
+					priority: 0.6
+				});
+			}
+		} catch (error) {
+			console.error('sitemap: failed to read products', error);
 		}
 	}
 
