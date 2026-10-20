@@ -100,6 +100,8 @@ export default defineConfig({
 				'scripts/',
 				// Dependency-free config data — nothing to unit test.
 				'src/lib/site.config.ts',
+				// Package manifests are data; their versions are checked by nebulakit-packages.test.ts.
+				'packages/*/package.json',
 				// Svelte components contain UI logic that's hard to unit test branches
 				// These are tested via E2E tests for user interaction flows
 				'**/*.svelte',

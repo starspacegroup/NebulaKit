@@ -82,7 +82,7 @@ describe('Documentation Page', () => {
 
 		const scoped = within(statsSection as HTMLElement);
 
-		expect(scoped.getAllByText(/\/admin\/stats/i).length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('/admin').length).toBeGreaterThan(0);
 		// The privacy posture is the reason this ships instead of a GA tag, so it
 		// has to be stated on the page users actually read.
 		expect(
@@ -96,6 +96,61 @@ describe('Documentation Page', () => {
 		expect(
 			scoped.getByText(/grows with your catalogue rather than with a fixed list/i)
 		).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — the admin landing page and the settings page are user-visible
+	// admin routes, so the documentation has to say where each lives.
+	it('documents the admin dashboard and settings pages', () => {
+		render(Page);
+
+		const card = screen.getByRole('heading', { name: 'Account and Admin Flow' }).parentElement;
+		const scoped = within(card as HTMLElement);
+
+		expect(scoped.getByText('/admin/settings')).toBeInTheDocument();
+		expect(scoped.getByText(/opens on the stats dashboard/i)).toBeInTheDocument();
+		expect(scoped.getByText(/OAuth authentication\s+keys/i)).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — the stats token and /api/stats/summary are a user-visible
+	// admin and integration surface, so the documentation has to say how an
+	// external dashboard gets in and that the token is shown once.
+	it('documents the stats token and the summary endpoint', () => {
+		render(Page);
+
+		const scoped = within(
+			screen.getByRole('heading', { name: /Admin Analytics/i }).closest('section') as HTMLElement
+		);
+
+		expect(
+			scoped.getByRole('heading', { name: /Reading Stats From a Dashboard/i })
+		).toBeInTheDocument();
+		expect(scoped.getAllByText(/\/api\/stats\/summary/).length).toBeGreaterThan(0);
+		expect(scoped.getByText(/it is shown once, and only its hash is stored/i)).toBeInTheDocument();
+		expect(scoped.getByText(/never issued one answers 401/i)).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — /admin/pages, /admin/api-keys, /p/[slug] and /api/v1 are
+	// user-visible routes, and the shop's env vars are bindings an operator sets.
+	it('documents the shop, the page builder, API keys and the site API', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of [
+			'/admin/pages',
+			'/admin/api-keys',
+			'/p/[slug]',
+			'/api/v1/openapi.json',
+			'POST /api/v1/checkout',
+			'COMMERCE_TAX_RATE_PERCENT',
+			'STRIPE_WEBHOOK_SECRET',
+			'ORCHESTRATOR_KEY_SHA256'
+		]) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/Security updates are forced to every site/i)).toBeInTheDocument();
 	});
 
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
@@ -129,9 +184,7 @@ describe('Documentation Page', () => {
 		expect(
 			screen.getByText((_content, element) => {
 				if (element?.tagName !== 'LI') return false;
-				return /first-party, cookie-free analytics at\s*\/admin\/stats/i.test(
-					element.textContent ?? ''
-				);
+				return /first-party, cookie-free analytics at\s*\/admin\b/i.test(element.textContent ?? '');
 			})
 		).toBeInTheDocument();
 	});
@@ -184,6 +237,13 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/use:draggable/);
 			expect(section.textContent).toMatch(/arrow up and down/i);
 			expect(section.textContent).toMatch(/must never be written into/i);
+		});
+
+		it('says the kit ships standard widgets, shown at /components', () => {
+			render(Page);
+			const section = document.getElementById('drag-and-drop') as HTMLElement;
+			expect(section.textContent).not.toMatch(/ships empty/i);
+			expect(section.textContent).toMatch(/clock.*checklist.*meter/is);
 		});
 
 		it('points every navigation anchor at a section that exists', () => {
@@ -366,6 +426,62 @@ describe('Documentation Page', () => {
 				'href',
 				'#agent-readiness'
 			);
+		});
+	});
+
+	describe('Modules section', () => {
+		it('documents the import, every group, and the live gallery', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^modules$/i })
+				.closest('section') as HTMLElement;
+			expect(section.id).toBe('modules');
+			expect(section.textContent).toMatch(/\$lib\/modules/);
+			expect(section.querySelector('a[href="/modules"]')).toBeTruthy();
+			for (const group of [
+				'Account',
+				'Settings',
+				'Marketing',
+				'App shell',
+				'Data & teams',
+				'Commerce'
+			]) {
+				expect(section.textContent).toContain(group);
+			}
+		});
+	});
+
+	describe('UI kit section', () => {
+		it('documents the import, the toaster, and the live catalog', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^ui kit$/i })
+				.closest('section') as HTMLElement;
+			expect(section.id).toBe('ui-kit');
+			expect(section.textContent).toMatch(/\$lib\/ui/);
+			expect(section.textContent).toMatch(/<Toaster \/>/);
+			expect(section.querySelector('a[href="/components"]')).toBeTruthy();
+		});
+
+		it('lists every group of the kit, including the larger components', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^ui kit$/i })
+				.closest('section') as HTMLElement;
+			for (const name of [
+				'Command',
+				'Combobox',
+				'DatePicker',
+				'Sheet',
+				'Sidebar',
+				'Resizable',
+				'DataTable',
+				'LineChart'
+			]) {
+				expect(section.textContent).toContain(name);
+			}
+			expect(section.textContent).toMatch(/Layout/);
+			expect(section.textContent).toMatch(/MIT-licensed/);
 		});
 	});
 });

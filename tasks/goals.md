@@ -1,5 +1,30 @@
 # Goals
 
+## Builder, shop and site API as packages (Ammoura's sites run on NebulaKit)
+
+status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-builder-site-api`)
+
+- Direction: `~/_Projects/StarSpace/NebulaKit/planning/BUILDER_AND_COMMERCE.md` and Ammoura's `plans/ammoura-as-orchestrator.md`. Every client gets their own NebulaKit site; Ammoura drives it through the site API.
+- Done: `@nebulakit/commerce` (pricing, cart repricing, orders, Stripe checkout + webhook signature, Printful), `@nebulakit/security` (API keys), `@nebulakit/builder` 0.3.0 (page format v2: nested Section/Columns, hide-per-breakpoint; revision history with restore; editor rebuilt on `$lib/actions/draggable` with undo/redo, lint, width preview; ported and fixed from Ammoura's builder), `/api/v1` with OpenAPI, `/admin/api-keys`, `/admin/pages`, `/p/[slug]`. Migrations 0016–0019. Local gates only; nothing deployed.
+- Open: storefront cart UI, shop admin screens (products/orders), regional pricing settings, Printful relay on payment, package distribution to forks, the forced-update bot.
+
+## Stats readable by the StarSpace Dashboard
+
+status: done 2026-10-10
+
+- A site built from the template can hand its owner's dashboard a read-only view of the admin stats: the owner issues a stats token on `/admin/analytics`, the dashboard reads `GET /api/stats/summary` with it as a bearer token, and gets the same object `/admin` renders.
+- The assembly moved out of the admin page load into `src/lib/server/stats-summary.ts` so both readers share it. The token lives hashed in KV (`stats_api_token`), is shown once at issue, and is owner-only to issue, rotate or revoke. `/auth.md` and the API catalog say so.
+- The consumer is the NebulaKit widget in the StarSpace Dashboard (`~/_Projects/StarSpace/Dashboard`). `nebulakit-site` is a diverged copy of this template and needs the same server pieces ported before its stats show up there.
+
+## New sites get a hero made for them
+
+status: in-progress
+
+- Every site created from the template should leave the NebulaKit space hero behind and have one that fits its own product, by following an easy guide during customization.
+- Done 2026-10-05: [docs/HERO.md](../docs/HERO.md) — words first, a motif from the product, what to keep and replace, the performance and theme rules, an optional live-field pattern, tests. Wired into the set path as Step 3b of `CUSTOMIZE.md`, the `INITIAL_CUSTOMIZATION.md` checklist, the definition of done, and a `hero_replaced` flag in `INITIAL_CUSTOMIZATION_STATUS.md`.
+- `bun run customize` now lists the hero among the steps still needing a human or agent.
+- Still open: nothing checks it. A downstream site can mark `status: complete` with the template hero still in place. Candidate: a test (like `product-identity.test.ts`) that fails once `site.slug` is not `nebulakit` while `.cosmic-bg` remains in `src/routes/+page.svelte`.
+
 ## Complete the NebulaKit quality and security pass
 
 status: blocked

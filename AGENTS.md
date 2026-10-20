@@ -26,6 +26,12 @@ the command list, repository map, and architecture explanation.
 - Keep robots, sitemap, API catalog, agent skills, `auth.md`, Markdown negotiation, and WebMCP honest.
   Add public pages to `SITEMAP_ROUTES` or explicitly exclude them. NebulaKit is an OAuth client, not
   an OAuth or MCP server. Keep `[x+2e]well-known`; the escape preserves TypeScript inclusion.
+- A screenshot of another website ships as a pair: one capture in that site's light mode, one in
+  its dark mode. Show the one that matches this page's current theme. Switch on
+  `[data-theme='dark']` on `<html>`, not on `prefers-color-scheme`: the user toggle overrides the
+  OS, so `<picture media="(prefers-color-scheme: dark)">` shows the wrong capture after a toggle.
+  Give both images the same size and `alt`. If the site has only one mode, say so beside the
+  single image.
 
 ## Security Boundaries
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import type { Writable } from 'svelte/store';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -56,8 +56,14 @@ const CONNECTED = {
 
 /** The admin page reads only `config`; the rest is the layout payload the
  *  generated `PageData` type folds in. */
-const pageData = (config: typeof CONNECTED | null) => ({
+const TOKEN_META = { prefix: 'nks_abc123', createdAt: '2026-10-10T12:00:00.000Z' };
+
+const pageData = (
+	config: typeof CONNECTED | null,
+	statsToken: typeof TOKEN_META | null = null
+) => ({
 	config,
+	statsToken,
 	user: OWNER,
 	hasAIProviders: false,
 	cmsPaletteItems: [],
@@ -79,12 +85,26 @@ describe('/admin/analytics load', () => {
 			platform: kvWith(JSON.stringify(CONNECTED))
 		} as never);
 
-		expect(data).toEqual({ config: CONNECTED });
+		expect(data).toEqual({ config: CONNECTED, statsToken: null });
 	});
 
 	it('reports no connection when nothing is saved', async () => {
 		const data = await load({ locals: { user: OWNER }, platform: kvWith(null) } as never);
-		expect(data).toEqual({ config: null });
+		expect(data).toEqual({ config: null, statsToken: null });
+	});
+
+	it('hands the stats token metadata to the owner, never its hash', async () => {
+		const kv = {
+			env: {
+				KV: {
+					get: vi.fn(async (key: string) =>
+						key === 'stats_api_token' ? JSON.stringify({ ...TOKEN_META, hash: 'digest' }) : null
+					)
+				}
+			}
+		} as never;
+		const data = await load({ locals: { user: OWNER }, platform: kv } as never);
+		expect(data).toEqual({ config: null, statsToken: TOKEN_META });
 	});
 
 	// Hidden UI is not authorization, but the route should still not 403 an admin
@@ -298,5 +318,133 @@ describe('GoogleAnalytics component', () => {
 
 		await waitFor(() => expect(sendPageView).toHaveBeenCalledTimes(2));
 		expect(vi.mocked(sendPageView).mock.calls[1][2].path).toBe('/blog?page=2');
+	});
+});
+
+describe('Admin analytics page — Dashboard access', () => {
+	const mockFetch = vi.fn();
+
+	beforeEach(() => {
+		mockFetch.mockReset();
+		vi.stubGlobal('fetch', mockFetch);
+	});
+
+	function scoped() {
+		const card = screen.getByRole('heading', { name: /Dashboard access/i }).closest('section');
+		return within(card as HTMLElement);
+	}
+
+	it('tells the owner where the dashboard reads from and that no token exists yet', () => {
+		render(AnalyticsPage, { props: { data: pageData(null) } });
+		const card = scoped();
+
+		expect(card.getByText('No token issued')).toBeInTheDocument();
+		expect(card.getByText(/\/api\/stats\/summary/)).toBeInTheDocument();
+		expect(card.getByRole('button', { name: 'Issue token' })).toBeInTheDocument();
+		expect(card.queryByRole('button', { name: 'Revoke' })).not.toBeInTheDocument();
+	});
+
+	it('shows an issued token by prefix and date, with rotate and revoke', () => {
+		render(AnalyticsPage, { props: { data: pageData(null, TOKEN_META) } });
+		const card = scoped();
+
+		expect(card.getByText('nks_abc123…')).toBeInTheDocument();
+		expect(card.getByText('Issued', { selector: '.status' })).toBeInTheDocument();
+		expect(card.getByRole('button', { name: 'Rotate token' })).toBeInTheDocument();
+		expect(card.getByRole('button', { name: 'Revoke' })).toBeInTheDocument();
+	});
+
+	it('issues a token, shows it once, and copies it', async () => {
+		const secret = 'nks_' + 'a'.repeat(48);
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({
+				success: true,
+				secret,
+				meta: { prefix: 'nks_aaaaaa', createdAt: '2026-10-10T12:00:00.000Z' }
+			})
+		});
+		const writeText = vi.fn(async () => {});
+		vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+
+		render(AnalyticsPage, { props: { data: pageData(null) } });
+		await fireEvent.click(scoped().getByRole('button', { name: 'Issue token' }));
+
+		expect(mockFetch).toHaveBeenCalledWith('/api/admin/settings/stats-token', { method: 'POST' });
+		const field = (await screen.findByLabelText('Stats token')) as HTMLInputElement;
+		expect(field.value).toBe(secret);
+		expect(scoped().getByText(/only time it is shown/i)).toBeInTheDocument();
+		expect(scoped().getByRole('button', { name: 'Rotate token' })).toBeInTheDocument();
+
+		await fireEvent.click(scoped().getByRole('button', { name: 'Copy' }));
+		expect(writeText).toHaveBeenCalledWith(secret);
+		expect(await scoped().findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+	});
+
+	it('keeps the token visible when the clipboard is unavailable', async () => {
+		const secret = 'nks_' + 'b'.repeat(48);
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({ success: true, secret, meta: TOKEN_META })
+		});
+		vi.stubGlobal('navigator', {
+			...navigator,
+			clipboard: {
+				writeText: vi.fn(async () => {
+					throw new Error('denied');
+				})
+			}
+		});
+
+		render(AnalyticsPage, { props: { data: pageData(null) } });
+		await fireEvent.click(scoped().getByRole('button', { name: 'Issue token' }));
+		await screen.findByLabelText('Stats token');
+		await fireEvent.click(scoped().getByRole('button', { name: 'Copy' }));
+
+		expect(scoped().getByRole('button', { name: 'Copy' })).toBeInTheDocument();
+		expect((screen.getByLabelText('Stats token') as HTMLInputElement).value).toBe(secret);
+	});
+
+	it('revokes and returns to the no-token state', async () => {
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({ success: true, meta: null })
+		});
+
+		render(AnalyticsPage, { props: { data: pageData(null, TOKEN_META) } });
+		await fireEvent.click(scoped().getByRole('button', { name: 'Revoke' }));
+
+		expect(mockFetch).toHaveBeenCalledWith('/api/admin/settings/stats-token', {
+			method: 'DELETE'
+		});
+		expect(await scoped().findByText('No token issued')).toBeInTheDocument();
+		expect(scoped().getByRole('button', { name: 'Issue token' })).toBeInTheDocument();
+	});
+
+	it('surfaces a server refusal instead of pretending', async () => {
+		mockFetch.mockResolvedValueOnce({
+			ok: false,
+			json: async () => ({ message: 'Owner access required' })
+		});
+
+		render(AnalyticsPage, { props: { data: pageData(null) } });
+		await fireEvent.click(scoped().getByRole('button', { name: 'Issue token' }));
+
+		expect(await scoped().findByText('Owner access required')).toBeInTheDocument();
+		expect(scoped().getByText('No token issued')).toBeInTheDocument();
+	});
+
+	it('falls back to a generic message when the refusal has no body', async () => {
+		mockFetch.mockResolvedValueOnce({
+			ok: false,
+			json: async () => {
+				throw new Error('no body');
+			}
+		});
+
+		render(AnalyticsPage, { props: { data: pageData(null) } });
+		await fireEvent.click(scoped().getByRole('button', { name: 'Issue token' }));
+
+		expect(await scoped().findByText('Request failed')).toBeInTheDocument();
 	});
 });

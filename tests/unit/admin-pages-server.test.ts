@@ -80,7 +80,7 @@ describe('Admin Auth Keys Page Server', () => {
 		vi.resetModules();
 		mockFetch = vi.fn();
 
-		const module = await import('../../src/routes/admin/auth-keys/+page.server');
+		const module = await import('../../src/routes/admin/settings/+page.server');
 		load = module.load;
 	});
 
@@ -108,6 +108,12 @@ describe('Admin Auth Keys Page Server', () => {
 		});
 
 		await expect(load({ fetch: mockFetch })).rejects.toMatchObject({ status: 503 });
+	});
+
+	it('should fail closed with a 500 when the error response has no status', async () => {
+		mockFetch.mockResolvedValue({ ok: false, status: 0 });
+
+		await expect(load({ fetch: mockFetch })).rejects.toMatchObject({ status: 500 });
 	});
 
 	it('should fail closed when fetch throws an error', async () => {

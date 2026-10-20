@@ -81,6 +81,16 @@ update it to match your rewrite.
 
 ---
 
+## Step 3b — Make the hero yours (semantic)
+
+The home page hero is NebulaKit's — a nebula, stars, planets, a comet. It says
+"starter kit", not your product. Write your headline, one sentence and one primary
+action, then build the decoration from your product's own motif (or leave it
+plain). Keep the structure; replace the picture. The full guide, with the rules
+that keep the page fast and themed, is [docs/HERO.md](docs/HERO.md).
+
+---
+
 ## Step 4 — Refill the command palette (semantic)
 
 The palette hardcodes its entries in
@@ -157,6 +167,8 @@ still needs doing.
 - `bun run check` and `bun run test` pass.
 - `wrangler.toml` points at **your** Cloudflare resources, not the template's.
 - The docs page and command palette reflect your app, not the starter.
+- The home hero says what your app is, in your app's own motif — no leftover
+  nebula or planets unless you chose them.
 - Social shares use your own image and metadata.
 - Auth and secret form fields carry your slug (`<slug>-password`), not `nebulakit-*`.
 - `INITIAL_CUSTOMIZATION_STATUS.md` says `status: complete`.

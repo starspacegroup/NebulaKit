@@ -1,39 +1,48 @@
+import { utcHourKey } from '$lib/utils/page-views';
+import { error } from '@sveltejs/kit';
+import { canViewStats } from '$lib/server/stats-guard';
+import { loadStatsSummary, parseTrafficWindow } from '$lib/server/stats-summary';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ platform }) => {
-	// Fetch OAuth configuration from KV
-	let authConfig = null;
-	let adminId = null;
-	let adminUsername = null;
-	let resetRouteDisabled = false;
-
-	if (platform?.env?.KV) {
-		try {
-			// Get OAuth config
-			const authConfigStr = await platform.env.KV.get('auth_config:github');
-			if (authConfigStr) {
-				authConfig = JSON.parse(authConfigStr);
-			}
-
-			// Get admin user info
-			adminId = await platform.env.KV.get('github_owner_id');
-			adminUsername = await platform.env.KV.get('github_owner_username');
-
-			// Get reset route status
-			resetRouteDisabled = (await platform.env.KV.get('reset_route_disabled')) === 'true';
-		} catch (err) {
-			console.error('Failed to fetch setup info from KV:', err);
-		}
+export const load: PageServerLoad = async ({ platform, url, locals }) => {
+	// The dashboard is every admin's landing page, but its stats are gated on the
+	// stats permission: owner always, plain admins only when granted
+	// can_view_stats. The admin layout guard has already run. An admin without
+	// the grant gets the page with no stats data, not a 403.
+	if (!canViewStats(locals.user)) {
+		return {
+			canViewStats: false as const,
+			stats: null,
+			traffic: null,
+			usage: null,
+			trafficWindow: 30,
+			trafficNowHour: utcHourKey(new Date())
+		};
 	}
 
-	return {
-		setupInfo: {
-			hasOAuthConfig: !!authConfig,
-			oauthProvider: authConfig?.provider || null,
-			oauthClientId: authConfig?.clientId || null,
-			adminId: adminId || null,
-			adminUsername: adminUsername || null,
-			resetRouteDisabled
-		}
-	};
+	if (!platform?.env?.DB) {
+		// Local dev without D1 — return a fully-shaped empty payload rather than
+		// throwing, so the page still renders and explains itself.
+		return {
+			canViewStats: true as const,
+			stats: null,
+			traffic: null,
+			usage: null,
+			trafficWindow: 30,
+			trafficNowHour: utcHourKey(new Date())
+		};
+	}
+
+	// The window is a query param so the UI can toggle it with a plain link —
+	// shareable, and it survives a reload. The assembly itself is shared with
+	// /api/stats/summary (src/lib/server/stats-summary.ts).
+	try {
+		const summary = await loadStatsSummary(
+			platform.env.DB,
+			parseTrafficWindow(url.searchParams.get('window'))
+		);
+		return { canViewStats: true as const, ...summary };
+	} catch {
+		throw error(500, 'Failed to load stats');
+	}
 };

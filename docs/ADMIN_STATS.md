@@ -5,7 +5,7 @@ NebulaKit ships its own analytics rather than a third-party tag. Everything is a
 identifiers, no IP addresses, and therefore nothing to put a consent banner in
 front of.
 
-Live at **`/admin/stats`**, gated on the per-admin `can_view_stats` grant.
+Live on the admin dashboard, **`/admin`**, gated on the per-admin `can_view_stats` grant. Admins without the grant still land on `/admin`, but see no stats. The old `/admin/stats` URL redirects there.
 
 An optional Google Analytics tag can be connected alongside it at
 **`/admin/analytics`** — off unless an owner turns it on. See
@@ -30,7 +30,7 @@ An optional Google Analytics tag can be connected alongside it at
    bun run db:migrate:local     # or db:migrate for remote
    ```
 
-2. **Grant yourself access.** The owner sees Stats automatically. Any other admin
+2. **Grant yourself access.** The owner sees the dashboard stats automatically. Any other admin
    needs `can_view_stats`:
 
    ```sql
@@ -171,10 +171,10 @@ canViewStats             = isOwner || isSuperAdmin || can_view_stats grant
 canManageStatsConnection = isOwner || isSuperAdmin
 ```
 
-`assertCanViewStats()` throws 403 on the route itself as defence in depth — the
-admin layout guard already blocks non-admins, so this only ever _narrows_. The
-sidebar hides the Stats link for admins without the grant, but the route is what
-enforces it.
+The `/admin` page load checks `canViewStats()` itself, as defence in depth — the
+admin layout guard already blocks non-admins, so this only ever _narrows_.
+`/admin` is every admin's landing page, so an admin without the grant gets the
+page without stats data rather than a 403. The query never runs for them.
 
 `can_view_stats` defaults to 0 so existing admins don't silently gain access on
 upgrade. It is refreshed from the database on every request by the auth hook, so
@@ -233,6 +233,45 @@ renders no GA data.
 
 ---
 
+## Reading the numbers from outside
+
+An external dashboard — the StarSpace Dashboard's NebulaKit widget, or anything
+else you trust — can read the admin dashboard's numbers as JSON:
+
+```
+GET /api/stats/summary?window=7
+Authorization: Bearer nks_…
+```
+
+The response is the object `/admin` renders (`stats`, `traffic`, `usage`,
+`trafficWindow`, `trafficNowHour`) plus `site: { name, url }` and
+`generatedAt`. Both readers call `loadStatsSummary()` in
+`src/lib/server/stats-summary.ts`, so they cannot disagree. `window` takes the
+same 1 / 7 / 30 / 90 values as the page.
+
+**The token** is issued by the owner on `/admin/analytics` ("Dashboard
+access"). One per site, no scopes: the endpoint is read-only and aggregate-only,
+so there is nothing to scope. Only its SHA-256 is kept, in the KV key
+`stats_api_token`; the plaintext is shown exactly once, at issue. **Rotate**
+issues a new one and invalidates the old; **Revoke** removes it and the next
+read answers 401 with a message that says so. Issuing, rotating and revoking are
+owner-only (`canManageStatsConnection`), the same policy as connecting Google
+Analytics — an admin with `can_view_stats` reads the page but does not hand out
+a standing credential for it.
+
+Three properties are load-bearing:
+
+- **The token never reaches a browser.** The dashboard proxies the call
+  server-side; the response carries `Cache-Control: no-store` and no CORS
+  headers, so a page cannot call it directly even with the token.
+- **No token, no endpoint.** A site that has never issued one answers 401 to
+  every request — there is no default and no environment-variable fallback.
+- **`/api/stats/summary` is counted by `usageHandler`, not `pageViewsHandler`,**
+  like every `/api` route: a dashboard polling every five minutes adds ~300
+  billable requests a day to the platform meter and zero page views.
+
+---
+
 ## Fail-soft rules
 
 The load function holds three rules, and they're worth preserving if you extend
@@ -265,25 +304,29 @@ contrast. Re-validate if you change one.
 
 ## Files
 
-| Path                                        | What                                   |
-| ------------------------------------------- | -------------------------------------- |
-| `migrations/0007_page_view_stats.sql`       | The five page-view counter tables      |
-| `migrations/0008_platform_usage.sql`        | The usage meter table                  |
-| `migrations/0009_user_can_view_stats.sql`   | The per-admin grant                    |
-| `src/hooks.server.ts`                       | `pageViewsHandler`, `usageHandler`     |
-| `src/lib/utils/page-views.ts`               | Bucketing + counter reads/writes       |
-| `src/lib/utils/usage.ts`                    | Buffered request counting + projection |
-| `src/lib/utils/stats-timeseries.ts`         | Gap-filling + SVG chart geometry       |
-| `src/lib/server/stats-guard.ts`             | Access policy                          |
-| `src/lib/components/StatBarChart.svelte`    | The bar chart                          |
-| `src/routes/admin/stats/`                   | The page                               |
-| `src/routes/api/stats/viewport/`            | Viewport beacon                        |
-| `src/lib/utils/analytics.ts`                | GA parsing, exclusions, gtag loader    |
-| `src/lib/server/analytics-config.ts`        | GA connection in KV                    |
-| `src/lib/components/GoogleAnalytics.svelte` | The optional GA4 tag                   |
-| `src/routes/admin/analytics/`               | The connect/pause/disconnect page      |
-| `src/routes/api/admin/settings/analytics/`  | Owner-only connection API              |
-| `src/routes/api/cron/prune-view-stats/`     | Retention                              |
+| Path                                         | What                                    |
+| -------------------------------------------- | --------------------------------------- |
+| `migrations/0007_page_view_stats.sql`        | The five page-view counter tables       |
+| `migrations/0008_platform_usage.sql`         | The usage meter table                   |
+| `migrations/0009_user_can_view_stats.sql`    | The per-admin grant                     |
+| `src/hooks.server.ts`                        | `pageViewsHandler`, `usageHandler`      |
+| `src/lib/utils/page-views.ts`                | Bucketing + counter reads/writes        |
+| `src/lib/utils/usage.ts`                     | Buffered request counting + projection  |
+| `src/lib/utils/stats-timeseries.ts`          | Gap-filling + SVG chart geometry        |
+| `src/lib/server/stats-guard.ts`              | Access policy                           |
+| `src/lib/server/stats-summary.ts`            | The assembly `/admin` and the API share |
+| `src/lib/server/stats-token.ts`              | Stats token: issue, verify, revoke      |
+| `src/routes/api/stats/summary/`              | Token-authenticated JSON summary        |
+| `src/routes/api/admin/settings/stats-token/` | Owner-only token management             |
+| `src/lib/components/StatBarChart.svelte`     | The bar chart                           |
+| `src/routes/admin/+page.*`                   | The page (the admin dashboard)          |
+| `src/routes/api/stats/viewport/`             | Viewport beacon                         |
+| `src/lib/utils/analytics.ts`                 | GA parsing, exclusions, gtag loader     |
+| `src/lib/server/analytics-config.ts`         | GA connection in KV                     |
+| `src/lib/components/GoogleAnalytics.svelte`  | The optional GA4 tag                    |
+| `src/routes/admin/analytics/`                | The connect/pause/disconnect page       |
+| `src/routes/api/admin/settings/analytics/`   | Owner-only connection API               |
+| `src/routes/api/cron/prune-view-stats/`      | Retention                               |
 
 ---
 

@@ -13,7 +13,7 @@ type StatsUser =
 
 /**
  * Stats-access policy (docs/ADMIN_STATS.md). The owner always sees the admin
- * Stats section; a plain admin needs the per-admin `can_view_stats` grant.
+ * dashboard stats; a plain admin needs the per-admin `can_view_stats` grant.
  *
  * This NARROWS access among admins — a non-admin can't reach /admin at all
  * (layout guard), so it never widens access beyond the admin surface.

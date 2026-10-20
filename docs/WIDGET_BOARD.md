@@ -3,8 +3,9 @@
 A columned board of draggable widgets, and the drag behaviour underneath it.
 Works with a mouse, a finger, or a keyboard alone.
 
-The widget registry ships **empty** — the kit gives you the mechanism, not
-someone else's widgets.
+The registry ships six standard widgets — stat, clock, checklist, meter, notes
+and links — shown running at `/components`. They are examples of the contract as
+much as features: delete the ones your app does not use.
 
 ---
 
@@ -162,6 +163,8 @@ Every component added to this library ships with all six:
 4. Tests, written first, holding the 95% coverage floor (AGENTS.md §1).
 5. A `/documentation` entry, in the same change (AGENTS.md §7).
 6. A `FEATURES.md` bullet.
+7. An entry in `src/lib/ui/catalog.ts` and a demo on `/components`. The catalog
+   test fails without the entry.
 
 ---
 

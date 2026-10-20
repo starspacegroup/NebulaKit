@@ -115,6 +115,20 @@
 			action: () => goto('/documentation'),
 			icon: '📚'
 		},
+		{
+			id: 'components',
+			label: 'Components',
+			description: 'Every UI element and widget, running',
+			action: () => goto('/components'),
+			icon: '🧩'
+		},
+		{
+			id: 'modules',
+			label: 'Modules',
+			description: 'Sign-in, settings, pricing, data grids and more, running',
+			action: () => goto('/modules'),
+			icon: '🧱'
+		},
 		...cmsCommands.map((command) => ({
 			id: command.id,
 			label: command.label,
@@ -238,7 +252,9 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (!show) {
-			if (e.key === 'Escape' && !e.defaultPrevented) {
+			// An open modal dialog owns Escape: preventDefault here would cancel its close.
+			const inDialog = document.querySelector('dialog[open]') !== null;
+			if (e.key === 'Escape' && !e.defaultPrevented && !inDialog) {
 				e.preventDefault();
 				show = true;
 			}
@@ -359,7 +375,14 @@
 					on:click={closeCommandPalette}
 					aria-label="Close command palette"
 				>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<svg
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
 						<line x1="18" y1="6" x2="6" y2="18"></line>
 						<line x1="6" y1="6" x2="18" y2="18"></line>
 					</svg>

@@ -430,6 +430,44 @@ describe('CMS Service', () => {
 			);
 			expect(prepareCall).toBeTruthy();
 		});
+
+		it('should filter by tag slug, scoped to the content type', async () => {
+			const { listContentItems } = await import('../../src/lib/services/cms.js');
+
+			mockDB.first.mockResolvedValueOnce({ count: 0 });
+			mockDB.all.mockResolvedValueOnce({ results: [] });
+
+			const result = await listContentItems(mockDB, 'ct-1', {
+				status: 'published',
+				tagSlug: 'history'
+			});
+			expect(result.items).toHaveLength(0);
+			expect(result.total).toBe(0);
+
+			// Both the count and the items query join through content_item_tags
+			const tagQueries = mockDB.prepare.mock.calls.filter((call: string[]) =>
+				call[0].includes('content_item_tags')
+			);
+			expect(tagQueries).toHaveLength(2);
+			expect(tagQueries[0][0]).toContain('t.slug = ?');
+			expect(tagQueries[0][0]).toContain('t.content_type_id = content_items.content_type_id');
+			// The slug is bound after the status, before LIMIT/OFFSET
+			expect(mockDB.bind).toHaveBeenCalledWith('ct-1', 'published', 'history');
+			expect(mockDB.bind).toHaveBeenCalledWith('ct-1', 'published', 'history', 12, 0);
+		});
+
+		it('should not touch the tag tables when no tag is given', async () => {
+			const { listContentItems } = await import('../../src/lib/services/cms.js');
+
+			mockDB.first.mockResolvedValueOnce({ count: 0 });
+			mockDB.all.mockResolvedValueOnce({ results: [] });
+
+			await listContentItems(mockDB, 'ct-1', { status: 'published' });
+			const tagQueries = mockDB.prepare.mock.calls.filter((call: string[]) =>
+				call[0].includes('content_item_tags')
+			);
+			expect(tagQueries).toHaveLength(0);
+		});
 	});
 
 	describe('updateContentItem', () => {

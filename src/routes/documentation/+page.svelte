@@ -69,6 +69,8 @@ bun run deploy`;
 			<a href="#quick-start">Quick Start</a>
 			<a href="#feature-overview">Feature Overview</a>
 			<a href="#how-to-use">How To Use</a>
+			<a href="#ui-kit">UI Kit</a>
+			<a href="#modules">Modules</a>
 			<a href="#drag-and-drop">Drag and Drop</a>
 			<a href="#ai-workflow">AI Workflow</a>
 			<a href="#commands">Commands</a>
@@ -76,6 +78,7 @@ bun run deploy`;
 			<a href="#database-migrations">Database Migrations</a>
 			<a href="#auth-and-setup">Auth and Setup</a>
 			<a href="#admin-analytics">Admin Analytics</a>
+			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
 			<a href="#lighthouse">Lighthouse</a>
 			<a href="#agent-readiness">Agent Readiness</a>
 			<a href="#testing">Testing</a>
@@ -179,6 +182,11 @@ bun run deploy`;
 					<ul>
 						<li>Setup-first authentication flow for owner configuration.</li>
 						<li>Login, signup, profile, reset, and admin routes are already scaffolded.</li>
+						<li>
+							<code>/admin</code> opens on the stats dashboard. <code>/admin/settings</code> holds
+							the configuration summary, the <code>/reset</code> route switch, and the OAuth authentication
+							keys.
+						</li>
 						<li>Cloudflare D1 and KV are used for setup state and application data.</li>
 					</ul>
 				</div>
@@ -211,8 +219,8 @@ bun run deploy`;
 					<h3>Analytics and Operations</h3>
 					<ul>
 						<li>
-							First-party, cookie-free analytics at <code>/admin/stats</code> — traffic, audience, and
-							growth, with no third-party script.
+							First-party, cookie-free analytics at <code>/admin</code> — traffic, audience, and growth,
+							with no third-party script.
 						</li>
 						<li>
 							A Cloudflare plan-limit meter that projects whether today's traffic will exhaust your
@@ -276,6 +284,106 @@ bun run deploy`;
 			</div>
 		</section>
 
+		<section id="ui-kit" class="docs-section">
+			<h2>UI Kit</h2>
+			<p>
+				Standard elements live in <code>src/lib/ui</code> and import from one place. Every one uses
+				the theme's CSS variables only, works in light and dark, and is usable by keyboard. See them
+				all running, with the code for each, at <a href="/components">/components</a>.
+			</p>
+			<pre><code
+					>{`import { Button, TextInput, Select, Dialog, Tabs, Table, toast } from '$lib/ui';`}</code
+				></pre>
+			<ul>
+				<li>
+					<strong>Actions</strong> — Button (four variants, three sizes, link form, loading state),
+					ButtonGroup, Menu, DropdownMenu (checkbox and radio items), Command (a filterable command
+					palette, inline or as a <kbd>Ctrl</kbd>+<kbd>K</kbd> dialog), Toggle and ToggleGroup.
+				</li>
+				<li>
+					<strong>Forms</strong> — TextInput, Textarea, Select, Checkbox, RadioGroup, Switch,
+					Slider, Combobox, Calendar, DatePicker, InputOTP, InputGroup, NumberInput, TagInput and
+					FileDrop, all wired the way Field wires them: a real label, the hint and error in
+					<code>aria-describedby</code>.
+				</li>
+				<li>
+					<strong>Feedback</strong> — Alert, toasts, Badge, Progress, Spinner and Skeleton.
+				</li>
+				<li>
+					<strong>Overlays</strong> — Dialog and AlertDialog (native <code>&lt;dialog&gt;</code>),
+					Sheet (from any side, so also a drawer), Popover, HoverCard, Tooltip and ContextMenu.
+				</li>
+				<li>
+					<strong>Navigation</strong> — Tabs, Accordion, Breadcrumbs, Pagination, Menubar, NavigationMenu,
+					Sidebar and Stepper.
+				</li>
+				<li>
+					<strong>Layout</strong> — Container, Stack, Separator, AspectRatio, ScrollArea, Resizable and
+					Collapsible.
+				</li>
+				<li>
+					<strong>Data display</strong> — Card, Item, Table, DataTable (search, sort, paging, selection),
+					BarChart, LineChart and DonutChart (plain SVG, each with a hidden data table for screen readers),
+					Stat, Carousel, Timeline, Avatar, AvatarGroup, Kbd, CodeBlock, Prose and EmptyState.
+				</li>
+			</ul>
+			<p>
+				That is every element shadcn/ui ships, and more. None of it needs a dependency beyond
+				Svelte, and none of it is a paid add-on: the kit is MIT-licensed with the rest of the
+				project.
+			</p>
+			<p>
+				Toasts need one <code>{'<Toaster />'}</code>, which the root layout already renders. Raise
+				one from anywhere with <code>toast.success('Saved')</code>; pass <code>0</code> as the duration
+				to keep it until it is dismissed.
+			</p>
+			<p>
+				The catalog is checked: a test fails when a component is added to <code>src/lib/ui</code>,
+				or a widget is registered, without an entry in <code>src/lib/ui/catalog.ts</code>. Full
+				reference: <code>docs/UI_KIT.md</code>.
+			</p>
+		</section>
+
+		<section id="modules" class="docs-section">
+			<h2>Modules</h2>
+			<p>
+				Where the UI kit gives you elements, modules give you the blocks every app ends up building.
+				They live in <code>src/lib/modules</code>, are built from <code>$lib/ui</code>, and are
+				shown running, with the accessibility behaviour each one keeps, at
+				<a href="/modules">/modules</a>.
+			</p>
+			<pre><code
+					>{`import { SignInForm, PricingTable, DataGrid, KanbanBoard } from '$lib/modules';`}</code
+				></pre>
+			<ul>
+				<li>
+					<strong>Account</strong> &mdash; sign-in, sign-up, password reset, profile, sessions, two-factor.
+				</li>
+				<li>
+					<strong>Settings</strong> &mdash; appearance, notifications, API keys, webhooks, cookie consent,
+					privacy.
+				</li>
+				<li>
+					<strong>Marketing</strong> &mdash; hero, pricing, comparison, FAQ, testimonials, footer, contact.
+				</li>
+				<li>
+					<strong>App shell</strong> &mdash; app shell, notification center, global search, wizard, error
+					states.
+				</li>
+				<li>
+					<strong>Data &amp; teams</strong> &mdash; data grid, kanban, comments, files, calendar, tree,
+					audit log.
+				</li>
+				<li>
+					<strong>Commerce</strong> &mdash; billing, invoices, checkout, cart, reviews, status page, changelog.
+				</li>
+			</ul>
+			<p>
+				Each module takes its data and copy as props, emits events, and never fetches. All are
+				mobile first from 320px, use CSS variables only, and work by keyboard and screen reader.
+			</p>
+		</section>
+
 		<section id="drag-and-drop" class="docs-section">
 			<h2>Drag and Drop</h2>
 			<p>
@@ -289,8 +397,10 @@ bun run deploy`;
 			<p>
 				Registering a widget takes three edits and none of them is the board: an entry in
 				<code>src/lib/widgets/manifest.ts</code>, a line in
-				<code>src/lib/widgets/index.ts</code>, and the component itself. The registry ships empty on
-				purpose. The two actions underneath the board — <code>use:draggable</code> and
+				<code>src/lib/widgets/index.ts</code>, and the component itself. The kit ships six standard
+				widgets — stat, clock, checklist, meter, notes and links — all running at
+				<a href="/components#widgets">/components</a>; delete the ones your app does not use. The
+				two actions underneath the board — <code>use:draggable</code> and
 				<code>use:dropzone</code> — work on any markup, so a sortable list or a nav reorder needs no board
 				at all.
 			</p>
@@ -486,10 +596,10 @@ bun run db:migrate:list</code
 		<section id="admin-analytics" class="docs-section">
 			<h2>Admin Analytics</h2>
 			<p>
-				<code>/admin/stats</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day
-				window, views by route, the most-read CMS items, referrers, countries, an audience breakdown,
-				and user and content growth over time. It is first-party — there is no third-party script, no
-				account, and no API key to provision.
+				<code>/admin</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day window,
+				views by route, the most-read CMS items, referrers, countries, an audience breakdown, and user
+				and content growth over time. It is first-party — there is no third-party script, no account,
+				and no API key to provision.
 			</p>
 			<p>
 				Everything collected is a daily aggregate counter in D1. There are
@@ -526,8 +636,11 @@ bun run db:migrate:list</code
 				<div class="callout-card">
 					<h3>Granting Access</h3>
 					<p>
-						The owner always sees Stats. Any other admin needs the <code>can_view_stats</code> flag, which
-						defaults to off so existing admins do not gain access on upgrade:
+						The owner always sees the dashboard stats. Any other admin needs the <code
+							>can_view_stats</code
+						>
+						flag, which defaults to off so existing admins do not gain access on upgrade. Without it,
+						an admin still lands on <code>/admin</code> but sees no stats:
 					</p>
 					<pre><code>UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';</code
 						></pre>
@@ -562,6 +675,24 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Reading Stats From a Dashboard</h3>
+					<p>
+						An external dashboard can read the same numbers as JSON. The owner issues a
+						<strong>stats token</strong> under "Dashboard access" on
+						<code>/admin/analytics</code>; it is shown once, and only its hash is stored. The
+						dashboard then sends it as a bearer token:
+					</p>
+					<pre><code
+							>curl https://your-app/api/stats/summary?window=7 \
+  -H "Authorization: Bearer nks_…"</code
+						></pre>
+					<p>
+						The response is read-only and aggregate-only — exactly what <code>/admin</code> shows. Rotate
+						replaces the token; Revoke cuts the dashboard off on its next read. A site that has never
+						issued one answers 401 to every request.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>Connecting Google Analytics</h3>
 					<p>
 						Optional, and off until you turn it on. The owner opens
@@ -585,6 +716,71 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 			</div>
+		</section>
+
+		<section id="shop-pages-api" class="docs-section">
+			<h2>Shop, Pages and the Site API</h2>
+			<p>
+				Three packages live in <code>packages/</code>, each versioned on its own:
+				<code>@nebulakit/commerce</code> (products, cart pricing, checkout, orders, Stripe,
+				Printful),
+				<code>@nebulakit/builder</code> (drag-and-drop pages stored as data), and
+				<code>@nebulakit/security</code> (API keys). Security updates are forced to every site; the other
+				two are opt-in.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Pages</h3>
+					<p>
+						Build pages at <code>/admin/pages</code>: drag blocks from the palette onto the page or
+						into a Section or Column, reorder and nest them, edit each block's fields, hide a block
+						on phones, tablets or desktops, preview at each width, and publish. Mouse, touch and
+						keyboard all work: every drag has Add, Move up/down, Move in and Move out buttons, plus
+						Alt+Arrow keys, and Undo and Redo (Ctrl/⌘+Z) cover every edit. A check list flags images
+						without a description, skipped heading levels and vague link text. Published pages are
+						served at <code>/p/[slug]</code> and listed in the sitemap. Every save that changes a
+						page keeps a revision (the newest 50), listed under History in the editor and at
+						<code>/api/v1/pages/[slug]/revisions</code>; restoring one is itself saved, so it can be
+						undone. A page is a JSON document (format version 2: a tree of blocks), never code.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Storefront</h3>
+					<p>
+						Shoppers browse <code>/shop</code> and <code>/shop/[slug]</code>, add products to a cart
+						kept in their browser, and check out at <code>/cart</code>. Prices, tax and shipping are
+						always worked out on the server from the catalog; the cart only remembers what to ask
+						for. Physical products ask for a shipping address. With Stripe configured the shopper
+						goes on to pay; without it the order waits for a manual payment.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>API keys</h3>
+					<p>
+						The owner manages access at <code>/admin/api-keys</code>: create a key with scopes and
+						an expiry, see when it was last used, revoke it in one click, and read the call log. A
+						key is shown once and stored hashed.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>The site API</h3>
+					<p>
+						Everything is reachable under <code>/api/v1</code>, described at
+						<code>/api/v1/openapi.json</code>. Send keys as <code>Authorization: Bearer nk_…</code>.
+						Checkout (<code>POST /api/v1/checkout</code>) is public and prices every line from the
+						catalog.
+					</p>
+				</div>
+			</div>
+			<p>
+				Shop settings are environment variables, never request fields:
+				<code>COMMERCE_TAX_RATE_PERCENT</code>, <code>COMMERCE_PRICES_INCLUDE_TAX</code>,
+				<code>COMMERCE_FLAT_SHIPPING_CENTS</code>, <code>STRIPE_SECRET_KEY</code> and
+				<code>STRIPE_WEBHOOK_SECRET</code> (webhook URL <code>/api/v1/webhooks/stripe</code>).
+				Without a Stripe key, orders wait for a manual payment. <code>ORCHESTRATOR_KEY_SHA256</code>
+				connects the Ammoura control room. Apply migrations <code>0016</code>–<code>0018</code> with
+				<code>bun run db:migrate:local</code>.
+			</p>
 		</section>
 
 		<section id="testing" class="docs-section">

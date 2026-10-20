@@ -1,6 +1,6 @@
 /**
  * First-party page-view analytics (docs/ADMIN_STATS.md): daily AGGREGATE
- * counters written by the `pageViewsHandler` hook and read by /admin/stats.
+ * counters written by the `pageViewsHandler` hook and read by the /admin dashboard.
  *
  * No raw request rows, no cookies, no identifiers, no IP addresses. Everything
  * below either bumps a `(day, …)` counter or maps a request header to a small

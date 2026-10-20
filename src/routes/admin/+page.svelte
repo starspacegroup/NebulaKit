@@ -1,482 +1,855 @@
 <script lang="ts">
-	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import StatBarChart from '$lib/components/StatBarChart.svelte';
+	import PagedRows from '$lib/components/admin/PagedRows.svelte';
+	import { fillDailySeries, fillHourlySeries } from '$lib/utils/stats-timeseries';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
 
-	$: setupInfo = data.setupInfo;
+	$: stats = data.stats;
+	$: traffic = data.traffic;
+	$: trafficWindow = data.trafficWindow;
 
-	let togglingReset = false;
-	let resetError = '';
+	const TRAFFIC_WINDOW_OPTIONS = [
+		{ value: 1, label: '1 day' },
+		{ value: 7, label: '7 days' },
+		{ value: 30, label: '30 days' },
+		{ value: 90, label: '90 days' }
+	];
 
-	// Mask client ID for security (show first 8 chars + ***)
-	function maskClientId(clientId: string | null): string {
-		if (!clientId) return 'Not configured';
-		return clientId.slice(0, 8) + '***';
+	// Views chart: the 1-day window is plotted as 24 hourly buckets (a day series
+	// over one day is just two bars); wider windows stay daily. Both are
+	// gap-filled so quiet hours/days render as zero bars, not missing ones.
+	const TRAFFIC_HOURS = 24;
+	$: hourly = trafficWindow === 1;
+	$: viewsSeries = !traffic
+		? []
+		: hourly
+			? fillHourlySeries(
+					traffic.hourly.map((h) => ({ hourKey: h.hourKey, count: h.views })),
+					data.trafficNowHour,
+					TRAFFIC_HOURS
+				)
+			: fillDailySeries(
+					traffic.daily.map((d) => ({ day: d.day, count: d.views })),
+					utcDayOffset(-trafficWindow),
+					utcDayOffset(0)
+				);
+
+	// Totals follow the chart's window so the caption and the bars agree.
+	$: viewRows = traffic ? (hourly ? traffic.hourly : traffic.daily) : [];
+	$: totalViews = viewRows.reduce((sum, r) => sum + r.views, 0);
+	$: signedInViews = viewRows.reduce((sum, r) => sum + r.signedIn, 0);
+
+	// Platform-usage history: the 30-day request series already rides on the
+	// usage counters; render it as a gap-filled bar chart.
+	$: usageSeries = data.usage
+		? fillDailySeries(
+				data.usage.days.map((d) => ({ day: d.day, count: d.requests })),
+				utcDayOffset(-29),
+				utcDayOffset(0)
+			)
+		: [];
+
+	function utcDayOffset(days: number): string {
+		return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 	}
 
-	async function toggleResetRoute() {
-		togglingReset = true;
-		resetError = '';
+	// Per-card maxima for the in-row meters. Each meter reads "share of this
+	// card's biggest row", so every table doubles as a bar chart.
+	const maxOf = (values: number[]) => Math.max(1, ...values);
+	$: byPathMax = traffic ? maxOf(traffic.byPath.map((r) => r.views)) : 1;
+	$: topContentMax = traffic ? maxOf((traffic.topContent ?? []).map((r) => r.views)) : 1;
+	$: referrersMax = traffic ? maxOf(traffic.referrers.map((r) => r.views)) : 1;
+	$: countriesMax = traffic ? maxOf(traffic.countries.map((r) => r.views)) : 1;
 
-		try {
-			const response = await fetch('/api/admin/settings/reset-route', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ disabled: !setupInfo.resetRouteDisabled })
-			});
+	function meterStyle(views: number, max: number): string {
+		return `--pct:${Math.max(2, Math.round((views / max) * 100))}%`;
+	}
 
-			if (!response.ok) {
-				const data = await response.json();
-				throw new Error(data.message || 'Failed to update setting');
+	// Audience cards: one config drives all five loops.
+	$: audienceCards = traffic?.audience
+		? [
+				{ key: 'os', title: 'Operating systems', rows: traffic.audience.os },
+				{ key: 'browsers', title: 'Browsers', rows: traffic.audience.browsers },
+				{ key: 'devices', title: 'Devices', rows: traffic.audience.devices },
+				{ key: 'languages', title: 'Languages', rows: traffic.audience.languages },
+				{ key: 'viewports', title: 'Viewports', rows: traffic.audience.viewports }
+			].map((card) => ({
+				...card,
+				max: maxOf(card.rows.map((r) => r.views)),
+				total: card.rows.reduce((sum, r) => sum + r.views, 0)
+			}))
+		: [];
+
+	// Display-time labels. Values are stored as raw buckets; every prettification
+	// below is presentational only, so the stored vocabulary stays stable.
+	const languageNames =
+		typeof Intl !== 'undefined' && 'DisplayNames' in Intl
+			? new Intl.DisplayNames(['en'], { type: 'language' })
+			: null;
+
+	const VIEWPORT_LABELS: Record<string, string> = {
+		'under-640': 'Phone (under 640px)',
+		'640-1023': 'Small tablet (640–1023px)',
+		'1024-1535': 'Laptop (1024–1535px)',
+		'1536-plus': 'Large (1536px and up)'
+	};
+
+	function audienceLabel(dimension: string, value: string): string {
+		if (value === '(unknown)' || value === '(other)') return value;
+		if (dimension === 'languages') {
+			try {
+				return languageNames?.of(value) ?? value;
+			} catch {
+				return value;
 			}
-
-			// Update local state
-			setupInfo.resetRouteDisabled = !setupInfo.resetRouteDisabled;
-		} catch (err) {
-			resetError = err instanceof Error ? err.message : 'Failed to update setting';
-		} finally {
-			togglingReset = false;
 		}
+		if (dimension === 'devices') return value.charAt(0).toUpperCase() + value.slice(1);
+		if (dimension === 'viewports') return VIEWPORT_LABELS[value] ?? value;
+		return value;
+	}
+
+	// Referrer bucketing is presentational: hosts are stored raw, grouped here.
+	function referrerBucket(host: string): string {
+		if (host === '(direct)') return 'Direct';
+		if (/google|bing|duckduckgo|yahoo|ecosia|qwant|startpage/.test(host)) return 'Search';
+		if (
+			/facebook|instagram|fb\.com|twitter|^t\.co$|tiktok|reddit|discord|threads|bsky|bluesky|linkedin|youtube|pinterest|pinimg/.test(
+				host
+			)
+		)
+			return 'Social';
+		return 'Other';
+	}
+
+	$: referrerBuckets = ((): { bucket: string; views: number }[] => {
+		if (!traffic) return [];
+		const buckets = new Map<string, number>();
+		for (const r of traffic.referrers) {
+			const bucket = referrerBucket(r.referrerHost);
+			buckets.set(bucket, (buckets.get(bucket) ?? 0) + r.views);
+		}
+		return [...buckets.entries()]
+			.map(([bucket, views]) => ({ bucket, views }))
+			.sort((a, b) => b.views - a.views);
+	})();
+
+	// Country display: codes are stored raw (ISO alpha-2 from the edge, or the
+	// '(unknown)'/'T1'/'XX' specials); names and flags are presentational.
+	const countryNames =
+		typeof Intl !== 'undefined' && 'DisplayNames' in Intl
+			? new Intl.DisplayNames(['en'], { type: 'region' })
+			: null;
+
+	function countryLabel(code: string): string {
+		if (code === '(unknown)' || code === 'XX') return 'Unknown';
+		if (code === 'T1') return 'Tor network';
+		try {
+			return countryNames?.of(code) ?? code;
+		} catch {
+			return code;
+		}
+	}
+
+	function countryFlag(code: string): string {
+		if (!/^[A-Z]{2}$/.test(code)) return '·';
+		return String.fromCodePoint(...[...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+	}
+
+	$: countryTotal = traffic ? traffic.countries.reduce((sum, c) => sum + c.views, 0) : 0;
+
+	$: contentStatusRows = stats
+		? [
+				{ key: 'published', label: 'Published', count: stats.contentByStatus.published },
+				{ key: 'draft', label: 'Draft', count: stats.contentByStatus.draft },
+				{ key: 'archived', label: 'Archived', count: stats.contentByStatus.archived }
+			].sort((a, b) => b.count - a.count)
+		: [];
+	$: contentStatusMax = maxOf(contentStatusRows.map((r) => r.count));
+
+	function formatHours(hours: number): string {
+		if (!Number.isFinite(hours)) return 'never at this rate';
+		if (hours < 1) return `${Math.round(hours * 60)} min`;
+		return `${hours.toFixed(1)} h`;
 	}
 </script>
 
-<SharingMeta title="Admin" noindex={true} />
+<svelte:head>
+	<title>Admin Dashboard</title>
+</svelte:head>
 
-<div class="admin-home">
-	<h1>Admin Dashboard</h1>
-	<p>Select a section from the sidebar to manage your settings.</p>
+<div class="stats-page">
+	<header class="page-head">
+		<h1>Dashboard</h1>
+		{#if data.canViewStats}
+			<p class="lede">
+				First-party, cookie-free analytics — aggregate counters only, no per-visitor data.
+			</p>
+		{:else}
+			<p class="lede">
+				Pick a section from the sidebar. Site stats appear here once the owner grants you stats
+				access.
+			</p>
+		{/if}
+	</header>
 
-	<div class="setup-info">
-		<h2>Configuration Summary</h2>
+	{#if data.canViewStats}
+		<!-- Overview -->
+		<section class="panel">
+			<h2>Overview</h2>
+			{#if stats}
+				<div class="tiles">
+					<div class="tile">
+						<span class="tile-label">Users</span>
+						<span class="tile-value">{stats.totalUsers.toLocaleString()}</span>
+					</div>
+					<div class="tile">
+						<span class="tile-label">Admins</span>
+						<span class="tile-value">{stats.totalAdmins.toLocaleString()}</span>
+					</div>
+					<div class="tile">
+						<span class="tile-label">Content items</span>
+						<span class="tile-value">{stats.totalContent.toLocaleString()}</span>
+					</div>
+					<div class="tile">
+						<span class="tile-label">Contact forms</span>
+						<span class="tile-value">{stats.totalContactSubmissions.toLocaleString()}</span>
+					</div>
+					<div class="tile">
+						<span class="tile-label">Chat messages</span>
+						<span class="tile-value">{stats.totalChatMessages.toLocaleString()}</span>
+					</div>
+				</div>
+			{:else}
+				<p class="empty-note">
+					No database bound. Run <code>bun run db:migrate:local</code> and reload.
+				</p>
+			{/if}
+		</section>
 
-		<div class="info-grid">
-			<!-- OAuth Configuration -->
-			<div class="info-card">
-				<h3>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-					</svg>
-					OAuth Configuration
-				</h3>
-				{#if setupInfo.hasOAuthConfig}
-					<div class="info-row">
-						<span class="label">Provider:</span>
-						<span class="value"
-							><span class="badge"
-								>{setupInfo.oauthProvider === 'github' ? 'GitHub' : setupInfo.oauthProvider}</span
-							></span
-						>
-					</div>
-					<div class="info-row">
-						<span class="label">Client ID:</span>
-						<span class="value mono">{maskClientId(setupInfo.oauthClientId)}</span>
-					</div>
-					<div class="status status-success">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M20 6L9 17l-5-5" />
-						</svg>
-						Configured
-					</div>
-				{:else}
-					<div class="status status-warning">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<circle cx="12" cy="12" r="10" />
-							<line x1="12" y1="8" x2="12" y2="12" />
-							<line x1="12" y1="16" x2="12.01" y2="16" />
-						</svg>
-						Not configured
-					</div>
-					<p class="hint">OAuth is required for authentication. Please configure it in setup.</p>
-				{/if}
-			</div>
+		<!-- Growth over time -->
+		{#if stats}
+			<section class="panel">
+				<h2>Growth over time</h2>
+				<div class="chart-grid">
+					<article class="chart-card">
+						<header class="chart-head">
+							<span class="chart-title">New users</span>
+							<span class="chart-sub">{stats.totalUsers.toLocaleString()} total</span>
+						</header>
+						<StatBarChart
+							series={stats.usersByMonth}
+							accent="var(--chart-users)"
+							unit="users"
+							periodLabel="month"
+						/>
+					</article>
+					<article class="chart-card">
+						<header class="chart-head">
+							<span class="chart-title">New content</span>
+							<span class="chart-sub">{stats.totalContent.toLocaleString()} total</span>
+						</header>
+						<StatBarChart
+							series={stats.contentByMonth}
+							accent="var(--chart-content)"
+							unit="items"
+							periodLabel="month"
+						/>
+					</article>
+				</div>
+			</section>
+		{/if}
 
-			<!-- Admin User -->
-			<div class="info-card">
-				<h3>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-						<circle cx="12" cy="7" r="4" />
-					</svg>
-					Admin User
-				</h3>
-				{#if setupInfo.adminUsername}
-					<div class="info-row">
-						<span class="label">Username:</span>
-						<span class="value">
-							<a
-								href="https://github.com/{setupInfo.adminUsername}"
-								target="_blank"
-								rel="noopener noreferrer"
-								class="github-link"
-							>
-								@{setupInfo.adminUsername}
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-									<polyline points="15 3 21 3 21 9" />
-									<line x1="10" y1="14" x2="21" y2="3" />
-								</svg>
-							</a>
+		<!-- Platform usage (Cloudflare plan limits) -->
+		{#if data.usage}
+			<section class="panel">
+				<h2>Platform usage</h2>
+				<p class="panel-note">
+					Billable Function invocations — a larger set than page views (bots, API calls, 404s and
+					non-GET all count). A floor, not a billing-grade figure; the Cloudflare dashboard is
+					authoritative.
+				</p>
+				<div class="tiles">
+					<div class="tile">
+						<span class="tile-label">Today</span>
+						<span class="tile-value">{data.usage.today.toLocaleString()}</span>
+						<span class="tile-sub">
+							{data.usage.projection.percentUsed.toFixed(1)}% of the free daily allowance
 						</span>
 					</div>
-					<div class="info-row">
-						<span class="label">User ID:</span>
-						<span class="value mono">{setupInfo.adminId}</span>
-					</div>
-					<div class="status status-success">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M20 6L9 17l-5-5" />
-						</svg>
-						Active
-					</div>
-				{:else}
-					<div class="status status-warning">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<circle cx="12" cy="12" r="10" />
-							<line x1="12" y1="8" x2="12" y2="12" />
-							<line x1="12" y1="16" x2="12.01" y2="16" />
-						</svg>
-						Not configured
-					</div>
-					<p class="hint">No admin user set. Please complete the initial setup.</p>
-				{/if}
-			</div>
-
-			<!-- Security Settings -->
-			<div class="info-card">
-				<h3>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-						<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-					</svg>
-					Security Settings
-				</h3>
-				<div class="setting-row">
-					<div class="setting-info">
-						<span class="setting-label">Reset Route</span>
-						<span class="setting-description">
-							{#if setupInfo.resetRouteDisabled}
-								The /reset route is disabled
+					<div class="tile">
+						<span class="tile-label">Projected today</span>
+						<span class="tile-value">{data.usage.projection.projectedToday.toLocaleString()}</span>
+						<span class="tile-sub" class:warn={data.usage.projection.willExhaustToday}>
+							{#if data.usage.projection.willExhaustToday}
+								Free allowance gone in ~{formatHours(data.usage.projection.hoursToLimit)}
 							{:else}
-								The /reset route is publicly accessible
+								Within the free allowance
 							{/if}
 						</span>
 					</div>
-					<button
-						class="toggle-btn"
-						class:active={!setupInfo.resetRouteDisabled}
-						on:click={toggleResetRoute}
-						disabled={togglingReset}
-						aria-label={setupInfo.resetRouteDisabled ? 'Enable reset route' : 'Disable reset route'}
-					>
-						<span class="toggle-slider"></span>
-					</button>
+					<div class="tile">
+						<span class="tile-label">Month to date</span>
+						<span class="tile-value">{data.usage.monthToDate.toLocaleString()}</span>
+						<span class="tile-sub">
+							{data.usage.projection.monthPercentOfPaidAllowance.toFixed(2)}% of the paid-plan
+							allowance
+						</span>
+					</div>
+					<div class="tile">
+						<span class="tile-label">Peak day</span>
+						<span class="tile-value">{data.usage.peakDay.toLocaleString()}</span>
+						<span class="tile-sub">{data.usage.peakDayOn ?? 'no data yet'}</span>
+					</div>
+					<div class="tile">
+						<span class="tile-label">Bots today</span>
+						<span class="tile-value">{data.usage.todayBot.toLocaleString()}</span>
+						<span class="tile-sub">{data.usage.todayNotFound.toLocaleString()} not-found</span>
+					</div>
 				</div>
-				{#if resetError}
-					<p class="error-text">{resetError}</p>
-				{/if}
-				{#if !setupInfo.resetRouteDisabled}
-					<div class="status status-warning">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
+				<article class="chart-card chart-card--wide">
+					<header class="chart-head">
+						<span class="chart-title">Requests over time</span>
+						<span class="chart-sub">last 30 days</span>
+					</header>
+					<StatBarChart
+						series={usageSeries}
+						accent="var(--chart-usage)"
+						unit="requests"
+						periodLabel="day"
+					/>
+				</article>
+			</section>
+		{/if}
+
+		<!-- Traffic -->
+		<section class="panel">
+			<div class="panel-head">
+				<h2>Traffic</h2>
+				<nav class="window-toggle" aria-label="Traffic window">
+					{#each TRAFFIC_WINDOW_OPTIONS as option (option.value)}
+						<a
+							href={`?window=${option.value}`}
+							class="window-link"
+							class:active={trafficWindow === option.value}
+							data-sveltekit-noscroll
+							aria-current={trafficWindow === option.value ? 'true' : undefined}>{option.label}</a
 						>
-							<circle cx="12" cy="12" r="10" />
-							<line x1="12" y1="8" x2="12" y2="12" />
-							<line x1="12" y1="16" x2="12.01" y2="16" />
-						</svg>
-						Security Risk
-					</div>
-					<p class="hint">
-						The reset route allows anyone to reset your OAuth configuration. Disable it to secure
-						your installation.
-					</p>
-				{:else}
-					<div class="status status-success">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M20 6L9 17l-5-5" />
-						</svg>
-						Secured
-					</div>
-				{/if}
+					{/each}
+				</nav>
 			</div>
-		</div>
-	</div>
+
+			{#if traffic}
+				<article class="chart-card chart-card--wide">
+					<header class="chart-head">
+						<span class="chart-title">Page views</span>
+						<span class="chart-sub">
+							{totalViews.toLocaleString()} views · {signedInViews.toLocaleString()} signed-in views ·
+							{#if hourly}last 24 hours (UTC){:else}last {trafficWindow} days{/if}
+						</span>
+					</header>
+					<StatBarChart
+						series={viewsSeries}
+						accent="var(--chart-views)"
+						unit="views"
+						periodLabel={hourly ? 'hour' : 'day'}
+					/>
+					{#if hourly}
+						<p class="chart-note">
+							Hourly buckets, UTC. The tables below count whole UTC days, so they also include
+							yesterday.
+						</p>
+					{/if}
+				</article>
+
+				<div class="card-grid">
+					<article class="card">
+						<h3>Views by page</h3>
+						{#if traffic.byPath.length === 0}
+							<p class="empty-note">No views recorded yet — check back after some traffic.</p>
+						{:else}
+							<PagedRows items={traffic.byPath} noun="pages" let:shown>
+								<table class="stat-table">
+									<thead>
+										<tr
+											><th>Route</th><th class="num">Views</th><th class="num">Signed-in views</th
+											></tr
+										>
+									</thead>
+									<tbody>
+										{#each shown as row (row.pathKey)}
+											<tr>
+												<td title={row.pathKey}>
+													<span class="cell-label"><code>{row.pathKey}</code></span>
+													<span class="meter" style={meterStyle(row.views, byPathMax)}></span>
+												</td>
+												<td class="num">{row.views.toLocaleString()}</td>
+												<td class="num">{row.signedIn.toLocaleString()}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</PagedRows>
+						{/if}
+					</article>
+
+					{#if (traffic.topContent ?? []).length > 0}
+						<article class="card">
+							<h3>Top content</h3>
+							<p class="empty-note card-note">
+								Which CMS items were read, rather than which routes were hit — every item shares one
+								route, so the table above cannot separate them.
+							</p>
+							<PagedRows items={traffic.topContent} noun="items" let:shown>
+								<table class="stat-table">
+									<thead>
+										<tr><th>Item</th><th class="num">Views</th></tr>
+									</thead>
+									<tbody>
+										{#each shown as row (row.contentId)}
+											<tr>
+												<td title={row.path ?? row.contentId}>
+													<span class="cell-label">
+														{#if row.path}
+															<a href={row.path}>{row.title ?? row.path}</a>
+														{:else}
+															<!-- Deleted since the views were counted; the counts are still
+														     real, so show them against the id rather than dropping them. -->
+															<code>{row.contentId}</code>
+															<span class="cell-hint">deleted</span>
+														{/if}
+													</span>
+													<span class="meter" style={meterStyle(row.views, topContentMax)}></span>
+												</td>
+												<td class="num">{row.views.toLocaleString()}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</PagedRows>
+						</article>
+					{/if}
+
+					<article class="card">
+						<h3>Referrers</h3>
+						{#if traffic.referrers.length === 0}
+							<p class="empty-note">No referrers recorded yet.</p>
+						{:else}
+							{#if referrerBuckets.length > 0}
+								<ul class="chip-row">
+									{#each referrerBuckets as b (b.bucket)}
+										<li class="chip">{b.bucket} · {b.views.toLocaleString()}</li>
+									{/each}
+								</ul>
+							{/if}
+							<PagedRows items={traffic.referrers} noun="referrers" let:shown>
+								<table class="stat-table">
+									<thead><tr><th>Host</th><th class="num">Views</th></tr></thead>
+									<tbody>
+										{#each shown as ref (ref.referrerHost)}
+											<tr>
+												<td title={ref.referrerHost}>
+													<span class="cell-label">{ref.referrerHost}</span>
+													<span class="meter" style={meterStyle(ref.views, referrersMax)}></span>
+												</td>
+												<td class="num">{ref.views.toLocaleString()}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</PagedRows>
+						{/if}
+					</article>
+
+					<article class="card">
+						<h3>Views by country</h3>
+						{#if traffic.countries.length === 0}
+							<p class="empty-note">
+								No country data yet. Country comes from the Cloudflare edge, so it stays
+								<code>(unknown)</code> in local development.
+							</p>
+						{:else}
+							<PagedRows items={traffic.countries} noun="countries" let:shown>
+								<table class="stat-table">
+									<thead>
+										<tr><th>Country</th><th class="num">Views</th><th class="num">Share</th></tr>
+									</thead>
+									<tbody>
+										{#each shown as row (row.country)}
+											<tr>
+												<td title={countryLabel(row.country)}>
+													<span class="cell-label">
+														<span class="glyph" aria-hidden="true">{countryFlag(row.country)}</span>
+														{countryLabel(row.country)}
+													</span>
+													<span class="meter" style={meterStyle(row.views, countriesMax)}></span>
+												</td>
+												<td class="num">{row.views.toLocaleString()}</td>
+												<td class="num">
+													{countryTotal > 0
+														? ((row.views / countryTotal) * 100).toFixed(1)
+														: '0.0'}%
+												</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</PagedRows>
+						{/if}
+					</article>
+				</div>
+			{:else}
+				<p class="empty-note">
+					Traffic data unavailable — apply migration <code>0007_page_view_stats.sql</code>.
+				</p>
+			{/if}
+		</section>
+
+		<!-- Audience (header buckets + viewport beacon; no PII, buckets only) -->
+		{#if audienceCards.length > 0}
+			<section class="panel">
+				<h2>Audience</h2>
+				<p class="panel-note">
+					Coarse buckets derived from request headers at request time. The raw User-Agent is never
+					stored.
+				</p>
+				<div class="card-grid">
+					{#each audienceCards as card (card.key)}
+						<article class="card">
+							<h3>{card.title}</h3>
+							{#if card.rows.length === 0}
+								<p class="empty-note">
+									{#if card.key === 'viewports'}
+										No samples yet — viewport arrives from the client beacon.
+									{:else}
+										No data in this window.
+									{/if}
+								</p>
+							{:else}
+								<PagedRows items={card.rows} pageSize={6} noun="rows" let:shown>
+									<table class="stat-table">
+										<thead><tr><th>Value</th><th class="num">Views</th></tr></thead>
+										<tbody>
+											{#each shown as row (row.value)}
+												<tr>
+													<td title={audienceLabel(card.key, row.value)}>
+														<span class="cell-label">{audienceLabel(card.key, row.value)}</span>
+														<span class="meter" style={meterStyle(row.views, card.max)}></span>
+													</td>
+													<td class="num">{row.views.toLocaleString()}</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</PagedRows>
+							{/if}
+						</article>
+					{/each}
+				</div>
+			</section>
+		{/if}
+
+		<!-- Content by status -->
+		{#if stats && stats.totalContent > 0}
+			<section class="panel">
+				<h2>Content by status</h2>
+				<table class="stat-table">
+					<thead><tr><th>Status</th><th class="num">Items</th></tr></thead>
+					<tbody>
+						{#each contentStatusRows as row (row.key)}
+							<tr>
+								<td>
+									<span class="cell-label">{row.label}</span>
+									<span class="meter" style={meterStyle(row.count, contentStatusMax)}></span>
+								</td>
+								<td class="num">{row.count.toLocaleString()}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</section>
+		{/if}
+	{/if}
 </div>
 
 <style>
-	.admin-home {
-		padding: var(--spacing-xl);
-	}
-
-	h1 {
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text);
-		margin-bottom: var(--spacing-md);
-	}
-
-	p {
-		color: var(--color-text-secondary);
-		font-size: 1.125rem;
-	}
-
-	.setup-info {
-		margin-top: var(--spacing-2xl);
-	}
-
-	.setup-info h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: var(--color-text);
-		margin-bottom: var(--spacing-lg);
-	}
-
-	.info-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	.stats-page {
+		display: flex;
+		flex-direction: column;
 		gap: var(--spacing-lg);
 	}
 
-	.info-card {
-		background-color: var(--color-surface);
+	.page-head h1 {
+		margin: 0;
+	}
+
+	.lede {
+		margin: 0.35rem 0 0;
+		color: var(--color-text-secondary);
+	}
+
+	.panel {
+		background: var(--color-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
 		padding: var(--spacing-lg);
-		transition: box-shadow var(--transition-fast);
 	}
 
-	.info-card:hover {
-		box-shadow: var(--shadow-md);
+	.panel h2 {
+		margin: 0 0 var(--spacing-md);
+		font-size: 1.1rem;
 	}
 
-	.info-card h3 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: var(--color-text);
-		margin-bottom: var(--spacing-md);
+	.panel-head {
 		display: flex;
-		align-items: center;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--spacing-md);
+		flex-wrap: wrap;
+	}
+
+	.panel-head h2 {
+		margin-bottom: var(--spacing-md);
+	}
+
+	.panel-note {
+		margin: -0.5rem 0 var(--spacing-md);
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+		max-width: 70ch;
+	}
+
+	/* Window toggle */
+	.window-toggle {
+		display: flex;
+		gap: 0.25rem;
+		flex-wrap: wrap;
+	}
+
+	.window-link {
+		padding: 0.2rem 0.6rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm, 6px);
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
+		text-decoration: none;
+	}
+
+	.window-link:hover {
+		background: var(--color-surface-hover);
+	}
+
+	.window-link.active {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: var(--color-background);
+	}
+
+	/* Tiles */
+	.tiles {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
 		gap: var(--spacing-sm);
 	}
 
-	.info-card h3 svg {
-		color: var(--color-primary);
+	.tile {
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
 	}
 
-	.info-row {
+	.tile-label {
+		color: var(--color-text-secondary);
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+
+	.tile-value {
+		font-size: 1.5rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.tile-sub {
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+	}
+
+	.tile-sub.warn {
+		color: var(--color-error, crimson);
+		font-weight: 600;
+	}
+
+	/* Charts */
+	.chart-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+		gap: var(--spacing-md);
+	}
+
+	.chart-card {
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+	}
+
+	.chart-card--wide {
+		margin-top: var(--spacing-md);
+	}
+
+	.chart-head {
 		display: flex;
+		align-items: baseline;
 		justify-content: space-between;
-		align-items: center;
-		padding: var(--spacing-sm) 0;
+		gap: var(--spacing-sm);
+		flex-wrap: wrap;
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.chart-title {
+		font-weight: 600;
+	}
+
+	.chart-sub,
+	.chart-note {
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+	}
+
+	.chart-note {
+		margin: var(--spacing-sm) 0 0;
+	}
+
+	/* Cards + tables */
+	.card-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+		gap: var(--spacing-md);
+		margin-top: var(--spacing-md);
+	}
+
+	.card {
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+		min-width: 0;
+	}
+
+	.card h3 {
+		margin: 0 0 var(--spacing-sm);
+		font-size: 0.9rem;
+	}
+
+	.stat-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.82rem;
+	}
+
+	.stat-table th {
+		text-align: left;
+		font-size: 0.7rem;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: var(--color-text-secondary);
+		font-weight: 600;
+		padding-bottom: 0.35rem;
 		border-bottom: 1px solid var(--color-border);
 	}
 
-	.info-row:last-of-type {
-		border-bottom: none;
+	.stat-table td {
+		padding: 0.4rem 0.35rem 0.4rem 0;
+		vertical-align: middle;
+		max-width: 0;
 	}
 
-	.label {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--color-text-secondary);
+	.stat-table .num {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		width: 1%;
+		padding-left: var(--spacing-sm);
 	}
 
-	.value {
-		font-size: 0.875rem;
-		color: var(--color-text);
-		font-weight: 500;
+	/* The label truncates, the meter sits under it — so every table doubles as
+	   a bar chart without a second column of chrome. */
+	.cell-label {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
-	.mono {
-		font-family: 'Courier New', monospace;
+	.cell-label code {
+		font-size: 0.78rem;
 	}
 
-	.badge {
-		display: inline-block;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		background-color: var(--color-primary);
-		color: var(--color-background);
-		border-radius: var(--radius-sm);
-		font-size: 0.75rem;
-		font-weight: 600;
+	.card-note {
+		margin: -0.25rem 0 var(--spacing-sm);
+		max-width: 60ch;
+	}
+
+	/* An item deleted since its views were counted. */
+	.cell-hint {
+		margin-left: 0.4rem;
+		font-size: 0.72rem;
 		text-transform: uppercase;
-		letter-spacing: 0.5px;
-	}
-
-	.github-link {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		color: var(--color-primary);
-		text-decoration: none;
-		transition: opacity var(--transition-fast);
-	}
-
-	.github-link:hover {
-		opacity: 0.8;
-		text-decoration: underline;
-	}
-
-	.status {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		margin-top: var(--spacing-md);
-		padding: var(--spacing-sm);
-		border-radius: var(--radius-sm);
-		font-size: 0.875rem;
-		font-weight: 500;
-	}
-
-	.status-success {
-		background-color: rgba(34, 197, 94, 0.1);
-		color: rgb(34, 197, 94);
-		border: 1px solid rgba(34, 197, 94, 0.3);
-	}
-
-	.status-warning {
-		background-color: rgba(234, 179, 8, 0.1);
-		color: rgb(234, 179, 8);
-		border: 1px solid rgba(234, 179, 8, 0.3);
-	}
-
-	.hint {
-		font-size: 0.875rem;
-		color: var(--color-text-secondary);
-		margin-top: var(--spacing-sm);
-		font-style: italic;
-	}
-
-	.setting-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--spacing-sm) 0;
-	}
-
-	.setting-info {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
-	.setting-label {
-		font-size: 0.9rem;
-		font-weight: 500;
-		color: var(--color-text);
-	}
-
-	.setting-description {
-		font-size: 0.8rem;
+		letter-spacing: 0.04em;
 		color: var(--color-text-secondary);
 	}
 
-	.toggle-btn {
-		position: relative;
-		width: 48px;
-		height: 26px;
+	.glyph {
+		margin-right: 0.3rem;
+	}
+
+	.meter {
+		display: block;
+		height: 3px;
+		margin-top: 0.25rem;
+		border-radius: 2px;
 		background: var(--color-border);
-		border: none;
-		border-radius: 13px;
-		cursor: pointer;
-		transition: background var(--transition-fast);
+		position: relative;
+		overflow: hidden;
 	}
 
-	.toggle-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.toggle-btn.active {
-		background: var(--color-warning);
-	}
-
-	.toggle-slider {
+	.meter::before {
+		content: '';
 		position: absolute;
-		top: 3px;
-		left: 3px;
-		width: 20px;
-		height: 20px;
-		background: white;
-		border-radius: 50%;
-		transition: transform var(--transition-fast);
+		inset: 0 auto 0 0;
+		width: var(--pct, 0%);
+		background: var(--chart-views);
+		border-radius: 2px;
 	}
 
-	.toggle-btn.active .toggle-slider {
-		transform: translateX(22px);
+	.chip-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		margin: 0 0 var(--spacing-sm);
+		padding: 0;
+		list-style: none;
 	}
 
-	.error-text {
-		color: var(--color-error);
+	.chip {
+		font-size: 0.72rem;
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		color: var(--color-text-secondary);
+	}
+
+	.empty-note {
 		font-size: 0.8rem;
-		margin-top: var(--spacing-sm);
+		color: var(--color-text-secondary);
+		margin: 0;
 	}
 </style>

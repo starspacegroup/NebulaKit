@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import SetupSummary from '$lib/components/admin/SetupSummary.svelte';
 	import { fieldName } from '$lib/utils/form-fields';
 	import type { PageData } from './$types';
 
@@ -170,11 +171,18 @@
 	}
 </script>
 
-<SharingMeta title="Authentication Keys - Admin" noindex={true} />
+<SharingMeta title="Settings - Admin" noindex={true} />
 
-<div class="auth-keys-page">
+<div class="settings-page">
 	<header class="page-header">
-		<h1>Authentication Keys</h1>
+		<h1>Settings</h1>
+		<p class="page-description">Site configuration, security, and authentication.</p>
+	</header>
+
+	<SetupSummary setupInfo={data.setupInfo} />
+
+	<header class="section-header">
+		<h2>Authentication Keys</h2>
 		<p class="page-description">Manage OAuth providers and API keys for authentication services.</p>
 	</header>
 
@@ -429,8 +437,19 @@
 {/if}
 
 <style>
-	.auth-keys-page {
+	.settings-page {
 		max-width: var(--layout-page-max-width);
+	}
+
+	.section-header {
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.section-header h2 {
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--color-text);
+		margin-bottom: var(--spacing-sm);
 	}
 
 	.page-header {

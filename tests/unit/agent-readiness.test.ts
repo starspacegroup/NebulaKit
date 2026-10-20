@@ -39,6 +39,10 @@ import { GET as catalogGet } from '../../src/routes/[x+2e]well-known/api-catalog
 import { GET as skillsIndexGet } from '../../src/routes/[x+2e]well-known/agent-skills/index.json/+server';
 import { GET as skillDocGet } from '../../src/routes/[x+2e]well-known/agent-skills/[skill]/SKILL.md/+server';
 
+import { emptyPage, savePage } from '@nebulakit/builder';
+import { createProduct } from '@nebulakit/commerce';
+import { createSqliteD1 } from '../helpers/sqlite-d1';
+
 const ORIGIN = 'https://example.test';
 
 /** Minimal event stub — these handlers only read `url` and `platform`. */
@@ -130,6 +134,27 @@ describe('sitemap.xml', () => {
 		}
 	});
 
+	it('includes published builder pages but never drafts', async () => {
+		const db = createSqliteD1();
+		await savePage(db, { slug: 'about', title: 'About', document: emptyPage(), published: true });
+		await savePage(db, { slug: 'secret', title: 'Draft', document: emptyPage(), published: false });
+		const body = await (
+			await sitemapGet(event('/sitemap.xml', { platform: { env: { DB: db } } }))
+		).text();
+		expect(body).toContain(`<loc>${ORIGIN}/p/about</loc>`);
+		expect(body).not.toContain('/p/secret');
+	});
+
+	it('includes active products', async () => {
+		const db = createSqliteD1();
+		await createProduct(db, { slug: 'tee', name: 'Tee', priceCents: 2500 });
+		const body = await (
+			await sitemapGet(event('/sitemap.xml', { platform: { env: { DB: db } } }))
+		).text();
+		expect(body).toContain(`<loc>${ORIGIN}/shop/tee</loc>`);
+		expect(body).not.toContain('/cart');
+	});
+
 	it('includes published CMS items and their type list pages', async () => {
 		const db = createDb([
 			{ type_slug: 'blog', item_slug: 'hello-world', lastmod: '2026-07-28 11:00:00' },
@@ -217,6 +242,12 @@ describe('/.well-known/api-catalog', () => {
 		expect(anchors).not.toContain('/api/cms');
 		expect(anchors).not.toContain('/api/chat');
 	});
+
+	it('describes the site API with its OpenAPI document', async () => {
+		const body = await (await catalogGet(event('/.well-known/api-catalog'))).json();
+		const member = body.linkset.find((m: { anchor: string }) => m.anchor.endsWith('/api/v1/site'));
+		expect(member['service-desc'][0].href).toBe(`${ORIGIN}/api/v1/openapi.json`);
+	});
 });
 
 describe('agent skills discovery', () => {
@@ -274,6 +305,13 @@ describe('agent skills discovery', () => {
 });
 
 describe('/auth.md', () => {
+	it('explains site API keys and that no endpoint issues them', async () => {
+		const text = await (await authMdGet(event('/auth.md'))).text();
+		expect(text).toContain(`${ORIGIN}/api/v1/openapi.json`);
+		expect(text).toContain('There is no endpoint that issues one');
+		expect(text).toContain(`POST ${ORIGIN}/api/v1/checkout`);
+	});
+
 	it('serves markdown with 200', async () => {
 		const response = await authMdGet(event('/auth.md'));
 		expect(response.status).toBe(200);

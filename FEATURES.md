@@ -74,8 +74,9 @@ NebulaKit stores bounded aggregate counters in D1:
 - Cloudflare request-plan projections
 
 The implementation does not store raw IP addresses or raw User-Agent strings and does not require a
-third-party analytics script. Operators need `can_view_stats`. See
-[docs/ADMIN_STATS.md](./docs/ADMIN_STATS.md).
+third-party analytics script. Operators need `can_view_stats`. The owner can issue a stats token on
+`/admin/analytics` so an external dashboard reads the same numbers as JSON from
+`/api/stats/summary`. See [docs/ADMIN_STATS.md](./docs/ADMIN_STATS.md).
 
 ## Optional Google Analytics connection
 
@@ -128,13 +129,23 @@ build/deploy. See [docs/CLOUDFLARE_SETUP.md](./docs/CLOUDFLARE_SETUP.md).
 - Open Graph, Twitter, canonical, and article metadata
 - Pointer, touch, and keyboard dragging built on Pointer Events, with a live-region
   announcement for every move
-- A columned widget board over a registry-driven widget catalogue, and a pure
-  `reorder()` engine usable on its own
+- A UI kit of 67 standard elements in `$lib/ui` — everything shadcn/ui ships and
+  more: buttons, dropdown and context menus, a command palette, every form
+  control including combobox, calendar, date picker, one-time code, tag input
+  and file drop, dialogs, sheets, popovers, hover cards, tabs, menubar, sidebar,
+  stepper, layout primitives, a full data table, SVG bar, line and donut charts,
+  carousel, timeline and more — themed with CSS variables, usable by keyboard,
+  free and dependency-free
+- A live catalog of every element and widget, with code, at `/components`
+- A columned widget board over a registry-driven widget catalogue, six standard
+  widgets (stat, clock, checklist, meter, notes, links), and a pure `reorder()`
+  engine usable on its own
 - A "Proudly built with NebulaKit" footer badge, on by default and removed with
   one `false` in `site.config.ts` — MIT-licensed, so it is a courtesy rather
   than a condition
 
 See [docs/THEME_SYSTEM.md](./docs/THEME_SYSTEM.md),
+[docs/UI_KIT.md](./docs/UI_KIT.md),
 [docs/COMMAND_PALETTE.md](./docs/COMMAND_PALETTE.md), and
 [docs/WIDGET_BOARD.md](./docs/WIDGET_BOARD.md).
 
