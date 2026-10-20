@@ -162,7 +162,7 @@ export function siteOpenApi() {
 						document: {
 							type: 'object',
 							description:
-								'Page document, format version 1: { version: 1, blocks: [{ id, type, props }] }'
+								'Page document, format version 2: { version: 2, blocks: [{ id, type, props, children?, hide? }] }. Section, Columns and Column blocks hold other blocks in children; version 1 documents are accepted and upgraded.'
 						}
 					}
 				}

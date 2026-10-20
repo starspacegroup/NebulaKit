@@ -201,10 +201,10 @@ describe('/admin/pages', () => {
 
 describe('/p/[slug]', () => {
 	const grid = {
-		version: 1 as const,
+		version: 2 as const,
 		blocks: [
 			{ id: 'g', type: 'product-grid' as const, props: { heading: 'Shop', limit: 2 } },
-			{ id: 't', type: 'text' as const, props: { text: 'Hi' } }
+			{ id: 't', type: 'text' as const, props: { text: 'Hi', align: 'start' as const } }
 		]
 	};
 

@@ -13,7 +13,8 @@
 	let saving = $state(false);
 	let message = $state('');
 
-	async function save(doc: PageDocument) {
+	/** Resolves `false` when nothing was saved, so the editor keeps the page marked unsaved. */
+	async function save(doc: PageDocument): Promise<boolean> {
 		saving = true;
 		message = '';
 		try {
@@ -24,8 +25,10 @@
 			});
 			const body = await response.json();
 			message = response.ok ? 'Saved.' : [body.error, ...(body.details ?? [])].join(' — ');
+			return response.ok;
 		} catch {
 			message = 'Could not reach the site. Nothing was saved.';
+			return false;
 		} finally {
 			saving = false;
 		}

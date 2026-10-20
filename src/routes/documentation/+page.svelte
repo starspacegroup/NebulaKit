@@ -732,9 +732,14 @@ bun run db:migrate:list</code
 				<div class="callout-card">
 					<h3>Pages</h3>
 					<p>
-						Build pages at <code>/admin/pages</code>: drag blocks from the palette, reorder them,
-						edit each block's fields, and publish. Published pages are served at
-						<code>/p/[slug]</code> and listed in the sitemap. A page is a JSON document, never code.
+						Build pages at <code>/admin/pages</code>: drag blocks from the palette onto the page or
+						into a Section or Column, reorder and nest them, edit each block's fields, hide a block
+						on phones, tablets or desktops, preview at each width, and publish. Mouse, touch and
+						keyboard all work: every drag has Add, Move up/down, Move in and Move out buttons, plus
+						Alt+Arrow keys, and Undo and Redo (Ctrl/⌘+Z) cover every edit. A check list flags images
+						without a description, skipped heading levels and vague link text. Published pages are
+						served at <code>/p/[slug]</code> and listed in the sitemap. A page is a JSON document (format
+						version 2: a tree of blocks), never code.
 					</p>
 				</div>
 				<div class="callout-card">

@@ -484,8 +484,8 @@ describe('checkout and orders API', () => {
 
 describe('pages API', () => {
 	const document = {
-		version: 1,
-		blocks: [{ id: 'h', type: 'heading', props: { text: 'Hi', level: 1 } }]
+		version: 2,
+		blocks: [{ id: 'h', type: 'heading', props: { text: 'Hi', level: 1, align: 'start' } }]
 	};
 
 	it('creates, replaces, reads, lists and deletes pages', async () => {
@@ -530,7 +530,7 @@ describe('pages API', () => {
 				title: '',
 				published: 'yes',
 				document: {
-					version: 1,
+					version: 2,
 					blocks: [{ id: 'b', type: 'button', props: { label: 'x', href: 'javascript:alert(1)' } }]
 				}
 			}

@@ -1,0 +1,230 @@
+/*
+ * How a page document looks. One stylesheet for both the live page
+ * (PageRenderer) and the editor's canvas, so what you edit is what visitors
+ * get. Plain global classes under the nk- prefix; colours, spacing and radii
+ * come from the site's CSS variables, so every theme works.
+ *
+ * Mobile first, and responsive to the page's OWN width, not the window's: the
+ * frame is a size container, so the editor can preview a phone, a tablet or a
+ * desktop by narrowing the frame, and the same rules fire as on a real device.
+ *   mobile  < 40rem     tablet  40rem – 64rem     desktop  ≥ 64rem
+ */
+.nk-frame {
+	container: nk-page / inline-size;
+	width: 100%;
+	min-width: 0;
+}
+
+.nk-page {
+	display: flex;
+	flex-direction: column;
+	gap: var(--nk-gap, 1rem);
+	max-width: 60rem;
+	margin: 0 auto;
+	padding: 2rem 1rem;
+	color: var(--color-text);
+}
+
+/* Spacing tokens, set by a block's data-gap / data-padding. */
+[data-gap='sm'] {
+	--nk-gap: 0.5rem;
+}
+[data-gap='md'] {
+	--nk-gap: 1rem;
+}
+[data-gap='lg'] {
+	--nk-gap: 2rem;
+}
+
+.nk-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--nk-gap, 1rem);
+	min-width: 0;
+	border-radius: var(--radius-lg);
+}
+.nk-section[data-padding='sm'] {
+	padding: 0.5rem;
+}
+.nk-section[data-padding='md'] {
+	padding: 1rem;
+}
+.nk-section[data-padding='lg'] {
+	padding: 2rem;
+}
+.nk-section[data-tone='surface'] {
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+.nk-section[data-tone='accent'] {
+	background: color-mix(in srgb, var(--color-primary) 14%, var(--color-background));
+	border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+}
+
+.nk-columns {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--nk-gap, 1rem);
+	align-items: start;
+}
+.nk-column {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	min-width: 0;
+}
+/* Phones stack; tablets show up to two across; desktops show them all. */
+@container nk-page (min-width: 40rem) {
+	.nk-columns {
+		grid-template-columns: repeat(min(var(--nk-cols, 2), 2), minmax(0, 1fr));
+	}
+}
+@container nk-page (min-width: 64rem) {
+	.nk-columns {
+		grid-template-columns: repeat(var(--nk-cols, 2), minmax(0, 1fr));
+	}
+}
+
+.nk-heading {
+	margin: 0;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+}
+h1.nk-heading {
+	font-size: clamp(1.75rem, 5cqi, 2.75rem);
+}
+h2.nk-heading {
+	font-size: clamp(1.4rem, 4cqi, 2rem);
+}
+h3.nk-heading {
+	font-size: clamp(1.15rem, 3cqi, 1.5rem);
+}
+[data-align='center'] {
+	text-align: center;
+}
+[data-align='end'] {
+	text-align: end;
+}
+.nk-text {
+	margin: 0;
+	color: var(--color-text-secondary);
+	white-space: pre-line;
+	line-height: 1.6;
+	overflow-wrap: anywhere;
+}
+.nk-image {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--radius-lg);
+}
+.nk-image-empty {
+	display: grid;
+	place-items: center;
+	min-height: 8rem;
+	border: 1px dashed var(--color-border);
+	border-radius: var(--radius-lg);
+	color: var(--color-text-secondary);
+}
+.nk-button {
+	display: inline-flex;
+	align-items: center;
+	align-self: flex-start;
+	min-height: 2.75rem;
+	padding: 0 1.25rem;
+	border-radius: var(--radius-md);
+	background: var(--color-primary-solid);
+	color: var(--color-on-solid);
+	font-weight: 600;
+	text-decoration: none;
+}
+.nk-button:hover {
+	background: var(--color-primary-solid-hover);
+}
+.nk-button:focus-visible {
+	outline: 2px solid var(--color-primary);
+	outline-offset: 2px;
+}
+.nk-quote {
+	margin: 0;
+	padding-inline-start: 1rem;
+	border-inline-start: 4px solid var(--color-primary);
+}
+.nk-quote p {
+	margin: 0;
+	font-size: 1.2rem;
+	line-height: 1.5;
+}
+.nk-quote footer {
+	margin-top: 0.5rem;
+	color: var(--color-text-secondary);
+	font-size: 0.9rem;
+}
+.nk-divider {
+	width: 100%;
+	margin: 0;
+	border: 0;
+	border-top: 1px solid var(--color-border);
+}
+.nk-spacer-sm {
+	height: 1rem;
+}
+.nk-spacer-md {
+	height: 2.5rem;
+}
+.nk-spacer-lg {
+	height: 5rem;
+}
+
+.nk-products ul {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr));
+	gap: 1rem;
+	padding: 0;
+	list-style: none;
+}
+.nk-products li {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.75rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background: var(--color-surface);
+}
+.nk-products img {
+	width: 100%;
+	aspect-ratio: 1;
+	object-fit: cover;
+	border-radius: var(--radius-sm);
+}
+.nk-products .price {
+	color: var(--color-text-secondary);
+	font-variant-numeric: tabular-nums;
+}
+
+/* A block hidden on a breakpoint is gone from the page at that width. */
+@container nk-page (max-width: 39.999rem) {
+	.nk-hide-mobile:not([data-editing]) {
+		display: none;
+	}
+}
+@container nk-page (min-width: 40rem) and (max-width: 63.999rem) {
+	.nk-hide-tablet:not([data-editing]) {
+		display: none;
+	}
+}
+@container nk-page (min-width: 64rem) {
+	.nk-hide-desktop:not([data-editing]) {
+		display: none;
+	}
+}
+
+@media (forced-colors: active) {
+	.nk-button {
+		border: 1px solid ButtonText;
+	}
+	.nk-quote {
+		border-inline-start-color: CanvasText;
+	}
+}
