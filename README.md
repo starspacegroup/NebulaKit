@@ -174,6 +174,7 @@ Important boundaries:
 - [Command palette](./docs/COMMAND_PALETTE.md)
 - [TDD workflow](./docs/TDD_WORKFLOW.md)
 - [In-app documentation contract](./docs/DOCUMENTATION_PAGE.md)
+- [Copy guide](./docs/COPY_GUIDE.md), [SEO guide](./docs/SEO_GUIDE.md), [trust badges](./docs/TRUST_BADGES.md), [cold outreach email](./docs/OUTREACH_EMAIL.md)
 
 ## Contributing
 
