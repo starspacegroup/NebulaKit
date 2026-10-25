@@ -6,6 +6,7 @@
 		"prepare": "svelte-kit sync",
 		"customize": "bun scripts/customize.mjs",
 		"check:bindings": "node scripts/check-bindings.mjs",
+		"check:migrations": "node scripts/check-migrations.mjs",
 		"setup:cf": "node scripts/setup-cf.mjs",
 		"palette:scan": "bun scripts/palette-scan.mjs",
 		"dev": "node scripts/check-bindings.mjs --warn && vite dev",

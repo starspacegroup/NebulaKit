@@ -35,6 +35,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Migrations on the base branch are already applied somewhere: no edits,
+      # and no two files with one number (scripts/check-migrations.mjs).
+      - name: Check migrations
+        run: |
+          if [ -n "$GITHUB_BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+          fi
+          node scripts/check-migrations.mjs
+
       - name: Type check
         run: bun run check
 
