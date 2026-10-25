@@ -1,4 +1,5 @@
 import { getOrder, isOrderStatus, transitionOrder } from '@nebulakit/commerce';
+import { sendOrderReceipt, sendOrderShipped } from '$lib/server/order-emails';
 import { apiJson, invalid, notFound, readJson, siteApi } from '$lib/server/site-api';
 
 /** GET /api/v1/orders/:id — one order with its lines. */
@@ -32,5 +33,9 @@ export const PATCH = siteApi('orders:write', async ({ db, event }) => {
 		fulfillmentReference: fulfillmentReference || undefined
 	});
 	if (!order) throw notFound('Order');
+	// A legal move happens once (shipped cannot be re-entered), and email_log
+	// refuses a repeat regardless. Manual-payment shops get their receipt here.
+	if (order.status === 'paid') void sendOrderReceipt(event.platform, order);
+	if (order.status === 'shipped') void sendOrderShipped(event.platform, order);
 	return apiJson({ order });
 });
