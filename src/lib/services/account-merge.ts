@@ -31,7 +31,8 @@ interface D1Result<T = unknown> {
  * 1. Checks if the source user is an admin (to preserve admin status)
  * 2. Transfers all oauth_accounts from source to target
  * 3. Transfers all chat_messages from source to target
- * 4. Transfers all sessions from source to target
+ * 4. Deletes the source user's sessions (a browser signed in as the source must
+ *    not inherit the target's privileges), and keeps content authorship
  * 5. Updates target user's admin status if source was admin
  * 6. Deletes the source user
  *
@@ -86,9 +87,16 @@ export async function mergeAccounts(
 			.bind(targetUserId, sourceUserId)
 	);
 
-	// Transfer sessions
+	// Drop the source's sessions instead of moving them: a browser still signed in
+	// as the source would otherwise wake up holding the target's privileges.
+	statements.push(db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(sourceUserId));
+
+	// Keep the source's content attributed to someone. author_id is ON DELETE SET
+	// NULL, so deleting the source would silently orphan every item it wrote.
 	statements.push(
-		db.prepare('UPDATE sessions SET user_id = ? WHERE user_id = ?').bind(targetUserId, sourceUserId)
+		db
+			.prepare('UPDATE content_items SET author_id = ? WHERE author_id = ?')
+			.bind(targetUserId, sourceUserId)
 	);
 
 	// Transfer existing aliases to the target account.
@@ -129,6 +137,15 @@ export async function mergeAccounts(
 	if (sourceIsAdmin) {
 		statements.push(db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').bind(targetUserId));
 	}
+
+	// Never lose a grant by merging: the target keeps stats access if either had it.
+	statements.push(
+		db
+			.prepare(
+				'UPDATE users SET can_view_stats = 1 WHERE id = ? AND COALESCE((SELECT can_view_stats FROM users WHERE id = ?), 0) = 1'
+			)
+			.bind(targetUserId, sourceUserId)
+	);
 
 	// Delete the source user (CASCADE will clean up any remaining references)
 	statements.push(db.prepare('DELETE FROM users WHERE id = ?').bind(sourceUserId));
