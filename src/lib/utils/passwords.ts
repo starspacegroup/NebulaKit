@@ -1,4 +1,10 @@
-const PASSWORD_ITERATIONS = 310000;
+/**
+ * Cloudflare Workers' WebCrypto refuses PBKDF2 above 100,000 iterations (it
+ * throws), so a higher count would turn every signup and login into a 500 in
+ * production while passing locally. Stay at the cap.
+ */
+const PASSWORD_ITERATIONS = 100000;
+const MAX_PASSWORD_ITERATIONS = 100000;
 const PASSWORD_HASH_BYTES = 32;
 const PASSWORD_SALT_BYTES = 16;
 
@@ -86,6 +92,15 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 
 	const iterations = Number.parseInt(iterationsValue, 10);
 	if (!Number.isFinite(iterations) || iterations <= 0) {
+		return false;
+	}
+
+	// A stored hash above the cap cannot be checked on Workers. Refuse it
+	// (the user resets their password) instead of throwing.
+	if (iterations > MAX_PASSWORD_ITERATIONS) {
+		console.error(
+			`password hash uses ${iterations} iterations; Workers allows ${MAX_PASSWORD_ITERATIONS}`
+		);
 		return false;
 	}
 

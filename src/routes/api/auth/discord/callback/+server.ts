@@ -94,7 +94,10 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals }) =>
 			provider: 'discord',
 			providerAccountId: discordUser.id,
 			legacyUserId: providerUserId,
-			email: discordUser.email,
+			// Discord returns unverified addresses too. Matching one to an existing
+			// account would let anyone who registers a Discord account with a victim's
+			// email take that account over, so only a verified address may match.
+			email: discordUser.verified === true ? discordUser.email : null,
 			linkingUserId: transaction.intent === 'link' ? existingUser?.id : undefined,
 			createUser: async (id) => {
 				// Discord cannot bootstrap ownership; privilege comes from a canonical linked account.

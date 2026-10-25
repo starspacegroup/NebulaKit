@@ -1024,6 +1024,7 @@ describe('Discord Callback Server - Extended Coverage', () => {
 						username: 'discorduser',
 						global_name: 'Discord User',
 						email: 'existing@example.com',
+						verified: true,
 						avatar: 'abcdef'
 					})
 			});
@@ -1114,6 +1115,52 @@ describe('Discord Callback Server - Extended Coverage', () => {
 			expect(response.status).toBe(302);
 			expect(insertOAuthRun).toHaveBeenCalledTimes(1);
 			expect(response.headers.get('Set-Cookie')).toContain('session=');
+		});
+
+		it('never matches an existing account by an unverified Discord email', async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ access_token: 'test-token' })
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: '987654321',
+						username: 'impostor',
+						email: 'existing@example.com',
+						verified: false
+					})
+			});
+
+			const emailLookups: string[] = [];
+			const mockDB = {
+				prepare: vi.fn().mockImplementation((sql: string) => {
+					if (sql.includes('user_login_aliases')) emailLookups.push(sql);
+					return {
+						bind: vi.fn().mockReturnValue({
+							first: vi.fn().mockResolvedValue(null),
+							all: vi.fn().mockResolvedValue({ results: [] }),
+							run: vi.fn().mockResolvedValue({ success: true })
+						})
+					};
+				})
+			};
+			const mockEvent = {
+				url: new URL('http://localhost/api/auth/discord/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				platform: {
+					env: {
+						DISCORD_CLIENT_ID: 'client-id',
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: mockDB
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/discord/callback/+server');
+			await GET(withDatabase(mockEvent) as any);
+			expect(emailLookups).toEqual([]);
 		});
 	});
 });
