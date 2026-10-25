@@ -1,18 +1,10 @@
 import { error, json } from '@sveltejs/kit';
 import { pruneViewStats, utcDay } from '$lib/utils/page-views';
 import type { RequestHandler } from './$types';
+import { timingSafeEqualStrings } from '$lib/server/timing-safe';
 
 /** Roughly 13 months, so year-over-year comparisons still have last year's data. */
 const RETENTION_DAYS = 400;
-
-function timingSafeEqual(a: string, b: string): boolean {
-	if (a.length !== b.length) return false;
-	let mismatch = 0;
-	for (let i = 0; i < a.length; i++) {
-		mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-	}
-	return mismatch === 0;
-}
 
 /**
  * Prune page-view counter rows past the retention window. Without this the
@@ -30,7 +22,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	}
 
 	const authHeader = request.headers.get('authorization') ?? '';
-	if (!timingSafeEqual(authHeader, `Bearer ${secret}`)) {
+	if (!timingSafeEqualStrings(authHeader, `Bearer ${secret}`)) {
 		throw error(401, 'Unauthorized');
 	}
 

@@ -10,6 +10,7 @@ import {
 import { findValidSession } from '$lib/utils/db';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { site } from '$lib/site.config';
 
 export const GET: RequestHandler = async ({ url, cookies, platform, locals }) => {
 	const code = url.searchParams.get('code');
@@ -87,7 +88,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals }) =>
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 				Accept: 'application/vnd.github.v3+json',
-				'User-Agent': 'NebulaKit'
+				'User-Agent': site.name
 			}
 		});
 		if (!userResponse.ok) throw redirect(302, '/auth/login?error=user_fetch_failed');

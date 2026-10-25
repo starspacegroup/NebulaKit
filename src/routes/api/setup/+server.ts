@@ -1,6 +1,7 @@
 import { requireOwner } from '$lib/server/auth-guards';
 import { error, isHttpError, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { site } from '$lib/site.config';
 
 export const GET: RequestHandler = async ({ platform }) => {
 	try {
@@ -75,7 +76,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		const userResponse = await fetch(`https://api.github.com/users/${trimmedUsername}`, {
 			headers: {
 				Accept: 'application/vnd.github.v3+json',
-				'User-Agent': 'NebulaKit'
+				'User-Agent': site.name
 			}
 		});
 		if (!userResponse.ok) {

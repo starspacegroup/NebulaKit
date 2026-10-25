@@ -1,15 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { isStrategy, runLighthouseSweep } from '$lib/server/lighthouse';
 import type { RequestHandler } from './$types';
-
-function timingSafeEqual(a: string, b: string): boolean {
-	if (a.length !== b.length) return false;
-	let mismatch = 0;
-	for (let i = 0; i < a.length; i++) {
-		mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-	}
-	return mismatch === 0;
-}
+import { timingSafeEqualStrings } from '$lib/server/timing-safe';
 
 /**
  * Re-audit every public page through PageSpeed Insights and store the results.
@@ -35,7 +27,7 @@ export const POST: RequestHandler = async ({ request, url, platform }) => {
 	}
 
 	const authHeader = request.headers.get('authorization') ?? '';
-	if (!timingSafeEqual(authHeader, `Bearer ${secret}`)) {
+	if (!timingSafeEqualStrings(authHeader, `Bearer ${secret}`)) {
 		throw error(401, 'Unauthorized');
 	}
 
