@@ -146,7 +146,10 @@ describe('Documentation Page', () => {
 			'POST /api/v1/checkout',
 			'COMMERCE_TAX_RATE_PERCENT',
 			'STRIPE_WEBHOOK_SECRET',
-			'ORCHESTRATOR_KEY_SHA256'
+			'ORCHESTRATOR_KEY_SHA256',
+			'GET /api/v1/orders/[id]/status',
+			'RESEND_API_KEY',
+			'checkout.session.async_payment_failed'
 		]) {
 			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
 		}

@@ -32,3 +32,12 @@ DEV_AUTH_BYPASS=true
 
 # Note: .dev.vars is gitignored and should never be committed
 # These values are used by `wrangler dev` for local development
+
+# Shop payments and email (all optional; see /documentation, "Shop, Pages and the Site API").
+# STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET: without the secret the Stripe webhook answers 503.
+# RESEND_API_KEY + EMAIL_FROM: order receipts and shipping notices. Unset = nothing is sent.
+# STRIPE_SECRET_KEY=sk_test_your_key_here
+# STRIPE_WEBHOOK_SECRET=whsec_your_secret_here
+# RESEND_API_KEY=re_your_key_here
+# EMAIL_FROM=Your Shop <orders@example.com>
+# EMAIL_REPLY_TO=help@example.com
