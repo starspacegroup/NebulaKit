@@ -119,3 +119,64 @@ describe('GET /media/[...key] — responses', () => {
 		expect((await GET(event as never)).status).toBe(200);
 	});
 });
+
+describe('GET /media/[...key] — byte ranges', () => {
+	function rangeEvent(range: string, size = 1000) {
+		const object = { ...makeObject(), size, body: 'slice' };
+		const bucket = {
+			head: vi.fn().mockResolvedValue({ size }),
+			get: vi.fn().mockResolvedValue(object)
+		};
+		const event = {
+			platform: { env: { BUCKET: bucket } },
+			params: { key: 'uploads/clip.mp4' },
+			request: { headers: new Headers({ Range: range }) }
+		};
+		return { event, bucket };
+	}
+
+	it('advertises ranges on a normal response', async () => {
+		const { event } = makeEvent();
+		const response = await GET(event as never);
+		expect(response.headers.get('Accept-Ranges')).toBe('bytes');
+		expect(response.status).toBe(200);
+	});
+
+	it('answers a range with 206 and its Content-Range', async () => {
+		const { event, bucket } = rangeEvent('bytes=100-199');
+		const response = await GET(event as never);
+		expect(response.status).toBe(206);
+		expect(response.headers.get('Content-Range')).toBe('bytes 100-199/1000');
+		expect(response.headers.get('Content-Length')).toBe('100');
+		expect(bucket.get).toHaveBeenCalledWith('uploads/clip.mp4', {
+			range: { offset: 100, length: 100 }
+		});
+	});
+
+	it('answers an open-ended and a suffix range', async () => {
+		const open = await GET(rangeEvent('bytes=900-').event as never);
+		expect(open.headers.get('Content-Range')).toBe('bytes 900-999/1000');
+		const suffix = await GET(rangeEvent('bytes=-50').event as never);
+		expect(suffix.headers.get('Content-Range')).toBe('bytes 950-999/1000');
+	});
+
+	it('answers 416 for a range past the end', async () => {
+		const { event } = rangeEvent('bytes=2000-3000');
+		const response = await GET(event as never);
+		expect(response.status).toBe(416);
+		expect(response.headers.get('Content-Range')).toBe('bytes */1000');
+	});
+
+	it('serves the whole object for a header it cannot use', async () => {
+		const { event, bucket } = rangeEvent('bytes=0-1,5-6');
+		const response = await GET(event as never);
+		expect(response.status).toBe(200);
+		expect(bucket.get).toHaveBeenCalledWith('uploads/clip.mp4');
+	});
+
+	it('404s when the object is gone before the range is read', async () => {
+		const { event, bucket } = rangeEvent('bytes=0-9');
+		bucket.head.mockResolvedValue(null);
+		await expect(GET(event as never)).rejects.toMatchObject({ status: 404 });
+	});
+});
