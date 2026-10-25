@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { addToCart, loadCart, saveCart } from '$lib/shop/cart';
 	import { MAX_QUANTITY } from '@nebulakit/commerce';
 	import type { PageData } from './$types';
@@ -24,10 +25,24 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{data.product.name}</title>
-	<meta name="description" content={data.product.description.slice(0, 160)} />
-</svelte:head>
+<SharingMeta
+	title={data.product.name}
+	description={data.product.description.slice(0, 160)}
+	image={data.product.imageUrl ?? ''}
+	structured={{
+		breadcrumb: [
+			{ name: 'Shop', path: '/shop' },
+			{ name: data.product.name, path: `/shop/${data.product.slug}` }
+		],
+		product: {
+			name: data.product.name,
+			description: data.product.description,
+			sku: data.product.slug,
+			priceCents: data.product.priceCents,
+			currency: data.product.currency
+		}
+	}}
+/>
 
 <article class="product">
 	<p><a href="/shop">← Shop</a></p>

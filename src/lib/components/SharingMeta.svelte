@@ -7,6 +7,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { site } from '$lib/site.config';
+	import { jsonLdScript, sharingGraph, type SharingGraphInput } from '$lib/seo/structured-data';
 
 	/** Page title (displayed in browser tab and social shares) */
 	export let title: string;
@@ -44,9 +45,33 @@
 	/** Height of the share image in pixels */
 	export let imageHeight: number = 0;
 
+	/**
+	 * Extra facts for the page's JSON-LD graph (breadcrumb, listing items,
+	 * product, article details). Pass `null` to emit no structured data. A
+	 * noindex page never emits any. See docs/STRUCTURED_DATA.md.
+	 */
+	export let structured: SharingGraphInput['extra'] = {};
+
 	$: fullTitle = siteName ? `${title} - ${siteName}` : title;
 	// Resolve root-relative image paths to absolute URLs for OG/Twitter compliance
 	$: absoluteImage = image && image.startsWith('/') ? `${$page.url.origin}${image}` : image;
+	$: jsonLd = jsonLdScript(
+		sharingGraph({
+			path: $page.url.pathname,
+			title,
+			description,
+			image,
+			imageAlt,
+			imageWidth,
+			imageHeight,
+			type,
+			publishedTime,
+			modifiedTime,
+			author,
+			noindex,
+			extra: structured
+		})
+	);
 </script>
 
 <svelte:head>
@@ -119,4 +144,7 @@
 			<meta property="article:author" content={author} />
 		{/if}
 	{/if}
+
+	<!-- Structured data (JSON-LD), escaped by jsonLdScript -->
+	{@html jsonLd}
 </svelte:head>

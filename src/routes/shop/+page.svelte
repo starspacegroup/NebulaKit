@@ -1,13 +1,19 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 </script>
 
-<svelte:head>
-	<title>Shop</title>
-	<meta name="description" content="Everything for sale on this site." />
-</svelte:head>
+<SharingMeta
+	title="Shop"
+	description="Everything for sale on this site."
+	structured={{
+		pageType: 'CollectionPage',
+		breadcrumb: [{ name: 'Shop', path: '/shop' }],
+		items: data.products.map((product) => ({ name: product.name, url: `/shop/${product.slug}` }))
+	}}
+/>
 
 <section class="shop">
 	<header>
