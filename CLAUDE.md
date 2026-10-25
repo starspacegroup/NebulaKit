@@ -56,10 +56,11 @@ SvelteKit 2 + **Svelte 5** (`^5.56.8`) + TypeScript run on Cloudflare Pages (`@s
 **`src/hooks.server.ts` — the sequence order is load-bearing.**
 
 ```
-sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
+sequence(securityHeadersHandler, usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
 ```
 
-- `usageHandler` first, so requests that return early still count against the Cloudflare plan meter (it counts _every_ invocation, buffered in-process and flushed on a rate limit).
+- `securityHeadersHandler` outermost: it only adds response headers, so it can wrap everything.
+- `usageHandler` next, so requests that return early still count against the Cloudflare plan meter (it counts _every_ invocation, buffered in-process and flushed on a rate limit).
 - `pageViewsHandler` last, so `locals.user` is populated and `signed_in` is accurate. It counts only non-bot HTML `GET` 200s on matched, non-`/admin|/api|/setup` routes.
 - `agentDiscoveryHandler` sits _outside_ that pair so `pageViewsHandler` still sees a `text/html` response and keeps counting agent reads as views.
 

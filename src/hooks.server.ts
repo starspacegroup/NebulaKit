@@ -4,6 +4,7 @@ import {
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
+import { withSecurityHeaders } from '$lib/server/security-headers';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthSession } from '$lib/utils/db';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
@@ -242,5 +243,19 @@ export const agentDiscoveryHandler: Handle = async ({ event, resolve }) => {
 	}
 };
 
+/**
+ * HSTS, nosniff, frame and referrer headers (security-headers.ts). Outermost,
+ * so redirects and error responses get them too. It only decorates the
+ * response, so it does not change when the other handlers run.
+ */
+export const securityHeadersHandler: Handle = async ({ event, resolve }) =>
+	withSecurityHeaders(await resolve(event));
+
 // Combine all hooks
-export const handle = sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler);
+export const handle = sequence(
+	securityHeadersHandler,
+	usageHandler,
+	agentDiscoveryHandler,
+	authHandler,
+	pageViewsHandler
+);
