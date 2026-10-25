@@ -1,3 +1,9 @@
+import {
+	clearFailures,
+	clientAddress,
+	isThrottled,
+	recordFailure
+} from '$lib/server/login-throttle';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
 import { verifyPassword } from '$lib/utils/passwords';
@@ -29,6 +35,14 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 		throw error(400, 'Email and password are required.');
 	}
 
+	// A brake on guessing: counts failures per address and per email in KV, and
+	// fails open when KV is missing (src/lib/server/login-throttle.ts).
+	const kv = platform.env.KV;
+	const ip = clientAddress(request);
+	if (await isThrottled(kv, ip, email)) {
+		throw error(429, 'Too many attempts. Try again in a few minutes.');
+	}
+
 	const user = await platform.env.DB.prepare(
 		`SELECT u.id, u.email, u.name, u.github_login, u.github_avatar_url, u.is_admin, u.password_hash
 		 FROM users u
@@ -40,13 +54,16 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 		.first<LoginUserRecord>();
 
 	if (!user?.password_hash) {
+		await recordFailure(kv, ip, email);
 		throw error(401, 'Invalid email or password.');
 	}
 
 	const isValidPassword = await verifyPassword(password, user.password_hash);
 	if (!isValidPassword) {
+		await recordFailure(kv, ip, email);
 		throw error(401, 'Invalid email or password.');
 	}
+	await clearFailures(kv, ip, email);
 
 	const isOwner = await resolveOwnerStatus(platform, user);
 	const sessionUser = createSessionUser({
