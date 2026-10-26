@@ -56,11 +56,12 @@ SvelteKit 2 + **Svelte 5** (`^5.56.8`) + TypeScript run on Cloudflare Pages (`@s
 **`src/hooks.server.ts` — the sequence order is load-bearing.**
 
 ```
-sequence(securityHeadersHandler, usageHandler, redirectsHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
+sequence(securityHeadersHandler, usageHandler, canonicalHostHandler, redirectsHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
 ```
 
 - `securityHeadersHandler` outermost: it only adds response headers, so it can wrap everything.
 - `usageHandler` next, so requests that return early still count against the Cloudflare plan meter (it counts _every_ invocation, buffered in-process and flushed on a rate limit).
+- `canonicalHostHandler` after `usageHandler`: sends `www.<site.url host>` to the canonical host (301 GET/HEAD, 308 otherwise; the session cookie is host-only) and marks every non-canonical host `X-Robots-Tag: noindex, nofollow`. Webhook and cron paths are exempt from the redirect. The host comes from `site.url`, never a literal.
 - `redirectsHandler` after `usageHandler`: it acts only on a `404` GET/HEAD and looks the path up in the `redirects` table (`/admin/redirects`, `src/lib/server/redirects.ts`), so healthy pages never touch D1 and a redirect is counted once, as the redirect, and never as a page view. Targets are re-validated at request time.
 - `pageViewsHandler` last, so `locals.user` is populated and `signed_in` is accurate. It counts only non-bot HTML `GET` 200s on matched, non-`/admin|/api|/setup` routes.
 - `agentDiscoveryHandler` sits _outside_ that pair so `pageViewsHandler` still sees a `text/html` response and keeps counting agent reads as views.

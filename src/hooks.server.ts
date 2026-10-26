@@ -1,4 +1,5 @@
 import { buildLinkHeader } from '$lib/agent-discovery';
+import { canonicalRedirect, withHostRobots } from '$lib/server/canonical-host';
 import {
 	isConvertibleHtml,
 	prefersMarkdown,
@@ -258,6 +259,25 @@ export const securityHeadersHandler: Handle = async ({ event, resolve }) =>
 	withSecurityHeaders(await resolve(event));
 
 /**
+ * Canonical host (src/lib/server/canonical-host.ts): `www.<site host>` is sent
+ * to the host in site.config (301 for GET/HEAD, 308 otherwise) because the
+ * session cookie is host-only, and every other non-canonical host (localhost,
+ * *.pages.dev, previews, tunnels) is answered normally with
+ * `X-Robots-Tag: noindex, nofollow`.
+ *
+ * Inside usageHandler, so the bounce is still counted as an invocation, and
+ * outside everything else, so a redirected request never reaches auth, D1 or
+ * page-view recording.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const canonicalHostHandler: Handle = async ({ event, resolve }) => {
+	const redirect = canonicalRedirect(event.url, event.request.method);
+	if (redirect) return redirect;
+	return withHostRobots(await resolve(event), event.url.hostname);
+};
+
+/**
  * Admin-managed redirects (docs/REDIRECTS.md, /admin/redirects). Consulted only
  * when the response is already a 404 for a GET/HEAD, so healthy pages pay
  * nothing. Checking the response rather than `route.id` matters: catch-all
@@ -301,6 +321,7 @@ export const redirectsHandler: Handle = async ({ event, resolve }) => {
 export const handle = sequence(
 	securityHeadersHandler,
 	usageHandler,
+	canonicalHostHandler,
 	redirectsHandler,
 	agentDiscoveryHandler,
 	authHandler,

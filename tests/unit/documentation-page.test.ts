@@ -184,6 +184,18 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/Loops and off-site targets are refused/i)).toBeInTheDocument();
 	});
 
+	it('documents the canonical host redirect and noindex rule', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		expect(scoped.getByRole('heading', { name: 'Canonical host' })).toBeInTheDocument();
+		expect(scoped.getAllByText('site.url').length).toBeGreaterThan(0);
+		expect(scoped.getByText(/X-Robots-Tag: noindex/)).toBeInTheDocument();
+	});
+
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
 	// documentation has to describe it and keep describing it.
 	it('documents the optional Google Analytics connection', () => {

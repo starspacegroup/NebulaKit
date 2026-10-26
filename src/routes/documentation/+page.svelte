@@ -776,6 +776,18 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Canonical host</h3>
+					<p>
+						The session cookie belongs to one host, so a visitor signed in on the bare domain would
+						look signed out on <code>www</code>. The site sends <code>www.</code> + the host in
+						<code>site.url</code> to that host (301 for reads, 308 for anything else), except
+						webhook and cron paths. It never redirects on localhost, <code>*.pages.dev</code>,
+						previews or tunnels. Every host that is not the one in <code>site.url</code> is served
+						with <code>X-Robots-Tag: noindex</code>, so a preview never competes with production in
+						search.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>The site API</h3>
 					<p>
 						Everything is reachable under <code>/api/v1</code>, described at
