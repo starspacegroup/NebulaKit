@@ -155,10 +155,21 @@ See [docs/THEME_SYSTEM.md](./docs/THEME_SYSTEM.md),
   PageSpeed Insights — no browser, no CI, no build step
 - `/admin/lighthouse` lists every audited page worst-first, with the specific
   audits that failed and what Lighthouse said about each
-- Scheduled through the same `/api/cron/*` shared-secret convention as the
-  other background jobs, or run on demand from the admin page
+- Scheduled by the bundled `cron-worker/` through the `/api/cron/*`
+  shared-secret convention, or run on demand from the admin page
 
 See [docs/LIGHTHOUSE_MONITORING.md](./docs/LIGHTHOUSE_MONITORING.md).
+
+## Scheduled jobs
+
+- A standalone Worker (`cron-worker/`) supplies the Cron Triggers Cloudflare
+  Pages lacks, with retries and exponential backoff
+- A typed job registry, one authorization helper for every `/api/cron/*` route,
+  one claim per job per scheduled minute, and run history in D1
+- `/admin/scheduled-jobs` shows last run, status and next expected run, with
+  **Run now**
+
+See [docs/SCHEDULED_JOBS.md](./docs/SCHEDULED_JOBS.md).
 
 ## Quality contract
 

@@ -38,13 +38,19 @@ An optional Google Analytics tag can be connected alongside it at
    ```
 
 3. **Schedule the retention prune** (optional but recommended — without it the
-   counter tables grow one row per day forever). Set `CRON_SECRET` and POST to
-   the endpoint from any scheduler:
+   counter tables grow one row per day forever). The template ships the
+   scheduler: deploy `cron-worker/` and set `CRON_SECRET` on it and on the Pages
+   project (see [SCHEDULED_JOBS.md](./SCHEDULED_JOBS.md)), and it calls
+   `/api/cron/prune-view-stats` daily at 03:17 UTC. Any other scheduler can POST
+   to the endpoint too:
 
    ```bash
    curl -X POST https://your-app.example.com/api/cron/prune-view-stats \
         -H "Authorization: Bearer $CRON_SECRET"
    ```
+
+   Each run deletes at most 5000 rows, so a long-neglected site drains its
+   backlog over several nights rather than in one statement.
 
    Retention is 400 days — roughly 13 months, so year-over-year comparisons still
    have last year to compare against. The prune covers all six counter tables,
@@ -326,7 +332,7 @@ contrast. Re-validate if you change one.
 | `src/lib/components/GoogleAnalytics.svelte`  | The optional GA4 tag                    |
 | `src/routes/admin/analytics/`                | The connect/pause/disconnect page       |
 | `src/routes/api/admin/settings/analytics/`   | Owner-only connection API               |
-| `src/routes/api/cron/prune-view-stats/`      | Retention                               |
+| `src/routes/api/cron/prune-view-stats/`      | Retention (scheduled by `cron-worker/`) |
 
 ---
 

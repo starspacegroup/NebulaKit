@@ -21,18 +21,22 @@ rather than showing an empty table.
 
 ## Scheduling
 
-There is no cron in a Pages deployment, so something external has to call the
-endpoint. It uses the same shared-secret convention as every other
-`/api/cron/*` route:
+There is no cron in a Pages deployment, so the template ships a small Worker
+that provides one: `cron-worker/` fires `/api/cron/lighthouse` daily (04:43 UTC)
+with the shared `CRON_SECRET`. Deploy it as described in
+[SCHEDULED_JOBS.md](./SCHEDULED_JOBS.md): `wrangler deploy` in `cron-worker/`,
+and set `CRON_SECRET` on both the Worker and the Pages project.
+
+The endpoint is still a plain authenticated POST, so a GitHub Actions
+`schedule:` or any other host works if you prefer it:
 
 ```bash
 curl -X POST https://your-app.example/api/cron/lighthouse \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-Set `CRON_SECRET` in your Pages environment. Any scheduler works — a one-line
-Cloudflare Worker with a Cron Trigger, a GitHub Actions `schedule:`, or any
-host that can make an authenticated POST.
+Runs are claimed once per scheduled minute, recorded, and listed at
+`/admin/scheduled-jobs`.
 
 **Daily is plenty.** PSI's keyless rate limit will not tolerate much more, and
 these scores do not move hourly. `?strategy=desktop` audits the desktop form

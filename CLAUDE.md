@@ -92,6 +92,8 @@ There is no `docs/` note for this subsystem; the source comments and `tests/unit
 
 **`wrangler.toml` ships placeholder resource ids that fail loudly by design.** `bun run dev` warns, `bun run build` fails, and remote migration/deploy paths fail until the ids are safe. `bun run build:ci` is the local-only exception: it warns and compiles without contacting Cloudflare. A previous version shipped real ids and six sibling products inherited one D1 and one KV, including shared OAuth secrets. Run `bun run setup:cf` rather than pasting ids from a sibling project.
 
+**Scheduled jobs** (`docs/SCHEDULED_JOBS.md`): Pages has no Cron Triggers, so `cron-worker/` is a separate Worker (own `wrangler.toml`/`tsconfig.json`, outside the app build and `svelte-check`) that POSTs to `/api/cron/*`. Jobs are registered in `src/lib/server/scheduler/registry.ts`; every cron route is `handleCronRequest(event, id)`, which authorizes with `authorizeCronRequest` (constant-time, 503 when `CRON_SECRET` is unset) and claims `(job, trigger, scheduled minute)` in `scheduled_job_runs` (migration `0023`) before running. `tests/unit/scheduler-registry.test.ts` fails if the registry, `cron-worker/wrangler.toml` `[triggers]` and `CRON_PATHS` in `cron-worker/src/index.ts` drift. Retention deletes go through `deleteInBatches` (`src/lib/server/bounded-delete.ts`): never an unbounded `DELETE`.
+
 ### Migrations
 
 `migrations/` is D1-native — wrangler sorts `.sql` files by numeric prefix and then by string, and records applied ones in `d1_migrations` **by filename**. A filename already on `main` is already applied and is immutable (AGENTS.md §2, `migrations/README.md`). The sequence runs `0001_`–`0013_`, the next is `0014_`.
