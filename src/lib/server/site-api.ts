@@ -25,6 +25,7 @@ import {
 	type ApiPrincipal,
 	type ApiScope
 } from '@nebulakit/security';
+import { recordAudit, ruleFor } from '$lib/server/audit';
 
 export type SitePrincipal =
 	ApiPrincipal | { kind: 'session'; keyId: null; name: string; scopes: ApiScope[] };
@@ -145,8 +146,44 @@ export function siteApi(
 				console.error('Failed to log API call', err);
 			}
 		}
+		if (scope && principal && response.status < 400) {
+			await auditApiCall(event, db, principal);
+		}
 		return response;
 	};
+}
+
+/**
+ * Record a successful write by a keyed or signed-in caller (admin audit log,
+ * docs/AUDIT_LOG.md). Reads and public endpoints are not audited. Never throws.
+ */
+async function auditApiCall(
+	event: RequestEvent,
+	db: D1Database,
+	principal: SitePrincipal
+): Promise<void> {
+	try {
+		const method = event.request.method;
+		if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return;
+		const rule = ruleFor(method, event.route?.id);
+		const via = principal.kind;
+		const actorId = via === 'session' ? (event.locals?.user?.id ?? null) : principal.keyId;
+		const actorLogin = via === 'key' ? `key:${principal.name}` : principal.name;
+		const targetId = rule?.param
+			? (((event.params ?? {}) as Record<string, string | undefined>)[rule.param] ?? null)
+			: null;
+		await recordAudit(db, {
+			actorId,
+			actorLogin,
+			action: rule?.action ?? `api.${method.toLowerCase()}`,
+			targetType: rule?.targetType ?? 'api',
+			targetId,
+			summary: rule?.summary ?? `${method} ${event.url.pathname}`,
+			detail: { via }
+		});
+	} catch (err) {
+		console.error('[audit] could not audit an API call:', err);
+	}
 }
 
 function errorResponse(err: unknown): Response {

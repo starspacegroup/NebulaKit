@@ -7,10 +7,11 @@ import {
 	verifyOAuthTransaction
 } from '$lib/utils/oauth-state';
 import { findValidSession } from '$lib/utils/db';
+import { trackSignIn } from '$lib/server/sign-ins';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ url, cookies, platform, locals }) => {
+export const GET: RequestHandler = async ({ url, cookies, platform, locals, request }) => {
 	const code = url.searchParams.get('code');
 	const state = url.searchParams.get('state');
 	if (!code) throw redirect(302, '/auth/login?error=no_code');
@@ -126,6 +127,8 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals }) =>
 			db,
 			platform,
 			url,
+			request,
+			method: 'discord',
 			userId,
 			currentSessionToken: linkedProvider ? currentSessionToken || undefined : undefined,
 			linkedProvider
@@ -133,6 +136,11 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals }) =>
 	} catch (error) {
 		if (isRedirect(error)) throw error;
 		console.error('Discord OAuth callback error:', error);
+		await trackSignIn(platform, request, {
+			method: 'discord',
+			success: false,
+			reason: 'provider error'
+		});
 		throw redirect(302, '/auth/login?error=oauth_failed');
 	}
 };

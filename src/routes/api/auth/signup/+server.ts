@@ -1,3 +1,4 @@
+import { trackSignIn } from '$lib/server/sign-ins';
 import { createAuthSession } from '$lib/utils/db';
 import { hashPassword, validatePassword } from '$lib/utils/passwords';
 import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
@@ -67,6 +68,7 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 	});
 
 	const sessionId = await createAuthSession(platform.env.DB, sessionUser);
+	await trackSignIn(platform, request, { method: 'signup', success: true, userId });
 
 	return json(
 		{ success: true, redirectTo: '/' },

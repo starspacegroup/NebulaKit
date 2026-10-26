@@ -99,6 +99,10 @@ and it is usually bot traffic.
 - **Viewport** is the one dimension headers cannot supply, so the root layout
   beacons the bucketed `innerWidth` once per session to `/api/stats/viewport`.
   Only the breakpoint bucket is stored; the raw width is validated and discarded.
+- **Page-view stats are the whole story for visitors.** The one place the site can store an
+  IP address is the owner's opt-in sign-in tracking
+  ([SIGN_IN_TRACKING.md](SIGN_IN_TRACKING.md)): off by default, people who are signing in only,
+  never page views.
 
 ---
 

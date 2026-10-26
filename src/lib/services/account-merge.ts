@@ -6,6 +6,8 @@
  * Instead of showing an error, we seamlessly merge the accounts.
  */
 
+import { recordAudit } from '$lib/server/audit';
+
 interface D1Database {
 	prepare(query: string): D1PreparedStatement;
 	batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
@@ -168,6 +170,18 @@ export async function mergeAccounts(
 
 	// Execute all statements in a batch for atomicity
 	await db.batch(statements);
+
+	// Audit trail (docs/AUDIT_LOG.md). The log is not a foreign key, so it keeps
+	// naming the source user after the DELETE above. Recording never throws.
+	await recordAudit(db as never, {
+		actorId: targetUserId,
+		actorLogin: targetUser.email,
+		action: 'user.merge',
+		targetType: 'user',
+		targetId: sourceUserId,
+		summary: 'Merged one account into another',
+		detail: { sourceUserId, targetUserId, sourceWasAdmin: sourceIsAdmin }
+	});
 
 	console.log(`[Account Merge] Successfully merged user ${sourceUserId} into ${targetUserId}`);
 }

@@ -590,4 +590,27 @@ describe('Documentation Page', () => {
 		expect(scoped.getAllByText('0021').length).toBeGreaterThan(0);
 		expect(scoped.getAllByText(/requirePermission/).length).toBeGreaterThan(0);
 	});
+
+	it('documents the audit log, its privacy limits and its retention endpoint', () => {
+		render(Page);
+		const section = screen.getByRole('heading', { name: /^Audit Log$/ }).closest('section');
+		expect(section).toBeTruthy();
+		const text = section?.textContent ?? '';
+		expect(text).toMatch(/never a secret value/i);
+		expect(text).toMatch(/never page views/i);
+		expect(text).toMatch(/\/api\/cron\/prune-audit/);
+		expect(text).toMatch(/365 days/);
+	});
+
+	it('documents sign-in tracking as opt-in with its privacy limits', () => {
+		render(Page);
+		const section = screen.getByRole('heading', { name: /^Sign-in Tracking$/ }).closest('section');
+		expect(section).toBeTruthy();
+		const text = section?.textContent ?? '';
+		expect(text).toMatch(/off by default/i);
+		expect(text).toMatch(/IP address/);
+		expect(text).toMatch(/never the raw browser string/i);
+		expect(text).toMatch(/90 days/);
+		expect(text).toMatch(/never\s+block a sign-in/i);
+	});
 });

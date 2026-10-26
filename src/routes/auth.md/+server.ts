@@ -92,7 +92,8 @@ Reading active products, published pages, pricing a cart at
 Two other operator-held secrets travel as bearer headers, also set or issued by
 the owner out of band:
 
-- \`CRON_SECRET\`, which only \`POST ${origin}/api/cron/prune-view-stats\` accepts.
+- \`CRON_SECRET\`, which only \`POST ${origin}/api/cron/prune-view-stats\` and
+  \`POST ${origin}/api/cron/prune-audit\` accept.
 - The stats token, which only \`GET ${origin}/api/stats/summary\` accepts and
   which the owner issues on the admin analytics page for their own dashboard.
 

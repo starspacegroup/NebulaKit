@@ -37,7 +37,12 @@
 			icon: 'mail',
 			permission: 'contact'
 		},
-		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart', permission: 'lighthouse' }
+		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart', permission: 'lighthouse' },
+		{ path: '/admin/audit', label: 'Audit log', icon: 'activity' },
+		// Owner-only: it shows where people signed in from.
+		...(data.user?.isOwner || data.user?.isSuperAdmin
+			? [{ path: '/admin/sign-ins', label: 'Sign-ins', icon: 'users' }]
+			: [])
 	].filter((item) => !('permission' in item) || held.has(item.permission as string));
 
 	// PII reveal state shared with admin views via context. The store tracks the

@@ -56,7 +56,7 @@ SvelteKit 2 + **Svelte 5** (`^5.56.8`) + TypeScript run on Cloudflare Pages (`@s
 **`src/hooks.server.ts` — the sequence order is load-bearing.**
 
 ```
-sequence(securityHeadersHandler, usageHandler, canonicalHostHandler, redirectsHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
+sequence(securityHeadersHandler, usageHandler, canonicalHostHandler, redirectsHandler, agentDiscoveryHandler, auditHandler, authHandler, pageViewsHandler)
 ```
 
 - `securityHeadersHandler` outermost: it only adds response headers, so it can wrap everything.
@@ -64,6 +64,7 @@ sequence(securityHeadersHandler, usageHandler, canonicalHostHandler, redirectsHa
 - `canonicalHostHandler` after `usageHandler`: sends `www.<site.url host>` to the canonical host (301 GET/HEAD, 308 otherwise; the session cookie is host-only) and marks every non-canonical host `X-Robots-Tag: noindex, nofollow`. Webhook and cron paths are exempt from the redirect. The host comes from `site.url`, never a literal.
 - `redirectsHandler` after `usageHandler`: it acts only on a `404` GET/HEAD and looks the path up in the `redirects` table (`/admin/redirects`, `src/lib/server/redirects.ts`), so healthy pages never touch D1 and a redirect is counted once, as the redirect, and never as a page view. Targets are re-validated at request time.
 - `pageViewsHandler` last, so `locals.user` is populated and `signed_in` is accurate. It counts only non-bot HTML `GET` 200s on matched, non-`/admin|/api|/setup` routes.
+- `auditHandler` (admin audit log, `docs/AUDIT_LOG.md`) wraps `authHandler` and reads `locals.user` only after the response; it never changes the order of the others.
 - `agentDiscoveryHandler` sits _outside_ that pair so `pageViewsHandler` still sees a `text/html` response and keeps counting agent reads as views.
 
 Each handler is exported individually because `sequence()` needs Kit's request store — unit tests call them directly. Reordering silently corrupts analytics rather than failing a test.
@@ -117,6 +118,8 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | Subsystem                                              | Doc                                                         |
 | ------------------------------------------------------ | ----------------------------------------------------------- |
 | Page-view stats, admin stats surface                   | `ADMIN_STATS.md`                                            |
+| Admin audit log (`/admin/audit`, `admin_actions`)      | `AUDIT_LOG.md`                                              |
+| Opt-in sign-in tracking (`/admin/sign-ins`)            | `SIGN_IN_TRACKING.md`                                       |
 | Agent discovery, Markdown negotiation, WebMCP          | `AGENT_READINESS.md`                                        |
 | D1/KV/R2 provisioning, the shared-resource incident    | `CLOUDFLARE_SETUP.md`                                       |
 | CMS embed registry and manifest split                  | `CMS_EMBEDS.md`                                             |
