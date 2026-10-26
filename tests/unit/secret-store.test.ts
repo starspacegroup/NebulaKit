@@ -317,7 +317,7 @@ describe('record helpers', () => {
 		const p = platform(createFakeKV(), { ENCRYPTION_KEY: OP_KEY });
 		const spec = authConfigSpec('github');
 
-		const sealed = await ensureRecordSealed(
+		const sealed: any = await ensureRecordSealed(
 			p,
 			{ clientId: 'c', clientSecret: 'plain-oauth-secret' },
 			spec

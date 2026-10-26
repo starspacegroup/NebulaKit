@@ -54,6 +54,46 @@ describe('Admin AI Keys Page', () => {
 		expect(title).toBeTruthy();
 	});
 
+	it('shows only that a key is configured and its last four characters', () => {
+		const data = {
+			user: mockUser,
+			canRevealPii: false,
+			canViewStats: false,
+			canManageAnalytics: false,
+			piiRevealed: false,
+			hasAIProviders: true,
+			cmsPaletteItems: [],
+			gaMeasurementId: null,
+			keys: [
+				{
+					id: 'a',
+					name: 'Prod',
+					provider: 'openai',
+					enabled: true,
+					models: [],
+					createdAt: '2026-01-01T00:00:00Z',
+					apiKeyConfigured: true,
+					apiKeyLast4: 'wxyz',
+					apiKeyStatus: 'ok'
+				},
+				{
+					id: 'b',
+					name: 'Lost',
+					provider: 'openai',
+					enabled: true,
+					models: [],
+					createdAt: '2026-01-01T00:00:00Z',
+					apiKeyConfigured: true,
+					apiKeyStatus: 'undecryptable'
+				}
+			]
+		};
+		render(AIKeysPage, { props: { data } });
+		expect(screen.getByText('Configured, encrypted, ends in wxyz')).toBeTruthy();
+		expect(screen.getByText(/Cannot be decrypted/)).toBeTruthy();
+		expect(screen.queryByLabelText('Show value')).toBeNull();
+	});
+
 	it('should render an empty state when no keys exist', () => {
 		render(AIKeysPage, {
 			props: {
@@ -279,18 +319,19 @@ describe('Admin AI Keys Page', () => {
 		});
 	});
 
-	it('should mask API keys by default', () => {
+	it('never renders a secret, even if one reaches the page', () => {
 		const mockKeys = [
 			{
 				id: '1',
 				name: 'OpenAI',
 				provider: 'openai',
 				apiKey: 'sk-test123',
+				apiKeyConfigured: true,
 				createdAt: '2024-01-01'
 			}
 		];
 
-		render(AIKeysPage, {
+		const { container } = render(AIKeysPage, {
 			props: {
 				data: {
 					user: mockUser,
@@ -306,42 +347,8 @@ describe('Admin AI Keys Page', () => {
 			}
 		});
 
-		const maskedValue = screen.getByText(/••••••/i);
-		expect(maskedValue).toBeTruthy();
-	});
-
-	it('should toggle visibility of API keys', async () => {
-		const mockKeys = [
-			{
-				id: '1',
-				name: 'OpenAI',
-				provider: 'openai',
-				apiKey: 'sk-test123',
-				createdAt: '2024-01-01'
-			}
-		];
-
-		render(AIKeysPage, {
-			props: {
-				data: {
-					user: mockUser,
-					canRevealPii: false,
-					canViewStats: false,
-					canManageAnalytics: false,
-					piiRevealed: false,
-					hasAIProviders: false,
-					cmsPaletteItems: [],
-					gaMeasurementId: null,
-					keys: mockKeys
-				}
-			}
-		});
-
-		const toggleButton = screen.getByLabelText(/Show value/i);
-		await fireEvent.click(toggleButton);
-
-		const visibleValue = screen.getByText('sk-test123');
-		expect(visibleValue).toBeTruthy();
+		expect(container.textContent).not.toContain('sk-test123');
+		expect(screen.getByText('Configured, encrypted')).toBeTruthy();
 	});
 
 	it('should display available AI providers', async () => {
