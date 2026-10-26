@@ -39,7 +39,7 @@ describe('admin contact submissions load', () => {
 	});
 
 	it('masks name/email by default', async () => {
-		const data = (await load(event({ user: { isAdmin: true } }) as never)) as {
+		const data = (await load(event({ user: { isAdmin: true, permissions: ['contact'] } }) as never)) as {
 			submissions: Array<{ name: string; email: string }>;
 		};
 		expect(data.submissions[0].name).toBe('A** L*******');

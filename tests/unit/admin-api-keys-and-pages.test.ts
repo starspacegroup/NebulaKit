@@ -10,7 +10,14 @@ import * as pageEdit from '../../src/routes/admin/pages/[slug]/+page.server';
 import * as publicPage from '../../src/routes/p/[slug]/+page.server';
 
 const owner = { id: 'o', login: 'owner', email: 'o@x', isOwner: true };
-const admin = { id: 'a', login: 'admin', email: 'a@x', isOwner: false, isAdmin: true };
+const admin = {
+	id: 'a',
+	login: 'admin',
+	email: 'a@x',
+	isOwner: false,
+	isAdmin: true,
+	permissions: ['pages']
+};
 
 let db: D1Database;
 beforeEach(() => {

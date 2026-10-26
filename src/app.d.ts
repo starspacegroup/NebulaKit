@@ -26,6 +26,10 @@ declare global {
 				 *  honour it, and they must agree — see the note in `auth-guards.ts`. */
 				isSuperAdmin?: boolean;
 				canViewStats?: boolean;
+				/** Effective role, re-read from `users` on every request (roles.ts). */
+				role?: 'user' | 'admin' | 'superadmin' | 'owner';
+				/** Granted admin areas (permissions.ts), re-read on every request. */
+				permissions?: string[];
 				isPretend?: boolean;
 			};
 			/** Set by the CMS content route so the page-view hook can attribute the

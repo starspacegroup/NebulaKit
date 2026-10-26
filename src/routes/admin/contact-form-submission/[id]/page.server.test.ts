@@ -56,7 +56,7 @@ describe('admin submission detail load', () => {
 	});
 
 	it('masks name/email by default', async () => {
-		const data = (await load(loadEvent({ user: { isAdmin: true } }) as never)) as {
+		const data = (await load(loadEvent({ user: { isAdmin: true, permissions: ['contact'] } }) as never)) as {
 			submission: { name: string; email: string };
 		};
 		expect(data.submission.name).toBe('A** L*******');
@@ -87,7 +87,7 @@ describe('resolve action', () => {
 	it('resolves then redirects to the inbox', async () => {
 		await expect(
 			actions.resolve({
-				locals: { user: { isAdmin: true } },
+				locals: { user: { isAdmin: true, permissions: ['contact'] } },
 				platform: { env: { DB: {} } },
 				params: { id: 'id-1' }
 			} as never)
@@ -98,7 +98,7 @@ describe('resolve action', () => {
 	it('throws 500 without a database', async () => {
 		await expect(
 			actions.resolve({
-				locals: { user: { isAdmin: true } },
+				locals: { user: { isAdmin: true, permissions: ['contact'] } },
 				platform: { env: { DB: null } },
 				params: { id: 'id-1' }
 			} as never)

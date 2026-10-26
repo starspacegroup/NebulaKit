@@ -1,5 +1,5 @@
 import { error, json } from '@sveltejs/kit';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { isStrategy, runLighthouseSweep } from '$lib/server/lighthouse';
 import type { RequestHandler } from './$types';
 
@@ -16,7 +16,7 @@ import type { RequestHandler } from './$types';
  * authorization.
  */
 export const POST: RequestHandler = async ({ request, locals, platform }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'lighthouse');
 
 	const db = platform?.env?.DB;
 	if (!db) {

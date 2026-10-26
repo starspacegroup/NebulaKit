@@ -1,11 +1,11 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { emptyPage, getPage, listPages, PAGE_SLUG, savePage } from '@nebulakit/builder';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import type { Actions, PageServerLoad } from './$types';
 
 /** /admin/pages — the builder's page list. Editing happens at /admin/pages/[slug]. */
 export const load: PageServerLoad = async ({ locals, platform }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'pages');
 	const db = platform?.env?.DB;
 	if (!db) throw error(503, 'The site database is not available');
 	return { pages: await listPages(db) };
@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 export const actions: Actions = {
 	create: async ({ locals, platform, request }) => {
-		requireAdmin(locals);
+		requirePermission(locals, 'pages');
 		const db = platform?.env?.DB;
 		if (!db) throw error(503, 'The site database is not available');
 		const form = await request.formData();

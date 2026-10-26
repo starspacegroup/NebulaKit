@@ -4,6 +4,8 @@ import {
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
+import { PERMISSIONS, parsePermissions } from '$lib/access/permissions';
+import { effectiveRole } from '$lib/access/roles';
 import { withSecurityHeaders } from '$lib/server/security-headers';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthSession } from '$lib/utils/db';
@@ -56,7 +58,13 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 				if (!isDevAuthSimulationEnabled(event.url, event.platform)) {
 					throw new Error('Simulated session outside the dev simulator');
 				}
-				event.locals.user = stored;
+				// Simulated admins hold every area; the simulator is dev-only.
+				const pretendRole = effectiveRole(stored);
+				event.locals.user = {
+					...stored,
+					role: pretendRole,
+					permissions: pretendRole === 'admin' ? [...PERMISSIONS] : []
+				};
 			} else {
 				type AuthUserRecord = {
 					id: string;
@@ -66,38 +74,76 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 					github_avatar_url: string | null;
 					is_admin: number;
 					can_view_stats?: number;
+					role?: string | null;
 				};
 				let userRecord: AuthUserRecord | null;
 				try {
 					userRecord = await db
 						.prepare(
 							`SELECT id, email, name, github_login, github_avatar_url,
-							        is_admin, can_view_stats
+							        is_admin, can_view_stats, role
 							 FROM users WHERE id = ?`
 						)
 						.bind(stored.id)
 						.first<AuthUserRecord>();
 				} catch {
-					// Migration 0009 added can_view_stats; retain compatibility with
-					// a locally created database that has not applied it yet.
-					userRecord = await db
-						.prepare(
-							`SELECT id, email, name, github_login, github_avatar_url, is_admin
-							 FROM users WHERE id = ?`
-						)
-						.bind(stored.id)
-						.first<AuthUserRecord>();
+					// Migration 0021 added role (0009 added can_view_stats); retain
+					// compatibility with a local database that has not applied them.
+					try {
+						userRecord = await db
+							.prepare(
+								`SELECT id, email, name, github_login, github_avatar_url,
+								        is_admin, can_view_stats
+								 FROM users WHERE id = ?`
+							)
+							.bind(stored.id)
+							.first<AuthUserRecord>();
+					} catch {
+						userRecord = await db
+							.prepare(
+								`SELECT id, email, name, github_login, github_avatar_url, is_admin
+								 FROM users WHERE id = ?`
+							)
+							.bind(stored.id)
+							.first<AuthUserRecord>();
+					}
 				}
 
 				if (!userRecord) throw new Error('Session user no longer exists');
 				const isOwner = await resolveOwnerStatus(event.platform, userRecord);
+				const role = effectiveRole({
+					isOwner,
+					role: userRecord.role,
+					isAdmin: userRecord.is_admin === 1
+				});
+				// The granted areas are re-read every request too, so revoking one
+				// bites on the next click. Fails closed: no table, no grants.
+				let permissions: string[] = [];
+				if (role === 'admin') {
+					try {
+						const rows = await db
+							.prepare('SELECT permission FROM user_permissions WHERE user_id = ?')
+							.bind(userRecord.id)
+							.all<{ permission: string }>();
+						permissions = parsePermissions((rows.results ?? []).map((r) => r.permission));
+					} catch {
+						permissions = [];
+					}
+					// `can_view_stats` (0009) and the `stats` permission are one grant.
+					if (userRecord.can_view_stats === 1 && !permissions.includes('stats')) {
+						permissions = [...permissions, 'stats'];
+					}
+				}
 				event.locals.user = {
 					...createSessionUser({
 						...userRecord,
 						isOwner,
-						isAdmin: userRecord.is_admin === 1 || isOwner
+						isAdmin: role !== 'user'
 					}),
-					canViewStats: userRecord.can_view_stats === 1
+					role,
+					permissions,
+					isSuperAdmin: role === 'superadmin',
+					canViewStats: userRecord.can_view_stats === 1 || permissions.includes('stats')
 				};
 			}
 		} catch {
