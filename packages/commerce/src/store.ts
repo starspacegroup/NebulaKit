@@ -6,9 +6,11 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import type { PricedCart } from './cart';
 import { canTransition } from './orders';
+import { parseRegionalPricing, type RegionalPricingSettings } from './regional';
 import type {
 	Order,
 	OrderItem,
+	OrderRegionalPricing,
 	OrderStatus,
 	Product,
 	ProductInput,
@@ -48,7 +50,23 @@ function parseAddress(raw: unknown): ShippingAddress | null {
 	}
 }
 
-function toOrder(row: Row, items: OrderItem[]): Order {
+function toRegional(row: Row | null): OrderRegionalPricing | null {
+	if (!row) return null;
+	let countries: Record<string, string | null> = {};
+	try {
+		const parsed = JSON.parse(String(row.countries));
+		if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) countries = parsed;
+	} catch {
+		// an unreadable audit blob must not hide the order it describes
+	}
+	return {
+		multiplier: Number(row.multiplier_percent) / 100,
+		countries,
+		baseSubtotalCents: Number(row.base_subtotal_cents)
+	};
+}
+
+function toOrder(row: Row, items: OrderItem[], regional: OrderRegionalPricing | null): Order {
 	return {
 		id: row.id as string,
 		status: row.status as OrderStatus,
@@ -62,6 +80,7 @@ function toOrder(row: Row, items: OrderItem[]): Order {
 		paymentProvider: (row.payment_provider as string | null) ?? null,
 		paymentReference: (row.payment_reference as string | null) ?? null,
 		fulfillmentReference: (row.fulfillment_reference as string | null) ?? null,
+		regional,
 		items,
 		createdAt: row.created_at as string,
 		updatedAt: row.updated_at as string
@@ -187,7 +206,13 @@ export async function deleteProduct(db: D1Database, id: string): Promise<boolean
 export async function createOrder(
 	db: D1Database,
 	cart: PricedCart,
-	details: { email: string; shippingAddress: ShippingAddress | null; paymentProvider: string }
+	details: {
+		email: string;
+		shippingAddress: ShippingAddress | null;
+		paymentProvider: string;
+		/** Written beside the order when regional pricing was on; see migration 0022. */
+		regional?: OrderRegionalPricing | null;
+	}
 ): Promise<Order> {
 	const orderId = crypto.randomUUID();
 	const statements = [
@@ -224,9 +249,25 @@ export async function createOrder(
 					line.quantity,
 					line.lineTotalCents
 				)
-		)
+		),
+		...(details.regional
+			? [
+					db
+						.prepare(
+							`INSERT INTO commerce_order_regional
+							 (order_id, multiplier_percent, countries, base_subtotal_cents)
+							 VALUES (?, ?, ?, ?)`
+						)
+						.bind(
+							orderId,
+							Math.round(details.regional.multiplier * 100),
+							JSON.stringify(details.regional.countries),
+							details.regional.baseSubtotalCents
+						)
+				]
+			: [])
 	];
-	// One batch: an order never exists without its lines.
+	// One batch: an order never exists without its lines (or its audit row).
 	await db.batch(statements);
 	return (await getOrder(db, orderId)) as Order;
 }
@@ -238,7 +279,11 @@ export async function getOrder(db: D1Database, id: string): Promise<Order | null
 		.prepare('SELECT * FROM commerce_order_items WHERE order_id = ? ORDER BY rowid')
 		.bind(id)
 		.all<Row>();
-	return toOrder(row, results.map(toItem));
+	const regional = await db
+		.prepare('SELECT * FROM commerce_order_regional WHERE order_id = ?')
+		.bind(id)
+		.first<Row>();
+	return toOrder(row, results.map(toItem), toRegional(regional));
 }
 
 /**
@@ -265,7 +310,7 @@ export async function listOrders(
 		: db.prepare('SELECT * FROM commerce_orders ORDER BY created_at DESC LIMIT ?').bind(limit);
 	const { results } = await query.all<Row>();
 	// Lists carry totals, not lines; one order's lines are a GET away.
-	return results.map((row) => toOrder(row, []));
+	return results.map((row) => toOrder(row, [], null));
 }
 
 /**
@@ -313,4 +358,53 @@ export async function setPaymentReference(
 		)
 		.bind(reference, id)
 		.run();
+}
+
+/** The settings row for `key`, or null when it was never saved. */
+export async function getCommerceSetting(db: D1Database, key: string): Promise<string | null> {
+	const row = await db
+		.prepare('SELECT value FROM commerce_settings WHERE key = ?')
+		.bind(key)
+		.first<Row>();
+	return row ? (row.value as string) : null;
+}
+
+export async function setCommerceSetting(
+	db: D1Database,
+	key: string,
+	value: string
+): Promise<void> {
+	await db
+		.prepare(
+			`INSERT INTO commerce_settings (key, value) VALUES (?, ?)
+			 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+		)
+		.bind(key, value)
+		.run();
+}
+
+const REGIONAL_PRICING_KEY = 'regional_pricing';
+
+/**
+ * Regional pricing settings. A missing or corrupt row reads as the defaults,
+ * which are OFF: the safe direction is charging the catalog price.
+ */
+export async function getRegionalPricingSettings(db: D1Database): Promise<RegionalPricingSettings> {
+	const raw = await getCommerceSetting(db, REGIONAL_PRICING_KEY);
+	if (raw === null) return parseRegionalPricing(null);
+	try {
+		return parseRegionalPricing(JSON.parse(raw));
+	} catch {
+		return parseRegionalPricing(null);
+	}
+}
+
+export async function saveRegionalPricingSettings(
+	db: D1Database,
+	settings: RegionalPricingSettings
+): Promise<RegionalPricingSettings> {
+	// Normalise on the way in as well, so what is stored is always what is read.
+	const safe = parseRegionalPricing(settings);
+	await setCommerceSetting(db, REGIONAL_PRICING_KEY, JSON.stringify(safe));
+	return safe;
 }

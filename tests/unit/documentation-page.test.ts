@@ -156,6 +156,28 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/Security updates are forced to every site/i)).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — /admin/settings/pricing, the quote endpoint and the pricing scopes.
+	it('documents regional pricing', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of [
+			'/admin/settings/pricing',
+			'POST /api/v1/checkout/quote',
+			'GET/PUT /api/v1/pricing',
+			'pricing:read',
+			'pricing:write',
+			'bun run update:price-index'
+		]) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/it only ever lowers a price/i)).toBeInTheDocument();
+		expect(scoped.getByText(/least generous\s+country/i)).toBeInTheDocument();
+	});
+
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
 	// documentation has to describe it and keep describing it.
 	it('documents the optional Google Analytics connection', () => {

@@ -24,7 +24,10 @@ export interface CartLine {
 export interface PricedLine {
 	product: Product;
 	quantity: number;
+	/** What is charged per unit, after any regional discount. */
 	unitPriceCents: number;
+	/** The catalog price, before any regional discount. */
+	baseUnitPriceCents: number;
 	lineTotalCents: number;
 }
 
@@ -32,6 +35,8 @@ export interface PricedCart {
 	lines: PricedLine[];
 	currency: string;
 	subtotalCents: number;
+	/** The subtotal at catalog prices; equals `subtotalCents` when nothing was lowered. */
+	baseSubtotalCents: number;
 	shippingCents: number;
 	taxCents: number;
 	totalCents: number;
@@ -41,8 +46,10 @@ export interface PricedCart {
 export interface PricingOptions {
 	taxRule?: TaxRule;
 	shippingCents?: number;
-	/** The shopper's regional (PPP) multiplier, applied to physical and digital products alike. */
+	/** The shopper's regional (PPP) multiplier. Only ever lowers a price (see `regionalPriceCents`). */
 	regionalMultiplier?: number;
+	/** Which products the multiplier covers; `all` unless the site's settings say `digital`. */
+	regionalScope?: 'digital' | 'all';
 }
 
 export class CommercePricingError extends Error {
@@ -82,16 +89,30 @@ export async function priceCart(
 			throw new CommercePricingError('Cart mixes currencies');
 		}
 		currency = product.currency;
-		const unitPriceCents = regionalPriceCents(product.priceCents, options.regionalMultiplier ?? 1);
-		priced.push({ product, quantity, unitPriceCents, lineTotalCents: unitPriceCents * quantity });
+		const covered = (options.regionalScope ?? 'all') === 'all' || product.type === 'digital';
+		const unitPriceCents = covered
+			? regionalPriceCents(product.priceCents, options.regionalMultiplier ?? 1)
+			: product.priceCents;
+		priced.push({
+			product,
+			quantity,
+			unitPriceCents,
+			baseUnitPriceCents: product.priceCents,
+			lineTotalCents: unitPriceCents * quantity
+		});
 	}
 
 	const subtotalCents = priced.reduce((sum, line) => sum + line.lineTotalCents, 0);
+	const baseSubtotalCents = priced.reduce(
+		(sum, line) => sum + line.baseUnitPriceCents * line.quantity,
+		0
+	);
 	const taxCents = calculateTaxCents(subtotalCents, taxRule);
 	return {
 		lines: priced,
 		currency: currency as string,
 		subtotalCents,
+		baseSubtotalCents,
 		shippingCents,
 		taxCents,
 		totalCents: calculateTotalCents(subtotalCents, shippingCents, taxCents, taxRule),

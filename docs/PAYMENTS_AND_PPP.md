@@ -1,10 +1,99 @@
-# Payments & Purchasing-Power Pricing — design plan
+# Payments & Purchasing-Power Pricing
 
-> **Status: plan (not yet built).** This is the design for bringing Stripe payments
-> into the kit with **purchasing-power parity (PPP) region pricing as a first-class
-> concept, not a bolt-on.** It is the detailed companion to the "Payments: Stripe
-> integration" and "Credits / points ledger" entries in
-> [ROADMAP.md](../ROADMAP.md). Paths below name the modules this design adds.
+> **Status: two layers, one built.**
+> **Built (2026-10-25): regional pricing as a multiplier on the shop's own prices**,
+> described first below. **Still a plan: Stripe `currency_options` (local-currency
+> charging)**, the long design that follows it. They answer different questions and
+> do not conflict. Companion to the "Payments: Stripe integration" and "Credits /
+> points ledger" entries in [ROADMAP.md](../ROADMAP.md).
+
+## What is built: regional pricing as a multiplier
+
+Code: `packages/commerce/src/regional.ts` (pure logic), `price-level-index.ts`
+(static World Bank table, 196 countries), `store.ts` (settings and audit),
+`src/lib/server/checkout-pricing.ts` (shared by checkout and quote). Admin screen:
+`/admin/settings/pricing`. Site API: `GET/PUT /api/v1/pricing`,
+`GET /api/v1/pricing/preview`, public `POST /api/v1/checkout/quote`. Migration
+`0022_commerce_settings.sql`. Ported from Ammoura's regional pricing.
+
+How it works:
+
+1. **The index.** Each country has a price level ratio (what the same basket costs
+   there against the US, World Bank `PA.NUS.PPP / PA.NUS.FCRF`). It ships as a
+   checked-in table and is refreshed by hand with `bun run update:price-index`, then
+   reviewed as a diff. Nothing is fetched at runtime.
+2. **The multiplier.** `1 - strength * (1 - level)`, rounded to steps of 5%, held
+   between `1 - maxDiscount` and 1. A per-country override replaces the index figure
+   and is still held to the cap; `1` pins a country to full price.
+3. **It only ever lowers.** A country priced above the US, a country with no data and
+   an unusable code all pay the base price. `regionalPriceCents` returns the base
+   price for any multiplier of 1 or more.
+4. **Least generous country wins.** An order is priced at the highest multiplier
+   among the country Cloudflare sees (`request.cf.country`, else `cf-ipcountry`) and
+   the shipping address country. A VPN into a cheap country does not beat a US
+   shipping address, and a US IP does not beat a cheap shipping address. A source
+   that cannot be placed (`XX`, `T1`, no header) counts as full price; a source that
+   does not exist for the order (no shipping address on a digital order) is left out.
+   The pure `orderMultiplier` accepts a billing country too, but the checkout has no
+   billing field of its own: the card's billing country lives in the Stripe-hosted
+   page (see Not built).
+5. **Rounding and floor.** Whole cents, round half up, in integer arithmetic. A unit
+   is never charged less than 50 cents (Stripe's USD minimum) because of a discount,
+   and a product already cheaper than that is left at its own price, never raised.
+6. **Scope.** `digital` (default) or `all`. A printed shirt costs the owner the same
+   anywhere, so physical products are not discounted unless the owner chooses.
+7. **Off by default.** The settings row is absent until the owner saves it, and an
+   absent, corrupt or disabled row reads as "off", which charges exactly the catalog
+   price and writes no audit row.
+
+Where it is stored and why:
+
+- **Settings:** new key/value table `commerce_settings`, key `regional_pricing`,
+  JSON value. Key/value because the next shop setting then needs no migration.
+- **Order audit:** new table `commerce_order_regional` (multiplier as a whole
+  percent, the countries considered as JSON, the catalog subtotal), written in the
+  same batch as the order. A table rather than columns on `commerce_orders`: the
+  orders table is untouched, orders placed with the feature off carry no row, and the
+  discount stays auditable after the settings change. The order's own lines and totals
+  already hold what was charged. The order API returns it as `order.regional`.
+
+What the shopper sees: the cart asks `POST /api/v1/checkout/quote` (the same code
+path as checkout) and shows the server's subtotal, shipping, tax and total, with a
+plain notice and the undiscounted subtotal when a discount applies. The browser's
+own figures are shown only until the server answers, and are never sent as prices.
+The quote knows the request country and, once the shopper types one, the shipping
+country; a less generous country that appears only at checkout can raise the price
+from the quote, which is the safe direction.
+
+### Why this and not `currency_options`, for now
+
+The Stripe design below charges in the visitor's currency at a hand-tuned local
+amount. It is the better experience for a shop with a few fixed prices and a Stripe
+account, but it needs Stripe-side setup per price, only suits Stripe, and cannot
+express "give this shopper 30% off a catalog the owner edits daily". The multiplier
+works for any payment provider (including the manual one), any product the owner
+creates, takes effect the moment the owner saves, and is checked end to end in tests
+against real SQLite without Stripe. It charges in the product's currency, so a shopper
+in India pays a lower dollar amount rather than a rupee amount. The two compose:
+`currency_options` would later change the currency, the multiplier the amount.
+
+Decisions that differ from the plan below: PPP is **off by default** here (the plan
+said on-by-default; charging less than the catalog on a fresh template is a pricing
+decision the owner must make, and the index only fits shops whose margin it fits), and
+it adds a small amount of schema (two tables) where the Stripe design needed none.
+
+### Not built
+
+- Billing country as an input: needs the card/billing country back from Stripe
+  (webhook) and a re-check before fulfilment.
+- Local-currency charging and `currency_options` (everything below).
+- Showing the regional price on `/shop` product cards (the cart and checkout are
+  honest; listing pages show catalog prices).
+- Coupons, per-product exemptions, and a USD-equivalent subscription floor.
+
+---
+
+# The Stripe `currency_options` design (not built)
 
 ## Why PPP is a core concept, not a feature flag
 
@@ -160,7 +249,7 @@ Layers 1–2 are the minimum for "the kit can take a payment, correctly, anywher
   gated to test mode / admins. Verify the gate; a leak lets anyone pick their own
   price.
 
-## Decisions (resolved 2026-07-16)
+## Decisions (resolved 2026-07-16, for the Stripe design above)
 
 - **Default posture — PPP on-by-default.** The kit ships with region pricing active and
   a USD fallback for unmapped countries. It's nearly free (rides on `currency_options`,

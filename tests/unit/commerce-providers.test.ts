@@ -31,6 +31,7 @@ const order: Order = {
 	paymentProvider: 'stripe',
 	paymentReference: null,
 	fulfillmentReference: null,
+	regional: null,
 	items: [
 		{
 			id: 'i1',

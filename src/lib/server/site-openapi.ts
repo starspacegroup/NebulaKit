@@ -39,6 +39,27 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 			body: 'Checkout'
 		}
 	},
+	'/api/v1/checkout/quote': {
+		post: {
+			summary: 'Price a cart without ordering, regional pricing included',
+			scope: null,
+			body: 'Quote'
+		}
+	},
+	'/api/v1/pricing': {
+		get: { summary: 'Regional (purchasing-power) pricing settings', scope: 'pricing:read' },
+		put: {
+			summary: 'Change regional pricing settings; a partial body is merged',
+			scope: 'pricing:write',
+			body: 'RegionalPricing'
+		}
+	},
+	'/api/v1/pricing/preview': {
+		get: {
+			summary: 'What a buyer in ?country= would pay (optional ?priceCents=)',
+			scope: 'pricing:read'
+		}
+	},
 	'/api/v1/orders': {
 		get: { summary: 'Orders, newest first (?status=&limit=)', scope: 'orders:read' }
 	},
@@ -158,6 +179,36 @@ export function siteOpenApi() {
 							}
 						},
 						shippingAddress: { type: 'object' }
+					}
+				},
+				Quote: {
+					type: 'object',
+					required: ['lines'],
+					properties: {
+						lines: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: { productId: { type: 'string' }, quantity: { type: 'integer' } }
+							}
+						},
+						shippingCountry: { type: 'string', description: 'ISO 3166-1 alpha-2' }
+					}
+				},
+				RegionalPricing: {
+					type: 'object',
+					description:
+						'Prices only ever go down. Off by default. An order takes the least generous of the request, billing and shipping countries.',
+					properties: {
+						enabled: { type: 'boolean' },
+						strength: { type: 'number', minimum: 0, maximum: 1 },
+						maxDiscount: { type: 'number', minimum: 0, maximum: 0.9 },
+						scope: { enum: ['digital', 'all'] },
+						overrides: {
+							type: 'object',
+							description: 'Country code to multiplier, 0.1 to 1 (0.6 = 40% off, 1 = full price)',
+							additionalProperties: { type: 'number', minimum: 0.1, maximum: 1 }
+						}
 					}
 				},
 				OrderPatch: {

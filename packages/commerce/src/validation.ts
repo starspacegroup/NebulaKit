@@ -126,6 +126,44 @@ export function validateShippingAddress(value: unknown): Validated<ShippingAddre
 	return { ok: true, value: address };
 }
 
+function parseLines(raw: unknown, errors: string[]): CartLine[] {
+	const lines: CartLine[] = [];
+	if (!Array.isArray(raw) || raw.length === 0) {
+		errors.push('lines must be a non-empty array');
+		return lines;
+	}
+	for (const line of raw) {
+		if (!isRecord(line)) {
+			errors.push('each line must be an object');
+			break;
+		}
+		lines.push({ productId: String(line.productId ?? ''), quantity: line.quantity as number });
+	}
+	return lines;
+}
+
+export interface QuoteInput {
+	lines: CartLine[];
+	/** The country the shopper says they will ship to, if they have said. */
+	shippingCountry?: string;
+}
+
+/** A quote body: lines and, optionally, the shipping country. No email, no address. */
+export function validateQuoteInput(body: unknown): Validated<QuoteInput> {
+	if (!isRecord(body)) return { ok: false, errors: ['Body must be an object'] };
+	const errors: string[] = [];
+	const lines = parseLines(body.lines, errors);
+	let shippingCountry: string | undefined;
+	if (body.shippingCountry !== undefined && body.shippingCountry !== null) {
+		if (typeof body.shippingCountry === 'string' && COUNTRY.test(body.shippingCountry))
+			shippingCountry = body.shippingCountry;
+		else errors.push('shippingCountry must be an ISO 3166-1 alpha-2 code');
+	}
+	return errors.length
+		? { ok: false, errors }
+		: { ok: true, value: { lines, ...(shippingCountry ? { shippingCountry } : {}) } };
+}
+
 /** A checkout body. Prices in it, if any, are ignored — `priceCart` reads the catalog. */
 export function validateCheckoutInput(body: unknown): Validated<CheckoutInput> {
 	if (!isRecord(body)) return { ok: false, errors: ['Body must be an object'] };
@@ -133,18 +171,7 @@ export function validateCheckoutInput(body: unknown): Validated<CheckoutInput> {
 	const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
 	if (!EMAIL.test(email)) errors.push('email is not a valid address');
 
-	const lines: CartLine[] = [];
-	if (!Array.isArray(body.lines) || body.lines.length === 0) {
-		errors.push('lines must be a non-empty array');
-	} else {
-		for (const line of body.lines) {
-			if (!isRecord(line)) {
-				errors.push('each line must be an object');
-				break;
-			}
-			lines.push({ productId: String(line.productId ?? ''), quantity: line.quantity as number });
-		}
-	}
+	const lines = parseLines(body.lines, errors);
 
 	let shippingAddress: ShippingAddress | null = null;
 	if (body.shippingAddress !== undefined && body.shippingAddress !== null) {

@@ -23,7 +23,9 @@ export const API_SCOPES = [
 	'orders:read',
 	'orders:write',
 	'pages:read',
-	'pages:write'
+	'pages:write',
+	'pricing:read',
+	'pricing:write'
 ] as const;
 export type ApiScope = (typeof API_SCOPES)[number];
 

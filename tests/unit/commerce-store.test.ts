@@ -18,7 +18,7 @@ import { createSqliteD1 } from '../helpers/sqlite-d1';
 let db: D1Database;
 
 beforeEach(() => {
-	db = createSqliteD1(['0016_commerce.sql']);
+	db = createSqliteD1(['0016_commerce.sql', '0022_commerce_settings.sql']);
 });
 
 describe('commerce store: products', () => {

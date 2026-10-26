@@ -59,6 +59,54 @@
 	const currency = $derived(cart[0]?.currency ?? 'usd');
 	const shipping = $derived(needsShipping(cart));
 
+	// What the server says this cart costs, regional pricing included. The
+	// prices stored in the cart are only a first guess shown until it answers.
+	interface Quote {
+		currency: string;
+		lines: { productId: string; lineTotalCents: number }[];
+		subtotalCents: number;
+		baseSubtotalCents: number;
+		shippingCents: number;
+		taxCents: number;
+		totalCents: number;
+		regional: { discountPercent: number; notice: string | null } | null;
+	}
+	let quote = $state<Quote | null>(null);
+	let quoteFailed = $state(false);
+	let quoteRun = 0;
+
+	$effect(() => {
+		if (!loaded || returnedOrder || placed || cart.length === 0) return;
+		const run = ++quoteRun;
+		const country = shipping && /^[A-Za-z]{2}$/.test(address.country) ? address.country : undefined;
+		const body = JSON.stringify({
+			lines: checkoutLines(cart),
+			...(country ? { shippingCountry: country.toUpperCase() } : {})
+		});
+		(async () => {
+			try {
+				const response = await fetch('/api/v1/checkout/quote', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body
+				});
+				const result = await response.json();
+				if (run !== quoteRun) return;
+				quote = response.ok ? result.quote : null;
+				quoteFailed = !response.ok;
+			} catch {
+				if (run === quoteRun) {
+					quote = null;
+					quoteFailed = true;
+				}
+			}
+		})();
+	});
+
+	const lineTotal = (line: (typeof cart)[number]) =>
+		quote?.lines.find((l) => l.productId === line.productId)?.lineTotalCents ??
+		line.unitPriceCents * line.quantity;
+
 	async function checkout(event: SubmitEvent) {
 		event.preventDefault();
 		placing = true;
@@ -154,7 +202,7 @@
 								update(setQuantity(cart, line.productId, e.currentTarget.valueAsNumber))}
 						/>
 					</label>
-					<span>{formatMoney(line.unitPriceCents * line.quantity, line.currency)}</span>
+					<span>{formatMoney(lineTotal(line), quote?.currency ?? line.currency)}</span>
 					<button
 						type="button"
 						aria-label="Remove {line.name}"
@@ -163,10 +211,38 @@
 				</li>
 			{/each}
 		</ul>
-		<p class="subtotal">
-			Subtotal {formatMoney(cartSubtotalCents(cart), currency)}. Shipping and tax are added when you
-			place the order.
-		</p>
+		{#if quote}
+			{#if quote.regional?.notice}
+				<p class="notice" role="status">
+					{quote.regional.notice}
+					Without it this cart would be {formatMoney(quote.baseSubtotalCents, quote.currency)}.
+				</p>
+			{/if}
+			<dl class="totals" aria-live="polite">
+				<div>
+					<dt>Subtotal</dt>
+					<dd>{formatMoney(quote.subtotalCents, quote.currency)}</dd>
+				</div>
+				<div>
+					<dt>Shipping</dt>
+					<dd>{formatMoney(quote.shippingCents, quote.currency)}</dd>
+				</div>
+				<div>
+					<dt>Tax</dt>
+					<dd>{formatMoney(quote.taxCents, quote.currency)}</dd>
+				</div>
+				<div class="grand">
+					<dt>Total</dt>
+					<dd>{formatMoney(quote.totalCents, quote.currency)}</dd>
+				</div>
+			</dl>
+		{:else}
+			<p class="subtotal">
+				Subtotal {formatMoney(cartSubtotalCents(cart), currency)}{quoteFailed
+					? ' (could not be confirmed just now)'
+					: ''}. Shipping and tax are added when you place the order.
+			</p>
+		{/if}
 
 		<form onsubmit={checkout}>
 			<h2>Checkout</h2>
@@ -308,5 +384,32 @@
 	}
 	.subtotal {
 		color: var(--color-text-secondary);
+	}
+	.notice {
+		padding: 0.75rem;
+		border: 1px solid var(--color-success);
+		border-radius: var(--radius-md);
+	}
+	.totals {
+		margin: 1rem 0;
+	}
+	.totals div {
+		display: flex;
+		justify-content: space-between;
+		padding: 0.25rem 0;
+	}
+	.totals dt {
+		color: var(--color-text-secondary);
+	}
+	.totals dd {
+		margin: 0;
+		font-variant-numeric: tabular-nums;
+	}
+	.totals .grand {
+		border-top: 1px solid var(--color-border);
+		font-weight: 700;
+	}
+	.totals .grand dt {
+		color: var(--color-text);
 	}
 </style>
