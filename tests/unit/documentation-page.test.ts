@@ -129,6 +129,22 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/never issued one answers 401/i)).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — /admin/scheduled-jobs, the cron Worker and CRON_SECRET are a
+	// user-visible admin route and a deployment step, so the documentation has to say so.
+	it('documents the cron Worker and the scheduled jobs admin page', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Scheduled Jobs/i, level: 2 })
+				.closest('section') as HTMLElement
+		);
+
+		expect(scoped.getAllByText(/cron-worker\//).length).toBeGreaterThan(0);
+		expect(scoped.getByText('/admin/scheduled-jobs')).toBeInTheDocument();
+		expect(scoped.getByText(/wrangler secret put CRON_SECRET/)).toBeInTheDocument();
+		expect(scoped.getByText('0023_scheduled_job_runs.sql')).toBeInTheDocument();
+	});
+
 	// AGENTS.md §7 — /admin/pages, /admin/api-keys, /p/[slug] and /api/v1 are
 	// user-visible routes, and the shop's env vars are bindings an operator sets.
 	it('documents the shop, the page builder, API keys and the site API', () => {

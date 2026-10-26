@@ -1,48 +1,12 @@
-import { error, json } from '@sveltejs/kit';
-import { isStrategy, runLighthouseSweep } from '$lib/server/lighthouse';
+import { handleCronRequest } from '$lib/server/scheduler/http';
 import type { RequestHandler } from './$types';
-import { timingSafeEqualStrings } from '$lib/server/timing-safe';
 
 /**
- * Re-audit every public page through PageSpeed Insights and store the results.
+ * Re-audit every public page through PageSpeed Insights (the job is defined in
+ * `$lib/server/scheduler/jobs/lighthouse.ts`). `?strategy=desktop` audits the
+ * desktop form factor instead of mobile.
  *
- * Authenticated with the same shared bearer secret as the other `/api/cron/*`
- * endpoints, because the caller is a scheduler rather than a user. Set
- * `CRON_SECRET` and POST with `Authorization: Bearer <secret>`.
- *
- * **There is no cron in a Pages deployment.** Cloudflare Pages has no Cron
- * Triggers — that is a Workers feature — so something external has to call
- * this: a one-line scheduled Worker, a GitHub Actions `schedule`, or any host
- * that can make an authenticated POST. Daily is plenty; PSI's keyless rate
- * limit will not tolerate much more, and the scores do not move hourly.
- *
- * `?strategy=desktop` audits the desktop form factor instead of mobile. They
- * are stored separately because PSI scores them very differently and it is
- * mobile that Google ranks on.
+ * Authenticated with the shared `CRON_SECRET` bearer because the caller is a
+ * scheduler: the Worker in `cron-worker/`, or anything that can POST.
  */
-export const POST: RequestHandler = async ({ request, url, platform }) => {
-	const secret = platform?.env?.CRON_SECRET;
-	if (!secret) {
-		throw error(503, 'CRON_SECRET not configured');
-	}
-
-	const authHeader = request.headers.get('authorization') ?? '';
-	if (!timingSafeEqualStrings(authHeader, `Bearer ${secret}`)) {
-		throw error(401, 'Unauthorized');
-	}
-
-	const db = platform?.env?.DB;
-	if (!db) {
-		throw error(503, 'Database not available');
-	}
-
-	const requested = url.searchParams.get('strategy');
-	const result = await runLighthouseSweep(db, {
-		strategy: isStrategy(requested) ? requested : 'mobile',
-		// Optional. Without it PSI still answers, just at a much lower rate limit,
-		// which is survivable for a handful of pages once a day.
-		apiKey: platform?.env?.PAGESPEED_API_KEY
-	});
-
-	return json(result);
-};
+export const POST: RequestHandler = (event) => handleCronRequest(event, 'lighthouse');

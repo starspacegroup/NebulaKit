@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createSqliteD1 } from '../helpers/sqlite-d1';
 import {
 	browserBucket,
 	deviceBucket,
@@ -12,6 +13,7 @@ import {
 	listViewsByPath,
 	normalizeCountry,
 	osBucket,
+	COUNTER_TABLES,
 	pruneViewStats,
 	recordPageView,
 	recordViewportSample,
@@ -383,26 +385,69 @@ describe('page-view queries', () => {
 		expect(ctl.calls[0].binds).toEqual(['2026-07-18', 'under-640']);
 	});
 
-	it('prunes every counter table before a day', async () => {
-		const ctl = createMockDb();
-		await pruneViewStats(ctl.db, '2025-06-01');
+	it('prunes every counter table before a day, and only before it', async () => {
+		const db = createSqliteD1();
+		// A table missing from the prune would grow forever, so seed every one.
+		// platform_usage_daily was missing until 2026-08-01 — the old assertion
+		// passed the whole time because it only described what the code did.
+		const seeds: Record<string, string> = {
+			page_view_daily: 'INSERT INTO page_view_daily (day, path_key) VALUES (?, ?)',
+			page_view_hourly: 'INSERT INTO page_view_hourly (day, hour) VALUES (?, ?)',
+			referrer_daily: 'INSERT INTO referrer_daily (day, referrer_host) VALUES (?, ?)',
+			country_view_daily: 'INSERT INTO country_view_daily (day, country) VALUES (?, ?)',
+			view_dimension_daily:
+				"INSERT INTO view_dimension_daily (day, dimension, value) VALUES (?, 'viewport', ?)",
+			platform_usage_daily: 'INSERT INTO platform_usage_daily (day) VALUES (?)',
+			content_view_daily: 'INSERT INTO content_view_daily (day, content_id) VALUES (?, ?)'
+		};
+		expect(Object.keys(seeds)).toEqual([...COUNTER_TABLES]);
+		for (const [table, sql] of Object.entries(seeds)) {
+			const extra =
+				table === 'platform_usage_daily' ? [] : table === 'page_view_hourly' ? [3] : ['x'];
+			for (const day of ['2025-05-31', '2025-06-01']) {
+				await db
+					.prepare(sql)
+					.bind(day, ...extra)
+					.run();
+			}
+		}
 
-		const batch = ctl.batches[0];
-		// A table missing here would grow forever, so the list is asserted whole.
-		// platform_usage_daily was missing until 2026-08-01 — this assertion passed
-		// the whole time because it only ever described what the code already did.
-		expect(batch).toHaveLength(7);
-		expect(batch.map((s) => s.query.match(/FROM (\w+)/)?.[1])).toEqual([
-			'page_view_daily',
-			'page_view_hourly',
-			'referrer_daily',
-			'country_view_daily',
-			'view_dimension_daily',
-			'platform_usage_daily',
-			// The only table here whose size grows with the catalogue rather than
-			// with a fixed vocabulary, so it is the one that most needs the cron.
-			'content_view_daily'
-		]);
-		for (const stmt of batch) expect(stmt.binds).toEqual(['2025-06-01']);
+		const result = await pruneViewStats(db, '2025-06-01');
+
+		expect(result.deleted).toBe(7);
+		expect(result.budgetExhausted).toBe(false);
+		expect(Object.keys(result.tables)).toEqual([...COUNTER_TABLES]);
+		for (const table of COUNTER_TABLES) {
+			const left = await db.prepare(`SELECT day FROM ${table}`).all<{ day: string }>();
+			expect(
+				left.results.map((r) => r.day),
+				table
+			).toEqual(['2025-06-01']);
+		}
+	});
+
+	it('stops at its row budget and finishes the backlog on the next run', async () => {
+		const db = createSqliteD1();
+		for (let i = 0; i < 12; i++) {
+			await db
+				.prepare('INSERT INTO page_view_daily (day, path_key) VALUES (?, ?)')
+				.bind('2024-01-01', `/p${i}`)
+				.run();
+		}
+		await db
+			.prepare('INSERT INTO referrer_daily (day, referrer_host) VALUES (?, ?)')
+			.bind('2024-01-01', 'h')
+			.run();
+
+		const first = await pruneViewStats(db, '2025-01-01', 5);
+		expect(first).toMatchObject({ deleted: 5, budgetExhausted: true });
+		// The budget is shared, so later tables are not touched at all.
+		expect(first.tables).toEqual({ page_view_daily: 5 });
+
+		const second = await pruneViewStats(db, '2025-01-01', 5);
+		expect(second.deleted).toBe(5);
+		const third = await pruneViewStats(db, '2025-01-01', 5);
+		expect(third).toMatchObject({ budgetExhausted: false, deleted: 3 });
+		expect(third.tables.referrer_daily).toBe(1);
 	});
 });
