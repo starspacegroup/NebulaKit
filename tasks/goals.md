@@ -1,5 +1,13 @@
 # Goals
 
+## Role ladder and per-area admin permissions
+
+status: done 2026-10-25 (branch `port/roles`, local only)
+
+- Ported the idea from the CustomPerfections client site, generically: owner > superadmin > admin > user (`src/lib/access/roles.ts`, pure), and named per-admin areas (`permissions.ts`; rows in `user_permissions`). Migration `0021_roles_and_permissions.sql` backfills existing admins with the areas they could already reach and maps `can_view_stats` to `stats`; `is_admin` and `can_view_stats` stay in sync.
+- Closed the "any admin can act on any user" gap here: user PATCH/DELETE enforce the ladder from the stored row, the owner is config and unassignable, and CMS, pages, contact, lighthouse, API keys, user list/management and PII reveal now use `requirePermission`. The admin nav filters from the same list; the users page has a Manage access dialog.
+- Not done: other forks and siblings (Guides still lets any admin promote or delete users); owner-only areas (settings, auth/AI keys, analytics connection) are not permissions; no shop permission because the template has no shop admin screens yet; no Playwright coverage of the dialog.
+
 ## Builder, shop and site API as packages (Ammoura's sites run on NebulaKit)
 
 status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-builder-site-api`)

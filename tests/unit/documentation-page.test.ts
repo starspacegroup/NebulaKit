@@ -484,4 +484,22 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/MIT-licensed/);
 		});
 	});
+
+	// AGENTS.md §7 — the role ladder and per-area permissions are an admin
+	// change, so the page has to say how they work and what upgrading does.
+	it('documents the role ladder and per-area permissions', () => {
+		render(Page);
+
+		const section = screen
+			.getByRole('heading', { name: /Roles and Permissions/i })
+			.closest('section');
+		expect(section).toBeTruthy();
+		const scoped = within(section as HTMLElement);
+
+		expect(scoped.getByText(/strictly below you/i)).toBeInTheDocument();
+		expect(scoped.getAllByText(/GITHUB_OWNER_ID/).length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('users-manage').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('0021').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText(/requirePermission/).length).toBeGreaterThan(0);
+	});
 });

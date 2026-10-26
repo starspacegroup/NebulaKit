@@ -78,6 +78,7 @@ bun run deploy`;
 			<a href="#database-migrations">Database Migrations</a>
 			<a href="#auth-and-setup">Auth and Setup</a>
 			<a href="#admin-analytics">Admin Analytics</a>
+			<a href="#roles-permissions">Roles and Permissions</a>
 			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
 			<a href="#lighthouse">Lighthouse</a>
 			<a href="#agent-readiness">Agent Readiness</a>
@@ -713,6 +714,59 @@ bun run db:migrate:list</code
 						different privacy posture from the built-in counters — review your privacy policy and
 						add a consent banner where your jurisdiction requires one. Only the owner can change the
 						connection.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<section id="roles-permissions" class="docs-section">
+			<h2>Roles and Permissions</h2>
+			<p>
+				Access is a ladder, <strong>owner &gt; superadmin &gt; admin &gt; user</strong>, plus a list
+				of named areas each admin may open. One rule does the work: you can only act on someone
+				strictly below you, and you can only hand out a role strictly below your own. An admin
+				cannot promote, demote or delete a peer, a superadmin or the owner, and nobody can promote
+				themselves.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>The owner is configuration</h3>
+					<p>
+						The owner is set by <code>GITHUB_OWNER_ID</code> (or setup), never by the
+						<code>users.role</code> column, so no request can assign or remove it. Superadmins hold
+						every area, including <code>pii</code>, and cannot be limited.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Areas for admins</h3>
+					<p>
+						<code>cms</code>, <code>pages</code>, <code>users</code> (view the list),
+						<code>users-manage</code> (change roles and delete, below their own role),
+						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code> and
+						<code>lighthouse</code>. Settings, auth keys, AI keys, the analytics connection, setup
+						and reset stay with the owner and superadmins. Only the owner or a superadmin can change
+						an admin's areas.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Managing access</h3>
+					<p>
+						On <code>/admin/users</code> choose <strong>Manage access</strong> on a row to set the role
+						and tick the areas. The sidebar only shows links the signed-in admin can use, but every load
+						and API also checks the permission itself. Role and areas are re-read from the database on
+						every request, so a change applies on the next click.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Upgrading</h3>
+					<p>
+						Migration <code>0021</code> adds <code>users.role</code> and
+						<code>user_permissions</code>. Existing admins keep every area they could reach before
+						(and <code>can_view_stats</code> becomes the <code>stats</code> permission); nobody is
+						promoted and owner-only areas are not handed out. <code>is_admin</code> and
+						<code>can_view_stats</code> stay in sync. To add an area, add it to
+						<code>src/lib/access/permissions.ts</code>, guard its routes with
+						<code>requirePermission</code>, and give its nav entry a <code>permission</code>.
 					</p>
 				</div>
 			</div>
