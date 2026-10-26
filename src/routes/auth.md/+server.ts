@@ -85,7 +85,8 @@ The site API under \`${origin}/api/v1\` (described at
 \`Authorization: Bearer nk_…\` API keys. There is no endpoint that issues one:
 the site owner creates each key on the admin API-keys page, picks its scopes and
 expiry, and can revoke it at any time. A key is shown once and stored hashed.
-Reading active products, published pages, and placing an order at
+Reading active products, published pages, pricing a cart at
+\`POST ${origin}/api/v1/checkout/quote\`, and placing an order at
 \`POST ${origin}/api/v1/checkout\` need no key.
 
 Two other operator-held secrets travel as bearer headers, also set or issued by

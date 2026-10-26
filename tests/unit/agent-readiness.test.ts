@@ -310,6 +310,7 @@ describe('/auth.md', () => {
 		expect(text).toContain(`${ORIGIN}/api/v1/openapi.json`);
 		expect(text).toContain('There is no endpoint that issues one');
 		expect(text).toContain(`POST ${ORIGIN}/api/v1/checkout`);
+		expect(text).toContain(`POST ${ORIGIN}/api/v1/checkout/quote`);
 	});
 
 	it('serves markdown with 200', async () => {
