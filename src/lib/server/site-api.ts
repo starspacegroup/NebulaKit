@@ -162,24 +162,28 @@ async function auditApiCall(
 	db: D1Database,
 	principal: SitePrincipal
 ): Promise<void> {
-	const method = event.request.method;
-	if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return;
-	const rule = ruleFor(method, event.route.id);
-	const via = principal.kind;
-	const actorId = via === 'session' ? (event.locals.user?.id ?? null) : principal.keyId;
-	const actorLogin = via === 'key' ? `key:${principal.name}` : principal.name;
-	const targetId = rule?.param
-		? ((event.params as Record<string, string | undefined>)[rule.param] ?? null)
-		: null;
-	await recordAudit(db, {
-		actorId,
-		actorLogin,
-		action: rule?.action ?? `api.${method.toLowerCase()}`,
-		targetType: rule?.targetType ?? 'api',
-		targetId,
-		summary: rule?.summary ?? `${method} ${event.url.pathname}`,
-		detail: { via }
-	});
+	try {
+		const method = event.request.method;
+		if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return;
+		const rule = ruleFor(method, event.route?.id);
+		const via = principal.kind;
+		const actorId = via === 'session' ? (event.locals?.user?.id ?? null) : principal.keyId;
+		const actorLogin = via === 'key' ? `key:${principal.name}` : principal.name;
+		const targetId = rule?.param
+			? (((event.params ?? {}) as Record<string, string | undefined>)[rule.param] ?? null)
+			: null;
+		await recordAudit(db, {
+			actorId,
+			actorLogin,
+			action: rule?.action ?? `api.${method.toLowerCase()}`,
+			targetType: rule?.targetType ?? 'api',
+			targetId,
+			summary: rule?.summary ?? `${method} ${event.url.pathname}`,
+			detail: { via }
+		});
+	} catch (err) {
+		console.error('[audit] could not audit an API call:', err);
+	}
 }
 
 function errorResponse(err: unknown): Response {

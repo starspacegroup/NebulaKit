@@ -417,6 +417,39 @@ describe('siteApi writes', () => {
 	});
 });
 
+describe('siteApi audit resilience', () => {
+	it('survives an event it cannot describe, and an unwritable table', async () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		const handler = siteApi('site:admin', async () => new Response('{}'));
+		const odd = {
+			request: new Request('https://x.test/api/v1/x', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' }
+			}),
+			locals: { user: { id: 'o', login: 'owner', isOwner: true } },
+			platform: { env: { DB: db } }
+		} as never; // no url, no route, no params
+		expect((await handler(odd)).status).toBe(200);
+		await db.exec('DROP TABLE admin_actions');
+		const ok = apiEventFor(db);
+		expect((await handler(ok)).status).toBe(200);
+	});
+});
+
+function apiEventFor(database: D1Database) {
+	return {
+		request: new Request('https://x.test/api/v1/x', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' }
+		}),
+		route: { id: '/api/v1/x' },
+		params: {},
+		url: new URL('https://x.test/api/v1/x'),
+		locals: { user: { id: 'o', login: 'owner', isOwner: true } },
+		platform: { env: { DB: database } }
+	} as never;
+}
+
 describe('account merge', () => {
 	it('leaves an audit row that survives the deleted user', async () => {
 		const user = (id: string, email: string) =>
