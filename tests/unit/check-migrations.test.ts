@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error plain .mjs script, no types
 import { immutabilityProblems, namingProblems, run } from '../../scripts/check-migrations.mjs';
 
 describe('migration names', () => {

@@ -21,7 +21,11 @@ import { fileURLToPath } from 'node:url';
 
 export const MIGRATION_NAME = /^(\d{4})_[a-z0-9]+(?:_[a-z0-9]+)*\.sql$/;
 
-/** Problems with the names in one directory listing. */
+/**
+ * Problems with the names in one directory listing.
+ * @param {string[]} filenames
+ * @returns {string[]}
+ */
 export function namingProblems(filenames) {
 	const problems = [];
 	const byNumber = new Map();
@@ -41,7 +45,10 @@ export function namingProblems(filenames) {
 
 /**
  * Files that exist on the base but changed or vanished here.
- * `changed` maps a filename to whether its content on this branch differs from the base.
+ * @param {string[]} baseFiles
+ * @param {string[]} currentFiles
+ * @param {(name: string) => boolean} differs whether the file's content here differs from the base
+ * @returns {string[]}
  */
 export function immutabilityProblems(baseFiles, currentFiles, differs) {
 	const problems = [];
@@ -54,20 +61,28 @@ export function immutabilityProblems(baseFiles, currentFiles, differs) {
 	return problems;
 }
 
+/**
+ * @param {string} root
+ * @param {...string} args
+ */
 function git(root, ...args) {
 	return execFileSync('git', args, { cwd: root, encoding: 'utf8' });
 }
 
+/**
+ * @param {string} root
+ * @param {string | undefined} base
+ */
 export function run(root, base) {
 	const dir = resolve(root, 'migrations');
-	const current = readdirSync(dir).filter((name) => name.endsWith('.sql'));
+	const current = readdirSync(dir).filter((/** @type {string} */ name) => name.endsWith('.sql'));
 	const problems = namingProblems(current);
 	let note = 'immutability check skipped (no --base)';
 	if (base) {
 		const baseFiles = git(root, 'ls-tree', '--name-only', base, 'migrations/')
 			.split('\n')
 			.map((line) => line.replace(/^migrations\//, ''))
-			.filter((name) => name.endsWith('.sql'));
+			.filter((/** @type {string} */ name) => name.endsWith('.sql'));
 		problems.push(
 			...immutabilityProblems(baseFiles, current, (name) => {
 				try {
