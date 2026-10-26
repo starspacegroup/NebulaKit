@@ -57,6 +57,19 @@ export interface OrderItem {
 	lineTotalCents: number;
 }
 
+/**
+ * How regional pricing treated an order, kept so the discount is auditable.
+ * Present only for orders placed while regional pricing was on.
+ */
+export interface OrderRegionalPricing {
+	/** 1 is full price, 0.7 is 30% off. */
+	multiplier: number;
+	/** The countries considered, by source: `request`, `shipping`, `billing`. Null = could not be placed. */
+	countries: Record<string, string | null>;
+	/** What the order would have cost at catalog prices. */
+	baseSubtotalCents: number;
+}
+
 export interface Order {
 	id: string;
 	status: OrderStatus;
@@ -70,6 +83,8 @@ export interface Order {
 	paymentProvider: string | null;
 	paymentReference: string | null;
 	fulfillmentReference: string | null;
+	/** Null when regional pricing was off for this order. */
+	regional: OrderRegionalPricing | null;
 	items: OrderItem[];
 	createdAt: string;
 	updatedAt: string;

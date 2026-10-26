@@ -51,10 +51,31 @@ export function calculateTotalCents(
 	return subtotalCents + shippingCents + (rule.pricesIncludeTax ? 0 : taxCents);
 }
 
-/** Regional (PPP) price: the base price times the shopper's multiplier, never above base. */
-export function regionalPriceCents(baseCents: number, multiplier: number): number {
-	if (!Number.isFinite(multiplier) || multiplier >= 1 || multiplier <= 0) return baseCents;
-	return Math.round(baseCents * multiplier);
+/**
+ * Never charge less than this per unit because of a regional discount. It is
+ * the smallest amount Stripe will take in USD, and below it the discount
+ * would make the order unpayable rather than cheaper.
+ */
+export const REGIONAL_PRICE_FLOOR_CENTS = 50;
+
+/**
+ * Regional (PPP) price: the base price times the shopper's multiplier.
+ *
+ * Only ever lowers: a multiplier of 1 or more, or one that is not a usable
+ * number, returns the base price. The multiplier is read as a whole percent
+ * and the result is rounded half-up in integer arithmetic, so the same input
+ * always gives the same cents. A product that costs less than the floor is
+ * left at its own price (never raised to the floor).
+ */
+export function regionalPriceCents(
+	baseCents: number,
+	multiplier: number,
+	floorCents = REGIONAL_PRICE_FLOOR_CENTS
+): number {
+	if (!Number.isFinite(multiplier)) return baseCents;
+	const percent = Math.round(multiplier * 100);
+	if (percent < 1 || percent >= 100) return baseCents;
+	return Math.max(Math.round((baseCents * percent) / 100), Math.min(baseCents, floorCents));
 }
 
 export function formatMoney(cents: number, currency = 'usd', locale = 'en-US'): string {

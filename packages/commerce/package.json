@@ -1,6 +1,6 @@
 {
 	"name": "@nebulakit/commerce",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Products, cart pricing, checkout, orders, Printful and payments for a NebulaKit site.",
 	"private": true,
 	"type": "module",
