@@ -58,6 +58,9 @@ declare global {
 				/** SHA-256 (hex) of the Ammoura control room's API key, set when Ammoura
 				 *  deploys the site. See packages/security/src/api-keys.ts. */
 				ORCHESTRATOR_KEY_SHA256?: string;
+				/** Comma-separated extra hostnames an admin redirect may point at (https
+				 *  only). The site's own host is always allowed. See src/lib/server/redirects.ts. */
+				REDIRECT_ALLOWED_HOSTS?: string;
 				/** Shop checkout settings, set per site — never read from a request.
 				 *  See src/lib/server/site-info.ts. */
 				COMMERCE_TAX_RATE_PERCENT?: string;

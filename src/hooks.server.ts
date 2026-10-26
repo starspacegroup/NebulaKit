@@ -4,6 +4,12 @@ import {
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
+import {
+	allowedRedirectHosts,
+	getRedirectByFromPath,
+	recordRedirectHit,
+	redirectLocation
+} from '$lib/server/redirects';
 import { withSecurityHeaders } from '$lib/server/security-headers';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthSession } from '$lib/utils/db';
@@ -251,10 +257,51 @@ export const agentDiscoveryHandler: Handle = async ({ event, resolve }) => {
 export const securityHeadersHandler: Handle = async ({ event, resolve }) =>
 	withSecurityHeaders(await resolve(event));
 
+/**
+ * Admin-managed redirects (docs/REDIRECTS.md, /admin/redirects). Consulted only
+ * when the response is already a 404 for a GET/HEAD, so healthy pages pay
+ * nothing. Checking the response rather than `route.id` matters: catch-all
+ * routes like /[contentType] match any single segment and 404 from their load.
+ *
+ * Sits INSIDE usageHandler (a bounced request is counted once, as the redirect
+ * it became) and OUTSIDE auth and pageViewsHandler (a redirect is never a page
+ * view, and the stale 404 render is simply discarded). A missing table or a D1
+ * error falls through to the plain 404.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const redirectsHandler: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	const method = event.request.method;
+	const db = event.platform?.env?.DB;
+	if (response.status !== 404 || !db || (method !== 'GET' && method !== 'HEAD')) return response;
+
+	try {
+		const redirect = await getRedirectByFromPath(db, event.url.pathname);
+		if (!redirect) return response;
+		const location = redirectLocation(
+			redirect,
+			event.url,
+			allowedRedirectHosts(event.platform?.env?.REDIRECT_ALLOWED_HOSTS)
+		);
+		if (!location) return response;
+		const hit = recordRedirectHit(db, redirect.id).catch(() => {});
+		if (event.platform?.context?.waitUntil) {
+			event.platform.context.waitUntil(hit);
+		} else {
+			await hit;
+		}
+		return new Response(null, { status: redirect.status, headers: { location } });
+	} catch {
+		return response;
+	}
+};
+
 // Combine all hooks
 export const handle = sequence(
 	securityHeadersHandler,
 	usageHandler,
+	redirectsHandler,
 	agentDiscoveryHandler,
 	authHandler,
 	pageViewsHandler
