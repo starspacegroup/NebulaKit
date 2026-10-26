@@ -252,6 +252,7 @@ describe('sendEmailAfterResponse', () => {
 });
 
 const order: Order = {
+	regional: null,
 	id: 'abcdef12-0000-4000-8000-000000000000',
 	status: 'paid',
 	email: 'ada@example.com',

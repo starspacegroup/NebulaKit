@@ -926,25 +926,6 @@
 		color: #ef4444;
 	}
 
-	.btn-icon-sm {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border-radius: var(--radius-sm);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		color: var(--color-text-secondary);
-		transition: all var(--transition-fast);
-	}
-
-	.btn-icon-sm:hover {
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-
 	.empty-state {
 		display: flex;
 		flex-direction: column;
