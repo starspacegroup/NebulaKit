@@ -74,6 +74,14 @@ export const SITEMAP_EXCLUDED_ROUTES: Readonly<Record<string, string>> = {
 };
 
 /**
+ * RFC 9116 security contact. Served only when the operator sets the
+ * SECURITY_CONTACT binding (src/lib/server/security-txt.ts); with none it is a
+ * 404, never an invented address, so it is deliberately NOT in
+ * {@link AGENT_LINKS}, which advertise on every page.
+ */
+export const SECURITY_TXT_PATH = '/.well-known/security.txt';
+
+/**
  * Paths no crawler should walk, for any user-agent group.
  *
  * Applies to the wildcard group AND every named AI crawler group: "open to

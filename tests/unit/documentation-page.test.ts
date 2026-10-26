@@ -184,6 +184,18 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/Loops and off-site targets are refused/i)).toBeInTheDocument();
 	});
 
+	it('documents the security.txt contact and that it is off until configured', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		expect(scoped.getAllByText('/.well-known/security.txt').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('SECURITY_CONTACT').length).toBeGreaterThan(0);
+		expect(scoped.getByText(/Until then the path answers 404/)).toBeInTheDocument();
+	});
+
 	it('documents the canonical host redirect and noindex rule', () => {
 		render(Page);
 		const scoped = within(

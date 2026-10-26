@@ -788,6 +788,16 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Security contact</h3>
+					<p>
+						<code>/.well-known/security.txt</code> (RFC 9116) tells researchers where to send a
+						vulnerability report. The template has no contact address of its own and invents none:
+						set <code>SECURITY_CONTACT</code> to an email address or an https URL (comma-separated
+						for several) and the file is served, with an <code>Expires</code> date recomputed on every
+						request, 180 days ahead. Until then the path answers 404.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>The site API</h3>
 					<p>
 						Everything is reachable under <code>/api/v1</code>, described at
