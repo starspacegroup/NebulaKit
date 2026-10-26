@@ -13,7 +13,7 @@
  * silently replacing existing evidence would undermine the whole point of
  * the proof.
  */
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { computeCanonicalHash } from '$lib/content-proof/hash';
 import {
 	getContentTypeBySlug,
@@ -31,7 +31,7 @@ interface HashableFields {
 }
 
 export const POST: RequestHandler = async ({ platform, locals, params }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {

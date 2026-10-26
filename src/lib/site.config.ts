@@ -43,5 +43,31 @@ export const site = {
 	showBuiltWithBadge: true
 } as const;
 
+/**
+ * Colours for transactional email (`src/lib/emails/templates.ts`).
+ *
+ * The one place literal colours are allowed outside `app.css`: email clients
+ * ignore CSS custom properties and often strip `<style>`, so a template can
+ * only use inlined literals. Keep them here, not in the templates, and set
+ * them to the brand in `bun run customize`. Templates also accept a theme
+ * argument, so a caller can override per message.
+ */
+export const emailTheme = {
+	/** Page background behind the card. */
+	background: '#f4f4f7',
+	/** The card the message sits on. */
+	surface: '#ffffff',
+	/** Header bar behind the site name, and the button. */
+	accent: '#3b3f8f',
+	/** Text on the accent colour. */
+	onAccent: '#ffffff',
+	/** Body copy. */
+	text: '#1f2230',
+	/** Footer and secondary copy. */
+	muted: '#6b7080',
+	/** Rules between table rows. */
+	border: '#e2e4ec'
+} as const;
+
 /** Full GitHub URL, derived from {@link site.repo}. */
 export const repoUrl = `https://github.com/${site.repo}`;

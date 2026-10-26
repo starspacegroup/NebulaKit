@@ -38,11 +38,13 @@ export default defineConfig({
 	// Preview (vite preview) reuses the dev port so local URLs stay stable.
 	preview: {
 		port: site.devPort,
-		host: true
+		host: '127.0.0.1'
 	},
 	server: {
 		port: site.devPort,
-		host: true, // listen on all interfaces so cloudflared can reach the dev server
+		// Loopback only. cloudflared connects to localhost, so listening on every
+		// interface exposed the dev server (and its dev-login) to the whole network.
+		host: '127.0.0.1',
 		// Allow any subdomain of the project's custom domain (set TUNNEL_HOSTNAME in .env)
 		// plus the free trycloudflare.com hostnames and localhost.
 		// Leading "." matches any subdomain, so per-dev tunnels work without editing this.
@@ -100,6 +102,8 @@ export default defineConfig({
 				'scripts/',
 				// Dependency-free config data — nothing to unit test.
 				'src/lib/site.config.ts',
+				// Package manifests are data; their versions are checked by nebulakit-packages.test.ts.
+				'packages/*/package.json',
 				// Svelte components contain UI logic that's hard to unit test branches
 				// These are tested via E2E tests for user interaction flows
 				'**/*.svelte',

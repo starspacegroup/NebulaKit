@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Toaster } from '$lib/ui';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -6,6 +7,7 @@
 	import GoogleAnalytics from '$lib/components/GoogleAnalytics.svelte';
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { goto } from '$app/navigation';
+	import { takeNext } from '$lib/utils/after-login';
 	import { showCommandPalette, toggleCommandPalette } from '$lib/stores/commandPalette';
 	import { resolvedTheme, themePreference } from '$lib/stores/theme';
 	import { registerWebMcpTools } from '$lib/webmcp';
@@ -39,6 +41,16 @@
 		requestAnimationFrame(() => {
 			document.documentElement.classList.remove('theme-preload');
 		});
+
+		// Signed in via GitHub/Discord after a page asked to come back
+		// (/auth/login?next=/shop/…): go there now. See $lib/utils/after-login.ts.
+		if (data.user && !$page.url.pathname.startsWith('/auth/')) {
+			const next = takeNext();
+			if (next && next !== $page.url.pathname) {
+				window.location.assign(next);
+				return;
+			}
+		}
 
 		// WebMCP (docs/AGENT_READINESS.md): offer this site's read/navigate actions
 		// to an in-browser AI agent. No-ops on browsers without the API, which is
@@ -103,6 +115,9 @@
 	{/if}
 
 	<CommandPalette {...commandPaletteProps} bind:show={$showCommandPalette} />
+
+	<!-- Toasts raised anywhere with toast.*() from $lib/ui. -->
+	<Toaster />
 
 	<!-- Optional GA4 tag; renders nothing unless an owner connected one. -->
 	<GoogleAnalytics measurementId={data.gaMeasurementId ?? null} />

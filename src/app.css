@@ -19,6 +19,15 @@
 	--color-success: #1a7f37;
 	--color-warning: #ffc107;
 
+	/* Solid fills with white text on them (UI kit buttons). Separate from
+	   --color-primary because the dark theme's primary is tuned for text on a
+	   dark ground, and white on it is only 3.7:1. Every pair here is >= 4.5:1. */
+	--color-primary-solid: #0066cc;
+	--color-primary-solid-hover: #0052a3;
+	--color-danger-solid: #c92a35;
+	--color-danger-solid-hover: #a61e29;
+	--color-on-solid: #ffffff;
+
 	/* Chart series (admin stats). A fixed categorical order — a series keeps its
 	   hue regardless of rank, so filtering never repaints the survivors. Both
 	   modes are stepped independently against their own surface and validated for
@@ -83,6 +92,10 @@
 	--color-danger: #ef4444; /* destructive accents; 4.6:1 on the dark background */
 	--color-success: #10b981;
 	--color-warning: #f59e0b;
+	--color-primary-solid: #2563eb;
+	--color-primary-solid-hover: #1d4ed8;
+	--color-danger-solid: #dc2626;
+	--color-danger-solid-hover: #b91c1c;
 
 	/* Chart series — stepped for the dark surface, not derived from the light
 	   values. See the note in :root. */

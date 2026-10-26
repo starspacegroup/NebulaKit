@@ -13,6 +13,8 @@
  * - api/admin/users/[id] (uncovered branches)
  * - chat page server (uncovered lines)
  */
+import { createSecretBox } from '../../src/lib/server/secret-box';
+import { TEST_ENCRYPTION_KEY } from '../helpers/fake-kv';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Admin CMS [type] Page - Missing branches ────────────────────────────────
@@ -233,12 +235,23 @@ describe('Auth Keys [id] API - KV Write/Delete Coverage', () => {
 					})
 				},
 				locals: AUTH_KEYS_OWNER,
-				platform: { env: { KV: mockKV } }
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } }
 			} as any);
 
 			expect(response.status).toBe(200);
 			const savedConfig = JSON.parse(mockKV.put.mock.calls[0][1]);
-			expect(savedConfig.clientSecret).toBe('old-secret');
+			// Preserved, but no longer as plaintext: the legacy value is sealed on write.
+			expect(savedConfig.clientSecret).not.toBe('old-secret');
+			expect(
+				(
+					await createSecretBox(TEST_ENCRYPTION_KEY).open(
+						savedConfig.clientSecret,
+						'auth-config',
+						'discord'
+					)
+				).plaintext
+			).toBe('old-secret');
+
 			expect(savedConfig.clientId).toBe('new-id');
 		});
 

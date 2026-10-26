@@ -77,6 +77,11 @@ describe('isConvertibleHtml', () => {
 });
 
 describe('toMarkdownResponse', () => {
+	it('is never cacheable, because the edge cache ignores Vary: Accept', async () => {
+		const response = await toMarkdownResponse(htmlResponse('<h1>Hi</h1>'));
+		expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+	});
+
 	const html =
 		'<html><head><title>T</title></head><body><main><h1>Hi</h1><p>Body.</p></main></body></html>';
 

@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { readAnalyticsConfig } from '$lib/server/analytics-config';
+import { readStatsTokenMeta } from '$lib/server/stats-token';
 import { canManageStatsConnection } from '$lib/server/stats-guard';
 import type { PageServerLoad } from './$types';
 
@@ -12,5 +13,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		throw redirect(302, '/admin');
 	}
 
-	return { config: await readAnalyticsConfig(platform?.env?.KV) };
+	const kv = platform?.env?.KV;
+	const [config, statsToken] = await Promise.all([readAnalyticsConfig(kv), readStatsTokenMeta(kv)]);
+	return { config, statsToken };
 };

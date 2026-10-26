@@ -1,0 +1,13 @@
+{
+	"name": "@nebulakit/builder",
+	"version": "0.3.0",
+	"description": "Drag-and-drop pages for a NebulaKit site, stored as data.",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"nebulakit": {
+		"updateChannel": "opt-in"
+	}
+}

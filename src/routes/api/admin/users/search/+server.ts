@@ -2,6 +2,7 @@ import { requireAdmin } from '$lib/server/auth-guards';
 import { isPiiRevealed, maskGeneric, PII_REVEAL_COOKIE } from '$lib/server/pii-mask';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { site } from '$lib/site.config';
 
 export const GET: RequestHandler = async ({ url, locals, fetch, cookies }) => {
 	const viewer = requireAdmin(locals);
@@ -18,7 +19,7 @@ export const GET: RequestHandler = async ({ url, locals, fetch, cookies }) => {
 			{
 				headers: {
 					Accept: 'application/vnd.github.v3+json',
-					'User-Agent': 'NebulaKit'
+					'User-Agent': site.name
 				}
 			}
 		);

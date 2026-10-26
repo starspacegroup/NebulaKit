@@ -80,8 +80,24 @@ tools running on the page — see below). There is no headless credential flow.
 
 ## Bearer tokens
 
-Not supported. No endpoint on this site accepts an \`Authorization: Bearer\`
-header. Sending one has no effect.
+The site API under \`${origin}/api/v1\` (described at
+[${origin}/api/v1/openapi.json](${origin}/api/v1/openapi.json)) accepts
+\`Authorization: Bearer nk_…\` API keys. There is no endpoint that issues one:
+the site owner creates each key on the admin API-keys page, picks its scopes and
+expiry, and can revoke it at any time. A key is shown once and stored hashed.
+Reading active products, published pages, pricing a cart at
+\`POST ${origin}/api/v1/checkout/quote\`, and placing an order at
+\`POST ${origin}/api/v1/checkout\` need no key.
+
+Two other operator-held secrets travel as bearer headers, also set or issued by
+the owner out of band:
+
+- \`CRON_SECRET\`, which only \`POST ${origin}/api/cron/prune-view-stats\` and
+  \`POST ${origin}/api/cron/prune-audit\` accept.
+- The stats token, which only \`GET ${origin}/api/stats/summary\` accepts and
+  which the owner issues on the admin analytics page for their own dashboard.
+
+Every other endpoint ignores the header.
 
 ## In-browser tools (WebMCP)
 

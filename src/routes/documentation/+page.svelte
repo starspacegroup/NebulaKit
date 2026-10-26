@@ -69,14 +69,20 @@ bun run deploy`;
 			<a href="#quick-start">Quick Start</a>
 			<a href="#feature-overview">Feature Overview</a>
 			<a href="#how-to-use">How To Use</a>
+			<a href="#ui-kit">UI Kit</a>
+			<a href="#modules">Modules</a>
 			<a href="#drag-and-drop">Drag and Drop</a>
 			<a href="#ai-workflow">AI Workflow</a>
 			<a href="#commands">Commands</a>
 			<a href="#cloudflare-bindings">Cloudflare Bindings</a>
 			<a href="#database-migrations">Database Migrations</a>
 			<a href="#auth-and-setup">Auth and Setup</a>
+			<a href="#secrets-at-rest">Secrets at Rest</a>
 			<a href="#admin-analytics">Admin Analytics</a>
+			<a href="#roles-permissions">Roles and Permissions</a>
+			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
 			<a href="#lighthouse">Lighthouse</a>
+			<a href="#scheduled-jobs">Scheduled Jobs</a>
 			<a href="#agent-readiness">Agent Readiness</a>
 			<a href="#testing">Testing</a>
 			<a href="#project-structure">Structure</a>
@@ -179,6 +185,11 @@ bun run deploy`;
 					<ul>
 						<li>Setup-first authentication flow for owner configuration.</li>
 						<li>Login, signup, profile, reset, and admin routes are already scaffolded.</li>
+						<li>
+							<code>/admin</code> opens on the stats dashboard. <code>/admin/settings</code> holds
+							the configuration summary, the <code>/reset</code> route switch, and the OAuth authentication
+							keys.
+						</li>
 						<li>Cloudflare D1 and KV are used for setup state and application data.</li>
 					</ul>
 				</div>
@@ -211,8 +222,8 @@ bun run deploy`;
 					<h3>Analytics and Operations</h3>
 					<ul>
 						<li>
-							First-party, cookie-free analytics at <code>/admin/stats</code> — traffic, audience, and
-							growth, with no third-party script.
+							First-party, cookie-free analytics at <code>/admin</code> — traffic, audience, and growth,
+							with no third-party script.
 						</li>
 						<li>
 							A Cloudflare plan-limit meter that projects whether today's traffic will exhaust your
@@ -276,6 +287,106 @@ bun run deploy`;
 			</div>
 		</section>
 
+		<section id="ui-kit" class="docs-section">
+			<h2>UI Kit</h2>
+			<p>
+				Standard elements live in <code>src/lib/ui</code> and import from one place. Every one uses
+				the theme's CSS variables only, works in light and dark, and is usable by keyboard. See them
+				all running, with the code for each, at <a href="/components">/components</a>.
+			</p>
+			<pre><code
+					>{`import { Button, TextInput, Select, Dialog, Tabs, Table, toast } from '$lib/ui';`}</code
+				></pre>
+			<ul>
+				<li>
+					<strong>Actions</strong> — Button (four variants, three sizes, link form, loading state),
+					ButtonGroup, Menu, DropdownMenu (checkbox and radio items), Command (a filterable command
+					palette, inline or as a <kbd>Ctrl</kbd>+<kbd>K</kbd> dialog), Toggle and ToggleGroup.
+				</li>
+				<li>
+					<strong>Forms</strong> — TextInput, Textarea, Select, Checkbox, RadioGroup, Switch,
+					Slider, Combobox, Calendar, DatePicker, InputOTP, InputGroup, NumberInput, TagInput and
+					FileDrop, all wired the way Field wires them: a real label, the hint and error in
+					<code>aria-describedby</code>.
+				</li>
+				<li>
+					<strong>Feedback</strong> — Alert, toasts, Badge, Progress, Spinner and Skeleton.
+				</li>
+				<li>
+					<strong>Overlays</strong> — Dialog and AlertDialog (native <code>&lt;dialog&gt;</code>),
+					Sheet (from any side, so also a drawer), Popover, HoverCard, Tooltip and ContextMenu.
+				</li>
+				<li>
+					<strong>Navigation</strong> — Tabs, Accordion, Breadcrumbs, Pagination, Menubar, NavigationMenu,
+					Sidebar and Stepper.
+				</li>
+				<li>
+					<strong>Layout</strong> — Container, Stack, Separator, AspectRatio, ScrollArea, Resizable and
+					Collapsible.
+				</li>
+				<li>
+					<strong>Data display</strong> — Card, Item, Table, DataTable (search, sort, paging, selection),
+					BarChart, LineChart and DonutChart (plain SVG, each with a hidden data table for screen readers),
+					Stat, Carousel, Timeline, Avatar, AvatarGroup, Kbd, CodeBlock, Prose and EmptyState.
+				</li>
+			</ul>
+			<p>
+				That is every element shadcn/ui ships, and more. None of it needs a dependency beyond
+				Svelte, and none of it is a paid add-on: the kit is MIT-licensed with the rest of the
+				project.
+			</p>
+			<p>
+				Toasts need one <code>{'<Toaster />'}</code>, which the root layout already renders. Raise
+				one from anywhere with <code>toast.success('Saved')</code>; pass <code>0</code> as the duration
+				to keep it until it is dismissed.
+			</p>
+			<p>
+				The catalog is checked: a test fails when a component is added to <code>src/lib/ui</code>,
+				or a widget is registered, without an entry in <code>src/lib/ui/catalog.ts</code>. Full
+				reference: <code>docs/UI_KIT.md</code>.
+			</p>
+		</section>
+
+		<section id="modules" class="docs-section">
+			<h2>Modules</h2>
+			<p>
+				Where the UI kit gives you elements, modules give you the blocks every app ends up building.
+				They live in <code>src/lib/modules</code>, are built from <code>$lib/ui</code>, and are
+				shown running, with the accessibility behaviour each one keeps, at
+				<a href="/modules">/modules</a>.
+			</p>
+			<pre><code
+					>{`import { SignInForm, PricingTable, DataGrid, KanbanBoard } from '$lib/modules';`}</code
+				></pre>
+			<ul>
+				<li>
+					<strong>Account</strong> &mdash; sign-in, sign-up, password reset, profile, sessions, two-factor.
+				</li>
+				<li>
+					<strong>Settings</strong> &mdash; appearance, notifications, API keys, webhooks, cookie consent,
+					privacy.
+				</li>
+				<li>
+					<strong>Marketing</strong> &mdash; hero, pricing, comparison, FAQ, testimonials, footer, contact.
+				</li>
+				<li>
+					<strong>App shell</strong> &mdash; app shell, notification center, global search, wizard, error
+					states.
+				</li>
+				<li>
+					<strong>Data &amp; teams</strong> &mdash; data grid, kanban, comments, files, calendar, tree,
+					audit log.
+				</li>
+				<li>
+					<strong>Commerce</strong> &mdash; billing, invoices, checkout, cart, reviews, status page, changelog.
+				</li>
+			</ul>
+			<p>
+				Each module takes its data and copy as props, emits events, and never fetches. All are
+				mobile first from 320px, use CSS variables only, and work by keyboard and screen reader.
+			</p>
+		</section>
+
 		<section id="drag-and-drop" class="docs-section">
 			<h2>Drag and Drop</h2>
 			<p>
@@ -289,8 +400,10 @@ bun run deploy`;
 			<p>
 				Registering a widget takes three edits and none of them is the board: an entry in
 				<code>src/lib/widgets/manifest.ts</code>, a line in
-				<code>src/lib/widgets/index.ts</code>, and the component itself. The registry ships empty on
-				purpose. The two actions underneath the board — <code>use:draggable</code> and
+				<code>src/lib/widgets/index.ts</code>, and the component itself. The kit ships six standard
+				widgets — stat, clock, checklist, meter, notes and links — all running at
+				<a href="/components#widgets">/components</a>; delete the ones your app does not use. The
+				two actions underneath the board — <code>use:draggable</code> and
 				<code>use:dropzone</code> — work on any markup, so a sortable list or a nav reorder needs no board
 				at all.
 			</p>
@@ -483,13 +596,27 @@ bun run db:migrate:list</code
 			</div>
 		</section>
 
+		<section id="secrets-at-rest" class="docs-section">
+			<h2>Secrets at Rest</h2>
+			<p>
+				AI provider keys and OAuth client secrets saved from the admin screens are encrypted
+				(AES-256-GCM, bound to their record) before they are written to KV, and the admin UI only
+				shows that a key is configured plus its last four characters. Set the
+				<code>ENCRYPTION_KEY</code> secret (<code>bun run generate:encryption-key</code>) so the key
+				lives outside KV; without it the app generates one and keeps it in KV, which encrypts the
+				values but does not defend against someone who can read the whole namespace. To rotate, move
+				the old value to <code>ENCRYPTION_KEY_PREVIOUS</code>; values are re-encrypted when read.
+				Plaintext keys saved by earlier versions are migrated on first read.
+			</p>
+		</section>
+
 		<section id="admin-analytics" class="docs-section">
 			<h2>Admin Analytics</h2>
 			<p>
-				<code>/admin/stats</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day
-				window, views by route, the most-read CMS items, referrers, countries, an audience breakdown,
-				and user and content growth over time. It is first-party — there is no third-party script, no
-				account, and no API key to provision.
+				<code>/admin</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day window,
+				views by route, the most-read CMS items, referrers, countries, an audience breakdown, and user
+				and content growth over time. It is first-party — there is no third-party script, no account,
+				and no API key to provision.
 			</p>
 			<p>
 				Everything collected is a daily aggregate counter in D1. There are
@@ -526,8 +653,11 @@ bun run db:migrate:list</code
 				<div class="callout-card">
 					<h3>Granting Access</h3>
 					<p>
-						The owner always sees Stats. Any other admin needs the <code>can_view_stats</code> flag, which
-						defaults to off so existing admins do not gain access on upgrade:
+						The owner always sees the dashboard stats. Any other admin needs the <code
+							>can_view_stats</code
+						>
+						flag, which defaults to off so existing admins do not gain access on upgrade. Without it,
+						an admin still lands on <code>/admin</code> but sees no stats:
 					</p>
 					<pre><code>UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';</code
 						></pre>
@@ -562,6 +692,24 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Reading Stats From a Dashboard</h3>
+					<p>
+						An external dashboard can read the same numbers as JSON. The owner issues a
+						<strong>stats token</strong> under "Dashboard access" on
+						<code>/admin/analytics</code>; it is shown once, and only its hash is stored. The
+						dashboard then sends it as a bearer token:
+					</p>
+					<pre><code
+							>curl https://your-app/api/stats/summary?window=7 \
+  -H "Authorization: Bearer nks_…"</code
+						></pre>
+					<p>
+						The response is read-only and aggregate-only — exactly what <code>/admin</code> shows. Rotate
+						replaces the token; Revoke cuts the dashboard off on its next read. A site that has never
+						issued one answers 401 to every request.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>Connecting Google Analytics</h3>
 					<p>
 						Optional, and off until you turn it on. The owner opens
@@ -585,6 +733,241 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 			</div>
+		</section>
+
+		<section id="roles-permissions" class="docs-section">
+			<h2>Roles and Permissions</h2>
+			<p>
+				Access is a ladder, <strong>owner &gt; superadmin &gt; admin &gt; user</strong>, plus a list
+				of named areas each admin may open. One rule does the work: you can only act on someone
+				strictly below you, and you can only hand out a role strictly below your own. An admin
+				cannot promote, demote or delete a peer, a superadmin or the owner, and nobody can promote
+				themselves.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>The owner is configuration</h3>
+					<p>
+						The owner is set by <code>GITHUB_OWNER_ID</code> (or setup), never by the
+						<code>users.role</code> column, so no request can assign or remove it. Superadmins hold
+						every area, including <code>pii</code>, and cannot be limited.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Areas for admins</h3>
+					<p>
+						<code>cms</code>, <code>pages</code>, <code>users</code> (view the list),
+						<code>users-manage</code> (change roles and delete, below their own role),
+						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code> and
+						<code>lighthouse</code>. Settings, auth keys, AI keys, the analytics connection, setup
+						and reset stay with the owner and superadmins. Only the owner or a superadmin can change
+						an admin's areas.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Managing access</h3>
+					<p>
+						On <code>/admin/users</code> choose <strong>Manage access</strong> on a row to set the role
+						and tick the areas. The sidebar only shows links the signed-in admin can use, but every load
+						and API also checks the permission itself. Role and areas are re-read from the database on
+						every request, so a change applies on the next click.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Upgrading</h3>
+					<p>
+						Migration <code>0021</code> adds <code>users.role</code> and
+						<code>user_permissions</code>. Existing admins keep every area they could reach before
+						(and <code>can_view_stats</code> becomes the <code>stats</code> permission); nobody is
+						promoted and owner-only areas are not handed out. <code>is_admin</code> and
+						<code>can_view_stats</code> stay in sync. To add an area, add it to
+						<code>src/lib/access/permissions.ts</code>, guard its routes with
+						<code>requirePermission</code>, and give its nav entry a <code>permission</code>.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<section id="shop-pages-api" class="docs-section">
+			<h2>Shop, Pages and the Site API</h2>
+			<p>
+				Three packages live in <code>packages/</code>, each versioned on its own:
+				<code>@nebulakit/commerce</code> (products, cart pricing, checkout, orders, Stripe,
+				Printful),
+				<code>@nebulakit/builder</code> (drag-and-drop pages stored as data), and
+				<code>@nebulakit/security</code> (API keys). Security updates are forced to every site; the other
+				two are opt-in.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Pages</h3>
+					<p>
+						Build pages at <code>/admin/pages</code>: drag blocks from the palette onto the page or
+						into a Section or Column, reorder and nest them, edit each block's fields, hide a block
+						on phones, tablets or desktops, preview at each width, and publish. Mouse, touch and
+						keyboard all work: every drag has Add, Move up/down, Move in and Move out buttons, plus
+						Alt+Arrow keys, and Undo and Redo (Ctrl/⌘+Z) cover every edit. A check list flags images
+						without a description, skipped heading levels and vague link text. Published pages are
+						served at <code>/p/[slug]</code> and listed in the sitemap. Every save that changes a
+						page keeps a revision (the newest 50), listed under History in the editor and at
+						<code>/api/v1/pages/[slug]/revisions</code>; restoring one is itself saved, so it can be
+						undone. A page is a JSON document (format version 2: a tree of blocks), never code.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Storefront</h3>
+					<p>
+						Shoppers browse <code>/shop</code> and <code>/shop/[slug]</code>, add products to a cart
+						kept in their browser, and check out at <code>/cart</code>. Prices, tax and shipping are
+						always worked out on the server from the catalog; the cart only remembers what to ask
+						for. Physical products ask for a shipping address. With Stripe configured the shopper
+						goes on to pay; without it the order waits for a manual payment.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Regional pricing</h3>
+					<p>
+						<code>/admin/settings/pricing</code> lowers prices for shoppers in countries where money
+						buys more, using a World Bank price level table shipped with the kit. It is off until
+						you turn it on, and it only ever lowers a price. Set how much of the gap to pass on, the
+						largest discount, which products it covers (digital only by default) and per-country
+						overrides, and preview any country before saving. An order takes the least generous
+						country among the one Cloudflare sees and the shipping address, so a VPN alone earns
+						nothing. The cart shows the server's quoted total (<code
+							>POST /api/v1/checkout/quote</code
+						>) and each order records the multiplier and countries used. Settings are also at
+						<code>GET/PUT /api/v1/pricing</code>, with scopes
+						<code>pricing:read</code> and <code>pricing:write</code>. Apply migration
+						<code>0022</code>; refresh the table with <code>bun run update:price-index</code>.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>API keys</h3>
+					<p>
+						The owner manages access at <code>/admin/api-keys</code>: create a key with scopes and
+						an expiry, see when it was last used, revoke it in one click, and read the call log. A
+						key is shown once and stored hashed.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Redirects</h3>
+					<p>
+						Admins manage old-to-new addresses at <code>/admin/redirects</code> (migration
+						<code>0024_redirects.sql</code>): pick 301, 302, 307 or 308 and see how many times each
+						one was used. A redirect is looked up only when the site would otherwise answer "not
+						found", so it never hides a live page and costs healthy pages nothing. The new address
+						is a path on this site or an https address on an allowed host: the site's own, plus any
+						you list in <code>REDIRECT_ALLOWED_HOSTS</code> (comma-separated). Loops and off-site targets
+						are refused when you save, and again when a visitor is redirected.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Canonical host</h3>
+					<p>
+						The session cookie belongs to one host, so a visitor signed in on the bare domain would
+						look signed out on <code>www</code>. The site sends <code>www.</code> + the host in
+						<code>site.url</code> to that host (301 for reads, 308 for anything else), except
+						webhook and cron paths. It never redirects on localhost, <code>*.pages.dev</code>,
+						previews or tunnels. Every host that is not the one in <code>site.url</code> is served
+						with <code>X-Robots-Tag: noindex</code>, so a preview never competes with production in
+						search.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Security contact</h3>
+					<p>
+						<code>/.well-known/security.txt</code> (RFC 9116) tells researchers where to send a
+						vulnerability report. The template has no contact address of its own and invents none:
+						set <code>SECURITY_CONTACT</code> to an email address or an https URL (comma-separated
+						for several) and the file is served, with an <code>Expires</code> date recomputed on every
+						request, 180 days ahead. Until then the path answers 404.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>The site API</h3>
+					<p>
+						Everything is reachable under <code>/api/v1</code>, described at
+						<code>/api/v1/openapi.json</code>. Send keys as <code>Authorization: Bearer nk_…</code>.
+						Checkout (<code>POST /api/v1/checkout</code>) is public and prices every line from the
+						catalog.
+					</p>
+				</div>
+			</div>
+			<p>
+				Shop settings are environment variables, never request fields:
+				<code>COMMERCE_TAX_RATE_PERCENT</code>, <code>COMMERCE_PRICES_INCLUDE_TAX</code>,
+				<code>COMMERCE_FLAT_SHIPPING_CENTS</code>, <code>STRIPE_SECRET_KEY</code> and
+				<code>STRIPE_WEBHOOK_SECRET</code> (webhook URL <code>/api/v1/webhooks/stripe</code>).
+				Without a Stripe key, orders wait for a manual payment. <code>ORCHESTRATOR_KEY_SHA256</code>
+				connects the Ammoura control room. Apply migrations <code>0016</code>–<code>0018</code> with
+				<code>bun run db:migrate:local</code>.
+			</p>
+			<h3 id="orders-payments-email">Payments, status and email</h3>
+			<p>
+				The Stripe webhook answers <code>503</code> until <code>STRIPE_WEBHOOK_SECRET</code> is set,
+				so Stripe keeps retrying. It handles <code>checkout.session.completed</code> and
+				<code>checkout.session.async_payment_succeeded</code> (the order becomes paid),
+				<code>checkout.session.async_payment_failed</code> and
+				<code>checkout.session.expired</code> (a pending order is cancelled). A payment that is smaller
+				than the order total, or in another currency, leaves the order pending for a person to check.
+				Replays change nothing a second time.
+			</p>
+			<p>
+				After paying, the shopper returns to <code>/cart?order=…</code>, which asks
+				<code>GET /api/v1/orders/[id]/status</code> every 1.5 seconds for 20 seconds. That public endpoint
+				returns the status word only, never an email, address or total, and the page says plainly when
+				payment is still being confirmed.
+			</p>
+			<p>
+				Email is optional. Set <code>RESEND_API_KEY</code> and <code>EMAIL_FROM</code> (and
+				<code>EMAIL_REPLY_TO</code> if you want one), then apply migration <code>0020</code>. A
+				receipt is sent when an order becomes paid and a shipping notice when it is marked shipped,
+				each at most once per order: the <code>email_log</code> table refuses a second send. Without
+				a key nothing is sent and the log records what was skipped. Email colours come from
+				<code>emailTheme</code> in <code>src/lib/site.config.ts</code>.
+			</p>
+		</section>
+
+		<section id="audit-log" class="docs-section">
+			<h2>Audit Log</h2>
+			<p>
+				<a href="/admin/audit">/admin/audit</a> (owners and superadmins) lists who changed what:
+				user role changes, deletes and merges, content publish and delete, settings and key changes,
+				API key create and revoke, builder page save, delete and restore, and shop product and order
+				changes through
+				<code>/api/v1</code>. It records changes only, never page views, and never a secret value: a
+				key or setting change notes that it changed, and any detail field named like a token,
+				secret, password or key is redacted. Filter by actor and action, search, and open a row for
+				its detail.
+			</p>
+			<p>
+				Rows are kept 365 days. The scheduled-jobs Worker fires <code>/api/cron/prune-audit</code>
+				daily (or POST to it with <code>Authorization: Bearer $CRON_SECRET</code> from any
+				scheduler) to delete older ones. Apply migration
+				<code>0025</code> (shared with sign-in tracking) with <code>bun run db:migrate:local</code>.
+				Details:
+				<code>docs/AUDIT_LOG.md</code>.
+			</p>
+		</section>
+
+		<section id="sign-in-tracking" class="docs-section">
+			<h2>Sign-in Tracking</h2>
+			<p>
+				The owner can see who is signed in and where each sign-in came from at
+				<a href="/admin/sign-ins">/admin/sign-ins</a>, and sign any session out. Recording is
+				<strong>off by default</strong>, because it is the one place the site stores an IP address;
+				the rest of the template stays cookie-free and IP-free. The owner switches it on on that
+				page, under a plain-language disclosure.
+			</p>
+			<p>
+				While on, each sign-in attempt, failures included, stores the method, whether it worked, the
+				IP address (shown masked unless the owner reveals personal data), a rough device label such
+				as “Chrome on macOS” (never the raw browser string), the country, and when a live session
+				was last used. Passwords and typed email addresses are never stored, visitors who are not
+				signing in are never recorded, and attempts are deleted after 90 days. Recording can never
+				block a sign-in. If you turn it on, say so in your privacy policy. Details:
+				<code>docs/SIGN_IN_TRACKING.md</code>.
+			</p>
 		</section>
 
 		<section id="testing" class="docs-section">
@@ -710,8 +1093,9 @@ bun run test:all</code
 			</p>
 			<h3>Scheduling it</h3>
 			<p>
-				There is no cron in a Pages deployment, so an external scheduler calls the endpoint — a Cron
-				Trigger Worker, a GitHub Actions <code>schedule:</code>, or anything that can POST. It uses
+				There is no cron in a Pages deployment, so the template ships a small Worker,
+				<code>cron-worker/</code>, that calls the endpoint daily (see
+				<a href="#scheduled-jobs">Scheduled Jobs</a>). Any scheduler that can POST works too, with
 				the same shared secret as the other background jobs:
 			</p>
 			<pre><code
@@ -722,6 +1106,31 @@ bun run test:all</code
 				Daily is plenty — PSI's keyless rate limit will not tolerate much more, and these scores do
 				not move hourly. <code>PAGESPEED_API_KEY</code> is optional and only raises that limit. Full
 				notes in <code>docs/LIGHTHOUSE_MONITORING.md</code>.
+			</p>
+		</section>
+
+		<section id="scheduled-jobs" class="docs-section">
+			<h2>Scheduled Jobs</h2>
+			<p>
+				Cloudflare Pages cannot run Cron Triggers, so a standalone Worker in
+				<code>cron-worker/</code> wakes on a schedule and POSTs to the app's
+				<code>/api/cron/*</code> routes with <code>CRON_SECRET</code>, retrying three times with
+				exponential backoff. The app claims each job once per scheduled minute, so a retry or
+				overlapping delivery never runs it twice, and records every run.
+			</p>
+			<p>
+				<code>/admin/scheduled-jobs</code> lists each job with its last run, status and next
+				expected run, and has a <strong>Run now</strong> button for admins.
+			</p>
+			<pre><code
+					>{`cd cron-worker
+# set TARGET_URL in wrangler.toml to your site's origin
+bunx wrangler deploy
+bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}</code
+				></pre>
+			<p>
+				It needs migration <code>0023_scheduled_job_runs.sql</code>. Adding a job and the details
+				are in <code>docs/SCHEDULED_JOBS.md</code>.
 			</p>
 		</section>
 

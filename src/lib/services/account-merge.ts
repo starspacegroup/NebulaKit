@@ -6,6 +6,8 @@
  * Instead of showing an error, we seamlessly merge the accounts.
  */
 
+import { recordAudit } from '$lib/server/audit';
+
 interface D1Database {
 	prepare(query: string): D1PreparedStatement;
 	batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
@@ -31,7 +33,8 @@ interface D1Result<T = unknown> {
  * 1. Checks if the source user is an admin (to preserve admin status)
  * 2. Transfers all oauth_accounts from source to target
  * 3. Transfers all chat_messages from source to target
- * 4. Transfers all sessions from source to target
+ * 4. Deletes the source user's sessions (a browser signed in as the source must
+ *    not inherit the target's privileges), and keeps content authorship
  * 5. Updates target user's admin status if source was admin
  * 6. Deletes the source user
  *
@@ -86,9 +89,16 @@ export async function mergeAccounts(
 			.bind(targetUserId, sourceUserId)
 	);
 
-	// Transfer sessions
+	// Drop the source's sessions instead of moving them: a browser still signed in
+	// as the source would otherwise wake up holding the target's privileges.
+	statements.push(db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(sourceUserId));
+
+	// Keep the source's content attributed to someone. author_id is ON DELETE SET
+	// NULL, so deleting the source would silently orphan every item it wrote.
 	statements.push(
-		db.prepare('UPDATE sessions SET user_id = ? WHERE user_id = ?').bind(targetUserId, sourceUserId)
+		db
+			.prepare('UPDATE content_items SET author_id = ? WHERE author_id = ?')
+			.bind(targetUserId, sourceUserId)
 	);
 
 	// Transfer existing aliases to the target account.
@@ -128,13 +138,50 @@ export async function mergeAccounts(
 	// If source user was admin, make target user admin too
 	if (sourceIsAdmin) {
 		statements.push(db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').bind(targetUserId));
+		// Carry the ladder with it: a plain user becomes an admin (never higher than
+		// the source's own admin; a superadmin is only ever granted by a person),
+		// and the source's granted areas are kept so the merge loses nothing.
+		statements.push(
+			db
+				.prepare("UPDATE users SET role = 'admin' WHERE id = ? AND role = 'user'")
+				.bind(targetUserId)
+		);
+		statements.push(
+			db
+				.prepare(
+					`INSERT OR IGNORE INTO user_permissions (user_id, permission, granted_by)
+					 SELECT ?, permission, 'account-merge' FROM user_permissions WHERE user_id = ?`
+				)
+				.bind(targetUserId, sourceUserId)
+		);
 	}
+
+	// Never lose a grant by merging: the target keeps stats access if either had it.
+	statements.push(
+		db
+			.prepare(
+				'UPDATE users SET can_view_stats = 1 WHERE id = ? AND COALESCE((SELECT can_view_stats FROM users WHERE id = ?), 0) = 1'
+			)
+			.bind(targetUserId, sourceUserId)
+	);
 
 	// Delete the source user (CASCADE will clean up any remaining references)
 	statements.push(db.prepare('DELETE FROM users WHERE id = ?').bind(sourceUserId));
 
 	// Execute all statements in a batch for atomicity
 	await db.batch(statements);
+
+	// Audit trail (docs/AUDIT_LOG.md). The log is not a foreign key, so it keeps
+	// naming the source user after the DELETE above. Recording never throws.
+	await recordAudit(db as never, {
+		actorId: targetUserId,
+		actorLogin: targetUser.email,
+		action: 'user.merge',
+		targetType: 'user',
+		targetId: sourceUserId,
+		summary: 'Merged one account into another',
+		detail: { sourceUserId, targetUserId, sourceWasAdmin: sourceIsAdmin }
+	});
 
 	console.log(`[Account Merge] Successfully merged user ${sourceUserId} into ${targetUserId}`);
 }

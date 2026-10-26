@@ -99,6 +99,14 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 	const sessionUser = buildDevUser(provider, role);
 	const redirectTarget = role === 'admin' || role === 'superadmin' ? '/admin' : '/';
 
+	// sessions.user_id is a foreign key to users, so the simulated user needs a row.
+	await db
+		.prepare(
+			`INSERT OR IGNORE INTO users (id, email, name, is_admin, created_at)
+			 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
+		)
+		.bind(sessionUser.id, sessionUser.email, sessionUser.name, sessionUser.isAdmin ? 1 : 0)
+		.run();
 	const sessionId = await createAuthSession(db, sessionUser);
 
 	return new Response(null, {

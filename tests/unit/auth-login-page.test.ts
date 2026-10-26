@@ -38,6 +38,21 @@ describe('Auth Login Page Server', () => {
 			).rejects.toMatchObject({ status: 302, location: '/' });
 		});
 
+		it('sends a logged-in user to a same-site ?next, and never off the site', async () => {
+			const { load } = await import('../../src/routes/auth/login/+page.server');
+			const user = { id: '1', login: 'user', email: 'user@test.com', isOwner: false };
+
+			await expect(
+				load({ locals: { user }, url: new URL('http://localhost/auth/login?next=/cart') } as any)
+			).rejects.toMatchObject({ status: 302, location: '/cart' });
+			await expect(
+				load({
+					locals: { user },
+					url: new URL('http://localhost/auth/login?next=//evil.example')
+				} as any)
+			).rejects.toMatchObject({ status: 302, location: '/' });
+		});
+
 		it('should redirect logged-in user with unauthorized error to home with forbidden', async () => {
 			const { load } = await import('../../src/routes/auth/login/+page.server');
 

@@ -4,26 +4,46 @@
 	import { setContext } from 'svelte';
 	import { writable } from 'svelte/store';
 	import PiiPrivacyToggle from '$lib/components/admin/PiiPrivacyToggle.svelte';
+	import { heldPermissions } from '$lib/access/permissions';
 	import type { LayoutData } from './$types';
 
 	export let data: LayoutData;
 
-	// Stats is gated on the per-admin `can_view_stats` grant, Analytics on owner
-	// (`canManageStatsConnection`). Both routes enforce it as well; hiding the
-	// links just avoids offering a 403.
+	// A link shows only if this admin can use it, from the same permission list
+	// the routes enforce (permissions.ts). Hiding a link is a courtesy, not
+	// authorization: every load and API still guards itself. The Dashboard is
+	// every admin's landing page; its stats are gated on `stats`. Settings,
+	// Analytics and AI Keys stay with the owner and superadmins.
+	$: held = new Set<string>(heldPermissions(data.user));
 	$: navItems = [
 		{ path: '/admin', label: 'Dashboard', icon: 'home' },
-		...(data.canViewStats ? [{ path: '/admin/stats', label: 'Stats', icon: 'chart' }] : []),
 		...(data.canManageAnalytics
-			? [{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' }]
+			? [
+					{ path: '/admin/settings', label: 'Settings', icon: 'settings' },
+					{ path: '/admin/settings/pricing', label: 'Regional Pricing', icon: 'chart' },
+					{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' },
+					{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
+					{ path: '/admin/scheduled-jobs', label: 'Scheduled Jobs', icon: 'clock' },
+					{ path: '/admin/audit', label: 'Audit log', icon: 'activity' }
+				]
 			: []),
-		{ path: '/admin/users', label: 'Users', icon: 'users' },
-		{ path: '/admin/auth-keys', label: 'Auth Keys', icon: 'key' },
-		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
-		{ path: '/admin/cms', label: 'Content', icon: 'document' },
-		{ path: '/admin/contact-form-submissions', label: 'Contact Forms', icon: 'mail' },
-		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart' }
-	];
+		{ path: '/admin/users', label: 'Users', icon: 'users', permission: 'users' },
+		{ path: '/admin/cms', label: 'Content', icon: 'document', permission: 'cms' },
+		{ path: '/admin/pages', label: 'Pages', icon: 'layout', permission: 'pages' },
+		{ path: '/admin/redirects', label: 'Redirects', icon: 'link', permission: 'pages' },
+		{ path: '/admin/api-keys', label: 'API Keys', icon: 'key', permission: 'api-keys' },
+		{
+			path: '/admin/contact-form-submissions',
+			label: 'Contact Forms',
+			icon: 'mail',
+			permission: 'contact'
+		},
+		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart', permission: 'lighthouse' },
+		// Owner-only: it shows where people signed in from.
+		...(data.user?.isOwner || data.user?.isSuperAdmin
+			? [{ path: '/admin/sign-ins', label: 'Sign-ins', icon: 'users' }]
+			: [])
+	].filter((item) => !('permission' in item) || held.has(item.permission as string));
 
 	// PII reveal state shared with admin views via context. The store tracks the
 	// server-provided value; toggling posts to the reveal endpoint and reloads so
@@ -71,6 +91,46 @@
 							<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
 							<polyline points="9 22 9 12 15 12 15 22" />
 						</svg>
+					{:else if item.icon === 'layout'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<rect x="3" y="3" width="18" height="18" rx="2" />
+							<line x1="3" y1="9" x2="21" y2="9" />
+							<line x1="9" y1="21" x2="9" y2="9" />
+						</svg>
+					{:else if item.icon === 'link'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+							<path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+						</svg>
+					{:else if item.icon === 'key'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="7.5" cy="15.5" r="4.5" />
+							<path d="M10.7 12.3 21 2M16 7l3 3M18 5l2 2" />
+						</svg>
 					{:else if item.icon === 'users'}
 						<svg
 							class="nav-icon"
@@ -86,7 +146,7 @@
 							<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
 							<path d="M16 3.13a4 4 0 0 1 0 7.75" />
 						</svg>
-					{:else if item.icon === 'key'}
+					{:else if item.icon === 'settings'}
 						<svg
 							class="nav-icon"
 							width="20"
@@ -96,8 +156,9 @@
 							stroke="currentColor"
 							stroke-width="2"
 						>
+							<circle cx="12" cy="12" r="3" />
 							<path
-								d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+								d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
 							/>
 						</svg>
 					{:else if item.icon === 'sparkles'}
@@ -167,6 +228,19 @@
 							stroke-width="2"
 						>
 							<polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+						</svg>
+					{:else if item.icon === 'clock'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="12" cy="12" r="9" />
+							<polyline points="12 7 12 12 15 14" />
 						</svg>
 					{/if}
 					<span>{item.label}</span>

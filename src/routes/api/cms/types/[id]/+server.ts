@@ -5,7 +5,7 @@
  * PUT    /api/cms/types/[id] - Update a content type
  * DELETE /api/cms/types/[id] - Delete a content type (non-system only)
  */
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { validateContentTypeInput } from '$lib/cms/utils';
 import {
 	deleteContentTypeFromDB,
@@ -16,7 +16,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ platform, locals, params }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -36,7 +36,7 @@ export const GET: RequestHandler = async ({ platform, locals, params }) => {
 };
 
 export const PUT: RequestHandler = async ({ platform, locals, params, request }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -85,7 +85,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request })
 };
 
 export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {

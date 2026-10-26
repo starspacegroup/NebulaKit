@@ -19,6 +19,7 @@ Do this before feature work, bug fixes, or content entry. The repository still c
 - [ ] Replace visible app branding.
 - [ ] Replace Open Graph, Twitter, and favicon assets.
 - [ ] Generate the full web-app icon set (apple-touch-icon, manifest icons, light/dark favicons) — see below. A tab favicon alone is not enough; phone home-screen tiles need it.
+- [ ] Replace the home hero with one made for your product — see [HERO.md](HERO.md).
 - [ ] Rewrite the `/documentation` route and its links for your product (replace the content; keep the route).
 - [ ] Confirm `site.slug` is your own slug, so this site's credential field names are unique — see below.
 - [ ] Update [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md) to `status: complete`.

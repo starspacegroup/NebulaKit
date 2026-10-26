@@ -1,4 +1,5 @@
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
+import { safeNext } from '$lib/utils/after-login';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -16,8 +17,9 @@ export const load: PageServerLoad = async ({ locals, url, platform }) => {
 			throw redirect(302, '/?error=forbidden');
 		}
 
-		// Otherwise, redirect logged-in users to home
-		throw redirect(302, '/');
+		// Otherwise send logged-in users where they were going (a same-site
+		// ?next=), or home.
+		throw redirect(302, safeNext(url.searchParams.get('next')) ?? '/');
 	}
 
 	const configuredProviders = await getConfiguredAuthProviders(platform);

@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import AuthProviderButtons from '$lib/components/AuthProviderButtons.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { rememberNext, takeNext } from '$lib/utils/after-login';
 	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
@@ -31,6 +32,8 @@
 	};
 
 	onMount(() => {
+		// ?next=/shop/orders: come back there after signing in (any provider).
+		rememberNext($page.url.searchParams.get('next'));
 		const errorCode = $page.url.searchParams.get('error');
 		if (errorCode) {
 			error = errorMessages[errorCode] || 'An unexpected error occurred. Please try again.';
@@ -59,7 +62,7 @@
 				throw new Error(payload.message || 'Failed to sign in.');
 			}
 
-			window.location.assign(payload.redirectTo || '/');
+			window.location.assign(takeNext() || payload.redirectTo || '/');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to sign in.';
 			isLoading = false;

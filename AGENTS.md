@@ -26,6 +26,12 @@ the command list, repository map, and architecture explanation.
 - Keep robots, sitemap, API catalog, agent skills, `auth.md`, Markdown negotiation, and WebMCP honest.
   Add public pages to `SITEMAP_ROUTES` or explicitly exclude them. NebulaKit is an OAuth client, not
   an OAuth or MCP server. Keep `[x+2e]well-known`; the escape preserves TypeScript inclusion.
+- A screenshot of another website ships as a pair: one capture in that site's light mode, one in
+  its dark mode. Show the one that matches this page's current theme. Switch on
+  `[data-theme='dark']` on `<html>`, not on `prefers-color-scheme`: the user toggle overrides the
+  OS, so `<picture media="(prefers-color-scheme: dark)">` shows the wrong capture after a toggle.
+  Give both images the same size and `alt`. If the site has only one mode, say so beside the
+  single image.
 
 ## Security Boundaries
 
@@ -50,7 +56,8 @@ the command list, repository map, and architecture explanation.
 
 - Runtime bindings come from `event.platform.env`; do not assume a writable filesystem, global
   bindings, or a long-lived process.
-- Keep `sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)` in
+- Keep `sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)` (plus
+  `auditHandler` just before `authHandler`) in
   `src/hooks.server.ts`; accounting and identity depend on that order.
 - CMS is registry-driven through `src/lib/cms/registry.ts`. Do not add parallel content routes or put
   `.svelte` imports in `src/lib/cms/embeds/manifest.ts`.

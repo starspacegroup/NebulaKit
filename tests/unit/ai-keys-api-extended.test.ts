@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createSecretBox } from '../../src/lib/server/secret-box';
+import { TEST_ENCRYPTION_KEY, createFakeKV } from '../helpers/fake-kv';
 
 /**
  * Tests for AI Keys API Endpoints
@@ -54,7 +56,7 @@ describe('AI Keys API', () => {
 			const { GET } = await import('../../src/routes/api/admin/ai-keys/+server');
 
 			const response = await GET({
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -63,18 +65,16 @@ describe('AI Keys API', () => {
 		});
 
 		it('should return all keys without apiKey field', async () => {
-			const mockKV = {
-				get: vi
-					.fn()
-					.mockResolvedValueOnce(JSON.stringify(['key1', 'key2']))
-					.mockResolvedValueOnce(JSON.stringify({ id: 'key1', name: 'Key 1', apiKey: 'secret1' }))
-					.mockResolvedValueOnce(JSON.stringify({ id: 'key2', name: 'Key 2', apiKey: 'secret2' }))
-			};
+			const mockKV = createFakeKV({
+				ai_keys_list: JSON.stringify(['key1', 'key2']),
+				'ai_key:key1': JSON.stringify({ id: 'key1', name: 'Key 1', apiKey: 'secret1' }),
+				'ai_key:key2': JSON.stringify({ id: 'key2', name: 'Key 2', apiKey: 'secret2' })
+			});
 
 			const { GET } = await import('../../src/routes/api/admin/ai-keys/+server');
 
 			const response = await GET({
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -82,6 +82,8 @@ describe('AI Keys API', () => {
 			expect(result.keys).toHaveLength(2);
 			expect(result.keys[0].apiKey).toBeUndefined();
 			expect(result.keys[1].apiKey).toBeUndefined();
+			expect(result.keys[0].apiKeyConfigured).toBe(true);
+			expect(JSON.stringify(result)).not.toContain('secret1');
 		});
 
 		it('should skip keys that no longer exist', async () => {
@@ -96,7 +98,7 @@ describe('AI Keys API', () => {
 			const { GET } = await import('../../src/routes/api/admin/ai-keys/+server');
 
 			const response = await GET({
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -149,7 +151,7 @@ describe('AI Keys API', () => {
 				put: mockPut
 			};
 
-			vi.stubGlobal('crypto', { randomUUID: () => 'new-key-id' });
+			vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('new-key-id' as any);
 
 			const { POST } = await import('../../src/routes/api/admin/ai-keys/+server');
 
@@ -163,7 +165,7 @@ describe('AI Keys API', () => {
 						enabled: true
 					})
 				},
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -181,7 +183,7 @@ describe('AI Keys API', () => {
 				put: mockPut
 			};
 
-			vi.stubGlobal('crypto', { randomUUID: () => 'new-key-id' });
+			vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('new-key-id' as any);
 
 			const { POST } = await import('../../src/routes/api/admin/ai-keys/+server');
 
@@ -192,7 +194,7 @@ describe('AI Keys API', () => {
 						apiKey: 'key123'
 					})
 				},
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -252,7 +254,7 @@ describe('AI Keys API', () => {
 				PUT({
 					params: { id: 'nonexistent' },
 					request: { json: vi.fn().mockResolvedValue({ name: 'Test' }) },
-					platform: { env: { KV: mockKV } },
+					platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 					locals: { user: { id: '1', isOwner: true } }
 				} as any)
 			).rejects.toThrow();
@@ -282,7 +284,7 @@ describe('AI Keys API', () => {
 						model: 'gpt-4o'
 					})
 				},
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -315,13 +317,15 @@ describe('AI Keys API', () => {
 						apiKey: 'new-secret'
 					})
 				},
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
 			// Verify the stored key has the new apiKey
 			const storedData = JSON.parse(mockPut.mock.calls[0][1]);
-			expect(storedData.apiKey).toBe('new-secret');
+			expect(storedData.apiKey).not.toBe('new-secret');
+			const box = createSecretBox(TEST_ENCRYPTION_KEY);
+			expect((await box.open(storedData.apiKey, 'ai-key', 'key1')).plaintext).toBe('new-secret');
 		});
 	});
 
@@ -363,7 +367,7 @@ describe('AI Keys API', () => {
 
 			const response = await DELETE({
 				params: { id: 'key1' },
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -387,7 +391,7 @@ describe('AI Keys API', () => {
 
 			const response = await DELETE({
 				params: { id: 'key1' },
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -434,7 +438,7 @@ describe('AI Keys API', () => {
 				PATCH({
 					params: { id: 'nonexistent' },
 					request: { json: vi.fn().mockResolvedValue({ enabled: true }) },
-					platform: { env: { KV: mockKV } },
+					platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 					locals: { user: { id: '1', isOwner: true } }
 				} as any)
 			).rejects.toThrow();
@@ -458,7 +462,7 @@ describe('AI Keys API', () => {
 			const response = await PATCH({
 				params: { id: 'key1' },
 				request: { json: vi.fn().mockResolvedValue({ enabled: false }) },
-				platform: { env: { KV: mockKV } },
+				platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 				locals: { user: { id: '1', isOwner: true } }
 			} as any);
 
@@ -479,7 +483,7 @@ describe('AI Keys API', () => {
 
 			try {
 				await GET({
-					platform: { env: { KV: mockKV } },
+					platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 					locals: { user: { id: '1', isOwner: true } }
 				} as any);
 				expect.fail('Should have thrown');
@@ -510,7 +514,7 @@ describe('AI Keys API', () => {
 							provider: 'openai'
 						})
 					},
-					platform: { env: { KV: mockKV } },
+					platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 					locals: { user: { id: '1', isOwner: true } }
 				} as any);
 				expect.fail('Should have thrown');
@@ -540,7 +544,7 @@ describe('AI Keys API', () => {
 							name: 'New Name'
 						})
 					},
-					platform: { env: { KV: mockKV } },
+					platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 					locals: { user: { id: '1', isOwner: true } }
 				} as any);
 				expect.fail('Should have thrown');
@@ -568,7 +572,7 @@ describe('AI Keys API', () => {
 				await PATCH({
 					params: { id: 'key1' },
 					request: { json: vi.fn().mockResolvedValue({ enabled: false }) },
-					platform: { env: { KV: mockKV } },
+					platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 					locals: { user: { id: '1', isOwner: true } }
 				} as any);
 				expect.fail('Should have thrown');
@@ -597,7 +601,7 @@ describe('AI Keys API', () => {
 			try {
 				await DELETE({
 					params: { id: 'key1' },
-					platform: { env: { KV: mockKV } },
+					platform: { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } },
 					locals: { user: { id: '1', isOwner: true } }
 				} as any);
 				expect.fail('Should have thrown');

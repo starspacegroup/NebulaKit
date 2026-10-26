@@ -35,10 +35,10 @@ if (TOKEN) {
 	console.log('Starting named Cloudflare tunnel (custom domain)...');
 	args = ['tunnel', '--no-autoupdate', 'run', '--token', TOKEN];
 } else {
-	console.log(`Starting free Cloudflare quick tunnel -> http://localhost:${PORT}`);
+	console.log(`Starting free Cloudflare quick tunnel -> http://127.0.0.1:${PORT}`);
 	console.log('  Your public URL will appear below (trycloudflare.com).');
 	console.log('  For a custom domain set TUNNEL_TOKEN=<your-token>.\n');
-	args = ['tunnel', '--url', `http://localhost:${PORT}`];
+	args = ['tunnel', '--url', `http://127.0.0.1:${PORT}`];
 }
 
 const proc = spawn('cloudflared', args, { stdio: 'inherit' });

@@ -1,6 +1,7 @@
 import { webcrypto } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAuthSession, getAuthSession } from '../../src/lib/utils/db';
+import { createSqliteD1 } from '../helpers/sqlite-d1';
 import type { SessionUser } from '../../src/lib/utils/session';
 
 const mockRedirect = vi.fn((status: number, location: string) => {
@@ -58,6 +59,23 @@ function sessionIdFromCookie(setCookieHeader: string): string {
 	if (!part) throw new Error('Session cookie not found');
 	return part.replace('session=', '');
 }
+
+describe('Dev auth simulation endpoint (real SQL)', () => {
+	it('gives the simulated user a users row, so the sessions foreign key holds', async () => {
+		vi.resetModules();
+		vi.stubGlobal('crypto', webcrypto as Crypto);
+		const { GET } = await import('../../src/routes/api/auth/dev-simulate/+server');
+		const db = createSqliteD1();
+		await GET({
+			url: new URL('http://localhost/api/auth/dev-simulate?provider=github&role=admin'),
+			platform: { env: { DEV_AUTH_BYPASS: 'true', DB: db } }
+		} as any);
+		const user = await db
+			.prepare("SELECT id, is_admin FROM users WHERE id LIKE 'dev-github-%'")
+			.first<{ id: string; is_admin: number }>();
+		expect(user?.is_admin).toBe(1);
+	});
+});
 
 describe('Dev auth simulation endpoint', () => {
 	beforeEach(() => {

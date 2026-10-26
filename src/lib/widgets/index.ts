@@ -8,8 +8,21 @@
  */
 
 import type { ComponentType, SvelteComponent } from 'svelte';
+import ChecklistWidget from './ChecklistWidget.svelte';
+import ClockWidget from './ClockWidget.svelte';
+import LinksWidget from './LinksWidget.svelte';
+import MeterWidget from './MeterWidget.svelte';
+import NotesWidget from './NotesWidget.svelte';
+import StatWidget from './StatWidget.svelte';
 
-const widgetComponents: Record<string, ComponentType<SvelteComponent>> = {};
+const widgetComponents: Record<string, ComponentType<SvelteComponent>> = {
+	notes: NotesWidget as ComponentType<SvelteComponent>,
+	stat: StatWidget as ComponentType<SvelteComponent>,
+	clock: ClockWidget as ComponentType<SvelteComponent>,
+	checklist: ChecklistWidget as ComponentType<SvelteComponent>,
+	meter: MeterWidget as ComponentType<SvelteComponent>,
+	links: LinksWidget as ComponentType<SvelteComponent>
+};
 
 export function getWidgetComponent(name: string): ComponentType<SvelteComponent> | null {
 	// Own-property check, not a bare lookup: type names come from stored layout

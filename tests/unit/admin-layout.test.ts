@@ -68,7 +68,10 @@ describe('Admin Layout Server Load', () => {
 	});
 });
 
-describe('Admin Dashboard Page Server Load', () => {
+describe('Admin Settings Page Server Load', () => {
+	// The settings load also lists the auth keys; these cases only read KV.
+	const keysFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ keys: [] }) });
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.resetModules();
@@ -93,9 +96,10 @@ describe('Admin Dashboard Page Server Load', () => {
 				}
 			};
 
-			const { load } = await import('../../src/routes/admin/+page.server');
+			const { load } = await import('../../src/routes/admin/settings/+page.server');
 			const result = (await load({
-				platform: mockPlatform
+				platform: mockPlatform,
+				fetch: keysFetch
 			} as any)) as {
 				setupInfo: {
 					hasOAuthConfig: boolean;
@@ -114,9 +118,10 @@ describe('Admin Dashboard Page Server Load', () => {
 		});
 
 		it('should return empty setup info when KV not available', async () => {
-			const { load } = await import('../../src/routes/admin/+page.server');
+			const { load } = await import('../../src/routes/admin/settings/+page.server');
 			const result = (await load({
-				platform: {}
+				platform: {},
+				fetch: keysFetch
 			} as any)) as {
 				setupInfo: {
 					hasOAuthConfig: boolean;
@@ -139,9 +144,10 @@ describe('Admin Dashboard Page Server Load', () => {
 				}
 			};
 
-			const { load } = await import('../../src/routes/admin/+page.server');
+			const { load } = await import('../../src/routes/admin/settings/+page.server');
 			const result = (await load({
-				platform: mockPlatform
+				platform: mockPlatform,
+				fetch: keysFetch
 			} as any)) as { setupInfo: { hasOAuthConfig: boolean } };
 
 			expect(result.setupInfo.hasOAuthConfig).toBe(false);
@@ -160,9 +166,10 @@ describe('Admin Dashboard Page Server Load', () => {
 				}
 			};
 
-			const { load } = await import('../../src/routes/admin/+page.server');
+			const { load } = await import('../../src/routes/admin/settings/+page.server');
 			const result = (await load({
-				platform: mockPlatform
+				platform: mockPlatform,
+				fetch: keysFetch
 			} as any)) as { setupInfo: { hasOAuthConfig: boolean; adminId: string | null } };
 
 			expect(result.setupInfo.hasOAuthConfig).toBe(false);

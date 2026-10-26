@@ -58,6 +58,9 @@ export async function toMarkdownResponse(response: Response): Promise<Response> 
 	headers.set('Content-Type', 'text/markdown; charset=utf-8');
 	headers.set('x-markdown-tokens', String(estimateTokens(markdown)));
 	headers.set('Vary', 'Accept');
+	// Cloudflare's cache ignores Vary: Accept, so a cached Markdown copy would be
+	// served to browsers asking for HTML. Never let this variant be stored.
+	headers.set('Cache-Control', 'private, no-store');
 
 	return new Response(markdown, {
 		status: response.status,

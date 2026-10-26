@@ -248,6 +248,32 @@ describe('CommandPalette', () => {
 		expect(component.show).toBe(true);
 	});
 
+	// A bare Escape opens the palette, but inside an open modal dialog Escape
+	// belongs to the dialog. Calling preventDefault there cancelled the
+	// dialog's own close, so the UI kit's Dialog could not be dismissed by key.
+	it('leaves Escape alone while a modal dialog is open', async () => {
+		const dialog = document.createElement('dialog');
+		dialog.setAttribute('open', '');
+		const inside = document.createElement('button');
+		dialog.append(inside);
+		document.body.append(dialog);
+		try {
+			const { component } = render(CommandPalette, { props: { show: false } });
+			const event = new KeyboardEvent('keydown', {
+				key: 'Escape',
+				bubbles: true,
+				cancelable: true
+			});
+			inside.dispatchEvent(event);
+			await new Promise((resolve) => setTimeout(resolve, 0));
+
+			expect(event.defaultPrevented).toBe(false);
+			expect(component.show).toBe(false);
+		} finally {
+			dialog.remove();
+		}
+	});
+
 	it('should display command icons', () => {
 		const { container } = render(CommandPalette, { props: { show: true } });
 		const icons = container.querySelectorAll('.command-icon');

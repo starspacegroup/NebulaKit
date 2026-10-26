@@ -44,6 +44,9 @@ export interface SitemapRoute {
 export const SITEMAP_ROUTES: readonly SitemapRoute[] = [
 	{ path: '/', changefreq: 'weekly', priority: 1.0 },
 	{ path: '/documentation', changefreq: 'weekly', priority: 0.8 },
+	{ path: '/components', changefreq: 'weekly', priority: 0.7 },
+	{ path: '/modules', changefreq: 'weekly', priority: 0.7 },
+	{ path: '/shop', changefreq: 'daily', priority: 0.7 },
 	{ path: '/chat', changefreq: 'monthly', priority: 0.6 },
 	{ path: '/contact', changefreq: 'monthly', priority: 0.5 },
 	{ path: '/privacy', changefreq: 'yearly', priority: 0.3 },
@@ -65,8 +68,18 @@ export const SITEMAP_EXCLUDED_ROUTES: Readonly<Record<string, string>> = {
 	reset: 'Destructive maintenance route — must never be crawled or surfaced.',
 	setup: 'One-time install wizard; meaningless (and risky) once the site is live.',
 	media: 'R2 binary passthrough, not an HTML page.',
-	'[contentType]': 'Enumerated dynamically from the CMS at request time.'
+	'[contentType]': 'Enumerated dynamically from the CMS at request time.',
+	cart: "The shopper's own cart and checkout — per-visitor, nothing to index.",
+	p: 'Builder pages — published ones are enumerated dynamically at request time.'
 };
+
+/**
+ * RFC 9116 security contact. Served only when the operator sets the
+ * SECURITY_CONTACT binding (src/lib/server/security-txt.ts); with none it is a
+ * 404, never an invented address, so it is deliberately NOT in
+ * {@link AGENT_LINKS}, which advertise on every page.
+ */
+export const SECURITY_TXT_PATH = '/.well-known/security.txt';
 
 /**
  * Paths no crawler should walk, for any user-agent group.
@@ -80,6 +93,7 @@ export const CRAWLER_DISALLOW: readonly string[] = [
 	'/api/',
 	'/auth/',
 	'/profile',
+	'/cart',
 	'/reset',
 	'/setup',
 	'/media/'

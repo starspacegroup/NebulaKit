@@ -128,7 +128,7 @@ high-entropy `SESSION_SECRET` and `SETUP_SECRET` values; generate each independe
 3. Sign in through `/auth/login` or create a password account through `/auth/signup`.
 4. Configure AI providers under `/admin/ai-keys` if chat is required.
 5. Create content types and entries under `/admin/cms`.
-6. Review privacy-safe usage data at `/admin/stats` when the account has `can_view_stats`.
+6. Review privacy-safe usage data on the `/admin` dashboard when the account has `can_view_stats`.
 
 The in-application guide at `/documentation` is the canonical user/operator walkthrough and must
 change in the same commit as any user-visible feature.

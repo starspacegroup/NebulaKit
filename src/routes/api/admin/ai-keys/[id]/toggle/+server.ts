@@ -1,4 +1,5 @@
 import { error, json } from '@sveltejs/kit';
+import { aiKeySpec, ensureRecordSealed, redactRecord } from '$lib/server/secret-store';
 import type { RequestHandler } from './$types';
 
 // PATCH - Toggle enabled status
@@ -24,18 +25,21 @@ export const PATCH: RequestHandler = async ({ params, request, platform, locals 
 		const existing = JSON.parse(existingData);
 
 		// Update enabled status
-		const updatedKey = {
-			...existing,
-			enabled: data.enabled,
-			updatedAt: new Date().toISOString()
-		};
+		const updatedKey = await ensureRecordSealed(
+			platform,
+			{
+				...existing,
+				enabled: data.enabled,
+				updatedAt: new Date().toISOString()
+			},
+			aiKeySpec(id)
+		);
 
 		// Store updated key
 		await platform.env.KV.put(`ai_key:${id}`, JSON.stringify(updatedKey));
 
-		// Return key without apiKey field
-		const responseKey = { ...updatedKey };
-		delete responseKey.apiKey;
+		// Return key without the secret
+		const responseKey = redactRecord(updatedKey, aiKeySpec(id));
 
 		return json({ success: true, key: responseKey });
 	} catch (err) {

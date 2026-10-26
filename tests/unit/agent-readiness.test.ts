@@ -13,7 +13,7 @@
  * The route-coverage test at the bottom is the one that keeps this true over
  * time: adding a page route without deciding its crawl policy fails the suite.
  */
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -38,6 +38,11 @@ import { GET as healthGet } from '../../src/routes/api/health/+server';
 import { GET as catalogGet } from '../../src/routes/[x+2e]well-known/api-catalog/+server';
 import { GET as skillsIndexGet } from '../../src/routes/[x+2e]well-known/agent-skills/index.json/+server';
 import { GET as skillDocGet } from '../../src/routes/[x+2e]well-known/agent-skills/[skill]/SKILL.md/+server';
+
+import { emptyPage, savePage } from '@nebulakit/builder';
+import { createProduct } from '@nebulakit/commerce';
+import { pageDirectoriesOf, rendersAPage } from '../helpers/route-pages';
+import { createSqliteD1 } from '../helpers/sqlite-d1';
 
 const ORIGIN = 'https://example.test';
 
@@ -130,6 +135,27 @@ describe('sitemap.xml', () => {
 		}
 	});
 
+	it('includes published builder pages but never drafts', async () => {
+		const db = createSqliteD1();
+		await savePage(db, { slug: 'about', title: 'About', document: emptyPage(), published: true });
+		await savePage(db, { slug: 'secret', title: 'Draft', document: emptyPage(), published: false });
+		const body = await (
+			await sitemapGet(event('/sitemap.xml', { platform: { env: { DB: db } } }))
+		).text();
+		expect(body).toContain(`<loc>${ORIGIN}/p/about</loc>`);
+		expect(body).not.toContain('/p/secret');
+	});
+
+	it('includes active products', async () => {
+		const db = createSqliteD1();
+		await createProduct(db, { slug: 'tee', name: 'Tee', priceCents: 2500 });
+		const body = await (
+			await sitemapGet(event('/sitemap.xml', { platform: { env: { DB: db } } }))
+		).text();
+		expect(body).toContain(`<loc>${ORIGIN}/shop/tee</loc>`);
+		expect(body).not.toContain('/cart');
+	});
+
 	it('includes published CMS items and their type list pages', async () => {
 		const db = createDb([
 			{ type_slug: 'blog', item_slug: 'hello-world', lastmod: '2026-07-28 11:00:00' },
@@ -217,6 +243,12 @@ describe('/.well-known/api-catalog', () => {
 		expect(anchors).not.toContain('/api/cms');
 		expect(anchors).not.toContain('/api/chat');
 	});
+
+	it('describes the site API with its OpenAPI document', async () => {
+		const body = await (await catalogGet(event('/.well-known/api-catalog'))).json();
+		const member = body.linkset.find((m: { anchor: string }) => m.anchor.endsWith('/api/v1/site'));
+		expect(member['service-desc'][0].href).toBe(`${ORIGIN}/api/v1/openapi.json`);
+	});
 });
 
 describe('agent skills discovery', () => {
@@ -274,6 +306,14 @@ describe('agent skills discovery', () => {
 });
 
 describe('/auth.md', () => {
+	it('explains site API keys and that no endpoint issues them', async () => {
+		const text = await (await authMdGet(event('/auth.md'))).text();
+		expect(text).toContain(`${ORIGIN}/api/v1/openapi.json`);
+		expect(text).toContain('There is no endpoint that issues one');
+		expect(text).toContain(`POST ${ORIGIN}/api/v1/checkout`);
+		expect(text).toContain(`POST ${ORIGIN}/api/v1/checkout/quote`);
+	});
+
 	it('serves markdown with 200', async () => {
 		const response = await authMdGet(event('/auth.md'));
 		expect(response.status).toBe(200);
@@ -351,10 +391,8 @@ describe('sitemap route coverage (the guard)', () => {
 	 * nested pages inherit it (an excluded `/admin` covers `/admin/users`).
 	 */
 	const routesDir = resolve(__dirname, '../../src/routes');
-	const pageDirectories = readdirSync(routesDir, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory())
-		.map((entry) => entry.name)
-		.filter((name) => existsSync(join(routesDir, name, '+page.svelte')));
+	// Recursive, not one level deep: see tests/helpers/route-pages.ts.
+	const pageDirectories = pageDirectoriesOf(routesDir);
 
 	it('finds the app’s route directories', () => {
 		// Sanity check: if this ever reads zero directories the tests below would
@@ -376,6 +414,31 @@ describe('sitemap route coverage (the guard)', () => {
 			).toBe(true);
 		}
 	);
+
+	it('sees pages that only exist in a nested, parameterised directory', () => {
+		// .llm-outputs/ is the gitignored scratch directory (AGENTS.md).
+		mkdirSync(join(process.cwd(), '.llm-outputs'), { recursive: true });
+		const root = mkdtempSync(join(process.cwd(), '.llm-outputs', 'routes-'));
+		try {
+			mkdirSync(join(root, 'nested', '[slug]'), { recursive: true });
+			writeFileSync(join(root, 'nested', '[slug]', '+page.svelte'), '');
+			mkdirSync(join(root, 'direct'));
+			writeFileSync(join(root, 'direct', '+page.svelte'), '');
+			mkdirSync(join(root, 'api', 'thing'), { recursive: true });
+			writeFileSync(join(root, 'api', 'thing', '+server.ts'), '');
+			expect(pageDirectoriesOf(root).sort()).toEqual(['direct', 'nested']);
+			expect(rendersAPage(join(root, 'api'))).toBe(false);
+			// The old one-level check would have missed `nested` entirely.
+			expect(existsSync(join(root, 'nested', '+page.svelte'))).toBe(false);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	it('guards nested-only areas of this app (shop, p)', () => {
+		expect(pageDirectories).toContain('shop');
+		expect(pageDirectories).toContain('p');
+	});
 
 	it('lists the site root', () => {
 		expect(existsSync(join(routesDir, '+page.svelte'))).toBe(true);

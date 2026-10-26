@@ -58,6 +58,12 @@
 							<a href="/documentation">Documentation</a>
 						</li>
 						<li>
+							<a href="/components">Components</a>
+						</li>
+						<li>
+							<a href="/modules">Modules</a>
+						</li>
+						<li>
 							<a href={repoUrl} target="_blank" rel="noopener noreferrer"> GitHub </a>
 						</li>
 					</ul>

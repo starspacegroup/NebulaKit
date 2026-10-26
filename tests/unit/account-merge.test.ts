@@ -63,7 +63,7 @@ describe('Account Merge Service', () => {
 			);
 		});
 
-		it('should transfer all sessions from source user to target user', async () => {
+		it('should drop the source sessions instead of moving them', async () => {
 			const { mergeAccounts } = await import('../../src/lib/services/account-merge');
 
 			const mockBatchResults = { success: true };
@@ -82,8 +82,8 @@ describe('Account Merge Service', () => {
 
 			await mergeAccounts(mockDB as any, 'source-user-id', 'target-user-id');
 
-			// Verify sessions are transferred
-			expect(mockPrepare).toHaveBeenCalledWith('UPDATE sessions SET user_id = ? WHERE user_id = ?');
+			// The source's sessions are dropped, not moved onto the target.
+			expect(mockPrepare).toHaveBeenCalledWith('DELETE FROM sessions WHERE user_id = ?');
 		});
 
 		it('should delete the source user after transferring data', async () => {

@@ -1,5 +1,57 @@
 # Goals
 
+## Scheduled jobs for a Pages deployment
+
+status: done locally 2026-10-25 (branch `port/cron`); not deployed
+
+- Pages cannot run Cron Triggers, so `cron-worker/` (standalone Worker, retries with backoff, never throws) calls the shared-secret `/api/cron/*` routes. Typed job registry, one authorization helper, idempotent per-minute claims with a lease, run history (migration 0023), bounded retention deletes, and `/admin/scheduled-jobs` with **Run now**. A test fails if the registry, the Worker triggers and the Worker path map drift. See [docs/SCHEDULED_JOBS.md](../docs/SCHEDULED_JOBS.md).
+- Open: `wrangler deploy` of the Worker and a real scheduled tick were not exercised (no Cloudflare access from the build host). `bun run customize` does not yet rename the Worker or set its `TARGET_URL`.
+## Secrets encrypted at rest
+status: done 2026-10-25 (branch `port/secrets`, local commits only)
+- `docs/ZERO_ENV_SETUP.md` claimed "Secrets stored encrypted in Cloudflare KV" while AI provider keys and OAuth client secrets were plain JSON in KV. Now sealed with AES-256-GCM (HKDF subkeys per purpose, AAD bound to the record, versioned `v1.` envelope) by `src/lib/server/secret-box.ts` and `secret-store.ts`; legacy plaintext migrates on read; rotation via `ENCRYPTION_KEY_PREVIOUS`; with no `ENCRYPTION_KEY` a key is generated into KV so the first save is already encrypted (weaker, documented).
+- Open: no automated way to sweep every record to the new key after rotation (it happens as records are read); the CMS/other KV values are not secrets and stay plaintext.
+## Role ladder and per-area admin permissions
+status: done 2026-10-25 (branch `port/roles`, local only)
+- Ported the idea from the CustomPerfections client site, generically: owner > superadmin > admin > user (`src/lib/access/roles.ts`, pure), and named per-admin areas (`permissions.ts`; rows in `user_permissions`). Migration `0021_roles_and_permissions.sql` backfills existing admins with the areas they could already reach and maps `can_view_stats` to `stats`; `is_admin` and `can_view_stats` stay in sync.
+- Closed the "any admin can act on any user" gap here: user PATCH/DELETE enforce the ladder from the stored row, the owner is config and unassignable, and CMS, pages, contact, lighthouse, API keys, user list/management and PII reveal now use `requirePermission`. The admin nav filters from the same list; the users page has a Manage access dialog.
+- Not done: other forks and siblings (Guides still lets any admin promote or delete users); owner-only areas (settings, auth/AI keys, analytics connection) are not permissions; no shop permission because the template has no shop admin screens yet; no Playwright coverage of the dialog.
+
+## Builder, shop and site API as packages (Ammoura's sites run on NebulaKit)
+
+status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-builder-site-api`)
+
+- Direction: `~/_Projects/StarSpace/NebulaKit/planning/BUILDER_AND_COMMERCE.md` and Ammoura's `plans/ammoura-as-orchestrator.md`. Every client gets their own NebulaKit site; Ammoura drives it through the site API.
+- Done: `@nebulakit/commerce` (pricing, cart repricing, orders, Stripe checkout + webhook signature, Printful), `@nebulakit/security` (API keys), `@nebulakit/builder` 0.3.0 (page format v2: nested Section/Columns, hide-per-breakpoint; revision history with restore; editor rebuilt on `$lib/actions/draggable` with undo/redo, lint, width preview; ported and fixed from Ammoura's builder), `/api/v1` with OpenAPI, `/admin/api-keys`, `/admin/pages`, `/p/[slug]`. Migrations 0016–0019. Local gates only; nothing deployed.
+- Done (port from CustomPerfections, branch `port/commerce`): once-only transactional email (migration 0020, Resend over fetch, receipt/shipped/notice templates), Stripe async/failed/expired events with amount check and 503-until-configured, public `GET /api/v1/orders/:id/status` and a `/cart` return view that polls until paid. Not stored, no schema for it: the amount actually taken and Stripe's customer email.
+- Done (2026-10-25, branch `port/ppp`): regional (PPP) pricing — `@nebulakit/commerce` 0.2.0 `regional.ts` + static World Bank table, `/admin/settings/pricing`, `GET/PUT /api/v1/pricing`, server-quoted cart, per-order audit; migration 0022. Design and decisions in `docs/PAYMENTS_AND_PPP.md`.
+- Open: storefront cart UI polish, shop admin screens (products/orders), Printful relay on payment, package distribution to forks, the forced-update bot.
+
+## Admin audit log and opt-in sign-in tracking
+
+status: in-progress (audit log and sign-in tracking landed 2026-10-25, branch `port/audit`; not merged)
+
+- Ported from AgapeVerse (`admin_actions`), SpaceBot (query scrubbing) and davis9001.com (sign-ins). One migration, `0025_audit_and_sign_ins.sql`.
+- Audit log: [docs/AUDIT_LOG.md](../docs/AUDIT_LOG.md). Admin and `/api/v1` mutations only, secrets never written, 365-day retention via `POST /api/cron/prune-audit`; `/admin/audit` for any admin.
+- Sign-in tracking: [docs/SIGN_IN_TRACKING.md](../docs/SIGN_IN_TRACKING.md). Opt-in, off by default (KV switch), IP masked on display, device bucket not the raw User-Agent, 90-day retention, `sessions.last_seen_at` throttled to 5 minutes, owner-only `/admin/sign-ins` with session revoke. Never blocks a login.
+- Open: nothing schedules the prune (the cron-worker branch owns scheduling); the audit rules cover the routes that exist today, so a new mutation needs an `AUDIT_RULES` entry.
+
+## Stats readable by the StarSpace Dashboard
+
+status: done 2026-10-10
+
+- A site built from the template can hand its owner's dashboard a read-only view of the admin stats: the owner issues a stats token on `/admin/analytics`, the dashboard reads `GET /api/stats/summary` with it as a bearer token, and gets the same object `/admin` renders.
+- The assembly moved out of the admin page load into `src/lib/server/stats-summary.ts` so both readers share it. The token lives hashed in KV (`stats_api_token`), is shown once at issue, and is owner-only to issue, rotate or revoke. `/auth.md` and the API catalog say so.
+- The consumer is the NebulaKit widget in the StarSpace Dashboard (`~/_Projects/StarSpace/Dashboard`). `nebulakit-site` is a diverged copy of this template and needs the same server pieces ported before its stats show up there.
+
+## New sites get a hero made for them
+
+status: in-progress
+
+- Every site created from the template should leave the NebulaKit space hero behind and have one that fits its own product, by following an easy guide during customization.
+- Done 2026-10-05: [docs/HERO.md](../docs/HERO.md) — words first, a motif from the product, what to keep and replace, the performance and theme rules, an optional live-field pattern, tests. Wired into the set path as Step 3b of `CUSTOMIZE.md`, the `INITIAL_CUSTOMIZATION.md` checklist, the definition of done, and a `hero_replaced` flag in `INITIAL_CUSTOMIZATION_STATUS.md`.
+- `bun run customize` now lists the hero among the steps still needing a human or agent.
+- Still open: nothing checks it. A downstream site can mark `status: complete` with the template hero still in place. Candidate: a test (like `product-identity.test.ts`) that fails once `site.slug` is not `nebulakit` while `.cosmic-bg` remains in `src/routes/+page.svelte`.
+
 ## Complete the NebulaKit quality and security pass
 
 status: blocked

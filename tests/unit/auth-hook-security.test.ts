@@ -272,8 +272,9 @@ describe('server-authenticated session hook', () => {
 		expect(event.locals).toMatchObject({
 			user: { id: 'legacy-user', isOwner: true, isAdmin: true, canViewStats: false }
 		});
-		// getAuthSession + can_view_stats query (throws) + fallback query.
-		expect(db.prepare).toHaveBeenCalledTimes(3);
+		// getAuthSession + full query (throws) + role-less query (throws, it still
+		// names can_view_stats) + the oldest fallback query.
+		expect(db.prepare).toHaveBeenCalledTimes(4);
 	});
 });
 import '../helpers/server-response';

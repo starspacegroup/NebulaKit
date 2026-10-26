@@ -36,6 +36,20 @@
 	image={item.seoImage || ''}
 	type="article"
 	publishedTime={item.publishedAt || ''}
+	modifiedTime={item.updatedAt || ''}
+	structured={{
+		breadcrumb: [
+			{ name: contentType.name, path: getRoutePrefix() },
+			{ name: item.title, path: `${getRoutePrefix()}/${item.slug}` }
+		],
+		article: {
+			type: contentType.slug === 'blog' ? 'BlogPosting' : 'Article',
+			datePublished: item.publishedAt || undefined,
+			dateModified: item.updatedAt || item.publishedAt || undefined,
+			keywords: tags.map((tag) => tag.name).filter(Boolean),
+			section: contentType.name
+		}
+	}}
 />
 
 <div class="cms-item-page">

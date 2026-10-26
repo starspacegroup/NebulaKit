@@ -18,7 +18,7 @@ import { GET, POST } from './+server';
 const DB = {} as never;
 
 function getEvent(opts: {
-	user?: { isOwner?: boolean; isAdmin?: boolean } | null;
+	user?: { isOwner?: boolean; isAdmin?: boolean; permissions?: string[] } | null;
 	cookie?: string;
 	params?: Record<string, string>;
 }) {
@@ -60,7 +60,7 @@ describe('GET /api/contact-form-submissions', () => {
 			{ id: '1', name: 'Ada Lovelace', email: 'ada@example.com', isResolved: false }
 		]);
 		contactMocks.countContactFormSubmissions.mockResolvedValue(1);
-		const res = await GET(getEvent({ user: { isAdmin: true } }) as never);
+		const res = await GET(getEvent({ user: { isAdmin: true, permissions: ['contact'] } }) as never);
 		const data = (await res.json()) as { values: Array<{ name: string; email: string }> };
 		expect(data.values[0].name).toBe('A** L*******');
 		expect(data.values[0].email).toBe('a**@example.com');

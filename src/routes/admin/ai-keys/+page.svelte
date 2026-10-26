@@ -40,7 +40,6 @@
 		voiceModels: [] as string[]
 	};
 	let errors: Record<string, string> = {};
-	let visibleKeys: Record<string, boolean> = {};
 	let showDeleteConfirm = false;
 	let deletingKeyId: string | null = null;
 
@@ -307,14 +306,6 @@
 		}
 	}
 
-	function toggleKeyVisibility(keyId: string) {
-		visibleKeys[keyId] = !visibleKeys[keyId];
-	}
-
-	function maskValue(value: string): string {
-		return '••••••';
-	}
-
 	async function toggleEnabled(keyId: string, currentEnabled: boolean) {
 		// Optimistically update UI
 		keys = keys.map((k: any) => (k.id === keyId ? { ...k, enabled: !currentEnabled } : k));
@@ -475,46 +466,22 @@
 							</button>
 						</div>
 					</div>
-					{#if key.apiKey}
-						<div class="key-field">
-							<div class="label">API Key</div>
-							<div class="key-value">
-								<span>{visibleKeys[key.id] ? key.apiKey : maskValue(key.apiKey)}</span>
-								<button
-									class="btn-icon-sm"
-									on:click={() => toggleKeyVisibility(key.id)}
-									aria-label={visibleKeys[key.id] ? 'Hide value' : 'Show value'}
+					<div class="key-field">
+						<div class="label">API Key</div>
+						<div class="key-value">
+							{#if key.apiKeyStatus === 'undecryptable'}
+								<span>Cannot be decrypted. Re-enter the key (check ENCRYPTION_KEY).</span>
+							{:else if key.apiKeyConfigured}
+								<span
+									>Configured, encrypted{key.apiKeyLast4
+										? `, ends in ${key.apiKeyLast4}`
+										: ''}</span
 								>
-									{#if visibleKeys[key.id]}
-										<svg
-											width="16"
-											height="16"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-										>
-											<path
-												d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"
-											/>
-										</svg>
-									{:else}
-										<svg
-											width="16"
-											height="16"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-										>
-											<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-											<circle cx="12" cy="12" r="3" />
-										</svg>
-									{/if}
-								</button>
-							</div>
+							{:else}
+								<span>Not set</span>
+							{/if}
 						</div>
-					{/if}
+					</div>
 					<div class="key-meta">
 						<span>Added {new Date(key.createdAt).toLocaleDateString()}</span>
 					</div>
@@ -957,25 +924,6 @@
 	.btn-icon.btn-danger:hover {
 		background: #fef2f2;
 		color: #ef4444;
-	}
-
-	.btn-icon-sm {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border-radius: var(--radius-sm);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		color: var(--color-text-secondary);
-		transition: all var(--transition-fast);
-	}
-
-	.btn-icon-sm:hover {
-		background: var(--color-surface);
-		color: var(--color-text);
 	}
 
 	.empty-state {

@@ -4,14 +4,14 @@
  * GET  /api/cms/types - List all content types (syncs registry first)
  * POST /api/cms/types - Create a new user-defined content type
  */
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { validateContentTypeInput } from '$lib/cms/utils';
 import { createContentTypeInDB, getContentTypes, syncContentTypes } from '$lib/services/cms';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ platform, locals }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -33,7 +33,7 @@ export const GET: RequestHandler = async ({ platform, locals }) => {
 };
 
 export const POST: RequestHandler = async ({ platform, locals, request }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {

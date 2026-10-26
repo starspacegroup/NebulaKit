@@ -25,8 +25,24 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      # Vitest runs on Node, and the shop/builder/API suites use `node:sqlite`
+      # (tests/helpers/sqlite-d1.ts), which the runner's default Node lacks.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      # Migrations on the base branch are already applied somewhere: no edits,
+      # and no two files with one number (scripts/check-migrations.mjs).
+      - name: Check migrations
+        run: |
+          if [ -n "$GITHUB_BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+          fi
+          node scripts/check-migrations.mjs
 
       - name: Type check
         run: bun run check

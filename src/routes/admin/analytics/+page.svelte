@@ -2,12 +2,24 @@
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { fieldName } from '$lib/utils/form-fields';
 	import { parseMeasurementId, type AnalyticsConfig } from '$lib/utils/analytics';
+	import { site } from '$lib/site.config';
+	import type { StatsTokenMeta } from '$lib/server/stats-token';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
 
 	let config: AnalyticsConfig | null = data.config;
 	$: config = data.config;
+
+	// ─── Stats token (Dashboard access) ───
+	let tokenMeta: StatsTokenMeta | null = data.statsToken ?? null;
+	$: tokenMeta = data.statsToken ?? null;
+	/** The plaintext, held only until the page is left. It is shown once. */
+	let issuedToken = '';
+	let tokenBusy = false;
+	let tokenError = '';
+	let tokenCopied = false;
+	const summaryUrl = `${site.url}/api/stats/summary`;
 
 	let input = '';
 	let saving = false;
@@ -80,6 +92,40 @@
 			disconnecting = false;
 		}
 	}
+
+	async function tokenRequest(method: 'POST' | 'DELETE') {
+		tokenBusy = true;
+		tokenError = '';
+		tokenCopied = false;
+		try {
+			const response = await fetch('/api/admin/settings/stats-token', { method });
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(payload.message || 'Request failed');
+			tokenMeta = payload.meta ?? null;
+			issuedToken = typeof payload.secret === 'string' ? payload.secret : '';
+		} catch (err) {
+			tokenError = err instanceof Error ? err.message : 'Request failed';
+		} finally {
+			tokenBusy = false;
+		}
+	}
+
+	function issueToken() {
+		return tokenRequest('POST');
+	}
+
+	function revokeToken() {
+		return tokenRequest('DELETE');
+	}
+
+	async function copyToken() {
+		try {
+			await navigator.clipboard.writeText(issuedToken);
+			tokenCopied = true;
+		} catch {
+			tokenCopied = false;
+		}
+	}
 </script>
 
 <SharingMeta title="Analytics" noindex={true} />
@@ -89,7 +135,7 @@
 		<h1>Analytics</h1>
 		<p>
 			Connect a Google Analytics 4 property. This is optional and additive — the built-in
-			<a href="/admin/stats">Stats</a> page keeps working either way.
+			<a href="/admin">Dashboard</a> stats keep working either way.
 		</p>
 	</header>
 
@@ -196,6 +242,83 @@
 					</button>
 				{/if}
 			</div>
+		</section>
+
+		<section class="card">
+			<h2>
+				<svg
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<rect x="3" y="3" width="7" height="7" />
+					<rect x="14" y="3" width="7" height="7" />
+					<rect x="3" y="14" width="7" height="7" />
+					<rect x="14" y="14" width="7" height="7" />
+				</svg>
+				Dashboard access
+			</h2>
+			<p class="hint">
+				Let an external dashboard read the numbers on the <a href="/admin">Dashboard</a>: issue a
+				stats token and give it to the dashboard. It reads a read-only JSON summary at
+				<code class="mono">{summaryUrl}</code> — the same aggregate counters, nothing else.
+			</p>
+
+			{#if tokenMeta}
+				<div class="info-row">
+					<span class="label">Token</span>
+					<span class="value mono">{tokenMeta.prefix}…</span>
+				</div>
+				<div class="info-row">
+					<span class="label">Issued</span>
+					<span class="value">{formatUpdated(tokenMeta.createdAt)}</span>
+				</div>
+				<div class="status status-success">Issued</div>
+			{:else}
+				<div class="status status-muted">No token issued</div>
+			{/if}
+
+			{#if issuedToken}
+				<div class="token-box">
+					<p class="token-note">
+						Copy it now — this is the only time it is shown. Rotating issues a new one.
+					</p>
+					<div class="token-row">
+						<input
+							class="token-value"
+							type="text"
+							readonly
+							value={issuedToken}
+							aria-label="Stats token"
+							spellcheck="false"
+							on:focus={(event) => event.currentTarget.select()}
+						/>
+						<button class="btn" type="button" on:click={copyToken}>
+							{tokenCopied ? 'Copied' : 'Copy'}
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			{#if tokenError}
+				<p class="error-text">{tokenError}</p>
+			{/if}
+
+			<div class="actions">
+				<button class="btn primary" on:click={issueToken} disabled={tokenBusy}>
+					{tokenBusy ? 'Working…' : tokenMeta ? 'Rotate token' : 'Issue token'}
+				</button>
+				{#if tokenMeta}
+					<button class="btn danger" on:click={revokeToken} disabled={tokenBusy}>Revoke</button>
+				{/if}
+			</div>
+			<p class="field-hint">
+				Only the owner can issue, rotate, or revoke it. Revoking cuts the dashboard off on its next
+				read; nothing else on this site uses it.
+			</p>
 		</section>
 
 		<section class="card">
@@ -498,6 +621,43 @@
 		color: var(--color-error);
 		font-size: 0.85rem;
 		margin-top: var(--spacing-sm);
+	}
+
+	.token-box {
+		margin-top: var(--spacing-md);
+		padding: var(--spacing-md);
+		border: 1px solid color-mix(in srgb, var(--color-success) 45%, var(--color-border));
+		border-radius: var(--radius-sm);
+		background-color: color-mix(in srgb, var(--color-success) 8%, transparent);
+	}
+
+	.token-note {
+		font-size: 0.85rem;
+		color: var(--color-text);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.token-row {
+		display: flex;
+		gap: var(--spacing-sm);
+		align-items: center;
+	}
+
+	.token-value {
+		flex: 1;
+		min-width: 0;
+		font-family: 'Courier New', monospace;
+		font-size: 0.85rem;
+		padding: var(--spacing-sm);
+		color: var(--color-text);
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+	}
+
+	.token-value:focus {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 1px;
 	}
 
 	.success-text {

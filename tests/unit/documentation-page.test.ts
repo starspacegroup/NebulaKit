@@ -27,6 +27,14 @@ describe('Documentation Page', () => {
 		).toBeInTheDocument();
 	});
 
+	it('documents how stored secrets are encrypted and how to rotate the key', () => {
+		render(Page);
+
+		expect(screen.getByRole('heading', { name: /Secrets at Rest/i })).toBeInTheDocument();
+		expect(screen.getAllByText(/ENCRYPTION_KEY_PREVIOUS/).length).toBeGreaterThan(0);
+		expect(screen.getByText(/generate:encryption-key/)).toBeInTheDocument();
+	});
+
 	it('documents core product features and operator workflows', () => {
 		render(Page);
 
@@ -82,7 +90,7 @@ describe('Documentation Page', () => {
 
 		const scoped = within(statsSection as HTMLElement);
 
-		expect(scoped.getAllByText(/\/admin\/stats/i).length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('/admin').length).toBeGreaterThan(0);
 		// The privacy posture is the reason this ships instead of a GA tag, so it
 		// has to be stated on the page users actually read.
 		expect(
@@ -96,6 +104,141 @@ describe('Documentation Page', () => {
 		expect(
 			scoped.getByText(/grows with your catalogue rather than with a fixed list/i)
 		).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — the admin landing page and the settings page are user-visible
+	// admin routes, so the documentation has to say where each lives.
+	it('documents the admin dashboard and settings pages', () => {
+		render(Page);
+
+		const card = screen.getByRole('heading', { name: 'Account and Admin Flow' }).parentElement;
+		const scoped = within(card as HTMLElement);
+
+		expect(scoped.getByText('/admin/settings')).toBeInTheDocument();
+		expect(scoped.getByText(/opens on the stats dashboard/i)).toBeInTheDocument();
+		expect(scoped.getByText(/OAuth authentication\s+keys/i)).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — the stats token and /api/stats/summary are a user-visible
+	// admin and integration surface, so the documentation has to say how an
+	// external dashboard gets in and that the token is shown once.
+	it('documents the stats token and the summary endpoint', () => {
+		render(Page);
+
+		const scoped = within(
+			screen.getByRole('heading', { name: /Admin Analytics/i }).closest('section') as HTMLElement
+		);
+
+		expect(
+			scoped.getByRole('heading', { name: /Reading Stats From a Dashboard/i })
+		).toBeInTheDocument();
+		expect(scoped.getAllByText(/\/api\/stats\/summary/).length).toBeGreaterThan(0);
+		expect(scoped.getByText(/it is shown once, and only its hash is stored/i)).toBeInTheDocument();
+		expect(scoped.getByText(/never issued one answers 401/i)).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — /admin/scheduled-jobs, the cron Worker and CRON_SECRET are a
+	// user-visible admin route and a deployment step, so the documentation has to say so.
+	it('documents the cron Worker and the scheduled jobs admin page', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Scheduled Jobs/i, level: 2 })
+				.closest('section') as HTMLElement
+		);
+
+		expect(scoped.getAllByText(/cron-worker\//).length).toBeGreaterThan(0);
+		expect(scoped.getByText('/admin/scheduled-jobs')).toBeInTheDocument();
+		expect(scoped.getByText(/wrangler secret put CRON_SECRET/)).toBeInTheDocument();
+		expect(scoped.getByText('0023_scheduled_job_runs.sql')).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — /admin/pages, /admin/api-keys, /p/[slug] and /api/v1 are
+	// user-visible routes, and the shop's env vars are bindings an operator sets.
+	it('documents the shop, the page builder, API keys and the site API', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of [
+			'/admin/pages',
+			'/admin/api-keys',
+			'/p/[slug]',
+			'/api/v1/openapi.json',
+			'POST /api/v1/checkout',
+			'COMMERCE_TAX_RATE_PERCENT',
+			'STRIPE_WEBHOOK_SECRET',
+			'ORCHESTRATOR_KEY_SHA256',
+			'GET /api/v1/orders/[id]/status',
+			'RESEND_API_KEY',
+			'checkout.session.async_payment_failed'
+		]) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/Security updates are forced to every site/i)).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — /admin/settings/pricing, the quote endpoint and the pricing scopes.
+	it('documents regional pricing', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of [
+			'/admin/settings/pricing',
+			'POST /api/v1/checkout/quote',
+			'GET/PUT /api/v1/pricing',
+			'pricing:read',
+			'pricing:write',
+			'bun run update:price-index'
+		]) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/it only ever lowers a price/i)).toBeInTheDocument();
+		expect(scoped.getByText(/least generous\s+country/i)).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — /admin/redirects is a user-visible admin route and
+	// REDIRECT_ALLOWED_HOSTS is a binding an operator sets.
+	it('documents the redirect manager', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of ['/admin/redirects', '0024_redirects.sql', 'REDIRECT_ALLOWED_HOSTS']) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/Loops and off-site targets are refused/i)).toBeInTheDocument();
+	});
+
+	it('documents the security.txt contact and that it is off until configured', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		expect(scoped.getAllByText('/.well-known/security.txt').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('SECURITY_CONTACT').length).toBeGreaterThan(0);
+		expect(scoped.getByText(/Until then the path answers 404/)).toBeInTheDocument();
+	});
+
+	it('documents the canonical host redirect and noindex rule', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		expect(scoped.getByRole('heading', { name: 'Canonical host' })).toBeInTheDocument();
+		expect(scoped.getAllByText('site.url').length).toBeGreaterThan(0);
+		expect(scoped.getByText(/X-Robots-Tag: noindex/)).toBeInTheDocument();
 	});
 
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
@@ -129,9 +272,7 @@ describe('Documentation Page', () => {
 		expect(
 			screen.getByText((_content, element) => {
 				if (element?.tagName !== 'LI') return false;
-				return /first-party, cookie-free analytics at\s*\/admin\/stats/i.test(
-					element.textContent ?? ''
-				);
+				return /first-party, cookie-free analytics at\s*\/admin\b/i.test(element.textContent ?? '');
 			})
 		).toBeInTheDocument();
 	});
@@ -184,6 +325,13 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/use:draggable/);
 			expect(section.textContent).toMatch(/arrow up and down/i);
 			expect(section.textContent).toMatch(/must never be written into/i);
+		});
+
+		it('says the kit ships standard widgets, shown at /components', () => {
+			render(Page);
+			const section = document.getElementById('drag-and-drop') as HTMLElement;
+			expect(section.textContent).not.toMatch(/ships empty/i);
+			expect(section.textContent).toMatch(/clock.*checklist.*meter/is);
 		});
 
 		it('points every navigation anchor at a section that exists', () => {
@@ -367,5 +515,102 @@ describe('Documentation Page', () => {
 				'#agent-readiness'
 			);
 		});
+	});
+
+	describe('Modules section', () => {
+		it('documents the import, every group, and the live gallery', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^modules$/i })
+				.closest('section') as HTMLElement;
+			expect(section.id).toBe('modules');
+			expect(section.textContent).toMatch(/\$lib\/modules/);
+			expect(section.querySelector('a[href="/modules"]')).toBeTruthy();
+			for (const group of [
+				'Account',
+				'Settings',
+				'Marketing',
+				'App shell',
+				'Data & teams',
+				'Commerce'
+			]) {
+				expect(section.textContent).toContain(group);
+			}
+		});
+	});
+
+	describe('UI kit section', () => {
+		it('documents the import, the toaster, and the live catalog', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^ui kit$/i })
+				.closest('section') as HTMLElement;
+			expect(section.id).toBe('ui-kit');
+			expect(section.textContent).toMatch(/\$lib\/ui/);
+			expect(section.textContent).toMatch(/<Toaster \/>/);
+			expect(section.querySelector('a[href="/components"]')).toBeTruthy();
+		});
+
+		it('lists every group of the kit, including the larger components', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^ui kit$/i })
+				.closest('section') as HTMLElement;
+			for (const name of [
+				'Command',
+				'Combobox',
+				'DatePicker',
+				'Sheet',
+				'Sidebar',
+				'Resizable',
+				'DataTable',
+				'LineChart'
+			]) {
+				expect(section.textContent).toContain(name);
+			}
+			expect(section.textContent).toMatch(/Layout/);
+			expect(section.textContent).toMatch(/MIT-licensed/);
+		});
+	});
+
+	// AGENTS.md §7 — the role ladder and per-area permissions are an admin
+	// change, so the page has to say how they work and what upgrading does.
+	it('documents the role ladder and per-area permissions', () => {
+		render(Page);
+
+		const section = screen
+			.getByRole('heading', { name: /Roles and Permissions/i })
+			.closest('section');
+		expect(section).toBeTruthy();
+		const scoped = within(section as HTMLElement);
+
+		expect(scoped.getByText(/strictly below you/i)).toBeInTheDocument();
+		expect(scoped.getAllByText(/GITHUB_OWNER_ID/).length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('users-manage').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('0021').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText(/requirePermission/).length).toBeGreaterThan(0);
+	});
+
+	it('documents the audit log, its privacy limits and its retention endpoint', () => {
+		render(Page);
+		const section = screen.getByRole('heading', { name: /^Audit Log$/ }).closest('section');
+		expect(section).toBeTruthy();
+		const text = section?.textContent ?? '';
+		expect(text).toMatch(/never a secret value/i);
+		expect(text).toMatch(/never page views/i);
+		expect(text).toMatch(/\/api\/cron\/prune-audit/);
+		expect(text).toMatch(/365 days/);
+	});
+
+	it('documents sign-in tracking as opt-in with its privacy limits', () => {
+		render(Page);
+		const section = screen.getByRole('heading', { name: /^Sign-in Tracking$/ }).closest('section');
+		expect(section).toBeTruthy();
+		const text = section?.textContent ?? '';
+		expect(text).toMatch(/off by default/i);
+		expect(text).toMatch(/IP address/);
+		expect(text).toMatch(/never the raw browser string/i);
+		expect(text).toMatch(/90 days/);
+		expect(text).toMatch(/never\s+block a sign-in/i);
 	});
 });

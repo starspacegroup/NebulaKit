@@ -1,0 +1,13 @@
+{
+	"name": "@nebulakit/security",
+	"version": "0.1.1",
+	"description": "Site API keys and the security surface every NebulaKit site takes as a forced update.",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"nebulakit": {
+		"updateChannel": "forced"
+	}
+}

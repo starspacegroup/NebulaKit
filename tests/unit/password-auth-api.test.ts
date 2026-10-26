@@ -949,3 +949,49 @@ describe('Password Auth APIs', () => {
 	});
 });
 import '../helpers/server-response';
+
+describe('POST /api/auth/login throttling', () => {
+	function loginEvent(kv: Record<string, unknown>, row: Record<string, unknown> | null) {
+		return {
+			url: new URL('http://localhost/api/auth/login'),
+			platform: {
+				env: {
+					KV: kv,
+					DB: {
+						prepare: vi.fn().mockImplementation(() => ({
+							bind: vi.fn().mockReturnValue({
+								run: vi.fn().mockResolvedValue({ success: true }),
+								first: vi.fn().mockResolvedValue(row)
+							})
+						}))
+					}
+				}
+			},
+			request: new Request('http://localhost/api/auth/login', {
+				method: 'POST',
+				headers: { 'cf-connecting-ip': '7.7.7.7' },
+				body: JSON.stringify({ email: 'who@example.com', password: 'whatever-it-is' })
+			})
+		};
+	}
+
+	it('refuses with 429 once the address has failed too often', async () => {
+		const { POST } = await import('../../src/routes/api/auth/login/+server');
+		const kv = { get: vi.fn().mockResolvedValue('8'), put: vi.fn(), delete: vi.fn() };
+		await expect(POST(loginEvent(kv, null) as any)).rejects.toMatchObject({ status: 429 });
+	});
+
+	it('counts a wrong password as a failure', async () => {
+		const { POST } = await import('../../src/routes/api/auth/login/+server');
+		const { hashPassword } = await import('../../src/lib/utils/passwords');
+		const kv = { get: vi.fn().mockResolvedValue(null), put: vi.fn(), delete: vi.fn() };
+		const row = {
+			id: 'u',
+			email: 'who@example.com',
+			is_admin: 0,
+			password_hash: await hashPassword('right-password-1')
+		};
+		await expect(POST(loginEvent(kv, row) as any)).rejects.toMatchObject({ status: 401 });
+		expect(kv.put).toHaveBeenCalledTimes(2);
+	});
+});

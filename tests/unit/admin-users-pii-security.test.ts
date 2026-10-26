@@ -70,7 +70,7 @@ describe('admin users API PII policy', () => {
 		const { GET } = await import('../../src/routes/api/admin/users/+server');
 		const response = await GET({
 			platform: platform(),
-			locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true } },
+			locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true, permissions: ['users'] } },
 			cookies: { get: vi.fn(() => undefined) }
 		} as never);
 		const { users } = await response.json();
@@ -94,7 +94,7 @@ describe('admin users API PII policy', () => {
 		} as never);
 		const { users } = await response.json();
 
-		expect(users[0]).toEqual(storedUser);
+		expect(users[0]).toEqual({ ...storedUser, effective_role: 'user', permissions: [] });
 	});
 
 	it('keeps owners masked until they explicitly enable reveal', async () => {
@@ -114,7 +114,7 @@ describe('admin users API PII policy', () => {
 		const { GET } = await import('../../src/routes/api/admin/users/search/+server');
 		const response = await GET({
 			url: new URL('https://example.com/api/admin/users/search?q=private'),
-			locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true } },
+			locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true, permissions: ['users'] } },
 			cookies: { get: vi.fn(() => '1') },
 			fetch: searchFetch()
 		} as never);
@@ -150,7 +150,7 @@ describe('admin users API PII policy', () => {
 		const { POST } = await import('../../src/routes/api/admin/users/+server');
 		const response = await POST({
 			platform: invitePlatform(),
-			locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true } },
+			locals: { user: { id: 'admin-1', isOwner: false, isAdmin: true, permissions: ['users'] } },
 			cookies: { get: vi.fn(() => '1') },
 			request: {
 				json: vi.fn().mockResolvedValue({

@@ -26,6 +26,10 @@ declare global {
 				 *  honour it, and they must agree — see the note in `auth-guards.ts`. */
 				isSuperAdmin?: boolean;
 				canViewStats?: boolean;
+				/** Effective role, re-read from `users` on every request (roles.ts). */
+				role?: 'user' | 'admin' | 'superadmin' | 'owner';
+				/** Granted admin areas (permissions.ts), re-read on every request. */
+				permissions?: string[];
 				isPretend?: boolean;
 			};
 			/** Set by the CMS content route so the page-view hook can attribute the
@@ -49,12 +53,39 @@ declare global {
 				DISCORD_CLIENT_SECRET?: string;
 				SESSION_SECRET?: string;
 				SETUP_SECRET?: string;
+				/** Base64 of 32 random bytes (`bun run generate:encryption-key`). Encrypts
+				 *  provider/API secrets stored in KV. Optional: without it a key is generated
+				 *  and kept in KV. See docs/ZERO_ENV_SETUP.md. */
+				ENCRYPTION_KEY?: string;
+				/** Retired key(s), comma separated, still accepted for decryption during rotation. */
+				ENCRYPTION_KEY_PREVIOUS?: string;
 				DEV_AUTH_BYPASS?: string;
 				/** Shared bearer secret for /api/cron/* scheduler endpoints. */
 				CRON_SECRET?: string;
 				/** Optional PageSpeed Insights API key. Without one PSI still answers,
 				 *  at a much lower rate limit. See src/lib/server/lighthouse.ts. */
 				PAGESPEED_API_KEY?: string;
+				/** SHA-256 (hex) of the Ammoura control room's API key, set when Ammoura
+				 *  deploys the site. See packages/security/src/api-keys.ts. */
+				ORCHESTRATOR_KEY_SHA256?: string;
+				/** Comma-separated extra hostnames an admin redirect may point at (https
+				 *  only). The site's own host is always allowed. See src/lib/server/redirects.ts. */
+				REDIRECT_ALLOWED_HOSTS?: string;
+				/** Where to send vulnerability reports: an email address or an https URL,
+				 *  comma-separated for several. Unset means /.well-known/security.txt is a
+				 *  404. See src/lib/server/security-txt.ts. */
+				SECURITY_CONTACT?: string;
+				/** Shop checkout settings, set per site — never read from a request.
+				 *  See src/lib/server/site-info.ts. */
+				COMMERCE_TAX_RATE_PERCENT?: string;
+				COMMERCE_PRICES_INCLUDE_TAX?: string;
+				COMMERCE_FLAT_SHIPPING_CENTS?: string;
+				STRIPE_SECRET_KEY?: string;
+				STRIPE_WEBHOOK_SECRET?: string;
+				/** Transactional email (Resend). See src/lib/server/email.ts. */
+				RESEND_API_KEY?: string;
+				EMAIL_FROM?: string;
+				EMAIL_REPLY_TO?: string;
 			};
 			/** Cloudflare request metadata. `cf.country` is the edge-provided ISO
 			 *  3166-1 alpha-2 code used by page-view stats — undefined locally. */

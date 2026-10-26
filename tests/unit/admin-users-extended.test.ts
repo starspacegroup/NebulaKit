@@ -277,7 +277,8 @@ describe('Admin Users Extended API', () => {
 					bind: vi.fn().mockReturnThis(),
 					first: vi.fn().mockResolvedValue({ id: 'user-123', email: 'user@test.com' }),
 					run: mockRun
-				})
+				}),
+				batch: vi.fn().mockResolvedValue([])
 			};
 
 			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server');

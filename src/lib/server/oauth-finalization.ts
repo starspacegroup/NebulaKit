@@ -3,11 +3,16 @@ import { resolveOwnerStatus, type AuthIdentityRecord } from '$lib/utils/auth-ide
 import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
 import type { D1Database } from '@cloudflare/workers-types';
 import type { OAuthProvider } from '$lib/utils/oauth-state';
+import { trackSignIn } from '$lib/server/sign-ins';
 
 interface FinalizeOAuthLoginOptions {
 	db: D1Database;
 	platform: App.Platform;
 	url: URL;
+	/** The callback request, for opt-in sign-in tracking only. */
+	request?: Request;
+	/** Which provider signed the person in, for opt-in sign-in tracking only. */
+	method?: 'github' | 'discord';
 	userId: string;
 	currentSessionToken?: string;
 	linkedProvider?: OAuthProvider;
@@ -24,6 +29,8 @@ export async function finalizeOAuthLogin({
 	db,
 	platform,
 	url,
+	request,
+	method,
 	userId,
 	currentSessionToken,
 	linkedProvider
@@ -45,6 +52,8 @@ export async function finalizeOAuthLogin({
 	const sessionToken = currentSessionToken
 		? await replaceAuthSession(db, sessionUser, currentSessionToken, 7)
 		: await createAuthSession(db, sessionUser, 7);
+	if (method && !linkedProvider)
+		await trackSignIn(platform, request, { method, success: true, userId });
 	if (isOwner && platform.env.KV) {
 		const marker = await platform.env.KV.get('admin_first_login_completed');
 		if (!marker) await platform.env.KV.put('admin_first_login_completed', 'true');

@@ -1,9 +1,21 @@
 import { buildLinkHeader } from '$lib/agent-discovery';
+import { canonicalRedirect, withHostRobots } from '$lib/server/canonical-host';
 import {
 	isConvertibleHtml,
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
+import {
+	allowedRedirectHosts,
+	getRedirectByFromPath,
+	recordRedirectHit,
+	redirectLocation
+} from '$lib/server/redirects';
+import { PERMISSIONS, parsePermissions } from '$lib/access/permissions';
+import { effectiveRole } from '$lib/access/roles';
+import { auditAround } from '$lib/server/audit';
+import { withSecurityHeaders } from '$lib/server/security-headers';
+import { trackSessionSeen } from '$lib/server/sign-ins';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthSession } from '$lib/utils/db';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
@@ -55,7 +67,13 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 				if (!isDevAuthSimulationEnabled(event.url, event.platform)) {
 					throw new Error('Simulated session outside the dev simulator');
 				}
-				event.locals.user = stored;
+				// Simulated admins hold every area; the simulator is dev-only.
+				const pretendRole = effectiveRole(stored);
+				event.locals.user = {
+					...stored,
+					role: pretendRole,
+					permissions: pretendRole === 'admin' ? [...PERMISSIONS] : []
+				};
 			} else {
 				type AuthUserRecord = {
 					id: string;
@@ -65,38 +83,76 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 					github_avatar_url: string | null;
 					is_admin: number;
 					can_view_stats?: number;
+					role?: string | null;
 				};
 				let userRecord: AuthUserRecord | null;
 				try {
 					userRecord = await db
 						.prepare(
 							`SELECT id, email, name, github_login, github_avatar_url,
-							        is_admin, can_view_stats
+							        is_admin, can_view_stats, role
 							 FROM users WHERE id = ?`
 						)
 						.bind(stored.id)
 						.first<AuthUserRecord>();
 				} catch {
-					// Migration 0009 added can_view_stats; retain compatibility with
-					// a locally created database that has not applied it yet.
-					userRecord = await db
-						.prepare(
-							`SELECT id, email, name, github_login, github_avatar_url, is_admin
-							 FROM users WHERE id = ?`
-						)
-						.bind(stored.id)
-						.first<AuthUserRecord>();
+					// Migration 0021 added role (0009 added can_view_stats); retain
+					// compatibility with a local database that has not applied them.
+					try {
+						userRecord = await db
+							.prepare(
+								`SELECT id, email, name, github_login, github_avatar_url,
+								        is_admin, can_view_stats
+								 FROM users WHERE id = ?`
+							)
+							.bind(stored.id)
+							.first<AuthUserRecord>();
+					} catch {
+						userRecord = await db
+							.prepare(
+								`SELECT id, email, name, github_login, github_avatar_url, is_admin
+								 FROM users WHERE id = ?`
+							)
+							.bind(stored.id)
+							.first<AuthUserRecord>();
+					}
 				}
 
 				if (!userRecord) throw new Error('Session user no longer exists');
 				const isOwner = await resolveOwnerStatus(event.platform, userRecord);
+				const role = effectiveRole({
+					isOwner,
+					role: userRecord.role,
+					isAdmin: userRecord.is_admin === 1
+				});
+				// The granted areas are re-read every request too, so revoking one
+				// bites on the next click. Fails closed: no table, no grants.
+				let permissions: string[] = [];
+				if (role === 'admin') {
+					try {
+						const rows = await db
+							.prepare('SELECT permission FROM user_permissions WHERE user_id = ?')
+							.bind(userRecord.id)
+							.all<{ permission: string }>();
+						permissions = parsePermissions((rows.results ?? []).map((r) => r.permission));
+					} catch {
+						permissions = [];
+					}
+					// `can_view_stats` (0009) and the `stats` permission are one grant.
+					if (userRecord.can_view_stats === 1 && !permissions.includes('stats')) {
+						permissions = [...permissions, 'stats'];
+					}
+				}
 				event.locals.user = {
 					...createSessionUser({
 						...userRecord,
 						isOwner,
-						isAdmin: userRecord.is_admin === 1 || isOwner
+						isAdmin: role !== 'user'
 					}),
-					canViewStats: userRecord.can_view_stats === 1
+					role,
+					permissions,
+					isSuperAdmin: role === 'superadmin',
+					canViewStats: userRecord.can_view_stats === 1 || permissions.includes('stats')
 				};
 			}
 		} catch {
@@ -104,6 +160,12 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 			delete event.locals.user;
 			event.cookies.delete('session', { path: '/' });
 		}
+	}
+
+	// Opt-in sign-in tracking (docs/SIGN_IN_TRACKING.md): a no-op unless the owner
+	// turned it on, throttled to once per 5 minutes per session, never throws.
+	if (sessionToken && event.locals.user && !event.locals.user.isPretend) {
+		await trackSessionSeen(event.platform, sessionToken);
 	}
 
 	return resolve(event);
@@ -242,5 +304,89 @@ export const agentDiscoveryHandler: Handle = async ({ event, resolve }) => {
 	}
 };
 
+/**
+ * Admin audit log (docs/AUDIT_LOG.md): one row per successful admin mutation,
+ * never per page view. Sits before authHandler so it wraps it; it reads
+ * `locals.user` only after the response, when authHandler has filled it in.
+ * The relative order of the other handlers is unchanged.
+ */
+export const auditHandler: Handle = ({ event, resolve }) => auditAround(event, resolve);
+
+/**
+ * HSTS, nosniff, frame and referrer headers (security-headers.ts). Outermost,
+ * so redirects and error responses get them too. It only decorates the
+ * response, so it does not change when the other handlers run.
+ */
+export const securityHeadersHandler: Handle = async ({ event, resolve }) =>
+	withSecurityHeaders(await resolve(event));
+
+/**
+ * Canonical host (src/lib/server/canonical-host.ts): `www.<site host>` is sent
+ * to the host in site.config (301 for GET/HEAD, 308 otherwise) because the
+ * session cookie is host-only, and every other non-canonical host (localhost,
+ * *.pages.dev, previews, tunnels) is answered normally with
+ * `X-Robots-Tag: noindex, nofollow`.
+ *
+ * Inside usageHandler, so the bounce is still counted as an invocation, and
+ * outside everything else, so a redirected request never reaches auth, D1 or
+ * page-view recording.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const canonicalHostHandler: Handle = async ({ event, resolve }) => {
+	const redirect = canonicalRedirect(event.url, event.request.method);
+	if (redirect) return redirect;
+	return withHostRobots(await resolve(event), event.url.hostname);
+};
+
+/**
+ * Admin-managed redirects (docs/REDIRECTS.md, /admin/redirects). Consulted only
+ * when the response is already a 404 for a GET/HEAD, so healthy pages pay
+ * nothing. Checking the response rather than `route.id` matters: catch-all
+ * routes like /[contentType] match any single segment and 404 from their load.
+ *
+ * Sits INSIDE usageHandler (a bounced request is counted once, as the redirect
+ * it became) and OUTSIDE auth and pageViewsHandler (a redirect is never a page
+ * view, and the stale 404 render is simply discarded). A missing table or a D1
+ * error falls through to the plain 404.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const redirectsHandler: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	const method = event.request.method;
+	const db = event.platform?.env?.DB;
+	if (response.status !== 404 || !db || (method !== 'GET' && method !== 'HEAD')) return response;
+
+	try {
+		const redirect = await getRedirectByFromPath(db, event.url.pathname);
+		if (!redirect) return response;
+		const location = redirectLocation(
+			redirect,
+			event.url,
+			allowedRedirectHosts(event.platform?.env?.REDIRECT_ALLOWED_HOSTS)
+		);
+		if (!location) return response;
+		const hit = recordRedirectHit(db, redirect.id).catch(() => {});
+		if (event.platform?.context?.waitUntil) {
+			event.platform.context.waitUntil(hit);
+		} else {
+			await hit;
+		}
+		return new Response(null, { status: redirect.status, headers: { location } });
+	} catch {
+		return response;
+	}
+};
+
 // Combine all hooks
-export const handle = sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler);
+export const handle = sequence(
+	securityHeadersHandler,
+	usageHandler,
+	canonicalHostHandler,
+	redirectsHandler,
+	agentDiscoveryHandler,
+	auditHandler,
+	authHandler,
+	pageViewsHandler
+);

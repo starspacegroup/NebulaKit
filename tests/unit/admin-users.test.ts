@@ -633,7 +633,7 @@ describe('Admin Users Page', () => {
 		const promoteButton = screen.getByLabelText(/Demote from admin/i);
 		expect(promoteButton).toBeTruthy();
 		expect(promoteButton.hasAttribute('disabled')).toBe(true);
-		expect(promoteButton.getAttribute('title')).toContain('Cannot modify your own role');
+		expect(promoteButton.getAttribute('title')).toContain('You cannot change your own role');
 	});
 
 	it('should disable delete button for current user', () => {
@@ -666,7 +666,7 @@ describe('Admin Users Page', () => {
 		const deleteButton = screen.getByLabelText(/Delete user/i);
 		expect(deleteButton).toBeTruthy();
 		expect(deleteButton.hasAttribute('disabled')).toBe(true);
-		expect(deleteButton.getAttribute('title')).toContain('Cannot delete your own account');
+		expect(deleteButton.getAttribute('title')).toContain('You cannot change your own role');
 	});
 
 	it('should enable buttons for other users', () => {
@@ -776,7 +776,7 @@ describe('Admin Users Page', () => {
 		const deleteButton = screen.getByLabelText(/Delete user/i);
 		expect(promoteButton).toBeDisabled();
 		expect(deleteButton).toBeDisabled();
-		expect(promoteButton).toHaveAttribute('title', 'Owner access required');
-		expect(deleteButton).toHaveAttribute('title', 'Owner access required');
+		expect(promoteButton).toHaveAttribute('title', 'You do not have permission to manage users');
+		expect(deleteButton).toHaveAttribute('title', 'You do not have permission to manage users');
 	});
 });

@@ -11,6 +11,8 @@ import {
 	auditPath,
 	auditablePaths,
 	isStrategy,
+	listAudits,
+	listFindings,
 	parsePsiResponse,
 	psiUrl,
 	runLighthouseSweep
@@ -201,5 +203,93 @@ describe('runLighthouseSweep', () => {
 
 		await runLighthouseSweep(fakeDb(), { fetcher: fetcher as never, origin: 'https://x.test' });
 		expect(peak).toBe(1);
+	});
+});
+
+describe('parsePsiResponse — sparse payloads', () => {
+	it('reads a result with no categories or audits as all-null with no findings', () => {
+		const parsed = parsePsiResponse({ lighthouseResult: {} });
+
+		expect(parsed).toMatchObject({
+			performance: null,
+			accessibility: null,
+			bestPractices: null,
+			seo: null,
+			lighthouseVersion: null,
+			error: null,
+			findings: []
+		});
+	});
+
+	it('skips a referenced audit that is missing, and falls back for bare fields', () => {
+		const parsed = parsePsiResponse({
+			lighthouseResult: {
+				categories: {
+					// A score that is not a number reads as null, not as zero.
+					performance: { score: 'n/a', auditRefs: [{ id: 'gone' }, { id: 'bare' }] },
+					// A category with no auditRefs contributes nothing.
+					seo: { score: 0.5 }
+				},
+				audits: { bare: { score: 0 } }
+			}
+		});
+
+		expect(parsed.performance).toBeNull();
+		expect(parsed.seo).toBe(50);
+		expect(parsed.findings).toEqual([
+			{
+				category: 'performance',
+				auditId: 'bare',
+				title: 'bare',
+				description: null,
+				score: 0,
+				displayValue: null
+			}
+		]);
+	});
+});
+
+describe('auditPath — defaults', () => {
+	it('records a thrown non-Error with a generic reason', async () => {
+		const audit = await auditPath('/', 'mobile', {
+			origin: 'https://example.com',
+			fetcher: vi.fn().mockRejectedValue('offline') as unknown as typeof fetch
+		});
+
+		expect(audit.error).toBe('PageSpeed Insights request failed');
+	});
+
+	it('uses the site origin and the global fetch when given neither', async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValue(new Response(JSON.stringify(payload()), { status: 200 }));
+		try {
+			const audit = await auditPath('/about', 'desktop');
+
+			expect(audit.error).toBeNull();
+			const requested = new URL(String(fetchSpy.mock.calls[0][0]));
+			expect(requested.searchParams.get('url')).toMatch(/^https?:\/\/[^/]+\/about$/);
+		} finally {
+			fetchSpy.mockRestore();
+		}
+	});
+});
+
+describe('listAudits / listFindings', () => {
+	function dbReturning(results: unknown) {
+		return {
+			prepare: vi.fn().mockReturnValue({ all: vi.fn().mockResolvedValue({ results }) })
+		} as unknown as Parameters<typeof listAudits>[0];
+	}
+
+	it('return the stored rows', async () => {
+		const rows = [{ path: '/' }];
+		expect(await listAudits(dbReturning(rows))).toEqual(rows);
+		expect(await listFindings(dbReturning(rows))).toEqual(rows);
+	});
+
+	it('return an empty list when D1 gives back no results array', async () => {
+		expect(await listAudits(dbReturning(undefined))).toEqual([]);
+		expect(await listFindings(dbReturning(undefined))).toEqual([]);
 	});
 });

@@ -42,7 +42,7 @@ import {
 	listTopContent
 } from '$lib/utils/page-views';
 import { getUsage as getUsageMock } from '$lib/utils/usage';
-import { load } from '../../src/routes/admin/stats/+page.server';
+import { load } from '../../src/routes/admin/+page.server';
 
 const OWNER = { id: 'u1', isOwner: true };
 
@@ -73,32 +73,35 @@ function createDb() {
 function createEvent(overrides: Record<string, any> = {}) {
 	return {
 		platform: { env: { DB: createDb() } },
-		url: new URL('https://example.com/admin/stats'),
+		url: new URL('https://example.com/admin'),
 		locals: { user: OWNER },
 		...overrides
 	} as any;
 }
 
-describe('/admin/stats load — access', () => {
+describe('/admin dashboard load — access', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it('throws 403 for an admin without the stats grant', async () => {
-		await expect(
-			load(createEvent({ locals: { user: { id: 'u2', isAdmin: true } } }))
-		).rejects.toHaveProperty('status', 403);
+	it('gives an admin without the stats grant the page with no stats', async () => {
+		const event = createEvent({ locals: { user: { id: 'u2', isAdmin: true } } });
+		const data = await run(event);
+
+		expect(data).toMatchObject({ canViewStats: false, stats: null, traffic: null, usage: null });
+		expect(event.platform.env.DB.prepare).not.toHaveBeenCalled();
 	});
 
 	it('allows an admin holding the grant', async () => {
 		const data = await run(
 			createEvent({ locals: { user: { id: 'u2', isAdmin: true, canViewStats: true } } })
 		);
+		expect(data.canViewStats).toBe(true);
 		expect(data.stats?.totalUsers).toBe(7);
 	});
 });
 
-describe('/admin/stats load — shape', () => {
+describe('/admin dashboard load — shape', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -149,7 +152,7 @@ describe('/admin/stats load — shape', () => {
 	it('defaults to a 30-day window and rejects unsupported values', async () => {
 		for (const raw of ['', '45', 'abc', '-1']) {
 			const data = await run(
-				createEvent({ url: new URL(`https://example.com/admin/stats?window=${raw}`) })
+				createEvent({ url: new URL(`https://example.com/admin?window=${raw}`) })
 			);
 			expect(data.trafficWindow).toBe(30);
 		}
@@ -157,16 +160,16 @@ describe('/admin/stats load — shape', () => {
 
 	it.each([1, 7, 30, 90])('accepts the %s-day window', async (days) => {
 		const data = await run(
-			createEvent({ url: new URL(`https://example.com/admin/stats?window=${days}`) })
+			createEvent({ url: new URL(`https://example.com/admin?window=${days}`) })
 		);
 		expect(data.trafficWindow).toBe(days);
 	});
 
 	it('only queries hourly counters for the 1-day window', async () => {
-		await run(createEvent({ url: new URL('https://example.com/admin/stats?window=7') }));
+		await run(createEvent({ url: new URL('https://example.com/admin?window=7') }));
 		expect(listHourlyViews).not.toHaveBeenCalled();
 
-		await run(createEvent({ url: new URL('https://example.com/admin/stats?window=1') }));
+		await run(createEvent({ url: new URL('https://example.com/admin?window=1') }));
 		expect(listHourlyViews).toHaveBeenCalledTimes(1);
 	});
 
@@ -219,7 +222,7 @@ describe('/admin/stats load — shape', () => {
 		const data = await run(
 			createEvent({
 				platform: { env: { DB: db } },
-				url: new URL('https://example.com/admin/stats?window=1')
+				url: new URL('https://example.com/admin?window=1')
 			})
 		);
 

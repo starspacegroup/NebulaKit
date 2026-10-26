@@ -1,0 +1,10 @@
+# Cloudflare Pages serves static files without running the Worker, so the
+# security headers are repeated here. src/lib/server/security-headers.ts is the
+# source of truth and tests/unit/security-headers.test.ts keeps this in step.
+# Do not put comments inside a rule block: Cloudflare drops the headers after one.
+
+/*
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
