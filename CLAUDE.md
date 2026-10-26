@@ -113,6 +113,7 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | Home page hero, and replacing it downstream            | `HERO.md`                                                   |
 | Local dev, `.dev.vars`                                 | `LOCAL_SETUP.md`                                            |
 | Payments / purchasing-power pricing                    | `PAYMENTS_AND_PPP.md`                                       |
+| Landing pages (who/where/what/when/why), the audit     | `SEO_LANDING_PAGES.md`                                      |
 | TDD expectations behind the coverage gate              | `TDD_WORKFLOW.md`                                           |
 | Theme tokens, contrast validation (AGENTS.md §3)       | `THEME_SYSTEM.md`, `THEME_IMPLEMENTATION_SUMMARY.md`        |
 | Chat / voice surfaces                                  | `UNIFIED_CHAT_INTERFACE.md`, `VOICE_CHAT_IMPLEMENTATION.md` |
