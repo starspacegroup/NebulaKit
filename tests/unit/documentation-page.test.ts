@@ -202,6 +202,45 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/least generous\s+country/i)).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — /admin/redirects is a user-visible admin route and
+	// REDIRECT_ALLOWED_HOSTS is a binding an operator sets.
+	it('documents the redirect manager', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of ['/admin/redirects', '0024_redirects.sql', 'REDIRECT_ALLOWED_HOSTS']) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/Loops and off-site targets are refused/i)).toBeInTheDocument();
+	});
+
+	it('documents the security.txt contact and that it is off until configured', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		expect(scoped.getAllByText('/.well-known/security.txt').length).toBeGreaterThan(0);
+		expect(scoped.getAllByText('SECURITY_CONTACT').length).toBeGreaterThan(0);
+		expect(scoped.getByText(/Until then the path answers 404/)).toBeInTheDocument();
+	});
+
+	it('documents the canonical host redirect and noindex rule', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		expect(scoped.getByRole('heading', { name: 'Canonical host' })).toBeInTheDocument();
+		expect(scoped.getAllByText('site.url').length).toBeGreaterThan(0);
+		expect(scoped.getByText(/X-Robots-Tag: noindex/)).toBeInTheDocument();
+	});
+
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
 	// documentation has to describe it and keep describing it.
 	it('documents the optional Google Analytics connection', () => {

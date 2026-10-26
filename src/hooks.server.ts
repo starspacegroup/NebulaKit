@@ -1,9 +1,16 @@
 import { buildLinkHeader } from '$lib/agent-discovery';
+import { canonicalRedirect, withHostRobots } from '$lib/server/canonical-host';
 import {
 	isConvertibleHtml,
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
+import {
+	allowedRedirectHosts,
+	getRedirectByFromPath,
+	recordRedirectHit,
+	redirectLocation
+} from '$lib/server/redirects';
 import { withSecurityHeaders } from '$lib/server/security-headers';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthSession } from '$lib/utils/db';
@@ -251,10 +258,71 @@ export const agentDiscoveryHandler: Handle = async ({ event, resolve }) => {
 export const securityHeadersHandler: Handle = async ({ event, resolve }) =>
 	withSecurityHeaders(await resolve(event));
 
+/**
+ * Canonical host (src/lib/server/canonical-host.ts): `www.<site host>` is sent
+ * to the host in site.config (301 for GET/HEAD, 308 otherwise) because the
+ * session cookie is host-only, and every other non-canonical host (localhost,
+ * *.pages.dev, previews, tunnels) is answered normally with
+ * `X-Robots-Tag: noindex, nofollow`.
+ *
+ * Inside usageHandler, so the bounce is still counted as an invocation, and
+ * outside everything else, so a redirected request never reaches auth, D1 or
+ * page-view recording.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const canonicalHostHandler: Handle = async ({ event, resolve }) => {
+	const redirect = canonicalRedirect(event.url, event.request.method);
+	if (redirect) return redirect;
+	return withHostRobots(await resolve(event), event.url.hostname);
+};
+
+/**
+ * Admin-managed redirects (docs/REDIRECTS.md, /admin/redirects). Consulted only
+ * when the response is already a 404 for a GET/HEAD, so healthy pages pay
+ * nothing. Checking the response rather than `route.id` matters: catch-all
+ * routes like /[contentType] match any single segment and 404 from their load.
+ *
+ * Sits INSIDE usageHandler (a bounced request is counted once, as the redirect
+ * it became) and OUTSIDE auth and pageViewsHandler (a redirect is never a page
+ * view, and the stale 404 render is simply discarded). A missing table or a D1
+ * error falls through to the plain 404.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const redirectsHandler: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	const method = event.request.method;
+	const db = event.platform?.env?.DB;
+	if (response.status !== 404 || !db || (method !== 'GET' && method !== 'HEAD')) return response;
+
+	try {
+		const redirect = await getRedirectByFromPath(db, event.url.pathname);
+		if (!redirect) return response;
+		const location = redirectLocation(
+			redirect,
+			event.url,
+			allowedRedirectHosts(event.platform?.env?.REDIRECT_ALLOWED_HOSTS)
+		);
+		if (!location) return response;
+		const hit = recordRedirectHit(db, redirect.id).catch(() => {});
+		if (event.platform?.context?.waitUntil) {
+			event.platform.context.waitUntil(hit);
+		} else {
+			await hit;
+		}
+		return new Response(null, { status: redirect.status, headers: { location } });
+	} catch {
+		return response;
+	}
+};
+
 // Combine all hooks
 export const handle = sequence(
 	securityHeadersHandler,
 	usageHandler,
+	canonicalHostHandler,
+	redirectsHandler,
 	agentDiscoveryHandler,
 	authHandler,
 	pageViewsHandler

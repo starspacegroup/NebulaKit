@@ -796,6 +796,40 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Redirects</h3>
+					<p>
+						Admins manage old-to-new addresses at <code>/admin/redirects</code> (migration
+						<code>0024_redirects.sql</code>): pick 301, 302, 307 or 308 and see how many times each
+						one was used. A redirect is looked up only when the site would otherwise answer "not
+						found", so it never hides a live page and costs healthy pages nothing. The new address
+						is a path on this site or an https address on an allowed host: the site's own, plus any
+						you list in <code>REDIRECT_ALLOWED_HOSTS</code> (comma-separated). Loops and off-site targets
+						are refused when you save, and again when a visitor is redirected.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Canonical host</h3>
+					<p>
+						The session cookie belongs to one host, so a visitor signed in on the bare domain would
+						look signed out on <code>www</code>. The site sends <code>www.</code> + the host in
+						<code>site.url</code> to that host (301 for reads, 308 for anything else), except
+						webhook and cron paths. It never redirects on localhost, <code>*.pages.dev</code>,
+						previews or tunnels. Every host that is not the one in <code>site.url</code> is served
+						with <code>X-Robots-Tag: noindex</code>, so a preview never competes with production in
+						search.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Security contact</h3>
+					<p>
+						<code>/.well-known/security.txt</code> (RFC 9116) tells researchers where to send a
+						vulnerability report. The template has no contact address of its own and invents none:
+						set <code>SECURITY_CONTACT</code> to an email address or an https URL (comma-separated
+						for several) and the file is served, with an <code>Expires</code> date recomputed on every
+						request, 180 days ahead. Until then the path answers 404.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>The site API</h3>
 					<p>
 						Everything is reachable under <code>/api/v1</code>, described at

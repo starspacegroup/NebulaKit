@@ -37,6 +37,7 @@ so the routes, the hooks, and the tests can never disagree.
 | `/.well-known/agent-skills/index.json`      | Agent Skills Discovery v0.2.0                                                                        | `src/routes/[x+2e]well-known/agent-skills/index.json/`       |
 | `/.well-known/agent-skills/<name>/SKILL.md` | —                                                                                                    | `src/routes/[x+2e]well-known/agent-skills/[skill]/SKILL.md/` |
 | `/auth.md`                                  | [auth.md](https://github.com/workos/auth.md)                                                         | `src/routes/auth.md/`                                        |
+| `/.well-known/security.txt`                 | RFC 9116 — only when `SECURITY_CONTACT` is set, otherwise a 404                                      | `src/routes/[x+2e]well-known/security.txt/`                  |
 | `/api/health`                               | —                                                                                                    | `src/routes/api/health/`                                     |
 | `Link:` headers on HTML                     | RFC 8288                                                                                             | `src/hooks.server.ts`                                        |
 | `Accept: text/markdown`                     | [Markdown for Agents](https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/) | `src/hooks.server.ts`                                        |
