@@ -38,7 +38,7 @@ function session(orderId: string, extra: Record<string, unknown> = {}) {
 		...extra
 	};
 }
-const evt = (type: string, object: unknown) => ({ type, data: { object } });
+const evt = (type: string, object: Record<string, unknown>) => ({ type, data: { object } });
 
 async function deliver(payload: unknown, opts: { header?: string; secret?: string } = {}) {
 	const body = typeof payload === 'string' ? payload : JSON.stringify(payload);

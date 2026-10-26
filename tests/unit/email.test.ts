@@ -24,7 +24,10 @@ const mail = (over: Partial<OutgoingEmail> = {}): OutgoingEmail => ({
 	relatedId: 'order-1',
 	...over
 });
-const ok = () => vi.fn(async () => new Response(JSON.stringify({ id: 're_1' }), { status: 200 }));
+const ok = () =>
+	vi.fn(
+		async (..._args: unknown[]) => new Response(JSON.stringify({ id: 're_1' }), { status: 200 })
+	);
 const rows = async () =>
 	(
 		await db
