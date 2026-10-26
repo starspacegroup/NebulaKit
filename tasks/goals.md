@@ -1,5 +1,12 @@
 # Goals
 
+## Secrets encrypted at rest
+
+status: done 2026-10-25 (branch `port/secrets`, local commits only)
+
+- `docs/ZERO_ENV_SETUP.md` claimed "Secrets stored encrypted in Cloudflare KV" while AI provider keys and OAuth client secrets were plain JSON in KV. Now sealed with AES-256-GCM (HKDF subkeys per purpose, AAD bound to the record, versioned `v1.` envelope) by `src/lib/server/secret-box.ts` and `secret-store.ts`; legacy plaintext migrates on read; rotation via `ENCRYPTION_KEY_PREVIOUS`; with no `ENCRYPTION_KEY` a key is generated into KV so the first save is already encrypted (weaker, documented).
+- Open: no automated way to sweep every record to the new key after rotation (it happens as records are read); the CMS/other KV values are not secrets and stay plaintext.
+
 ## Builder, shop and site API as packages (Ammoura's sites run on NebulaKit)
 
 status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-builder-site-api`)

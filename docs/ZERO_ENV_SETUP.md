@@ -14,7 +14,7 @@ Click the button above to create your own repository from the NebulaKit template
 
 ---
 
-NebulaKit can work **without any pre-configured environment variables**. Instead of relying on `.env` files or manually set secrets, all configuration is done through a web-based setup flow and stored securely in Cloudflare KV.
+NebulaKit can work **without any pre-configured environment variables**. Instead of relying on `.env` files or manually set secrets, all configuration is done through a web-based setup flow and stored in Cloudflare KV. Secret values are encrypted before they are written; see [Secrets at rest](#secrets-at-rest) for exactly what that does and does not protect.
 
 Before running this setup flow in a template-derived project, complete [INITIAL_CUSTOMIZATION.md](./INITIAL_CUSTOMIZATION.md) so the app name, sharing assets, and documentation links are updated first.
 
@@ -70,7 +70,7 @@ ADMIN_GITHUB_ID=zzz
 
 - ✅ Zero secrets in code or environment
 - ✅ Web-based configuration at runtime
-- ✅ Secrets stored encrypted in Cloudflare KV
+- ✅ Secrets encrypted (AES-256-GCM) before they reach Cloudflare KV; see [Secrets at rest](#secrets-at-rest) for the trust model
 - ✅ Self-service setup for new deployments
 - ✅ Easy secret rotation without redeployment
 
@@ -130,12 +130,14 @@ After saving the configuration:
 
 ```typescript
 // When you submit the setup form:
-// 1. OAuth credentials are stored in KV
+// 1. OAuth credentials are stored in KV. The client secret is sealed first
+//    (src/lib/server/secret-store.ts); the client ID is not secret.
 await platform.env.KV.put(
 	'auth_config:github',
 	JSON.stringify({
 		clientId: 'your_client_id',
-		clientSecret: 'your_client_secret'
+		clientSecret: 'v1.<iv>.<ciphertext>', // AES-GCM envelope, bound to "auth-config:github"
+		clientSecretLast4: 'cret'
 	})
 );
 
@@ -146,6 +148,67 @@ await platform.env.KV.put('github_owner_username', 'your_username');
 // 3. Setup is permanently locked
 await platform.env.KV.put('admin_first_login_completed', 'true');
 ```
+
+---
+
+## Secrets at rest
+
+### What is encrypted
+
+Before this was implemented, the claim "secrets stored encrypted in KV" was false: AI provider keys (`ai_key:<id>`) and OAuth client secrets (`auth_config:<provider>`) were stored as plain JSON. They are now sealed with AES-256-GCM before they are written.
+
+| Value                                                                                       | Where                                            | Stored as                                                      |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------- |
+| AI provider API keys                                                                        | KV `ai_key:<id>` field `apiKey`                  | Encrypted                                                      |
+| OAuth client secrets (GitHub via `/setup`, Discord, others added in admin)                  | KV `auth_config:<provider>` field `clientSecret` | Encrypted                                                      |
+| Last four characters of each, for the admin screen                                          | `apiKeyLast4`, `clientSecretLast4`               | Plaintext (hint only; omitted for secrets under 12 characters) |
+| OAuth client IDs, key names, models, flags                                                  | same records                                     | Plaintext (not secret)                                         |
+| Site API keys, stats API token                                                              | D1 / KV                                          | Already stored as one-way hashes; unchanged                    |
+| Secrets you set as Worker secrets (`SESSION_SECRET`, `SETUP_SECRET`, `ENCRYPTION_KEY`, ...) | Cloudflare                                       | Never in KV or D1                                              |
+
+The admin UI and API never return a stored secret. They return whether one is configured, the last four characters, and a status (`ok`, `legacy`, `undecryptable`).
+
+### The key: `ENCRYPTION_KEY` (recommended) or an automatic one
+
+```bash
+bun run generate:encryption-key          # prints a base64 32-byte key
+bunx wrangler pages secret put ENCRYPTION_KEY   # or Workers: bunx wrangler secret put ENCRYPTION_KEY
+# local development: bun run generate:encryption-key --env  >> .dev.vars
+```
+
+**With `ENCRYPTION_KEY` set**, the key lives in Cloudflare's secret store and never in KV. Someone who can read your KV namespace (a leaked API token, a dump, a misconfigured export) sees only ciphertext. This is the real protection and what production should use.
+
+**Without it**, the zero-environment promise holds: nothing breaks and nothing is stored in plaintext. On the first save, a random 32-byte key is generated and stored in KV as `encryption_key:auto`, and every secret is encrypted with it from then on. We chose this over refusing to save secrets (which would break the "deploy with no setup" flow) and over storing plaintext (which is what the template did before). Be clear about what it buys: anyone who can read the whole KV namespace reads the key beside the ciphertext, so it does **not** defend against KV compromise. It does stop the casual leaks: one record pasted into a ticket or log, a partial export, a backup of a single value, and it makes every value tamper-evident and non-transplantable (below). Set `ENCRYPTION_KEY` when the site holds anything you would mind losing.
+
+Upgrading later is safe and needs no migration step: set `ENCRYPTION_KEY`, and the KV-held key keeps working as an accepted old key. Each value is re-encrypted with the new key the next time it is read, after which the KV key is no longer needed (leave it until you have viewed the AI Keys and Auth Keys admin pages, or call the API once, so every record gets rewritten).
+
+A malformed `ENCRYPTION_KEY` (not base64, or not 32 bytes) is an error, never a silent fallback: saving a secret fails with a logged message instead of quietly using a different key.
+
+### How it works
+
+- Algorithm: AES-256-GCM through WebCrypto. Stored form: `v1.<base64url iv>.<base64url ciphertext>`; a fresh random 96-bit IV per value.
+- One root secret serves every purpose: a separate subkey per purpose (`ai-key`, `auth-config`) is derived with HKDF-SHA-256, so a value for one purpose can never be opened as another.
+- Associated data binds each ciphertext to `purpose:record id`. Copying the sealed `apiKey` from one record into another, or an OAuth secret from one provider to another, fails to decrypt. Any edit to the stored text fails authentication.
+- If a value cannot be decrypted (the key was lost or changed without keeping the old one), the record stays visible with status `undecryptable`, the secret is treated as absent (the AI key is skipped, the provider counts as unconfigured), and nothing is overwritten. Re-enter the secret in the admin screen.
+- Code: `src/lib/server/secret-box.ts` (crypto), `src/lib/server/secret-store.ts` (key resolution, KV records, migration).
+
+### Rotating the key
+
+1. `bun run generate:encryption-key` and set the new value as `ENCRYPTION_KEY`.
+2. Set the old value as `ENCRYPTION_KEY_PREVIOUS` (comma separated for several).
+3. Deploy. Values sealed with a previous key still open and are re-encrypted with the new key when read.
+4. Open `/admin/ai-keys` and `/admin/auth-keys` once so every record is read, then remove `ENCRYPTION_KEY_PREVIOUS`.
+
+### Existing plaintext
+
+A site that saved keys before this change needs no action. A legacy plaintext value is returned as before and rewritten encrypted the first time it is read (and any edit or toggle of the record seals it). If the rewrite fails the read still succeeds and is retried next time.
+
+### Limits
+
+- KV has no compare-and-set. If two very first saves race with no `ENCRYPTION_KEY`, both read the key back after writing it and converge on whichever write won; only the owner (or the holder of `SETUP_SECRET` during bootstrap) can save secrets, so this needs two simultaneous first saves.
+- A rewrite-on-read can overwrite a metadata edit made in the same instant. Records are small and owner-edited, so this was accepted rather than adding locking.
+- Encryption protects the stored copy. The decrypted secret is in Worker memory while a request uses it, and it is sent to the provider as it must be.
+- Environment-variable credentials (`GITHUB_CLIENT_SECRET` etc.) are Cloudflare secrets and take precedence over KV; they are not copied into KV.
 
 ---
 
@@ -172,12 +235,13 @@ The reset page allows you to clear all setup configuration and start fresh. This
 
 ### What Is NOT Reset
 
-| Preserved           | Description                  |
-| ------------------- | ---------------------------- |
-| ❌ User accounts    | All users in the D1 database |
-| ❌ AI provider keys | OpenAI, Anthropic, etc.      |
-| ❌ Chat history     | Stored conversations         |
-| ❌ Other app data   | Any other application state  |
+| Preserved                | Description                                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| ❌ User accounts         | All users in the D1 database                                                                                          |
+| ❌ AI provider keys      | OpenAI, Anthropic, etc.                                                                                               |
+| ❌ `encryption_key:auto` | The KV-held encryption key (see [Secrets at rest](#secrets-at-rest)); deleting it would make saved AI keys unreadable |
+| ❌ Chat history          | Stored conversations                                                                                                  |
+| ❌ Other app data        | Any other application state                                                                                           |
 
 ### Using the Reset Page
 
@@ -376,8 +440,9 @@ wrangler kv:namespace create "KV" --preview
 1. **Always disable `/reset` in production** after initial setup
 2. **Use strong OAuth secrets** - Let GitHub generate them
 3. **Verify the admin username** before first login
-4. **Monitor the admin panel** for unauthorized access attempts
-5. **Rotate OAuth secrets periodically** via the reset flow
+4. **Set `ENCRYPTION_KEY`** so a KV leak does not also leak the encryption key
+5. **Monitor the admin panel** for unauthorized access attempts
+6. **Rotate OAuth secrets periodically** via the reset flow
 
 ---
 

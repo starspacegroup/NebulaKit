@@ -77,6 +77,24 @@ bun run db:migrate
 
 </details>
 
+## The encryption key
+
+AI provider keys and OAuth client secrets saved in KV are encrypted. Give the
+project its own key once the KV namespace exists:
+
+```bash
+bun run generate:encryption-key
+bunx wrangler pages secret put ENCRYPTION_KEY    # or: bunx wrangler secret put ENCRYPTION_KEY
+```
+
+It is optional (without it a key is generated and stored in the same KV
+namespace, which is weaker), but it is the only thing that keeps a KV leak from
+revealing the secrets. Because the key lives outside KV, never copy or restore KV
+data into a project that has a different `ENCRYPTION_KEY` without also setting the
+source's key as `ENCRYPTION_KEY_PREVIOUS`, and when copying KV between projects that
+use the automatic key, copy `encryption_key:auto` too. Details and rotation:
+[Secrets at rest](./ZERO_ENV_SETUP.md#secrets-at-rest).
+
 ## The database name
 
 `db:migrate` reads `database_name` from `wrangler.toml` rather than hardcoding
