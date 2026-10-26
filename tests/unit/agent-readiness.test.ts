@@ -13,7 +13,7 @@
  * The route-coverage test at the bottom is the one that keeps this true over
  * time: adding a page route without deciding its crawl policy fails the suite.
  */
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -41,6 +41,7 @@ import { GET as skillDocGet } from '../../src/routes/[x+2e]well-known/agent-skil
 
 import { emptyPage, savePage } from '@nebulakit/builder';
 import { createProduct } from '@nebulakit/commerce';
+import { pageDirectoriesOf, rendersAPage } from '../helpers/route-pages';
 import { createSqliteD1 } from '../helpers/sqlite-d1';
 
 const ORIGIN = 'https://example.test';
@@ -389,10 +390,8 @@ describe('sitemap route coverage (the guard)', () => {
 	 * nested pages inherit it (an excluded `/admin` covers `/admin/users`).
 	 */
 	const routesDir = resolve(__dirname, '../../src/routes');
-	const pageDirectories = readdirSync(routesDir, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory())
-		.map((entry) => entry.name)
-		.filter((name) => existsSync(join(routesDir, name, '+page.svelte')));
+	// Recursive, not one level deep: see tests/helpers/route-pages.ts.
+	const pageDirectories = pageDirectoriesOf(routesDir);
 
 	it('finds the app’s route directories', () => {
 		// Sanity check: if this ever reads zero directories the tests below would
@@ -414,6 +413,31 @@ describe('sitemap route coverage (the guard)', () => {
 			).toBe(true);
 		}
 	);
+
+	it('sees pages that only exist in a nested, parameterised directory', () => {
+		// .llm-outputs/ is the gitignored scratch directory (AGENTS.md).
+		mkdirSync(join(process.cwd(), '.llm-outputs'), { recursive: true });
+		const root = mkdtempSync(join(process.cwd(), '.llm-outputs', 'routes-'));
+		try {
+			mkdirSync(join(root, 'nested', '[slug]'), { recursive: true });
+			writeFileSync(join(root, 'nested', '[slug]', '+page.svelte'), '');
+			mkdirSync(join(root, 'direct'));
+			writeFileSync(join(root, 'direct', '+page.svelte'), '');
+			mkdirSync(join(root, 'api', 'thing'), { recursive: true });
+			writeFileSync(join(root, 'api', 'thing', '+server.ts'), '');
+			expect(pageDirectoriesOf(root).sort()).toEqual(['direct', 'nested']);
+			expect(rendersAPage(join(root, 'api'))).toBe(false);
+			// The old one-level check would have missed `nested` entirely.
+			expect(existsSync(join(root, 'nested', '+page.svelte'))).toBe(false);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	it('guards nested-only areas of this app (shop, p)', () => {
+		expect(pageDirectories).toContain('shop');
+		expect(pageDirectories).toContain('p');
+	});
 
 	it('lists the site root', () => {
 		expect(existsSync(join(routesDir, '+page.svelte'))).toBe(true);
