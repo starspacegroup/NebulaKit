@@ -145,7 +145,7 @@ describe('settings storage', () => {
 			strength: 7,
 			maxDiscount: 0.4,
 			scope: 'all',
-			overrides: { in: 0.6 } as never
+			overrides: { in: 0.6 }
 		});
 		expect(saved).toEqual({
 			enabled: true,
@@ -161,7 +161,9 @@ describe('settings storage', () => {
 describe('where the country comes from', () => {
 	const req = (headers: Record<string, string> = {}) => new Request('https://x.test', { headers });
 	it('prefers Cloudflare cf.country, then the cf-ipcountry header, and drops non-countries', () => {
-		expect(requestCountry({ request: req(), platform: { cf: { country: 'in' } } })).toBe('IN');
+		expect(requestCountry({ request: req(), platform: { cf: { country: 'in' as never } } })).toBe(
+			'IN'
+		);
 		expect(requestCountry({ request: req({ 'cf-ipcountry': 'br' }) })).toBe('BR');
 		expect(
 			requestCountry({

@@ -31,12 +31,18 @@ const PLAUSIBLE_MAX = 2;
 /** Fewer rows than this means the API answered badly; keep the file we have. */
 const MIN_COUNTRIES = 150;
 
+/** @param {string} url */
 async function getJson(url) {
 	const res = await fetch(url);
 	if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
 	return res.json();
 }
 
+/**
+ * @param {string} indicator
+ * @param {string} range
+ * @returns {Promise<Map<string, Map<number, number>>>}
+ */
 async function series(indicator, range) {
 	const body = await getJson(
 		`${API}/country/all/indicator/${indicator}?format=json&per_page=20000&date=${range}`
@@ -45,12 +51,13 @@ async function series(indicator, range) {
 		throw new Error(`${indicator}: ${JSON.stringify(body).slice(0, 200)}`);
 	}
 	/** iso2 -> year -> value */
+	/** @type {Map<string, Map<number, number>>} */
 	const out = new Map();
 	for (const row of body[1]) {
 		if (row.value === null) continue;
 		const code = row.country.id;
 		if (!out.has(code)) out.set(code, new Map());
-		out.get(code).set(Number(row.date), row.value);
+		out.get(code)?.set(Number(row.date), row.value);
 	}
 	return out;
 }
@@ -60,19 +67,28 @@ async function countryCodes() {
 	const body = await getJson(`${API}/country?format=json&per_page=400`);
 	if (!Array.isArray(body) || !Array.isArray(body[1])) throw new Error('country list unreadable');
 	return new Set(
-		body[1].filter((c) => c.region?.id !== 'NA' && /^[A-Z]{2}$/.test(c.id)).map((c) => c.id)
+		body[1]
+			.filter((/** @type {any} */ c) => c.region?.id !== 'NA' && /^[A-Z]{2}$/.test(c.id))
+			.map((/** @type {any} */ c) => c.id)
 	);
 }
 
-/** Pure, so it can be tested without the network: rows from the three fetched maps. */
+/**
+ * Pure, so it can be tested without the network: rows from the three fetched maps.
+ * @param {Map<string, Map<number, number>>} ppp
+ * @param {Map<string, Map<number, number>>} fx
+ * @param {Set<string>} known
+ */
 export function buildRows(ppp, fx, known) {
+	/** @type {{ code: string; year: number; ratio: number }[]} */
 	const rows = [];
 	for (const [code, years] of ppp) {
 		if (!known.has(code) || !fx.has(code)) continue;
-		const common = [...years.keys()].filter((y) => fx.get(code).has(y));
+		const rates = /** @type {Map<number, number>} */ (fx.get(code));
+		const common = [...years.keys()].filter((y) => rates.has(y));
 		if (common.length === 0) continue;
 		const year = Math.max(...common);
-		const ratio = years.get(year) / fx.get(code).get(year);
+		const ratio = /** @type {number} */ (years.get(year)) / /** @type {number} */ (rates.get(year));
 		// Outside this range the two series disagree about the currency (Liberia
 		// reports PPP in US$ and the exchange rate in L$, giving 0.002) or the
 		// official rate is far from the real one (Iran, 2.2). Such a figure would
@@ -83,6 +99,10 @@ export function buildRows(ppp, fx, known) {
 	return rows.sort((a, b) => a.code.localeCompare(b.code));
 }
 
+/**
+ * @param {{ code: string; year: number; ratio: number }[]} rows
+ * @param {string} today
+ */
 export function render(rows, today) {
 	return `/**
  * Price level ratio by country: what the same basket of goods costs there,

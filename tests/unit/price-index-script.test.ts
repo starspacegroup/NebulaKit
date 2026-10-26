@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { PRICE_LEVEL_INDEX, PRICE_LEVEL_INDEX_UPDATED } from '@nebulakit/commerce';
-// @ts-expect-error the script is plain ESM without types
 import { buildRows, render } from '../../scripts/update-price-index.mjs';
 
 const series = (entries: Record<string, Record<number, number>>) =>
