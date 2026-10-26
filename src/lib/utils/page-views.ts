@@ -13,6 +13,7 @@
  */
 
 import type { D1Database } from '@cloudflare/workers-types';
+import { deleteInBatches } from '$lib/server/bounded-delete';
 
 export interface PageViewRecord {
 	day: string; // 'YYYY-MM-DD' (UTC)
@@ -427,21 +428,60 @@ export async function recordViewportSample(
 		.run();
 }
 
+/** Every daily counter table, in the order they are pruned. */
+export const COUNTER_TABLES = [
+	'page_view_daily',
+	'page_view_hourly',
+	'referrer_daily',
+	'country_view_daily',
+	'view_dimension_daily',
+	'platform_usage_daily',
+	'content_view_daily'
+] as const;
+
+/** Rows one prune run may delete in total, across all counter tables. */
+export const PRUNE_ROW_BUDGET = 5000;
+
+export interface PruneViewStatsResult {
+	deleted: number;
+	/** Rows deleted per table. */
+	tables: Record<string, number>;
+	/** True when the row budget ran out, so older rows remain for the next run. */
+	budgetExhausted: boolean;
+}
+
 /**
  * Delete counter rows older than the retention window (cron-driven).
  *
  * Covers every daily counter table, including `platform_usage_daily` — that one
  * is only a row a day, but nothing else deletes it, so leaving it out meant it
  * grew for the life of the deployment.
+ *
+ * Bounded: deletes go in batches under one shared row budget (see
+ * `deleteInBatches`), so a backlog on a long-neglected site drains over several
+ * runs instead of spending a day's D1 write allowance in one statement.
  */
-export async function pruneViewStats(db: D1Database, beforeDay: string): Promise<void> {
-	await db.batch([
-		db.prepare('DELETE FROM page_view_daily WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM page_view_hourly WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM referrer_daily WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM country_view_daily WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM view_dimension_daily WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM platform_usage_daily WHERE day < ?').bind(beforeDay),
-		db.prepare('DELETE FROM content_view_daily WHERE day < ?').bind(beforeDay)
-	]);
+export async function pruneViewStats(
+	db: D1Database,
+	beforeDay: string,
+	budget: number = PRUNE_ROW_BUDGET
+): Promise<PruneViewStatsResult> {
+	const result: PruneViewStatsResult = { deleted: 0, tables: {}, budgetExhausted: false };
+	for (const table of COUNTER_TABLES) {
+		const remaining = budget - result.deleted;
+		if (remaining <= 0) {
+			result.budgetExhausted = true;
+			break;
+		}
+		const pass = await deleteInBatches(db, {
+			table,
+			where: 'day < ?',
+			binds: [beforeDay],
+			budget: remaining
+		});
+		result.tables[table] = pass.deleted;
+		result.deleted += pass.deleted;
+		if (pass.budgetExhausted) result.budgetExhausted = true;
+	}
+	return result;
 }
