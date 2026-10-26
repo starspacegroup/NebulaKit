@@ -652,7 +652,7 @@ describe('CMS [type] GET - listPageSize fallback', () => {
 		};
 
 		const response = await GET({
-			locals: { user: { id: '1', isOwner: false, isAdmin: true } },
+			locals: { user: { id: '1', isOwner: false, isAdmin: true, permissions: ['cms'] } },
 			platform: { env: { DB: mockDB } },
 			params: { type: 'blog' },
 			url: new URL('http://localhost/api/cms/blog')

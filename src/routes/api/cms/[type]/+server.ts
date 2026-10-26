@@ -9,12 +9,12 @@ import { sanitizeRichtextFields } from '$lib/cms/sanitize';
 import { getContentTypeRoutePrefix, validateFields } from '$lib/cms/utils';
 import { runTimestampProofJob } from '$lib/content-proof/proof-job';
 import { createContentItem, getContentTypeBySlug, listContentItems } from '$lib/services/cms';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ platform, locals, params, url }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -61,7 +61,7 @@ export const GET: RequestHandler = async ({ platform, locals, params, url }) => 
 };
 
 export const POST: RequestHandler = async ({ platform, locals, params, request, url }) => {
-	const user = requireAdmin(locals);
+	const user = requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {

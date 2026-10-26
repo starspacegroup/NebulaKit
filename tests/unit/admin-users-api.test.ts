@@ -11,7 +11,8 @@ describe('Admin Users API', () => {
 			bind: vi.fn().mockReturnThis(),
 			all: vi.fn(),
 			first: vi.fn(),
-			run: vi.fn()
+			run: vi.fn(),
+			batch: vi.fn().mockResolvedValue([])
 		};
 
 		// Mock KV
@@ -89,7 +90,8 @@ describe('Admin Users API', () => {
 			} as any);
 			const data = await response.json();
 
-			expect(data.users).toEqual(mockUsers);
+			// Each row also carries its effective role and granted areas.
+			expect(data.users).toEqual([{ ...mockUsers[0], effective_role: 'user', permissions: [] }]);
 		});
 	});
 

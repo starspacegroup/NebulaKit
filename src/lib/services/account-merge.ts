@@ -136,6 +136,22 @@ export async function mergeAccounts(
 	// If source user was admin, make target user admin too
 	if (sourceIsAdmin) {
 		statements.push(db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').bind(targetUserId));
+		// Carry the ladder with it: a plain user becomes an admin (never higher than
+		// the source's own admin; a superadmin is only ever granted by a person),
+		// and the source's granted areas are kept so the merge loses nothing.
+		statements.push(
+			db
+				.prepare("UPDATE users SET role = 'admin' WHERE id = ? AND role = 'user'")
+				.bind(targetUserId)
+		);
+		statements.push(
+			db
+				.prepare(
+					`INSERT OR IGNORE INTO user_permissions (user_id, permission, granted_by)
+					 SELECT ?, permission, 'account-merge' FROM user_permissions WHERE user_id = ?`
+				)
+				.bind(targetUserId, sourceUserId)
+		);
 	}
 
 	// Never lose a grant by merging: the target keeps stats access if either had it.

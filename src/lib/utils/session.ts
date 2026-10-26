@@ -9,6 +9,10 @@ export interface SessionUser {
 	/** Per-admin grant for the stats on /admin. Refreshed from the DB on every request
 	 *  by the auth hook, so revoking it takes effect without a re-login. */
 	canViewStats?: boolean;
+	/** Effective role and granted areas; refreshed from the DB by the auth hook. */
+	role?: 'user' | 'admin' | 'superadmin' | 'owner';
+	permissions?: string[];
+	isSuperAdmin?: boolean;
 	githubLogin?: string;
 	isPretend?: boolean;
 	simulatedConnections?: string[];

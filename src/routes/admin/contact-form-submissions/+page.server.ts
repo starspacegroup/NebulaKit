@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { requirePermission } from '$lib/server/auth-guards';
 import type { PageServerLoad } from './$types';
 import { listContactFormSubmissions, countContactFormSubmissions } from '$lib/services/contact';
 import { isPiiRevealed, maskName, maskEmail, PII_REVEAL_COOKIE } from '$lib/server/pii-mask';
@@ -6,6 +7,7 @@ import { isPiiRevealed, maskName, maskEmail, PII_REVEAL_COOKIE } from '$lib/serv
 const PAGE_SIZE = 50;
 
 export const load: PageServerLoad = async ({ locals, platform, url, cookies }) => {
+	requirePermission(locals, 'contact');
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 

@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { requirePermission } from '$lib/server/auth-guards';
 import { listAudits, listFindings } from '$lib/server/lighthouse';
 import { site } from '$lib/site.config';
 import type { PageServerLoad } from './$types';
@@ -8,7 +9,8 @@ import type { PageServerLoad } from './$types';
  * an admin session; this adds nothing on top, because the scores of your own
  * public pages are not more sensitive than the pages themselves.
  */
-export const load: PageServerLoad = async ({ platform }) => {
+export const load: PageServerLoad = async ({ platform, locals }) => {
+	requirePermission(locals, 'lighthouse');
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(503, 'Database not available');

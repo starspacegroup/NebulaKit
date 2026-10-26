@@ -1,12 +1,99 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { can, PERMISSIONS, PERMISSION_LABELS, canEditPermissions } from '$lib/access/permissions';
+	import { assignableBy, canActOn, canGrant, effectiveRole, type Role } from '$lib/access/roles';
 
 	export let data: PageData;
 
 	// While PII is masked the ids in this table are masks, so a mutation would
 	// target a nonexistent row (404) and the "not yourself" comparison below
-	// could never match. Owner-only actions therefore also require reveal.
-	$: canMutateUsers = Boolean(data.user.isOwner && data.piiRevealed);
+	// could never match. Acting on users therefore also requires reveal. The
+	// server re-checks rank and permission on every request; this only decides
+	// what to offer.
+	$: actorRank = effectiveRole(data.user);
+
+	const ROLE_LABELS: Record<Role, string> = {
+		owner: 'Owner',
+		superadmin: 'Superadmin',
+		admin: 'Admin',
+		user: 'User'
+	};
+
+	function rowRole(user: any): Role {
+		return (user.effective_role ?? (user.is_admin ? 'admin' : 'user')) as Role;
+	}
+
+	// Why an action on this row is unavailable, said plainly; null when allowed.
+	function blockedReason(user: any): string | null {
+		if (!can(data.user, 'users-manage')) return 'You do not have permission to manage users';
+		if (!data.piiRevealed) {
+			return 'Reveal identifiers to act on users — the ids shown are masked';
+		}
+		if (user.id === data.user.id) return 'You cannot change your own role';
+		if (!canActOn(actorRank, rowRole(user))) {
+			return rowRole(user) === 'owner'
+				? 'The owner cannot be changed from inside the site'
+				: 'You can only act on people below your own role';
+		}
+		return null;
+	}
+
+	// Promoting needs the right to hand out the admin role; demoting does not.
+	function toggleBlocked(user: any): boolean {
+		return blockedReason(user) !== null || (!user.is_admin && !canGrant(actorRank, 'admin'));
+	}
+
+	// Access dialog: role and, for admins, the areas they may open.
+	let accessUser: any = null;
+	let accessRole: Role = 'user';
+	let accessPermissions: string[] = [];
+	let accessError = '';
+	let accessSaving = false;
+
+	$: accessRoles = assignableBy(actorRank);
+	$: permissionRule = canEditPermissions(actorRank, accessRole);
+
+	function openAccess(user: any) {
+		accessUser = user;
+		accessRole = rowRole(user);
+		accessPermissions = [...(user.permissions ?? [])];
+		accessError = '';
+	}
+
+	function closeAccess() {
+		accessUser = null;
+		accessError = '';
+	}
+
+	async function saveAccess() {
+		if (!accessUser) return;
+		accessSaving = true;
+		accessError = '';
+		try {
+			const body: Record<string, unknown> = { role: accessRole };
+			if (accessRole === 'admin' && permissionRule.ok) body.permissions = accessPermissions;
+			const response = await fetch(`/api/admin/users/${accessUser.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
+			if (response.ok) {
+				const usersResponse = await fetch('/api/admin/users');
+				if (usersResponse.ok) {
+					const usersData = await usersResponse.json();
+					users = usersData.users || [];
+				}
+				closeAccess();
+			} else {
+				const errorData = await response.json().catch(() => ({}));
+				accessError = errorData.message || 'Failed to update access';
+			}
+		} catch {
+			accessError = 'Failed to update access';
+		} finally {
+			accessSaving = false;
+		}
+	}
 
 	let users = data.users || [];
 	let searchQuery = '';
@@ -299,10 +386,15 @@
 									{/if}
 								</td>
 								<td>
-									{#if user.is_admin}
-										<span class="badge badge-admin">Admin</span>
-									{:else}
+									{#if rowRole(user) === 'user'}
 										<span class="badge badge-user">User</span>
+									{:else}
+										<span class="badge badge-admin">{ROLE_LABELS[rowRole(user)]}</span>
+									{/if}
+									{#if rowRole(user) === 'admin' && user.permissions}
+										<span class="perm-count"
+											>{user.permissions.length} of {PERMISSIONS.length} areas</span
+										>
 									{/if}
 								</td>
 								<td>{formatDate(user.created_at)}</td>
@@ -310,18 +402,15 @@
 									<div class="actions">
 										<button
 											class="btn-icon"
-											class:disabled={!canMutateUsers || user.id === data.user.id}
-											disabled={!canMutateUsers || user.id === data.user.id}
+											class:disabled={toggleBlocked(user)}
+											disabled={toggleBlocked(user)}
 											on:click={() => toggleAdmin(user.id, user.is_admin)}
-											title={!data.user.isOwner
-												? 'Owner access required'
-												: !data.piiRevealed
-													? 'Reveal identifiers to act on users — the ids shown are masked'
-													: user.id === data.user.id
-														? 'Cannot modify your own role'
-														: user.is_admin
-															? 'Demote from admin'
-															: 'Promote to admin'}
+											title={blockedReason(user) ??
+												(toggleBlocked(user)
+													? 'You cannot grant a role at or above your own'
+													: user.is_admin
+														? 'Demote from admin'
+														: 'Promote to admin')}
 											aria-label={user.is_admin ? 'Demote from admin' : 'Promote to admin'}
 										>
 											{#if user.is_admin}
@@ -349,17 +438,34 @@
 											{/if}
 										</button>
 										<button
+											class="btn-icon"
+											class:disabled={blockedReason(user) !== null}
+											disabled={blockedReason(user) !== null}
+											on:click={() => openAccess(user)}
+											title={blockedReason(user) ?? 'Manage role and access'}
+											aria-label="Manage access for {user.name || user.email}"
+										>
+											<svg
+												fill="none"
+												height="18"
+												stroke="currentColor"
+												stroke-width="2"
+												viewBox="0 0 24 24"
+												width="18"
+												aria-hidden="true"
+											>
+												<circle cx="12" cy="12" r="3" />
+												<path
+													d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
+												/>
+											</svg>
+										</button>
+										<button
 											class="btn-icon btn-danger"
-											class:disabled={!canMutateUsers || user.id === data.user.id}
-											disabled={!canMutateUsers || user.id === data.user.id}
+											class:disabled={blockedReason(user) !== null}
+											disabled={blockedReason(user) !== null}
 											on:click={() => deleteUser(user.id, user.name || user.email)}
-											title={!data.user.isOwner
-												? 'Owner access required'
-												: !data.piiRevealed
-													? 'Reveal identifiers to act on users — the ids shown are masked'
-													: user.id === data.user.id
-														? 'Cannot delete your own account'
-														: 'Delete user'}
+											title={blockedReason(user) ?? 'Delete user'}
 											aria-label="Delete user"
 										>
 											<svg
@@ -385,6 +491,87 @@
 		{/if}
 	</div>
 </div>
+
+{#if accessUser}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="modal-overlay" on:click={closeAccess}>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+		<div
+			class="modal"
+			on:click|stopPropagation
+			on:keydown={(e) => e.key === 'Escape' && closeAccess()}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="access-title"
+			tabindex="-1"
+		>
+			<div class="modal-header">
+				<h2 id="access-title">Access for {accessUser.name || accessUser.email}</h2>
+				<button aria-label="Close" class="btn-close" on:click={closeAccess}>
+					<svg
+						fill="none"
+						height="24"
+						stroke="currentColor"
+						stroke-width="2"
+						viewBox="0 0 24 24"
+						width="24"
+						aria-hidden="true"
+					>
+						<path d="M18 6L6 18M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+
+			<form class="modal-body" on:submit|preventDefault={saveAccess}>
+				<fieldset class="access-fieldset">
+					<legend>Role</legend>
+					{#each accessRoles as option}
+						<label class="choice">
+							<input type="radio" name="role" value={option} bind:group={accessRole} />
+							<span>{ROLE_LABELS[option]}</span>
+						</label>
+					{/each}
+					<p class="rule-note">
+						You can grant roles below your own ({ROLE_LABELS[actorRank]}). The owner is set in
+						configuration and cannot be changed here.
+					</p>
+				</fieldset>
+
+				<fieldset class="access-fieldset">
+					<legend>Areas this admin can open</legend>
+					{#if permissionRule.ok}
+						{#each PERMISSIONS as permission}
+							<label class="choice">
+								<input type="checkbox" value={permission} bind:group={accessPermissions} />
+								<span>
+									<strong>{PERMISSION_LABELS[permission].label}</strong>
+									<span class="choice-detail">{PERMISSION_LABELS[permission].detail}</span>
+								</span>
+							</label>
+						{/each}
+					{:else}
+						<p class="rule-note">{permissionRule.reason}</p>
+					{/if}
+				</fieldset>
+
+				<div role="alert">
+					{#if accessError}
+						<div class="error-banner">{accessError}</div>
+					{/if}
+				</div>
+
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" on:click={closeAccess}>Cancel</button>
+					<button type="submit" class="btn btn-primary" disabled={accessSaving}>
+						{accessSaving ? 'Saving…' : 'Save access'}
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
 
 {#if showInviteModal}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -720,6 +907,11 @@
 	}
 
 	.btn-icon {
+		min-width: 44px;
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		padding: var(--spacing-sm);
 		border: none;
 		background: transparent;
@@ -731,6 +923,56 @@
 
 	.btn-icon:hover {
 		background: var(--color-background);
+	}
+
+	.perm-count {
+		display: block;
+		margin-top: var(--spacing-xs);
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+	}
+
+	.access-fieldset {
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+		margin: 0 0 var(--spacing-md) 0;
+	}
+
+	.access-fieldset legend {
+		font-weight: 600;
+		color: var(--color-text);
+		padding: 0 var(--spacing-xs);
+	}
+
+	.choice {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--spacing-sm);
+		min-height: 44px;
+		padding: var(--spacing-xs) 0;
+		cursor: pointer;
+		color: var(--color-text);
+	}
+
+	.choice input {
+		width: 24px;
+		height: 24px;
+		margin: 0;
+		flex-shrink: 0;
+		accent-color: var(--color-primary);
+	}
+
+	.choice-detail {
+		display: block;
+		font-size: 0.85rem;
+		color: var(--color-text-secondary);
+	}
+
+	.rule-note {
+		margin: var(--spacing-sm) 0 0 0;
+		font-size: 0.9rem;
+		color: var(--color-text-secondary);
 	}
 
 	.btn-danger {
@@ -872,6 +1114,7 @@
 	}
 
 	.btn {
+		min-height: 44px;
 		padding: var(--spacing-md) var(--spacing-lg);
 		border: none;
 		border-radius: var(--radius-md);

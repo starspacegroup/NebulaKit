@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { can, PERMISSION_LABELS, type Permission } from '$lib/access/permissions';
 
 export type AuthenticatedUser = NonNullable<App.Locals['user']>;
 
@@ -23,5 +24,20 @@ export function requireAdmin(locals: App.Locals): AuthenticatedUser {
 export function requireOwner(locals: App.Locals): AuthenticatedUser {
 	const user = requireUser(locals);
 	if (!user.isOwner && !user.isSuperAdmin) throw error(403, 'Owner access required');
+	return user;
+}
+
+/**
+ * Guard an admin area by named permission (owner and superadmin hold all).
+ * Every load and action that serves an area calls this itself: hiding a nav
+ * link is not authorization, and a `+page.server.ts` load also runs on a
+ * client-side navigation or a direct `__data.json` fetch, which the layout's
+ * redirect does not cover.
+ */
+export function requirePermission(locals: App.Locals, permission: Permission): AuthenticatedUser {
+	const user = requireUser(locals);
+	if (!can(user, permission)) {
+		throw error(403, `You do not have access to ${PERMISSION_LABELS[permission].label}.`);
+	}
 	return user;
 }

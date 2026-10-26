@@ -1,4 +1,4 @@
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
@@ -15,7 +15,7 @@ import { isPiiRevealed, maskName, maskEmail, PII_REVEAL_COOKIE } from '$lib/serv
  * names + emails are masked unless the owner has PII reveal on.
  */
 export const GET: RequestHandler = async ({ locals, platform, url, cookies }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'contact');
 
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');

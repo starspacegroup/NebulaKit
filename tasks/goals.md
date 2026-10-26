@@ -10,6 +10,11 @@ status: done locally 2026-10-25 (branch `port/cron`); not deployed
 status: done 2026-10-25 (branch `port/secrets`, local commits only)
 - `docs/ZERO_ENV_SETUP.md` claimed "Secrets stored encrypted in Cloudflare KV" while AI provider keys and OAuth client secrets were plain JSON in KV. Now sealed with AES-256-GCM (HKDF subkeys per purpose, AAD bound to the record, versioned `v1.` envelope) by `src/lib/server/secret-box.ts` and `secret-store.ts`; legacy plaintext migrates on read; rotation via `ENCRYPTION_KEY_PREVIOUS`; with no `ENCRYPTION_KEY` a key is generated into KV so the first save is already encrypted (weaker, documented).
 - Open: no automated way to sweep every record to the new key after rotation (it happens as records are read); the CMS/other KV values are not secrets and stay plaintext.
+## Role ladder and per-area admin permissions
+status: done 2026-10-25 (branch `port/roles`, local only)
+- Ported the idea from the CustomPerfections client site, generically: owner > superadmin > admin > user (`src/lib/access/roles.ts`, pure), and named per-admin areas (`permissions.ts`; rows in `user_permissions`). Migration `0021_roles_and_permissions.sql` backfills existing admins with the areas they could already reach and maps `can_view_stats` to `stats`; `is_admin` and `can_view_stats` stay in sync.
+- Closed the "any admin can act on any user" gap here: user PATCH/DELETE enforce the ladder from the stored row, the owner is config and unassignable, and CMS, pages, contact, lighthouse, API keys, user list/management and PII reveal now use `requirePermission`. The admin nav filters from the same list; the users page has a Manage access dialog.
+- Not done: other forks and siblings (Guides still lets any admin promote or delete users); owner-only areas (settings, auth/AI keys, analytics connection) are not permissions; no shop permission because the template has no shop admin screens yet; no Playwright coverage of the dialog.
 
 ## Builder, shop and site API as packages (Ammoura's sites run on NebulaKit)
 

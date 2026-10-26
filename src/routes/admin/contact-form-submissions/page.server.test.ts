@@ -9,7 +9,7 @@ vi.mock('$lib/services/contact', () => contactMocks);
 import { load } from './+page.server';
 
 function event(opts: {
-	user?: { isOwner?: boolean; isAdmin?: boolean };
+	user?: { isOwner?: boolean; isAdmin?: boolean; permissions?: string[] };
 	cookie?: string;
 	query?: Record<string, string>;
 	db?: unknown;
@@ -39,7 +39,9 @@ describe('admin contact submissions load', () => {
 	});
 
 	it('masks name/email by default', async () => {
-		const data = (await load(event({ user: { isAdmin: true } }) as never)) as {
+		const data = (await load(
+			event({ user: { isAdmin: true, permissions: ['contact'] } }) as never
+		)) as {
 			submissions: Array<{ name: string; email: string }>;
 		};
 		expect(data.submissions[0].name).toBe('A** L*******');

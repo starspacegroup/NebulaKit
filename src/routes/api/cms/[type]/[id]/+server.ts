@@ -16,12 +16,12 @@ import {
 	getItemTags,
 	updateContentItem
 } from '$lib/services/cms';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ platform, locals, params }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -55,7 +55,7 @@ export const GET: RequestHandler = async ({ platform, locals, params }) => {
 };
 
 export const PUT: RequestHandler = async ({ platform, locals, params, request, url }) => {
-	const user = requireAdmin(locals);
+	const user = requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -121,7 +121,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 };
 
 export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'cms');
 
 	const db = platform?.env?.DB;
 	if (!db) {

@@ -1,11 +1,11 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { getContactFormSubmission, resolveContactFormSubmission } from '$lib/services/contact';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import { isPiiRevealed, maskName, maskEmail, PII_REVEAL_COOKIE } from '$lib/server/pii-mask';
 
 export const load: PageServerLoad = async ({ locals, platform, params, cookies }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'contact');
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ locals, platform, params, cookies }
 
 export const actions: Actions = {
 	resolve: async ({ platform, params, locals }) => {
-		requireAdmin(locals);
+		requirePermission(locals, 'contact');
 		const db = platform?.env?.DB;
 		if (!db) throw error(500, 'Database not available');
 		await resolveContactFormSubmission(db, params.id);

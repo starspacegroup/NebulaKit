@@ -19,7 +19,7 @@ const submission = {
 };
 
 function loadEvent(opts: {
-	user?: { isOwner?: boolean; isAdmin?: boolean };
+	user?: { isOwner?: boolean; isAdmin?: boolean; permissions?: string[] };
 	cookie?: string;
 	db?: unknown;
 }) {
@@ -56,7 +56,9 @@ describe('admin submission detail load', () => {
 	});
 
 	it('masks name/email by default', async () => {
-		const data = (await load(loadEvent({ user: { isAdmin: true } }) as never)) as {
+		const data = (await load(
+			loadEvent({ user: { isAdmin: true, permissions: ['contact'] } }) as never
+		)) as {
 			submission: { name: string; email: string };
 		};
 		expect(data.submission.name).toBe('A** L*******');
@@ -73,7 +75,7 @@ describe('admin submission detail load', () => {
 
 describe('resolve action', () => {
 	it('rejects anonymous and regular-user mutations', async () => {
-		const event = (user?: { isOwner?: boolean; isAdmin?: boolean }) => ({
+		const event = (user?: { isOwner?: boolean; isAdmin?: boolean; permissions?: string[] }) => ({
 			locals: { user },
 			platform: { env: { DB: {} } },
 			params: { id: 'id-1' }
@@ -87,7 +89,7 @@ describe('resolve action', () => {
 	it('resolves then redirects to the inbox', async () => {
 		await expect(
 			actions.resolve({
-				locals: { user: { isAdmin: true } },
+				locals: { user: { isAdmin: true, permissions: ['contact'] } },
 				platform: { env: { DB: {} } },
 				params: { id: 'id-1' }
 			} as never)
@@ -98,7 +100,7 @@ describe('resolve action', () => {
 	it('throws 500 without a database', async () => {
 		await expect(
 			actions.resolve({
-				locals: { user: { isAdmin: true } },
+				locals: { user: { isAdmin: true, permissions: ['contact'] } },
 				platform: { env: { DB: null } },
 				params: { id: 'id-1' }
 			} as never)

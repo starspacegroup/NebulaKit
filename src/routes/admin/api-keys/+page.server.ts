@@ -7,7 +7,7 @@ import {
 	recentApiCalls,
 	revokeApiKey
 } from '@nebulakit/security';
-import { requireOwner } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -23,7 +23,7 @@ function database(platform: App.Platform | undefined) {
 }
 
 export const load: PageServerLoad = async ({ locals, platform }) => {
-	requireOwner(locals);
+	requirePermission(locals, 'api-keys');
 	const db = database(platform);
 	return {
 		keys: await listApiKeys(db),
@@ -37,7 +37,7 @@ const EXPIRY_DAYS = new Set(['7', '30', '90', '365', 'never']);
 
 export const actions: Actions = {
 	create: async ({ locals, platform, request }) => {
-		const user = requireOwner(locals);
+		const user = requirePermission(locals, 'api-keys');
 		const db = database(platform);
 		const form = await request.formData();
 		const name = String(form.get('name') ?? '').trim();
@@ -60,7 +60,7 @@ export const actions: Actions = {
 		return { created: { key, name: record.name } };
 	},
 	revoke: async ({ locals, platform, request }) => {
-		requireOwner(locals);
+		requirePermission(locals, 'api-keys');
 		const db = database(platform);
 		const id = String((await request.formData()).get('id') ?? '');
 		if (!(await revokeApiKey(db, id)))
