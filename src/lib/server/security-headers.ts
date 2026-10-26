@@ -2,7 +2,7 @@
  * Response security headers, set on every response the Worker produces.
  *
  * Static assets are served by Cloudflare Pages, not the Worker, so the same
- * headers are repeated for them in `static/_headers`. A test keeps the two in
+ * headers are repeated for them in `_headers`. A test keeps the two in
  * step.
  *
  * Content-Security-Policy is set by SvelteKit (`kit.csp` in svelte.config.js)

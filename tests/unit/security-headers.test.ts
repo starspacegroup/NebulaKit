@@ -40,8 +40,8 @@ describe('security headers', () => {
 		expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
 	});
 
-	it('static/_headers repeats exactly the Worker headers', () => {
-		const file = readFileSync('static/_headers', 'utf8');
+	it('_headers repeats exactly the Worker headers', () => {
+		const file = readFileSync('_headers', 'utf8');
 		const block = file
 			.split(/\n\n/)
 			.find((part) => part.includes('\n/*\n') || part.startsWith('/*'));
