@@ -1,0 +1,37 @@
+# Scheduler for a Cloudflare Pages deployment.
+#
+# Pages cannot run Cron Triggers (that is a Workers feature) and rejects a
+# `[triggers]` block. This is a separate, tiny Worker whose only job is to wake
+# on a schedule and POST to the app's /api/cron/* routes. It has no bindings and
+# no public URL. Deploy it on its own:
+#
+#   cd cron-worker
+#   bunx wrangler deploy
+#   bunx wrangler secret put CRON_SECRET   # same value as on the Pages project
+#
+# See docs/SCHEDULED_JOBS.md.
+name = "nebulakit-cron"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# No route and no workers.dev subdomain: nothing here should be reachable from
+# the internet, and the Worker defines no fetch handler.
+workers_dev = false
+
+# No account_id on purpose. wrangler takes it from `wrangler login` or from the
+# CLOUDFLARE_ACCOUNT_ID environment variable.
+
+# Every expression here must be a key of CRON_PATHS in src/index.ts and must be
+# the `cron` of a job in src/lib/server/scheduler/registry.ts.
+# tests/unit/scheduler-registry.test.ts fails if the three disagree.
+[triggers]
+crons = ["17 3 * * *", "43 4 * * *"]
+
+[vars]
+# The app's origin, no path. Not a secret. Set it to your deployed site, for
+# example https://www.your-domain.example. The Worker refuses to call the
+# placeholder.
+TARGET_URL = "https://REPLACE_ME.example"
+
+# CRON_SECRET is a secret, not a var. Set it with `wrangler secret put
+# CRON_SECRET`, to the same value as CRON_SECRET on the Pages project.

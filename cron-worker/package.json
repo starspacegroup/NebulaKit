@@ -1,0 +1,10 @@
+{
+	"name": "nebulakit-cron-worker",
+	"private": true,
+	"type": "module",
+	"description": "Standalone scheduler Worker for a Cloudflare Pages deployment. Not part of the app build.",
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev --test-scheduled"
+	}
+}
