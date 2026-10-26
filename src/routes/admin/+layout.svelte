@@ -4,31 +4,38 @@
 	import { setContext } from 'svelte';
 	import { writable } from 'svelte/store';
 	import PiiPrivacyToggle from '$lib/components/admin/PiiPrivacyToggle.svelte';
+	import { heldPermissions } from '$lib/access/permissions';
 	import type { LayoutData } from './$types';
 
 	export let data: LayoutData;
 
-	// The Dashboard shows stats only to admins with the `can_view_stats` grant
-	// (it degrades for the rest). Analytics is owner-only
-	// (`canManageStatsConnection`); the route enforces it as well, and hiding the
-	// link just avoids offering a 403.
+	// A link shows only if this admin can use it, from the same permission list
+	// the routes enforce (permissions.ts). Hiding a link is a courtesy, not
+	// authorization: every load and API still guards itself. The Dashboard is
+	// every admin's landing page; its stats are gated on `stats`. Settings,
+	// Analytics and AI Keys stay with the owner and superadmins.
+	$: held = new Set<string>(heldPermissions(data.user));
 	$: navItems = [
 		{ path: '/admin', label: 'Dashboard', icon: 'home' },
-		{ path: '/admin/settings', label: 'Settings', icon: 'settings' },
 		...(data.canManageAnalytics
-			? [{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' }]
+			? [
+					{ path: '/admin/settings', label: 'Settings', icon: 'settings' },
+					{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' },
+					{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' }
+				]
 			: []),
-		{ path: '/admin/users', label: 'Users', icon: 'users' },
-		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
-		{ path: '/admin/cms', label: 'Content', icon: 'document' },
-		{ path: '/admin/pages', label: 'Pages', icon: 'layout' },
-		// Owner-only, like Analytics: a key can carry site:admin.
-		...(data.user?.isOwner || data.user?.isSuperAdmin
-			? [{ path: '/admin/api-keys', label: 'API Keys', icon: 'key' }]
-			: []),
-		{ path: '/admin/contact-form-submissions', label: 'Contact Forms', icon: 'mail' },
-		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart' }
-	];
+		{ path: '/admin/users', label: 'Users', icon: 'users', permission: 'users' },
+		{ path: '/admin/cms', label: 'Content', icon: 'document', permission: 'cms' },
+		{ path: '/admin/pages', label: 'Pages', icon: 'layout', permission: 'pages' },
+		{ path: '/admin/api-keys', label: 'API Keys', icon: 'key', permission: 'api-keys' },
+		{
+			path: '/admin/contact-form-submissions',
+			label: 'Contact Forms',
+			icon: 'mail',
+			permission: 'contact'
+		},
+		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart', permission: 'lighthouse' }
+	].filter((item) => !('permission' in item) || held.has(item.permission as string));
 
 	// PII reveal state shared with admin views via context. The store tracks the
 	// server-provided value; toggling posts to the reveal endpoint and reloads so
