@@ -407,6 +407,11 @@ export const AUDIT_RULES: Record<string, AuditRule> = {
 		targetType: 'setting',
 		summary: 'Changed sign-in tracking'
 	},
+	'ACTION /admin/sign-ins?/clear': {
+		action: 'sign_in.clear_history',
+		targetType: 'setting',
+		summary: 'Deleted the recorded sign-in history'
+	},
 	'ACTION /admin/sign-ins?/revoke': {
 		action: 'session.revoke',
 		targetType: 'session',

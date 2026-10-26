@@ -109,6 +109,7 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | ------------------------------------------------------ | ----------------------------------------------------------- |
 | Page-view stats, admin stats surface                   | `ADMIN_STATS.md`                                            |
 | Admin audit log (`/admin/audit`, `admin_actions`)      | `AUDIT_LOG.md`                                              |
+| Opt-in sign-in tracking (`/admin/sign-ins`)            | `SIGN_IN_TRACKING.md`                                       |
 | Agent discovery, Markdown negotiation, WebMCP          | `AGENT_READINESS.md`                                        |
 | D1/KV/R2 provisioning, the shared-resource incident    | `CLOUDFLARE_SETUP.md`                                       |
 | CMS embed registry and manifest split                  | `CMS_EMBEDS.md`                                             |

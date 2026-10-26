@@ -6,6 +6,7 @@ import {
 } from '$lib/server/markdown-negotiation';
 import { auditAround } from '$lib/server/audit';
 import { withSecurityHeaders } from '$lib/server/security-headers';
+import { trackSessionSeen } from '$lib/server/sign-ins';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthSession } from '$lib/utils/db';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
@@ -106,6 +107,12 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 			delete event.locals.user;
 			event.cookies.delete('session', { path: '/' });
 		}
+	}
+
+	// Opt-in sign-in tracking (docs/SIGN_IN_TRACKING.md): a no-op unless the owner
+	// turned it on, throttled to once per 5 minutes per session, never throws.
+	if (sessionToken && event.locals.user && !event.locals.user.isPretend) {
+		await trackSessionSeen(event.platform, sessionToken);
 	}
 
 	return resolve(event);

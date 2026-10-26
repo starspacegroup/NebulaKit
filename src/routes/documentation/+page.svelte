@@ -798,8 +798,29 @@ bun run db:migrate:list</code
 			<p>
 				Rows are kept 365 days. Have a scheduler POST to <code>/api/cron/prune-audit</code> with
 				<code>Authorization: Bearer $CRON_SECRET</code> to delete older ones. Apply migration
-				<code>0025</code> with <code>bun run db:migrate:local</code>. Details:
+				<code>0025</code> (shared with sign-in tracking) with <code>bun run db:migrate:local</code>.
+				Details:
 				<code>docs/AUDIT_LOG.md</code>.
+			</p>
+		</section>
+
+		<section id="sign-in-tracking" class="docs-section">
+			<h2>Sign-in Tracking</h2>
+			<p>
+				The owner can see who is signed in and where each sign-in came from at
+				<a href="/admin/sign-ins">/admin/sign-ins</a>, and sign any session out. Recording is
+				<strong>off by default</strong>, because it is the one place the site stores an IP address;
+				the rest of the template stays cookie-free and IP-free. The owner switches it on on that
+				page, under a plain-language disclosure.
+			</p>
+			<p>
+				While on, each sign-in attempt, failures included, stores the method, whether it worked, the
+				IP address (shown masked unless the owner reveals personal data), a rough device label such
+				as “Chrome on macOS” (never the raw browser string), the country, and when a live session
+				was last used. Passwords and typed email addresses are never stored, visitors who are not
+				signing in are never recorded, and attempts are deleted after 90 days. Recording can never
+				block a sign-in. If you turn it on, say so in your privacy policy. Details:
+				<code>docs/SIGN_IN_TRACKING.md</code>.
 			</p>
 		</section>
 

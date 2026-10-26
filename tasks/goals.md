@@ -10,10 +10,11 @@ status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-
 
 ## Admin audit log and opt-in sign-in tracking
 
-status: in-progress (audit log landed 2026-10-25, branch `port/audit`; sign-in tracking follows)
+status: in-progress (audit log and sign-in tracking landed 2026-10-25, branch `port/audit`; not merged)
 
 - Ported from AgapeVerse (`admin_actions`), SpaceBot (query scrubbing) and davis9001.com (sign-ins). One migration, `0025_audit_and_sign_ins.sql`.
 - Audit log: [docs/AUDIT_LOG.md](../docs/AUDIT_LOG.md). Admin and `/api/v1` mutations only, secrets never written, 365-day retention via `POST /api/cron/prune-audit`; `/admin/audit` for any admin.
+- Sign-in tracking: [docs/SIGN_IN_TRACKING.md](../docs/SIGN_IN_TRACKING.md). Opt-in, off by default (KV switch), IP masked on display, device bucket not the raw User-Agent, 90-day retention, `sessions.last_seen_at` throttled to 5 minutes, owner-only `/admin/sign-ins` with session revoke. Never blocks a login.
 - Open: nothing schedules the prune (the cron-worker branch owns scheduling); the audit rules cover the routes that exist today, so a new mutation needs an `AUDIT_RULES` entry.
 
 ## Stats readable by the StarSpace Dashboard

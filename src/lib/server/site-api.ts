@@ -168,7 +168,9 @@ async function auditApiCall(
 	const via = principal.kind;
 	const actorId = via === 'session' ? (event.locals.user?.id ?? null) : principal.keyId;
 	const actorLogin = via === 'key' ? `key:${principal.name}` : principal.name;
-	const targetId = rule?.param ? (event.params[rule.param] ?? null) : null;
+	const targetId = rule?.param
+		? ((event.params as Record<string, string | undefined>)[rule.param] ?? null)
+		: null;
 	await recordAudit(db, {
 		actorId,
 		actorLogin,

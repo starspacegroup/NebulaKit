@@ -495,4 +495,16 @@ describe('Documentation Page', () => {
 		expect(text).toMatch(/\/api\/cron\/prune-audit/);
 		expect(text).toMatch(/365 days/);
 	});
+
+	it('documents sign-in tracking as opt-in with its privacy limits', () => {
+		render(Page);
+		const section = screen.getByRole('heading', { name: /^Sign-in Tracking$/ }).closest('section');
+		expect(section).toBeTruthy();
+		const text = section?.textContent ?? '';
+		expect(text).toMatch(/off by default/i);
+		expect(text).toMatch(/IP address/);
+		expect(text).toMatch(/never the raw browser string/i);
+		expect(text).toMatch(/90 days/);
+		expect(text).toMatch(/never\s+block a sign-in/i);
+	});
 });

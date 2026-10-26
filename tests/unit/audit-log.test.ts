@@ -352,7 +352,7 @@ describe('presentation', () => {
 		});
 		expect(event.target).toBe('user: u2');
 		expect(event.details).toEqual({ summary: 'Deleted a user', detail: { a: 1 } });
-		const bare = toAuditEvent({
+		const bareRow = {
 			id: '2',
 			at: 'x',
 			actor: 'a',
@@ -362,9 +362,9 @@ describe('presentation', () => {
 			targetId: null,
 			summary: 's',
 			detail: undefined
-		});
-		expect(bare.target).toBeUndefined();
-		expect(toAuditEvent({ ...bare, targetType: 'page' }).target).toBe('page');
+		};
+		expect(toAuditEvent(bareRow).target).toBeUndefined();
+		expect(toAuditEvent({ ...bareRow, targetType: 'page' }).target).toBe('page');
 	});
 });
 
@@ -453,7 +453,7 @@ describe('cron and page', () => {
 			)
 			.run();
 		const res = await call({ DB: db, CRON_SECRET: 's' }, 'Bearer s');
-		expect(await res.json()).toEqual({ retentionDays: 365, pruned: 1 });
+		expect(await res.json()).toEqual({ retentionDays: 365, pruned: 1, prunedSignIns: 0 });
 	});
 
 	it('serves the page to admins only', async () => {
