@@ -755,6 +755,23 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 				<div class="callout-card">
+					<h3>Regional pricing</h3>
+					<p>
+						<code>/admin/settings/pricing</code> lowers prices for shoppers in countries where money
+						buys more, using a World Bank price level table shipped with the kit. It is off until
+						you turn it on, and it only ever lowers a price. Set how much of the gap to pass on, the
+						largest discount, which products it covers (digital only by default) and per-country
+						overrides, and preview any country before saving. An order takes the least generous
+						country among the one Cloudflare sees and the shipping address, so a VPN alone earns
+						nothing. The cart shows the server's quoted total (<code
+							>POST /api/v1/checkout/quote</code
+						>) and each order records the multiplier and countries used. Settings are also at
+						<code>GET/PUT /api/v1/pricing</code>, with scopes
+						<code>pricing:read</code> and <code>pricing:write</code>. Apply migration
+						<code>0022</code>; refresh the table with <code>bun run update:price-index</code>.
+					</p>
+				</div>
+				<div class="callout-card">
 					<h3>API keys</h3>
 					<p>
 						The owner manages access at <code>/admin/api-keys</code>: create a key with scopes and
