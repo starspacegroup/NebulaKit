@@ -56,11 +56,12 @@ SvelteKit 2 + **Svelte 5** (`^5.56.8`) + TypeScript run on Cloudflare Pages (`@s
 **`src/hooks.server.ts` — the sequence order is load-bearing.**
 
 ```
-sequence(securityHeadersHandler, usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
+sequence(securityHeadersHandler, usageHandler, redirectsHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
 ```
 
 - `securityHeadersHandler` outermost: it only adds response headers, so it can wrap everything.
 - `usageHandler` next, so requests that return early still count against the Cloudflare plan meter (it counts _every_ invocation, buffered in-process and flushed on a rate limit).
+- `redirectsHandler` after `usageHandler`: it acts only on a `404` GET/HEAD and looks the path up in the `redirects` table (`/admin/redirects`, `src/lib/server/redirects.ts`), so healthy pages never touch D1 and a redirect is counted once, as the redirect, and never as a page view. Targets are re-validated at request time.
 - `pageViewsHandler` last, so `locals.user` is populated and `signed_in` is accurate. It counts only non-bot HTML `GET` 200s on matched, non-`/admin|/api|/setup` routes.
 - `agentDiscoveryHandler` sits _outside_ that pair so `pageViewsHandler` still sees a `text/html` response and keeps counting agent reads as views.
 
@@ -91,6 +92,8 @@ There is no `docs/` note for this subsystem; the source comments and `tests/unit
 **Chat and AI keys** are spread across `src/lib/services/openai-chat.ts` (streaming text plus realtime voice, and the model allow-lists), `src/routes/api/chat/`, `src/routes/admin/ai-keys/`, `src/lib/utils/cost.ts`, and `src/lib/stores/chatHistory.ts`; behavior is specified in `UNIFIED_CHAT_INTERFACE.md` and `VOICE_CHAT_IMPLEMENTATION.md`.
 
 **`wrangler.toml` ships placeholder resource ids that fail loudly by design.** `bun run dev` warns, `bun run build` fails, and remote migration/deploy paths fail until the ids are safe. `bun run build:ci` is the local-only exception: it warns and compiles without contacting Cloudflare. A previous version shipped real ids and six sibling products inherited one D1 and one KV, including shared OAuth secrets. Run `bun run setup:cf` rather than pasting ids from a sibling project.
+
+**Scheduled jobs** (`docs/SCHEDULED_JOBS.md`): Pages has no Cron Triggers, so `cron-worker/` is a separate Worker (own `wrangler.toml`/`tsconfig.json`, outside the app build and `svelte-check`) that POSTs to `/api/cron/*`. Jobs are registered in `src/lib/server/scheduler/registry.ts`; every cron route is `handleCronRequest(event, id)`, which authorizes with `authorizeCronRequest` (constant-time, 503 when `CRON_SECRET` is unset) and claims `(job, trigger, scheduled minute)` in `scheduled_job_runs` (migration `0023`) before running. `tests/unit/scheduler-registry.test.ts` fails if the registry, `cron-worker/wrangler.toml` `[triggers]` and `CRON_PATHS` in `cron-worker/src/index.ts` drift. Retention deletes go through `deleteInBatches` (`src/lib/server/bounded-delete.ts`): never an unbounded `DELETE`.
 
 ### Migrations
 

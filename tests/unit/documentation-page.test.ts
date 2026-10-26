@@ -129,6 +129,22 @@ describe('Documentation Page', () => {
 		expect(scoped.getByText(/never issued one answers 401/i)).toBeInTheDocument();
 	});
 
+	// AGENTS.md §7 — /admin/scheduled-jobs, the cron Worker and CRON_SECRET are a
+	// user-visible admin route and a deployment step, so the documentation has to say so.
+	it('documents the cron Worker and the scheduled jobs admin page', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Scheduled Jobs/i, level: 2 })
+				.closest('section') as HTMLElement
+		);
+
+		expect(scoped.getAllByText(/cron-worker\//).length).toBeGreaterThan(0);
+		expect(scoped.getByText('/admin/scheduled-jobs')).toBeInTheDocument();
+		expect(scoped.getByText(/wrangler secret put CRON_SECRET/)).toBeInTheDocument();
+		expect(scoped.getByText('0023_scheduled_job_runs.sql')).toBeInTheDocument();
+	});
+
 	// AGENTS.md §7 — /admin/pages, /admin/api-keys, /p/[slug] and /api/v1 are
 	// user-visible routes, and the shop's env vars are bindings an operator sets.
 	it('documents the shop, the page builder, API keys and the site API', () => {
@@ -151,6 +167,21 @@ describe('Documentation Page', () => {
 			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
 		}
 		expect(scoped.getByText(/Security updates are forced to every site/i)).toBeInTheDocument();
+	});
+
+	// AGENTS.md §7 — /admin/redirects is a user-visible admin route and
+	// REDIRECT_ALLOWED_HOSTS is a binding an operator sets.
+	it('documents the redirect manager', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: /Shop, Pages and the Site API/i })
+				.closest('section') as HTMLElement
+		);
+		for (const text of ['/admin/redirects', '0024_redirects.sql', 'REDIRECT_ALLOWED_HOSTS']) {
+			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/Loops and off-site targets are refused/i)).toBeInTheDocument();
 	});
 
 	// AGENTS.md §7 — /admin/analytics is a user-visible admin surface, so the
