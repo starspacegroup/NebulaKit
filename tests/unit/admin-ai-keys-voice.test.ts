@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_ENCRYPTION_KEY } from '../helpers/fake-kv';
 
 /**
  * Tests for AI Keys Voice Chat Configuration
@@ -15,6 +16,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 		it('should create key with voice chat enabled', async () => {
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi.fn().mockResolvedValue(JSON.stringify([])),
 						put: vi.fn().mockResolvedValue(undefined)
@@ -60,6 +62,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 		it('should create key with voice chat disabled by default', async () => {
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi.fn().mockResolvedValue(JSON.stringify([])),
 						put: vi.fn().mockResolvedValue(undefined)
@@ -111,6 +114,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi.fn().mockResolvedValue(JSON.stringify(existingKey)),
 						put: vi.fn().mockResolvedValue(undefined)
@@ -163,6 +167,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi.fn().mockResolvedValue(JSON.stringify(existingKey)),
 						put: vi.fn().mockResolvedValue(undefined)
@@ -214,6 +219,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi
 							.fn()
@@ -261,6 +267,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi
 							.fn()
@@ -298,6 +305,7 @@ describe('AI Keys Voice Chat Configuration', () => {
 
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi
 							.fn()

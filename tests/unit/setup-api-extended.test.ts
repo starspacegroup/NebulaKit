@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_ENCRYPTION_KEY } from '../helpers/fake-kv';
 
 const ownerLocals = { user: { id: 'owner-1', isOwner: true, isAdmin: true } };
 const setupHeaders = new Headers({ authorization: 'Bearer test-setup-secret' });
@@ -186,6 +187,7 @@ describe('Setup API', () => {
 			const mockPlatform = {
 				env: {
 					SETUP_SECRET: 'test-setup-secret',
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
 						get: vi.fn().mockResolvedValue(null),
 						put: mockPut
@@ -202,7 +204,7 @@ describe('Setup API', () => {
 				})
 			});
 
-			vi.stubGlobal('crypto', { randomUUID: () => 'config-uuid' });
+			vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('config-uuid' as any);
 
 			const { POST } = await import('../../src/routes/api/setup/+server');
 			const response = await POST({

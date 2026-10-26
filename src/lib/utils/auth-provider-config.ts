@@ -1,3 +1,4 @@
+import { authConfigSpec, readRecordWithSecret } from '$lib/server/secret-store';
 import type { OAuthProvider } from './oauth-state';
 
 export interface AuthProviderConfig {
@@ -33,11 +34,15 @@ export async function getAuthProviderCredentials(
 
 	if ((!credentials.clientId || !credentials.clientSecret) && platform?.env?.KV) {
 		try {
-			const stored = await platform.env.KV.get(`auth_config:${provider}`);
+			// The client secret is encrypted at rest; legacy plaintext is migrated here.
+			const stored = await readRecordWithSecret<AuthProviderCredentials & Record<string, unknown>>(
+				platform,
+				`auth_config:${provider}`,
+				authConfigSpec(provider)
+			);
 			if (stored) {
-				const config = JSON.parse(stored) as AuthProviderCredentials;
-				credentials.clientId ||= config.clientId;
-				credentials.clientSecret ||= config.clientSecret;
+				credentials.clientId ||= stored.record.clientId;
+				credentials.clientSecret ||= stored.record.clientSecret;
 			}
 		} catch (error) {
 			console.error('Failed to fetch from KV:', error);

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { TEST_ENCRYPTION_KEY } from '../helpers/fake-kv';
 
 /**
  * Tests for OpenAI Chat Service
@@ -31,13 +32,13 @@ describe('OpenAI Chat Service', () => {
 				return Promise.resolve(null);
 			});
 
-			const platform = { env: { KV: mockKV } };
+			const platform = { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } };
 
 			// Import and test
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
 			const result = await getEnabledOpenAIKey(platform as any);
 
-			expect(result).toEqual({
+			expect(result).toMatchObject({
 				id: 'key1',
 				name: 'OpenAI Production',
 				provider: 'openai',
@@ -68,7 +69,7 @@ describe('OpenAI Chat Service', () => {
 				return Promise.resolve(null);
 			});
 
-			const platform = { env: { KV: mockKV } };
+			const platform = { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } };
 
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
 			const result = await getEnabledOpenAIKey(platform as any);
@@ -112,7 +113,9 @@ describe('OpenAI Chat Service', () => {
 			});
 
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
-			const result = await getEnabledOpenAIKey({ env: { KV: mockKV } } as any);
+			const result = await getEnabledOpenAIKey({
+				env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY }
+			} as any);
 
 			expect(result?.id).toBe('chat-capable');
 		});
@@ -139,7 +142,9 @@ describe('OpenAI Chat Service', () => {
 			});
 
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
-			const result = await getEnabledOpenAIKey({ env: { KV: mockKV } } as any);
+			const result = await getEnabledOpenAIKey({
+				env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY }
+			} as any);
 
 			// The route then surfaces 503 "No chat models configured", unchanged.
 			expect(result?.id).toBe('voice-only');
@@ -177,7 +182,7 @@ describe('OpenAI Chat Service', () => {
 				return Promise.resolve(null);
 			});
 
-			const platform = { env: { KV: mockKV } };
+			const platform = { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } };
 
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
 			const result = await getEnabledOpenAIKey(platform as any);
@@ -209,7 +214,7 @@ describe('OpenAI Chat Service', () => {
 				)
 			};
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
-			const platform = { env: { KV: mockKV } } as any;
+			const platform = { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } } as any;
 
 			expect((await getEnabledOpenAIKey(platform, 'gpt-4o-mini'))?.apiKey).toBe('sk-second');
 			expect(await getEnabledOpenAIKey(platform, 'o3')).toBeNull();
@@ -525,7 +530,7 @@ describe('OpenAI Chat Service', () => {
 				get: vi.fn().mockResolvedValue(null)
 			};
 
-			const platform = { env: { KV: mockKV } };
+			const platform = { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } };
 
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
 			const result = await getEnabledOpenAIKey(platform as any);
@@ -539,7 +544,7 @@ describe('OpenAI Chat Service', () => {
 				get: vi.fn().mockRejectedValue(new Error('KV error'))
 			};
 
-			const platform = { env: { KV: mockKV } };
+			const platform = { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } };
 
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
 			const result = await getEnabledOpenAIKey(platform as any);
@@ -575,7 +580,7 @@ describe('OpenAI Chat Service', () => {
 				return Promise.resolve(null);
 			});
 
-			const platform = { env: { KV: mockKV } };
+			const platform = { env: { KV: mockKV, ENCRYPTION_KEY: TEST_ENCRYPTION_KEY } };
 
 			const { getEnabledOpenAIKey } = await import('$lib/services/openai-chat');
 			const result = await getEnabledOpenAIKey(platform as any);

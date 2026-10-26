@@ -2,6 +2,7 @@
  * Extended tests for setup API endpoint - covering more branches
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_ENCRYPTION_KEY } from '../helpers/fake-kv';
 import { GET, POST } from '../../src/routes/api/setup/+server';
 
 describe('Setup API - Extended Branch Coverage', () => {
@@ -47,6 +48,7 @@ describe('Setup API - Extended Branch Coverage', () => {
 					? {
 							env: {
 								SETUP_SECRET: 'test-setup-secret',
+								ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 								KV: {
 									get: overrides.kvGet || mockKVGet,
 									put: overrides.kvPut || mockKVPut

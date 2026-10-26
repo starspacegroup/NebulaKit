@@ -1,4 +1,5 @@
 import { requireOwner } from '$lib/server/auth-guards';
+import { authConfigSpec, sealRecordSecret } from '$lib/server/secret-store';
 import { error, isHttpError, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { site } from '$lib/site.config';
@@ -90,14 +91,18 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		const adminGithubId = String(githubUser.id);
 		const adminGithubUsername = String(githubUser.login);
 		const now = new Date().toISOString();
-		const authConfig = {
-			id: crypto.randomUUID(),
-			provider: 'github',
-			clientId: data.clientId,
-			clientSecret: data.clientSecret,
-			createdAt: now,
-			updatedAt: now
-		};
+		const authConfig = await sealRecordSecret(
+			platform,
+			{
+				id: crypto.randomUUID(),
+				provider: 'github',
+				clientId: data.clientId,
+				createdAt: now,
+				updatedAt: now
+			},
+			authConfigSpec('github'),
+			data.clientSecret
+		);
 
 		// KV has no transactions, and the lock above treats *any* leftover key as
 		// "setup already happened". A torn write would therefore lock setup while

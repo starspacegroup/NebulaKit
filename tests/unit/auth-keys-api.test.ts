@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_ENCRYPTION_KEY } from '../helpers/fake-kv';
 
 const ownerLocals = { user: { id: 'owner-1', isOwner: true, isAdmin: true } };
 
@@ -214,7 +215,7 @@ describe('Auth Keys API', () => {
 
 	describe('POST /api/admin/auth-keys', () => {
 		it('should create a new auth key', async () => {
-			vi.stubGlobal('crypto', { randomUUID: () => 'new-key-123' });
+			vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('new-key-123' as any);
 
 			const { POST } = await import('../../src/routes/api/admin/auth-keys/+server');
 			const response = await POST({
@@ -227,7 +228,12 @@ describe('Auth Keys API', () => {
 						clientSecret: 'secret-123'
 					})
 				},
-				platform: { env: { KV: { put: vi.fn().mockResolvedValue(undefined) } } },
+				platform: {
+					env: {
+						ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
+						KV: { get: vi.fn().mockResolvedValue(null), put: vi.fn().mockResolvedValue(undefined) }
+					}
+				},
 				locals: ownerLocals
 			} as any);
 
@@ -255,13 +261,15 @@ describe('Auth Keys API', () => {
 		});
 
 		it('should save auth key to KV when provider is specified', async () => {
-			vi.stubGlobal('crypto', { randomUUID: () => 'kv-key-123' });
+			vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('kv-key-123' as any);
 			const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 			const mockPut = vi.fn().mockResolvedValue(undefined);
 
 			const mockPlatform = {
 				env: {
+					ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
 					KV: {
+						get: vi.fn().mockResolvedValue(null),
 						put: mockPut
 					}
 				}
