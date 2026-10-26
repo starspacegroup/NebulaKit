@@ -15,6 +15,8 @@ spam policies and structured-data guidelines; they are not tricks.
   something local to say. No tie, no page.
 - **Hub pages and internal links.** A hub lists its child pages; each child links back to the hub
   and to its nearest siblings. Every indexable page is reachable by links, not only by the sitemap.
+- **Built in:** the who/where/what/when/why landing-page system and its audit enforce these rules.
+  See [SEO_LANDING_PAGES.md](SEO_LANDING_PAGES.md).
 
 ## Every indexable page
 
