@@ -8,6 +8,14 @@ status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-
 - Done: `@nebulakit/commerce` (pricing, cart repricing, orders, Stripe checkout + webhook signature, Printful), `@nebulakit/security` (API keys), `@nebulakit/builder` 0.3.0 (page format v2: nested Section/Columns, hide-per-breakpoint; revision history with restore; editor rebuilt on `$lib/actions/draggable` with undo/redo, lint, width preview; ported and fixed from Ammoura's builder), `/api/v1` with OpenAPI, `/admin/api-keys`, `/admin/pages`, `/p/[slug]`. Migrations 0016–0019. Local gates only; nothing deployed.
 - Open: storefront cart UI, shop admin screens (products/orders), regional pricing settings, Printful relay on payment, package distribution to forks, the forced-update bot.
 
+## Admin audit log and opt-in sign-in tracking
+
+status: in-progress (audit log landed 2026-10-25, branch `port/audit`; sign-in tracking follows)
+
+- Ported from AgapeVerse (`admin_actions`), SpaceBot (query scrubbing) and davis9001.com (sign-ins). One migration, `0025_audit_and_sign_ins.sql`.
+- Audit log: [docs/AUDIT_LOG.md](../docs/AUDIT_LOG.md). Admin and `/api/v1` mutations only, secrets never written, 365-day retention via `POST /api/cron/prune-audit`; `/admin/audit` for any admin.
+- Open: nothing schedules the prune (the cron-worker branch owns scheduling); the audit rules cover the routes that exist today, so a new mutation needs an `AUDIT_RULES` entry.
+
 ## Stats readable by the StarSpace Dashboard
 
 status: done 2026-10-10

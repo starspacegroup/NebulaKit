@@ -484,4 +484,15 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/MIT-licensed/);
 		});
 	});
+
+	it('documents the audit log, its privacy limits and its retention endpoint', () => {
+		render(Page);
+		const section = screen.getByRole('heading', { name: /^Audit Log$/ }).closest('section');
+		expect(section).toBeTruthy();
+		const text = section?.textContent ?? '';
+		expect(text).toMatch(/never a secret value/i);
+		expect(text).toMatch(/never page views/i);
+		expect(text).toMatch(/\/api\/cron\/prune-audit/);
+		expect(text).toMatch(/365 days/);
+	});
 });

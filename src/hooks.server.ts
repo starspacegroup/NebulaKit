@@ -4,6 +4,7 @@ import {
 	prefersMarkdown,
 	toMarkdownResponse
 } from '$lib/server/markdown-negotiation';
+import { auditAround } from '$lib/server/audit';
 import { withSecurityHeaders } from '$lib/server/security-headers';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthSession } from '$lib/utils/db';
@@ -244,6 +245,14 @@ export const agentDiscoveryHandler: Handle = async ({ event, resolve }) => {
 };
 
 /**
+ * Admin audit log (docs/AUDIT_LOG.md): one row per successful admin mutation,
+ * never per page view. Sits before authHandler so it wraps it; it reads
+ * `locals.user` only after the response, when authHandler has filled it in.
+ * The relative order of the other handlers is unchanged.
+ */
+export const auditHandler: Handle = ({ event, resolve }) => auditAround(event, resolve);
+
+/**
  * HSTS, nosniff, frame and referrer headers (security-headers.ts). Outermost,
  * so redirects and error responses get them too. It only decorates the
  * response, so it does not change when the other handlers run.
@@ -256,6 +265,7 @@ export const handle = sequence(
 	securityHeadersHandler,
 	usageHandler,
 	agentDiscoveryHandler,
+	auditHandler,
 	authHandler,
 	pageViewsHandler
 );

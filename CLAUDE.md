@@ -56,12 +56,13 @@ SvelteKit 2 + **Svelte 5** (`^5.56.8`) + TypeScript run on Cloudflare Pages (`@s
 **`src/hooks.server.ts` — the sequence order is load-bearing.**
 
 ```
-sequence(securityHeadersHandler, usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)
+sequence(securityHeadersHandler, usageHandler, agentDiscoveryHandler, auditHandler, authHandler, pageViewsHandler)
 ```
 
 - `securityHeadersHandler` outermost: it only adds response headers, so it can wrap everything.
 - `usageHandler` next, so requests that return early still count against the Cloudflare plan meter (it counts _every_ invocation, buffered in-process and flushed on a rate limit).
 - `pageViewsHandler` last, so `locals.user` is populated and `signed_in` is accurate. It counts only non-bot HTML `GET` 200s on matched, non-`/admin|/api|/setup` routes.
+- `auditHandler` (admin audit log, `docs/AUDIT_LOG.md`) wraps `authHandler` and reads `locals.user` only after the response; it never changes the order of the others.
 - `agentDiscoveryHandler` sits _outside_ that pair so `pageViewsHandler` still sees a `text/html` response and keeps counting agent reads as views.
 
 Each handler is exported individually because `sequence()` needs Kit's request store — unit tests call them directly. Reordering silently corrupts analytics rather than failing a test.
@@ -107,6 +108,7 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | Subsystem                                              | Doc                                                         |
 | ------------------------------------------------------ | ----------------------------------------------------------- |
 | Page-view stats, admin stats surface                   | `ADMIN_STATS.md`                                            |
+| Admin audit log (`/admin/audit`, `admin_actions`)      | `AUDIT_LOG.md`                                              |
 | Agent discovery, Markdown negotiation, WebMCP          | `AGENT_READINESS.md`                                        |
 | D1/KV/R2 provisioning, the shared-resource incident    | `CLOUDFLARE_SETUP.md`                                       |
 | CMS embed registry and manifest split                  | `CMS_EMBEDS.md`                                             |

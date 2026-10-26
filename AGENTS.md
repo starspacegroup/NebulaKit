@@ -56,7 +56,8 @@ the command list, repository map, and architecture explanation.
 
 - Runtime bindings come from `event.platform.env`; do not assume a writable filesystem, global
   bindings, or a long-lived process.
-- Keep `sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)` in
+- Keep `sequence(usageHandler, agentDiscoveryHandler, authHandler, pageViewsHandler)` (plus
+  `auditHandler` just before `authHandler`) in
   `src/hooks.server.ts`; accounting and identity depend on that order.
 - CMS is registry-driven through `src/lib/cms/registry.ts`. Do not add parallel content routes or put
   `.svelte` imports in `src/lib/cms/embeds/manifest.ts`.

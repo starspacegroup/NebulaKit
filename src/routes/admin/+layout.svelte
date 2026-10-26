@@ -27,7 +27,12 @@
 			? [{ path: '/admin/api-keys', label: 'API Keys', icon: 'key' }]
 			: []),
 		{ path: '/admin/contact-form-submissions', label: 'Contact Forms', icon: 'mail' },
-		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart' }
+		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart' },
+		{ path: '/admin/audit', label: 'Audit log', icon: 'activity' },
+		// Owner-only: it shows where people signed in from.
+		...(data.user?.isOwner || data.user?.isSuperAdmin
+			? [{ path: '/admin/sign-ins', label: 'Sign-ins', icon: 'users' }]
+			: [])
 	];
 
 	// PII reveal state shared with admin views via context. The store tracks the
