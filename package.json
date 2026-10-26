@@ -9,6 +9,7 @@
 		"check:migrations": "node scripts/check-migrations.mjs",
 		"setup:cf": "node scripts/setup-cf.mjs",
 		"palette:scan": "bun scripts/palette-scan.mjs",
+		"generate:encryption-key": "node scripts/generate-encryption-key.mjs",
 		"dev": "node scripts/check-bindings.mjs --warn && vite dev",
 		"build": "node scripts/check-bindings.mjs && vite build",
 		"build:ci": "node scripts/check-bindings.mjs --warn && vite build",
