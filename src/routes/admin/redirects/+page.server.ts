@@ -1,5 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requirePermission } from '$lib/server/auth-guards';
 import {
 	allowedRedirectHosts,
 	createRedirect,
@@ -13,7 +13,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 /** /admin/redirects: old addresses that send visitors to new ones. */
 export const load: PageServerLoad = async ({ locals, platform }) => {
-	requireAdmin(locals);
+	requirePermission(locals, 'pages');
 	const db = platform?.env?.DB;
 	if (!db) throw error(503, 'The site database is not available');
 	return { redirects: await listRedirects(db) };
@@ -40,7 +40,7 @@ async function check(form: FormData, platform: App.Platform | undefined, ignoreI
 
 export const actions: Actions = {
 	create: async ({ locals, platform, request }) => {
-		requireAdmin(locals);
+		requirePermission(locals, 'pages');
 		const result = await check(await request.formData(), platform);
 		if (!result.value)
 			return fail(400, { action: 'create', problem: result.problem, values: result.values });
@@ -57,7 +57,7 @@ export const actions: Actions = {
 	},
 
 	update: async ({ locals, platform, request }) => {
-		requireAdmin(locals);
+		requirePermission(locals, 'pages');
 		const form = await request.formData();
 		const id = Number(form.get('id'));
 		if (!Number.isInteger(id)) return fail(400, { action: 'update', problem: 'Missing redirect.' });
@@ -79,7 +79,7 @@ export const actions: Actions = {
 	},
 
 	delete: async ({ locals, platform, request }) => {
-		requireAdmin(locals);
+		requirePermission(locals, 'pages');
 		const db = platform?.env?.DB;
 		if (!db) throw error(503, 'The site database is not available');
 		const id = Number((await request.formData()).get('id'));

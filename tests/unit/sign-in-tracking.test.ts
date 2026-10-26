@@ -485,9 +485,10 @@ describe('retention', () => {
 				method: 'POST',
 				headers: { authorization: 'Bearer s' }
 			}),
+			url: new URL('https://x.test/api/cron/prune-audit'),
 			platform: { env: { DB: db, CRON_SECRET: 's' } }
 		} as never);
-		expect((await res.json()).prunedSignIns).toBe(1);
+		expect((await res.json()).detail.prunedSignIns).toBe(1);
 		await db.prepare('INSERT INTO users (id, email) VALUES (?,?)').bind('u', 'u@x.test').run();
 		await createAuthSession(db, { id: 'u' } as never);
 		await db.prepare("UPDATE sessions SET last_seen_at = '2026-01-01T00:00:00Z'").run();

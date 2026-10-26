@@ -1,5 +1,5 @@
 import { error, json } from '@sveltejs/kit';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requireOwner } from '$lib/server/auth-guards';
 import { getScheduledJob } from '$lib/server/scheduler/registry';
 import { executeJob } from '$lib/server/scheduler/runner';
 import type { RequestHandler } from './$types';
@@ -17,7 +17,7 @@ import type { RequestHandler } from './$types';
  * cannot set `Content-Type: application/json` without a CORS preflight.
  */
 export const POST: RequestHandler = async ({ request, locals, platform }) => {
-	requireAdmin(locals);
+	requireOwner(locals);
 
 	const type = request.headers.get('content-type') ?? '';
 	if (!type.toLowerCase().startsWith('application/json')) {

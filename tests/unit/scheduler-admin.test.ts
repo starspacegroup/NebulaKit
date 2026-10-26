@@ -32,7 +32,11 @@ describe('POST /api/admin/scheduled-jobs/run', () => {
 	it('runs a registered job for an admin, as a manual run', async () => {
 		const db = createSqliteD1();
 		const response = await POST(
-			runEvent({ id: '1', isAdmin: true }, { jobId: 'prune-view-stats' }, { db })
+			runEvent(
+				{ id: '1', isAdmin: true, isSuperAdmin: true },
+				{ jobId: 'prune-view-stats' },
+				{ db }
+			)
 		);
 		expect(response.status).toBe(200);
 		expect(await response.json()).toMatchObject({ job: 'prune-view-stats', outcome: 'succeeded' });
@@ -66,7 +70,7 @@ describe('POST /api/admin/scheduled-jobs/run', () => {
 	});
 
 	it('is JSON-only, so a cross-site form post cannot trigger it', async () => {
-		const admin = { id: '1', isAdmin: true };
+		const admin = { id: '1', isAdmin: true, isSuperAdmin: true };
 		for (const type of ['application/x-www-form-urlencoded', 'text/plain', null]) {
 			await expect(POST(runEvent(admin, { jobId: 'lighthouse' }, { type }))).rejects.toMatchObject({
 				status: 415
@@ -75,7 +79,7 @@ describe('POST /api/admin/scheduled-jobs/run', () => {
 	});
 
 	it('rejects an unknown job, a missing id, and a body that is not JSON', async () => {
-		const admin = { id: '1', isAdmin: true };
+		const admin = { id: '1', isAdmin: true, isSuperAdmin: true };
 		for (const body of [{ jobId: 'nope' }, {}, { jobId: 7 }, 'not json', 'null']) {
 			await expect(POST(runEvent(admin, body))).rejects.toMatchObject({ status: 400 });
 		}
@@ -83,7 +87,13 @@ describe('POST /api/admin/scheduled-jobs/run', () => {
 
 	it('needs a database', async () => {
 		await expect(
-			POST(runEvent({ id: '1', isAdmin: true }, { jobId: 'lighthouse' }, { db: undefined }))
+			POST(
+				runEvent(
+					{ id: '1', isAdmin: true, isSuperAdmin: true },
+					{ jobId: 'lighthouse' },
+					{ db: undefined }
+				)
+			)
 		).rejects.toMatchObject({ status: 503 });
 	});
 });

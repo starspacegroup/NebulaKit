@@ -23,7 +23,8 @@
 					{ path: '/admin/settings/pricing', label: 'Regional Pricing', icon: 'chart' },
 					{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' },
 					{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
-					{ path: '/admin/scheduled-jobs', label: 'Scheduled Jobs', icon: 'clock' }
+					{ path: '/admin/scheduled-jobs', label: 'Scheduled Jobs', icon: 'clock' },
+					{ path: '/admin/audit', label: 'Audit log', icon: 'activity' }
 				]
 			: []),
 		{ path: '/admin/users', label: 'Users', icon: 'users', permission: 'users' },
@@ -38,7 +39,6 @@
 			permission: 'contact'
 		},
 		{ path: '/admin/lighthouse', label: 'Lighthouse', icon: 'chart', permission: 'lighthouse' },
-		{ path: '/admin/audit', label: 'Audit log', icon: 'activity' },
 		// Owner-only: it shows where people signed in from.
 		...(data.user?.isOwner || data.user?.isSuperAdmin
 			? [{ path: '/admin/sign-ins', label: 'Sign-ins', icon: 'users' }]

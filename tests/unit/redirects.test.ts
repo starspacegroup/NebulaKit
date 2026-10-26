@@ -269,7 +269,7 @@ describe('redirectsHandler', () => {
 });
 
 describe('/admin/redirects', () => {
-	const admin = { isAdmin: true } as never;
+	const admin = { isAdmin: true, permissions: ['pages'] } as never;
 	const formData = (fields: Record<string, string>) => {
 		const body = new FormData();
 		for (const [k, v] of Object.entries(fields)) body.set(k, v);
@@ -286,6 +286,12 @@ describe('/admin/redirects', () => {
 		const db = createSqliteD1();
 		await expect(load(base(db, {}))).rejects.toMatchObject({ status: 401 });
 		await expect(load(base(db, { user: { isAdmin: false } }))).rejects.toMatchObject({
+			status: 403
+		});
+		// An admin without the pages area is refused too.
+		await expect(
+			load(base(db, { user: { isAdmin: true, permissions: [] } }))
+		).rejects.toMatchObject({
 			status: 403
 		});
 		for (const name of ['create', 'update', 'delete'] as const) {

@@ -51,14 +51,15 @@ that user is deleted or merged away.
 
 ## Viewing
 
-`/admin/audit`, any admin. Server-side filters `?actor=` and `?action=`, then the `AuditLog`
+`/admin/audit`, owners and superadmins (it shows what every admin did). Server-side filters `?actor=` and `?action=`, then the `AuditLog`
 module for search, severity, paging and expandable detail. The newest 500 matching rows load.
 
 ## Retention
 
-365 days. There is no scheduler in the template: `POST /api/cron/prune-audit` deletes older rows
-and is authenticated exactly like `prune-view-stats`, with `Authorization: Bearer $CRON_SECRET`.
-Call it from any scheduler.
+365 days. The `prune-audit` job is in the scheduler registry (`src/lib/server/scheduler/`) and the
+cron Worker in `cron-worker/` fires it daily (see docs/SCHEDULED_JOBS.md). It is the same route as
+any other job: `POST /api/cron/prune-audit` with `Authorization: Bearer $CRON_SECRET`, so any
+scheduler can call it too.
 
 ```bash
 curl -X POST https://your-app/api/cron/prune-audit -H "Authorization: Bearer $CRON_SECRET"

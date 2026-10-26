@@ -931,18 +931,19 @@ bun run db:migrate:list</code
 		<section id="audit-log" class="docs-section">
 			<h2>Audit Log</h2>
 			<p>
-				<a href="/admin/audit">/admin/audit</a> (any admin) lists who changed what: user role
-				changes, deletes and merges, content publish and delete, settings and key changes, API key
-				create and revoke, builder page save, delete and restore, and shop product and order changes
-				through
+				<a href="/admin/audit">/admin/audit</a> (owners and superadmins) lists who changed what:
+				user role changes, deletes and merges, content publish and delete, settings and key changes,
+				API key create and revoke, builder page save, delete and restore, and shop product and order
+				changes through
 				<code>/api/v1</code>. It records changes only, never page views, and never a secret value: a
 				key or setting change notes that it changed, and any detail field named like a token,
 				secret, password or key is redacted. Filter by actor and action, search, and open a row for
 				its detail.
 			</p>
 			<p>
-				Rows are kept 365 days. Have a scheduler POST to <code>/api/cron/prune-audit</code> with
-				<code>Authorization: Bearer $CRON_SECRET</code> to delete older ones. Apply migration
+				Rows are kept 365 days. The scheduled-jobs Worker fires <code>/api/cron/prune-audit</code>
+				daily (or POST to it with <code>Authorization: Bearer $CRON_SECRET</code> from any
+				scheduler) to delete older ones. Apply migration
 				<code>0025</code> (shared with sign-in tracking) with <code>bun run db:migrate:local</code>.
 				Details:
 				<code>docs/AUDIT_LOG.md</code>.

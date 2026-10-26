@@ -470,26 +470,30 @@ describe('cron and page', () => {
 				method: 'POST',
 				headers: auth ? { authorization: auth } : {}
 			}),
+			url: new URL('https://x.test/api/cron/prune-audit'),
 			platform: { env }
 		} as never);
 
+	// The job runs through the shared scheduler (src/lib/server/scheduler), which
+	// owns authorization, claims and run history; its own tests cover those.
 	it('prunes with the shared secret and refuses everything else', async () => {
 		await expect(call({ DB: db })).rejects.toMatchObject({ status: 503 });
 		await expect(call({ DB: db, CRON_SECRET: 's' })).rejects.toMatchObject({ status: 401 });
 		await expect(call({ DB: db, CRON_SECRET: 's' }, 'Bearer wrong')).rejects.toMatchObject({
 			status: 401
 		});
-		await expect(call({ CRON_SECRET: 's' }, 'Bearer s')).rejects.toMatchObject({ status: 503 });
 		await db
 			.prepare(
 				`INSERT INTO admin_actions (id, actor_login, action, summary, created_at) VALUES ('o','a','x','s','2000-01-01T00:00:00Z')`
 			)
 			.run();
 		const res = await call({ DB: db, CRON_SECRET: 's' }, 'Bearer s');
-		expect(await res.json()).toEqual({ retentionDays: 365, pruned: 1, prunedSignIns: 0 });
+		const body = await res.json();
+		expect(body.outcome).toBe('succeeded');
+		expect(body.detail).toEqual({ retentionDays: 365, pruned: 1, prunedSignIns: 0 });
 	});
 
-	it('serves the page to admins only', async () => {
+	it('serves the page to owners and superadmins only', async () => {
 		await recordAudit(db, { actorLogin: 'ada', action: 'user.delete', summary: 's' });
 		const load = (user: unknown, search = '', env: Record<string, unknown> = { DB: db }) =>
 			auditPage.load({
@@ -499,8 +503,10 @@ describe('cron and page', () => {
 			} as never);
 		await expect(load(undefined)).rejects.toMatchObject({ status: 401 });
 		await expect(load({ id: 'u' })).rejects.toMatchObject({ status: 403 });
-		await expect(load({ isAdmin: true }, '', {})).rejects.toMatchObject({ status: 503 });
-		const data = (await load({ isAdmin: true }, '?actor=ada&action=user.delete')) as never as {
+		// An ordinary admin cannot read what every admin did.
+		await expect(load({ isAdmin: true })).rejects.toMatchObject({ status: 403 });
+		await expect(load({ isSuperAdmin: true }, '', {})).rejects.toMatchObject({ status: 503 });
+		const data = (await load({ isSuperAdmin: true }, '?actor=ada&action=user.delete')) as never as {
 			events: unknown[];
 			actions: string[];
 			actor: string;

@@ -25,7 +25,7 @@ workers_dev = false
 # the `cron` of a job in src/lib/server/scheduler/registry.ts.
 # tests/unit/scheduler-registry.test.ts fails if the three disagree.
 [triggers]
-crons = ["17 3 * * *", "43 4 * * *"]
+crons = ["17 3 * * *", "43 4 * * *", "29 5 * * *"]
 
 [vars]
 # The app's origin, no path. Not a secret. Set it to your deployed site, for

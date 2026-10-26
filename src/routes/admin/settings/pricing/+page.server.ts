@@ -6,7 +6,7 @@ import {
 	saveRegionalPricingSettings,
 	validateRegionalPricingInput
 } from '@nebulakit/commerce';
-import { requireAdmin } from '$lib/server/auth-guards';
+import { requireOwner } from '$lib/server/auth-guards';
 import { requestCountry } from '$lib/server/checkout-pricing';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -22,7 +22,7 @@ function database(platform: App.Platform | undefined) {
 }
 
 export const load: PageServerLoad = async ({ locals, platform, request }) => {
-	requireAdmin(locals);
+	requireOwner(locals);
 	return {
 		settings: await getRegionalPricingSettings(database(platform)),
 		priceLevelIndexUpdated: PRICE_LEVEL_INDEX_UPDATED,
@@ -39,7 +39,7 @@ function fraction(value: FormDataEntryValue | null): number {
 
 export const actions: Actions = {
 	save: async ({ locals, platform, request }) => {
-		requireAdmin(locals);
+		requireOwner(locals);
 		const db = database(platform);
 		const form = await request.formData();
 		const { overrides, errors } = parseOverrideLines(String(form.get('overrides') ?? ''));

@@ -5,7 +5,16 @@ import { createSqliteD1 } from '../helpers/sqlite-d1';
 import * as pricingAdmin from '../../src/routes/admin/settings/pricing/+page.server';
 
 const owner = { id: 'o', login: 'owner', email: 'o@x', isOwner: true };
-const admin = { id: 'a', login: 'admin', email: 'a@x', isOwner: false, isAdmin: true };
+// Regional pricing sits with Settings: owners and superadmins only.
+const admin = {
+	id: 'a',
+	login: 'admin',
+	email: 'a@x',
+	isOwner: false,
+	isAdmin: true,
+	isSuperAdmin: true
+};
+const plainAdmin = { id: 'p', login: 'plain', email: 'p@x', isOwner: false, isAdmin: true };
 const member = { id: 'm', login: 'member', email: 'm@x', isOwner: false };
 
 let db: D1Database;
@@ -48,6 +57,7 @@ const valid: Array<[string, string]> = [
 describe('/admin/settings/pricing', () => {
 	it('is admin-only and needs the database', async () => {
 		expect(await status(pricingAdmin.load(event(member)))).toBe(403);
+		expect(await status(pricingAdmin.load(event(plainAdmin)))).toBe(403);
 		expect(await status(pricingAdmin.load(event(undefined)))).toBe(401);
 		expect(await status(pricingAdmin.load(event(admin, {}, {})))).toBe(503);
 		expect(await status(pricingAdmin.actions.save(event(member, { request: post(valid) })))).toBe(
