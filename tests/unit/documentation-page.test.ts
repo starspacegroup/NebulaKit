@@ -613,4 +613,11 @@ describe('Documentation Page', () => {
 		expect(text).toMatch(/90 days/);
 		expect(text).toMatch(/never\s+block a sign-in/i);
 	});
+
+	it('documents the landing page families and their CLI', () => {
+		render(Page);
+		expect(screen.getByRole('link', { name: '/who' })).toHaveAttribute('href', '/who');
+		expect(screen.getByText(/bun run landing report/)).toBeInTheDocument();
+		expect(screen.getByText(/Example Co\. pages are marked/)).toBeInTheDocument();
+	});
 });
