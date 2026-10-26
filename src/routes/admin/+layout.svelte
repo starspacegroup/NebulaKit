@@ -15,6 +15,7 @@
 	$: navItems = [
 		{ path: '/admin', label: 'Dashboard', icon: 'home' },
 		{ path: '/admin/settings', label: 'Settings', icon: 'settings' },
+		{ path: '/admin/settings/pricing', label: 'Regional Pricing', icon: 'chart' },
 		...(data.canManageAnalytics
 			? [{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' }]
 			: []),
