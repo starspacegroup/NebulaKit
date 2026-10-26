@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_ENCRYPTION_KEY } from '../helpers/fake-kv';
 
 // Mock SvelteKit modules
 const mockJson = vi.fn((data) => ({ data, status: 200 }));
@@ -29,7 +30,8 @@ describe('AI Keys Toggle API', () => {
 
 		mockPlatform = {
 			env: {
-				KV: mockKV
+				KV: mockKV,
+				ENCRYPTION_KEY: TEST_ENCRYPTION_KEY
 			}
 		};
 

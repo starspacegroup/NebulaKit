@@ -1,4 +1,5 @@
 import { error, json } from '@sveltejs/kit';
+import { aiKeySpec, readRecordWithSecret } from '$lib/server/secret-store';
 import type { RequestHandler } from './$types';
 
 // OpenAI model pricing per 1M tokens (as of December 2025)
@@ -187,12 +188,10 @@ export const GET: RequestHandler = async ({ platform, locals, url }) => {
 
 	// If a specific key ID is provided, use that key
 	if (keyId && platform?.env?.KV) {
-		const keyData = await platform.env.KV.get(`ai_key:${keyId}`);
-		if (keyData) {
-			const key = JSON.parse(keyData);
-			if (key.provider === 'openai' && key.apiKey) {
-				apiKey = key.apiKey;
-			}
+		const key = (await readRecordWithSecret<any>(platform, `ai_key:${keyId}`, aiKeySpec(keyId)))
+			?.record;
+		if (key?.provider === 'openai' && key.apiKey) {
+			apiKey = key.apiKey;
 		}
 	}
 
@@ -202,13 +201,11 @@ export const GET: RequestHandler = async ({ platform, locals, url }) => {
 		if (keysList) {
 			const keyIds = JSON.parse(keysList);
 			for (const id of keyIds) {
-				const keyData = await platform.env.KV.get(`ai_key:${id}`);
-				if (keyData) {
-					const key = JSON.parse(keyData);
-					if (key.provider === 'openai' && key.apiKey) {
-						apiKey = key.apiKey;
-						break;
-					}
+				const key = (await readRecordWithSecret<any>(platform, `ai_key:${id}`, aiKeySpec(id)))
+					?.record;
+				if (key?.provider === 'openai' && key.apiKey) {
+					apiKey = key.apiKey;
+					break;
 				}
 			}
 		}

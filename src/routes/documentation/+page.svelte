@@ -77,6 +77,7 @@ bun run deploy`;
 			<a href="#cloudflare-bindings">Cloudflare Bindings</a>
 			<a href="#database-migrations">Database Migrations</a>
 			<a href="#auth-and-setup">Auth and Setup</a>
+			<a href="#secrets-at-rest">Secrets at Rest</a>
 			<a href="#admin-analytics">Admin Analytics</a>
 			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
 			<a href="#lighthouse">Lighthouse</a>
@@ -592,6 +593,20 @@ bun run db:migrate:list</code
 					</p>
 				</div>
 			</div>
+		</section>
+
+		<section id="secrets-at-rest" class="docs-section">
+			<h2>Secrets at Rest</h2>
+			<p>
+				AI provider keys and OAuth client secrets saved from the admin screens are encrypted
+				(AES-256-GCM, bound to their record) before they are written to KV, and the admin UI only
+				shows that a key is configured plus its last four characters. Set the
+				<code>ENCRYPTION_KEY</code> secret (<code>bun run generate:encryption-key</code>) so the key
+				lives outside KV; without it the app generates one and keeps it in KV, which encrypts the
+				values but does not defend against someone who can read the whole namespace. To rotate, move
+				the old value to <code>ENCRYPTION_KEY_PREVIOUS</code>; values are re-encrypted when read.
+				Plaintext keys saved by earlier versions are migrated on first read.
+			</p>
 		</section>
 
 		<section id="admin-analytics" class="docs-section">

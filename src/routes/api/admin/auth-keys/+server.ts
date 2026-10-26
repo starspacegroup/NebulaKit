@@ -1,5 +1,11 @@
 import { requireOwner } from '$lib/server/auth-guards';
 import { AUTH_PROVIDERS, isAuthProvider } from '$lib/utils/auth-provider-config';
+import {
+	authConfigSpec,
+	readRecordWithSecret,
+	redactRecord,
+	sealRecordSecret
+} from '$lib/server/secret-store';
 import { error, isHttpError, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -12,15 +18,27 @@ export const GET: RequestHandler = async ({ platform, locals }) => {
 
 		// Fetch GitHub OAuth configuration from KV (saved during setup)
 		for (const provider of AUTH_PROVIDERS) {
-			const configString = await platform.env.KV.get(`auth_config:${provider}`);
-			if (!configString) continue;
-			const config = JSON.parse(configString);
+			const found = await readRecordWithSecret<any>(
+				platform,
+				`auth_config:${provider}`,
+				authConfigSpec(provider)
+			);
+			if (!found) continue;
+			const config = found.record;
+			// Only "configured" and the last four characters ever reach the browser.
+			const { clientSecretConfigured, clientSecretLast4 } = redactRecord(
+				config,
+				authConfigSpec(provider)
+			) as { clientSecretConfigured: boolean; clientSecretLast4: string | null };
 			keys.push({
 				id: config.id,
 				name: `${provider === 'github' ? 'GitHub' : 'Discord'} OAuth (Setup)`,
 				provider: config.provider,
 				type: 'oauth',
 				clientId: config.clientId,
+				clientSecretConfigured,
+				clientSecretLast4,
+				clientSecretStatus: found.status,
 				createdAt: config.createdAt,
 				isSetupKey: true
 			});
@@ -61,14 +79,18 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		};
 
 		// Store in KV for OAuth providers (github, discord, etc.)
-		const authConfig = {
-			id,
-			provider: data.provider,
-			clientId: data.clientId,
-			clientSecret: data.clientSecret,
-			createdAt,
-			updatedAt: new Date().toISOString()
-		};
+		const authConfig = await sealRecordSecret(
+			platform,
+			{
+				id,
+				provider: data.provider,
+				clientId: data.clientId,
+				createdAt,
+				updatedAt: new Date().toISOString()
+			},
+			authConfigSpec(data.provider),
+			data.clientSecret
+		);
 		await platform.env.KV.put(`auth_config:${data.provider}`, JSON.stringify(authConfig));
 
 		return json({ success: true, key: newKey });

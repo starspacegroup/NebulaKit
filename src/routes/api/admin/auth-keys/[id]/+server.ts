@@ -1,10 +1,12 @@
 import { requireOwner } from '$lib/server/auth-guards';
 import { AUTH_PROVIDERS } from '$lib/utils/auth-provider-config';
+import { authConfigSpec, ensureRecordSealed, sealRecordSecret } from '$lib/server/secret-store';
 import { error, isHttpError, json } from '@sveltejs/kit';
 import type { KVNamespace } from '@cloudflare/workers-types';
 import type { RequestHandler } from './$types';
 
 interface StoredAuthConfig {
+	[key: string]: unknown;
 	clientId?: string;
 	clientSecret?: string;
 	createdAt?: string;
@@ -53,14 +55,19 @@ export const PUT: RequestHandler = async ({ params, request, platform, locals })
 		assertNotSetupKey(target, 'edit');
 
 		const updatedAt = new Date().toISOString();
-		const authConfig: StoredAuthConfig = {
+		const spec = authConfigSpec(target.provider);
+		const nextConfig: StoredAuthConfig = {
 			...target.config,
 			id: params.id,
 			provider: target.provider,
 			clientId: data.clientId,
-			...(data.clientSecret && { clientSecret: data.clientSecret }),
 			updatedAt
 		};
+		// New secret: seal it. Otherwise keep what is stored, sealing it first if
+		// it is still legacy plaintext.
+		const authConfig: StoredAuthConfig = data.clientSecret
+			? await sealRecordSecret(platform, nextConfig, spec, data.clientSecret)
+			: await ensureRecordSealed(platform, nextConfig, spec);
 		await kv.put(`auth_config:${target.provider}`, JSON.stringify(authConfig));
 
 		return json({

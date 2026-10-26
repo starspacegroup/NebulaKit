@@ -49,6 +49,12 @@ declare global {
 				DISCORD_CLIENT_SECRET?: string;
 				SESSION_SECRET?: string;
 				SETUP_SECRET?: string;
+				/** Base64 of 32 random bytes (`bun run generate:encryption-key`). Encrypts
+				 *  provider/API secrets stored in KV. Optional: without it a key is generated
+				 *  and kept in KV. See docs/ZERO_ENV_SETUP.md. */
+				ENCRYPTION_KEY?: string;
+				/** Retired key(s), comma separated, still accepted for decryption during rotation. */
+				ENCRYPTION_KEY_PREVIOUS?: string;
 				DEV_AUTH_BYPASS?: string;
 				/** Shared bearer secret for /api/cron/* scheduler endpoints. */
 				CRON_SECRET?: string;

@@ -1,4 +1,10 @@
 import { error, json } from '@sveltejs/kit';
+import {
+	aiKeySpec,
+	ensureRecordSealed,
+	redactRecord,
+	sealRecordSecret
+} from '$lib/server/secret-store';
 import type { RequestHandler } from './$types';
 
 // PUT - Update AI key
@@ -34,7 +40,7 @@ export const PUT: RequestHandler = async ({ params, request, platform, locals })
 		const voiceModels =
 			data.voiceModels || (data.voiceModel ? [data.voiceModel] : existing.voiceModels || []);
 
-		const updatedKey = {
+		let updatedKey = {
 			...existing,
 			name: data.name,
 			provider: data.provider,
@@ -46,17 +52,17 @@ export const PUT: RequestHandler = async ({ params, request, platform, locals })
 			updatedAt: new Date().toISOString()
 		};
 
-		// Update API key if provided
-		if (data.apiKey) {
-			updatedKey.apiKey = data.apiKey;
-		}
+		// A new secret is sealed; an existing one is kept as stored, and a legacy
+		// plaintext one is sealed now rather than carried forward.
+		updatedKey = data.apiKey
+			? await sealRecordSecret(platform, updatedKey, aiKeySpec(id), data.apiKey)
+			: await ensureRecordSealed(platform, updatedKey, aiKeySpec(id));
 
 		// Store updated key
 		await platform.env.KV.put(`ai_key:${id}`, JSON.stringify(updatedKey));
 
-		// Return key without apiKey field
-		const responseKey = { ...updatedKey };
-		delete responseKey.apiKey;
+		// Return key without the secret
+		const responseKey = redactRecord(updatedKey, aiKeySpec(id));
 
 		return json({ success: true, key: responseKey });
 	} catch (err) {
@@ -91,18 +97,21 @@ export const PATCH: RequestHandler = async ({ params, request, platform, locals 
 		const existing = JSON.parse(existingData);
 
 		// Update enabled status
-		const updatedKey = {
-			...existing,
-			enabled: data.enabled,
-			updatedAt: new Date().toISOString()
-		};
+		const updatedKey = await ensureRecordSealed(
+			platform,
+			{
+				...existing,
+				enabled: data.enabled,
+				updatedAt: new Date().toISOString()
+			},
+			aiKeySpec(id)
+		);
 
 		// Store updated key
 		await platform.env.KV.put(`ai_key:${id}`, JSON.stringify(updatedKey));
 
-		// Return key without apiKey field
-		const responseKey = { ...updatedKey };
-		delete responseKey.apiKey;
+		// Return key without the secret
+		const responseKey = redactRecord(updatedKey, aiKeySpec(id));
 
 		return json({ success: true, key: responseKey });
 	} catch (err) {

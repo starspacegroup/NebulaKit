@@ -94,6 +94,7 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 GITHUB_OWNER_ID=your_github_user_id
 SESSION_SECRET=generate_a_high_entropy_session_secret
 SETUP_SECRET=generate_a_different_bootstrap_secret
+ENCRYPTION_KEY=run_bun_run_generate_encryption_key
 ```
 
 The app will check environment variables first, then fall back to KV storage.
@@ -108,7 +109,14 @@ bunx wrangler secret put GITHUB_CLIENT_ID
 bunx wrangler secret put GITHUB_CLIENT_SECRET
 bunx wrangler secret put SESSION_SECRET
 bunx wrangler secret put SETUP_SECRET
+bunx wrangler secret put ENCRYPTION_KEY   # value from: bun run generate:encryption-key
 ```
+
+`ENCRYPTION_KEY` encrypts AI provider keys and OAuth client secrets stored in KV. It is optional:
+without it the app generates a key and keeps it in KV, which still encrypts the values but does not
+protect against someone who can read the whole namespace. See
+[Secrets at rest](./ZERO_ENV_SETUP.md#secrets-at-rest), including rotation with
+`ENCRYPTION_KEY_PREVIOUS`.
 
 Set `GITHUB_OWNER_ID` as a production variable. Alternatively, use `/setup` with `SETUP_SECRET`;
 provider credentials are saved to the production KV namespace, and only the authenticated owner can
