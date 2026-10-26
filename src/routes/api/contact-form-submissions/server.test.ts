@@ -18,7 +18,7 @@ import { GET, POST } from './+server';
 const DB = {} as never;
 
 function getEvent(opts: {
-	user?: { isOwner?: boolean; isAdmin?: boolean } | null;
+	user?: { isOwner?: boolean; isAdmin?: boolean; permissions?: string[] } | null;
 	cookie?: string;
 	params?: Record<string, string>;
 }) {

@@ -63,7 +63,9 @@ describe('POST /api/cron/lighthouse', () => {
 
 describe('POST /api/admin/lighthouse', () => {
 	it('runs for an admin', async () => {
-		const response = await adminPost(adminEvent({ id: '1', isAdmin: true, permissions: ['lighthouse'] }));
+		const response = await adminPost(
+			adminEvent({ id: '1', isAdmin: true, permissions: ['lighthouse'] })
+		);
 		expect(response.status).toBe(200);
 	});
 
