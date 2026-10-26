@@ -781,6 +781,30 @@ bun run db:migrate:list</code
 				connects the Ammoura control room. Apply migrations <code>0016</code>–<code>0018</code> with
 				<code>bun run db:migrate:local</code>.
 			</p>
+			<h3 id="orders-payments-email">Payments, status and email</h3>
+			<p>
+				The Stripe webhook answers <code>503</code> until <code>STRIPE_WEBHOOK_SECRET</code> is set,
+				so Stripe keeps retrying. It handles <code>checkout.session.completed</code> and
+				<code>checkout.session.async_payment_succeeded</code> (the order becomes paid),
+				<code>checkout.session.async_payment_failed</code> and
+				<code>checkout.session.expired</code> (a pending order is cancelled). A payment that is smaller
+				than the order total, or in another currency, leaves the order pending for a person to check.
+				Replays change nothing a second time.
+			</p>
+			<p>
+				After paying, the shopper returns to <code>/cart?order=…</code>, which asks
+				<code>GET /api/v1/orders/[id]/status</code> every 1.5 seconds for 20 seconds. That public endpoint
+				returns the status word only, never an email, address or total, and the page says plainly when
+				payment is still being confirmed.
+			</p>
+			<p>
+				Email is optional. Set <code>RESEND_API_KEY</code> and <code>EMAIL_FROM</code> (and
+				<code>EMAIL_REPLY_TO</code> if you want one), then apply migration <code>0020</code>. A
+				receipt is sent when an order becomes paid and a shipping notice when it is marked shipped,
+				each at most once per order: the <code>email_log</code> table refuses a second send. Without
+				a key nothing is sent and the log records what was skipped. Email colours come from
+				<code>emailTheme</code> in <code>src/lib/site.config.ts</code>.
+			</p>
 		</section>
 
 		<section id="testing" class="docs-section">

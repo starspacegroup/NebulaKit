@@ -241,6 +241,18 @@ export async function getOrder(db: D1Database, id: string): Promise<Order | null
 	return toOrder(row, results.map(toItem));
 }
 
+/**
+ * Just an order's status, for the public status poll. Nothing else about the
+ * order is read, so nothing else can leak through the caller.
+ */
+export async function getOrderStatus(db: D1Database, id: string): Promise<OrderStatus | null> {
+	const row = await db
+		.prepare('SELECT status FROM commerce_orders WHERE id = ?')
+		.bind(id)
+		.first<Row>();
+	return row ? (row.status as OrderStatus) : null;
+}
+
 export async function listOrders(
 	db: D1Database,
 	options: { status?: OrderStatus; limit?: number } = {}

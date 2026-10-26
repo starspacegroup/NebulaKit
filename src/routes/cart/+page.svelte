@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { formatMoney } from '@nebulakit/commerce';
+	import { waitForOrderPaid, type OrderWait } from '$lib/shop/order-status';
 	import {
 		cartSubtotalCents,
 		checkoutLines,
@@ -32,10 +33,22 @@
 	// Coming back from the payment page with ?order=…, the cart has been paid for.
 	const returnedOrder = $derived(page.url.searchParams.get('order'));
 
+	// 'checking' until the server says otherwise. The redirect back from the
+	// payment page proves nothing; only the order's status does.
+	let returnState = $state<OrderWait | 'checking'>('checking');
+
 	onMount(() => {
-		if (returnedOrder) saveCart(localStorage, []);
-		else cart = loadCart(localStorage);
+		const controller = new AbortController();
+		if (returnedOrder) {
+			saveCart(localStorage, []);
+			waitForOrderPaid(returnedOrder, { signal: controller.signal }).then((result) => {
+				if (!controller.signal.aborted) returnState = result;
+			});
+		} else {
+			cart = loadCart(localStorage);
+		}
 		loaded = true;
+		return () => controller.abort();
 	});
 
 	function update(next: Cart) {
@@ -92,7 +105,27 @@
 	<h1>Cart</h1>
 
 	{#if returnedOrder}
-		<p role="status">Thank you. Your order is in. A receipt is on its way to your email.</p>
+		<div role="status" aria-live="polite">
+			{#if returnState === 'checking'}
+				<p>Confirming your payment…</p>
+			{:else if returnState === 'paid'}
+				<p>Thank you. Your payment is confirmed. A receipt is on its way to your email.</p>
+			{:else if returnState === 'cancelled'}
+				<p>
+					This order was cancelled and you have not been charged. You can start again from the shop.
+				</p>
+			{:else if returnState === 'pending'}
+				<p>
+					We are still confirming your payment. Some payment methods take longer to clear than a
+					card. Nothing is wrong, and we will email you when it settles.
+				</p>
+			{:else}
+				<p>
+					We could not check your payment from here. If you were charged, a receipt will arrive by
+					email; if it does not, contact the shop and quote order {returnedOrder}.
+				</p>
+			{/if}
+		</div>
 		<p><a href="/shop">Keep shopping</a></p>
 	{:else if placed}
 		<p role="status">

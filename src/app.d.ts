@@ -65,6 +65,10 @@ declare global {
 				COMMERCE_FLAT_SHIPPING_CENTS?: string;
 				STRIPE_SECRET_KEY?: string;
 				STRIPE_WEBHOOK_SECRET?: string;
+				/** Transactional email (Resend). See src/lib/server/email.ts. */
+				RESEND_API_KEY?: string;
+				EMAIL_FROM?: string;
+				EMAIL_REPLY_TO?: string;
 			};
 			/** Cloudflare request metadata. `cf.country` is the edge-provided ISO
 			 *  3166-1 alpha-2 code used by page-view stats — undefined locally. */

@@ -1,20 +1,26 @@
-import { getOrder, transitionOrder, verifyStripeSignature } from '@nebulakit/commerce';
+import { applyStripeEvent, verifiedStripeEmail, verifyStripeSignature } from '@nebulakit/commerce';
 import { ApiError, apiJson, siteApi } from '$lib/server/site-api';
 import type { CommerceEnv } from '$lib/server/site-info';
-
-interface StripeEvent {
-	type?: string;
-	data?: { object?: { id?: string; payment_status?: string; metadata?: { orderId?: string } } };
-}
+import { sendOrderReceipt } from '$lib/server/order-emails';
 
 /**
- * POST /api/v1/webhooks/stripe — Stripe tells the site a checkout finished.
+ * POST /api/v1/webhooks/stripe — Stripe tells the site what happened to a checkout.
  *
- * Authenticated by the `Stripe-Signature` HMAC under `STRIPE_WEBHOOK_SECRET`,
- * not by an API key. Marks the order paid only when the session is actually
- * paid (delayed methods complete unpaid) and only when the session id is the
- * one this site recorded for that order — metadata alone is not trusted.
- * Replays are harmless: an order that is already past `pending` is left alone.
+ * Authenticated by the `Stripe-Signature` HMAC under `STRIPE_WEBHOOK_SECRET`
+ * (checked in constant time, replay window 5 minutes), not by an API key.
+ * Without the secret it answers 503 so Stripe keeps retrying until the site
+ * is configured. What each event does is `applyStripeEvent` in
+ * packages/commerce/src/stripe-events.ts:
+ *
+ * - `checkout.session.completed` / `async_payment_succeeded`, when paid: the
+ *   order becomes `paid` and the receipt is sent (once only).
+ * - `checkout.session.async_payment_failed` / `expired`: a still-`pending`
+ *   order becomes `cancelled`.
+ *
+ * Replays change nothing a second time: only the delivery that moved the
+ * order sends the receipt, and `email_log` refuses a second one regardless.
+ * Always 200 for a verified event, so Stripe stops retrying events this site
+ * has no use for.
  */
 export const POST = siteApi(null, async ({ db, event }) => {
 	const env = (event.platform?.env ?? {}) as CommerceEnv;
@@ -27,20 +33,30 @@ export const POST = siteApi(null, async ({ db, event }) => {
 	);
 	if (!signed) throw new ApiError(400, 'Invalid signature');
 
-	let stripeEvent: StripeEvent;
+	let stripeEvent;
 	try {
 		stripeEvent = JSON.parse(payload);
 	} catch {
 		throw new ApiError(400, 'Invalid payload');
 	}
-	const session = stripeEvent.data?.object;
-	if (stripeEvent.type !== 'checkout.session.completed' || session?.payment_status !== 'paid') {
+	if (typeof stripeEvent !== 'object' || stripeEvent === null) {
+		throw new ApiError(400, 'Invalid payload');
+	}
+
+	const result = await applyStripeEvent(db, stripeEvent);
+	if (result.outcome === 'ignored') {
+		if (result.reason === 'amount-mismatch' || result.reason === 'order-cancelled') {
+			// Money and order disagree; a person has to look. Ids only, no PII.
+			console.error('stripe webhook: needs attention', {
+				reason: result.reason,
+				session: stripeEvent.data?.object?.id
+			});
+		}
 		return apiJson({ received: true, ignored: true });
 	}
-	const order = session.metadata?.orderId ? await getOrder(db, session.metadata.orderId) : null;
-	if (!order || order.paymentReference !== session.id) {
-		return apiJson({ received: true, ignored: true });
+	if (result.outcome === 'paid' && result.changed) {
+		// Not awaited: the response must not wait on the email provider.
+		void sendOrderReceipt(event.platform, result.order, verifiedStripeEmail(stripeEvent));
 	}
-	if (order.status === 'pending') await transitionOrder(db, order.id, 'paid');
 	return apiJson({ received: true });
 });

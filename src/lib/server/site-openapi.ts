@@ -50,6 +50,13 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 			body: 'OrderPatch'
 		}
 	},
+	'/api/v1/orders/{id}/status': {
+		get: {
+			summary:
+				'Public: only { status } for an order id, so a returning shopper can wait for payment',
+			scope: null
+		}
+	},
 	'/api/v1/pages': {
 		get: { summary: 'Published pages (drafts too with pages:read)', scope: null }
 	},
@@ -66,7 +73,11 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 		post: { summary: 'Put a revision back as the page', scope: 'pages:write' }
 	},
 	'/api/v1/webhooks/stripe': {
-		post: { summary: 'Stripe checkout events (Stripe-Signature, not an API key)', scope: null }
+		post: {
+			summary:
+				'Stripe checkout events: completed, async succeeded/failed, expired (Stripe-Signature, not an API key; 503 until configured)',
+			scope: null
+		}
 	}
 };
 

@@ -6,6 +6,7 @@ status: in-progress (vertical slice landed 2026-10-18, branch `feature/commerce-
 
 - Direction: `~/_Projects/StarSpace/NebulaKit/planning/BUILDER_AND_COMMERCE.md` and Ammoura's `plans/ammoura-as-orchestrator.md`. Every client gets their own NebulaKit site; Ammoura drives it through the site API.
 - Done: `@nebulakit/commerce` (pricing, cart repricing, orders, Stripe checkout + webhook signature, Printful), `@nebulakit/security` (API keys), `@nebulakit/builder` 0.3.0 (page format v2: nested Section/Columns, hide-per-breakpoint; revision history with restore; editor rebuilt on `$lib/actions/draggable` with undo/redo, lint, width preview; ported and fixed from Ammoura's builder), `/api/v1` with OpenAPI, `/admin/api-keys`, `/admin/pages`, `/p/[slug]`. Migrations 0016–0019. Local gates only; nothing deployed.
+- Done (port from CustomPerfections, branch `port/commerce`): once-only transactional email (migration 0020, Resend over fetch, receipt/shipped/notice templates), Stripe async/failed/expired events with amount check and 503-until-configured, public `GET /api/v1/orders/:id/status` and a `/cart` return view that polls until paid. Not stored, no schema for it: the amount actually taken and Stripe's customer email.
 - Open: storefront cart UI, shop admin screens (products/orders), regional pricing settings, Printful relay on payment, package distribution to forks, the forced-update bot.
 
 ## Stats readable by the StarSpace Dashboard
