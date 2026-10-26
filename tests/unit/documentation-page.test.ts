@@ -460,4 +460,11 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/MIT-licensed/);
 		});
 	});
+
+	it('documents the landing page families and their CLI', () => {
+		render(Page);
+		expect(screen.getByRole('link', { name: '/who' })).toHaveAttribute('href', '/who');
+		expect(screen.getByText(/bun run landing report/)).toBeInTheDocument();
+		expect(screen.getByText(/Example Co\. pages are marked/)).toBeInTheDocument();
+	});
 });
