@@ -9,6 +9,7 @@
 		"setup:cf": "node scripts/setup-cf.mjs",
 		"palette:scan": "bun scripts/palette-scan.mjs",
 		"landing": "bun scripts/landing.ts",
+		"seo:external": "bun scripts/external-checks.ts",
 		"dev": "node scripts/check-bindings.mjs --warn && vite dev",
 		"build": "node scripts/check-bindings.mjs && vite build",
 		"build:ci": "node scripts/check-bindings.mjs --warn && vite build",
