@@ -32,15 +32,10 @@
 		UptimeDay
 	} from '$lib/modules/commerce';
 	import ModuleItem from '../ModuleItem.svelte';
+	import { picture } from '../fake-images';
 
 	// A fixed "now" so every demo renders the same on server and client.
 	const now = new Date('2026-10-13T12:00:00Z');
-
-	// Tiny inline pictures, so nothing is fetched.
-	function picture(label: string, hue: number): string {
-		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="hsl(${hue} 45% 60%)"/><text x="200" y="165" font-size="44" text-anchor="middle" fill="white" font-family="sans-serif">${label}</text></svg>`;
-		return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-	}
 
 	const meters: UsageMeter[] = [
 		{ id: 'api', label: 'API calls', used: 8400, limit: 10000, unit: 'calls' },
@@ -59,7 +54,7 @@
 		amountCents: i === 4 ? 0 : 2900,
 		status: i === 0 ? 'open' : i === 1 ? 'overdue' : i === 5 ? 'refunded' : 'paid',
 		description: 'Pro plan, monthly',
-		downloadUrl: i % 2 === 0 ? undefined : '#invoice'
+		downloadUrl: i % 2 === 0 ? undefined : '#invoice-list'
 	}));
 	let invoicePage = 1;
 	let invoiceNote = '';
@@ -100,7 +95,7 @@
 			variant: 'White',
 			unitCents: 1800,
 			quantity: 2,
-			image: picture('Mug', 200)
+			image: picture('mug', 200)
 		},
 		{
 			id: 'tote',
@@ -108,7 +103,7 @@
 			variant: 'Natural',
 			unitCents: 2400,
 			quantity: 1,
-			image: picture('Tote', 30)
+			image: picture('tote', 30)
 		}
 	];
 	const promos: Promo[] = [
@@ -151,7 +146,7 @@
 		{
 			id: 'p1',
 			name: 'Ceramic mug',
-			image: picture('Mug', 200),
+			image: picture('mug', 200),
 			imageAlt: 'White ceramic mug',
 			priceCents: 1800,
 			rating: 4.5,
@@ -161,7 +156,7 @@
 		{
 			id: 'p2',
 			name: 'Canvas tote',
-			image: picture('Tote', 30),
+			image: picture('tote', 30),
 			imageAlt: 'Natural canvas tote bag',
 			priceCents: 2800,
 			salePriceCents: 2100,
@@ -190,10 +185,10 @@
 	}
 
 	const galleryImages = [
-		{ src: picture('Front', 210), alt: 'Front of the mug' },
-		{ src: picture('Side', 150), alt: 'Side of the mug with its handle' },
-		{ src: picture('Top', 280), alt: 'Looking down into the mug' },
-		{ src: picture('Box', 20), alt: 'The mug in its gift box' }
+		{ src: picture('front', 210), alt: 'Front of the mug' },
+		{ src: picture('side', 150), alt: 'Side of the mug with its handle' },
+		{ src: picture('top', 280), alt: 'Looking down into the mug' },
+		{ src: picture('box', 20), alt: 'The mug in its gift box' }
 	];
 	let galleryIndex = 0;
 

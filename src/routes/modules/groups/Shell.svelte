@@ -206,15 +206,15 @@
 	}
 
 	// Tabs
-	let tabsCurrent = '/settings/billing';
+	let tabsCurrent = '/modules?settings=billing#tabs-page-nav';
 	const tabItems = [
-		{ id: 'general', label: 'General', href: '/settings/general' },
-		{ id: 'members', label: 'Members', href: '/settings/members' },
-		{ id: 'billing', label: 'Billing', href: '/settings/billing', badge: 2 },
-		{ id: 'security', label: 'Security', href: '/settings/security' },
-		{ id: 'integrations', label: 'Integrations', href: '/settings/integrations' },
-		{ id: 'audit', label: 'Audit log', href: '/settings/audit' },
-		{ id: 'danger', label: 'Danger zone', href: '/settings/danger' }
+		{ id: 'general', label: 'General', href: '/modules?settings=general#tabs-page-nav' },
+		{ id: 'members', label: 'Members', href: '/modules?settings=members#tabs-page-nav' },
+		{ id: 'billing', label: 'Billing', href: '/modules?settings=billing#tabs-page-nav', badge: 2 },
+		{ id: 'security', label: 'Security', href: '/modules?settings=security#tabs-page-nav' },
+		{ id: 'integrations', label: 'Integrations', href: '/modules?settings=integrations#tabs-page-nav' },
+		{ id: 'audit', label: 'Audit log', href: '/modules?settings=audit#tabs-page-nav' },
+		{ id: 'danger', label: 'Danger zone', href: '/modules?settings=danger#tabs-page-nav' }
 	];
 
 	// Toolbar
@@ -250,12 +250,12 @@
 	let toolbarLog = '';
 
 	// Bottom nav
-	let bottomCurrent = '/inbox';
+	let bottomCurrent = '/modules?nav=inbox#bottom-nav';
 	const bottomItems = [
-		{ id: 'home', label: 'Home', href: '/home', icon: '🏠' },
-		{ id: 'inbox', label: 'Inbox', href: '/inbox', icon: '📥', badge: 3 },
-		{ id: 'search', label: 'Search', href: '/search', icon: '🔍' },
-		{ id: 'me', label: 'Profile', href: '/me', icon: '👤' }
+		{ id: 'home', label: 'Home', href: '/modules?nav=home#bottom-nav', icon: '🏠' },
+		{ id: 'inbox', label: 'Inbox', href: '/modules?nav=inbox#bottom-nav', icon: '📥', badge: 3 },
+		{ id: 'search', label: 'Search', href: '/modules?nav=search#bottom-nav', icon: '🔍' },
+		{ id: 'me', label: 'Profile', href: '/modules?nav=me#bottom-nav', icon: '👤' }
 	];
 </script>
 
@@ -499,10 +499,10 @@
 	<ModuleItem id="tabs-page-nav" wide>
 		<TabsPageNav items={tabItems} current={tabsCurrent} label="Account pages" badgeWord="alerts" />
 		<div class="row">
-			<Button size="sm" variant="secondary" on:click={() => (tabsCurrent = '/settings/general')}
+			<Button size="sm" variant="secondary" on:click={() => (tabsCurrent = '/modules?settings=general#tabs-page-nav')}
 				>Go to General</Button
 			>
-			<Button size="sm" variant="secondary" on:click={() => (tabsCurrent = '/settings/danger')}
+			<Button size="sm" variant="secondary" on:click={() => (tabsCurrent = '/modules?settings=danger#tabs-page-nav')}
 				>Go to Danger zone</Button
 			>
 		</div>

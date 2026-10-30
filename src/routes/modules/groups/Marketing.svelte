@@ -19,6 +19,7 @@
 		type PlanInterval
 	} from '$lib/modules';
 	import ModuleItem from '../ModuleItem.svelte';
+	import { avatar } from '../fake-images';
 
 	let heroLayout: 'centered' | 'split' = 'centered';
 	let heroClicks = 0;
@@ -101,17 +102,20 @@
 		{
 			quote: 'We replaced three tools with this and shipped a month early.',
 			name: 'Ada Lovelace',
-			role: 'CTO, Analytical Co.'
+			role: 'CTO, Analytical Co.',
+			avatar: avatar('Ada Lovelace', 280)
 		},
 		{
 			quote: 'The accessibility work alone saved us an audit.',
 			name: 'Grace Hopper',
-			role: 'Head of Product, Compiler Inc.'
+			role: 'Head of Product, Compiler Inc.',
+			avatar: avatar('Grace Hopper', 170)
 		},
 		{
 			quote: 'Setup took an afternoon. Support answered in minutes.',
 			name: 'Alan Turing',
-			role: 'Founder, Enigma Labs'
+			role: 'Founder, Enigma Labs',
+			avatar: avatar('Alan Turing', 30)
 		}
 	];
 	let slide = 0;
