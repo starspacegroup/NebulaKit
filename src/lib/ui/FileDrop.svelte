@@ -41,7 +41,7 @@
 		.filter(Boolean)
 		.join(', ');
 	$: describedBy =
-		[limits && `${id}-limits`, hint && `${id}-hint`].filter(Boolean).join(' ') || undefined;
+		[hint && `${id}-hint`].filter(Boolean).join(' ') || undefined;
 	$: callToAction =
 		prompt || (multiple ? 'Drop files here or choose files' : 'Drop a file here or choose a file');
 
@@ -116,7 +116,7 @@
 		type="button"
 		class="filedrop__zone"
 		class:filedrop__zone--dragging={dragging}
-		aria-labelledby="{id}-label {id}-cta"
+		aria-labelledby="{id}-label {id}-cta{limits ? ` ${id}-limits` : ''}"
 		aria-describedby={describedBy}
 		{disabled}
 		use:dropTarget

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { pasteInto } from '../../../../tests/helpers/paste';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Harness from '../../../../tests/fixtures/ModulesAccountHarness.svelte';
@@ -276,7 +277,7 @@ describe('PasswordResetFlow', () => {
 
 		const cells = screen.getAllByRole('textbox');
 		expect(cells).toHaveLength(6);
-		await fireEvent.paste(cells[0], { clipboardData: { getData: () => '123456' } });
+		await pasteInto(cells[0], '123456');
 		await settle();
 		await fireEvent.submit(submitOf('Verify code'));
 		await settle();
@@ -663,7 +664,7 @@ describe('TwoFactorSetup', () => {
 		expect(onEvent).not.toHaveBeenCalled();
 		expect(screen.getByText('Enter all 6 characters of the code.')).toBeTruthy();
 		const cells = screen.getAllByRole('textbox');
-		await fireEvent.paste(cells[0], { clipboardData: { getData: () => '123456' } });
+		await pasteInto(cells[0], '123456');
 		await settle();
 		await fireEvent.submit(
 			screen.getByRole('button', { name: 'Verify and turn on' }).closest('form')!
