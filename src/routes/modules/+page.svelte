@@ -16,6 +16,7 @@
 	import Marketing from './groups/Marketing.svelte';
 	import Settings from './groups/Settings.svelte';
 	import Shell from './groups/Shell.svelte';
+	import LazyGroup from './LazyGroup.svelte';
 	import ModulesSidebar from './ModulesSidebar.svelte';
 
 	// One demo file per group, so each keeps its own state and imports.
@@ -78,7 +79,9 @@
 				<section class="group" id={groupId(group)} aria-labelledby="{groupId(group)}-title">
 					<h2 id="{groupId(group)}-title">{group}</h2>
 					<div class="list">
-						<svelte:component this={demos[group]} />
+						<LazyGroup eager={group === MODULE_GROUPS[0]} items={inGroup(group)}>
+							<svelte:component this={demos[group]} />
+						</LazyGroup>
 					</div>
 				</section>
 			{/each}

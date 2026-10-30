@@ -4,15 +4,71 @@ import { describe, expect, it, vi } from 'vitest';
 import { MODULE_GROUPS, moduleCatalog } from '../../src/lib/modules/catalog';
 import Page from '../../src/routes/modules/+page.svelte';
 
+/** An IntersectionObserver that calls back as soon as something is observed. */
+function stubVisibleObserver() {
+	vi.stubGlobal(
+		'IntersectionObserver',
+		class {
+			constructor(private cb: IntersectionObserverCallback) {}
+			observe(target: Element) {
+				this.cb([{ isIntersecting: true, target }] as never, this as never);
+			}
+			disconnect() {}
+		}
+	);
+}
+
 describe('/modules page', () => {
-	it('shows one live, labelled article per catalog entry', () => {
+	it('shows one live, labelled article per catalog entry', async () => {
+		stubVisibleObserver();
 		const { container } = render(Page);
+		await tick();
 		expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
 		const articles = [...container.querySelectorAll('article.item')];
 		expect(articles.map((a) => a.id).sort()).toEqual(moduleCatalog.map((e) => e.id).sort());
 		for (const article of articles) {
 			expect(article.getAttribute('aria-labelledby')).toBe(`${article.id}-name`);
 		}
+		vi.unstubAllGlobals();
+	});
+
+	it('builds only the first group up front and leaves an anchor for every other module', () => {
+		vi.stubGlobal(
+			'IntersectionObserver',
+			class {
+				observe() {}
+				disconnect() {}
+			}
+		);
+		const { container } = render(Page);
+		const live = new Set([...container.querySelectorAll('article.item')].map((a) => a.id));
+		const first = moduleCatalog.filter((e) => e.group === MODULE_GROUPS[0]);
+		expect(live.size).toBe(first.length);
+		// Every module still has its id and heading, so links and the outline work without script.
+		for (const entry of moduleCatalog) {
+			expect(document.getElementById(entry.id)).toBeTruthy();
+		}
+		vi.unstubAllGlobals();
+	});
+
+	it('builds a group when a link points inside it', async () => {
+		vi.stubGlobal(
+			'IntersectionObserver',
+			class {
+				observe() {}
+				disconnect() {}
+			}
+		);
+		const { container } = render(Page);
+		const target = moduleCatalog.find((e) => e.group === MODULE_GROUPS[2])!;
+		expect(container.querySelector(`article#${target.id}`)).toBeNull();
+		window.location.hash = `#${target.id}`;
+		window.dispatchEvent(new Event('hashchange'));
+		await tick();
+		await tick();
+		expect(container.querySelector(`article#${target.id}`)).toBeTruthy();
+		window.location.hash = '';
+		vi.unstubAllGlobals();
 	});
 
 	it('has a nav link and a labelled section for every group', () => {
@@ -70,7 +126,7 @@ describe('/modules sidebar', () => {
 			class {
 				constructor(cb: IntersectionObserverCallback, options?: IntersectionObserverInit) {
 					// Other modules observe too; the sidebar is the one with a reading band.
-					if (options?.rootMargin) callback = cb;
+					if (options?.rootMargin && options.rootMargin !== '900px 0px') callback = cb;
 				}
 				observe() {}
 				disconnect() {}

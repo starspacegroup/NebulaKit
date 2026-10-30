@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { describe, expect, it, vi } from 'vitest';
 import Harness from '../../../tests/fixtures/UiKitFormHarness.svelte';
+import { pasteInto } from '../../../tests/helpers/paste';
 import InputOTP from './InputOTP.svelte';
 
 type Which =
@@ -376,14 +377,14 @@ describe('InputOTP', () => {
 
 	it('fills every cell on paste and reports the code once', async () => {
 		const { onEvent, state } = mount('otp');
-		await fireEvent.paste(cells()[2], { clipboardData: { getData: () => '123 456' } });
+		await pasteInto(cells()[2], '123 456');
 		await tick();
 		expect(state().value).toBe('123456');
 		expect(onEvent).toHaveBeenCalledWith('complete', { value: '123456' });
-		await fireEvent.paste(cells()[5], { clipboardData: { getData: () => 'x' } });
+		await pasteInto(cells()[5], 'x');
 		await tick();
 		expect(onEvent).toHaveBeenCalledTimes(1);
-		await fireEvent.paste(cells()[5], {});
+		await pasteInto(cells()[5], null);
 		expect(state().value).toBe('123456');
 	});
 
@@ -687,13 +688,12 @@ describe('FileDrop', () => {
 	it('is a button that opens the file chooser and describes its limits', async () => {
 		mount('files', { props: { accept: 'image/*', maxSize: 2048, hint: 'PNG or JPG' } });
 		const zone = screen.getByRole('button', {
-			name: 'Attachments Drop a file here or choose a file'
+			// The name carries everything the button shows, so the visible text is
+			// part of it (the label-content-name-mismatch audit).
+			name: 'Attachments Drop a file here or choose a file Accepts image/*, up to 2 KB'
 		});
 		const described = zone.getAttribute('aria-describedby')!.split(' ');
-		expect(described.map((id) => document.getElementById(id)?.textContent)).toEqual([
-			'Accepts image/*, up to 2 KB',
-			'PNG or JPG'
-		]);
+		expect(described.map((id) => document.getElementById(id)?.textContent)).toEqual(['PNG or JPG']);
 		const picker = document.querySelector('input[type="file"]') as HTMLInputElement;
 		expect(picker.accept).toBe('image/*');
 		const click = vi.spyOn(picker, 'click').mockImplementation(() => {});

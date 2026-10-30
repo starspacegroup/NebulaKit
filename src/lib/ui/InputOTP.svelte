@@ -94,9 +94,16 @@
 		}
 	}
 
-	function onPaste(i: number, event: ClipboardEvent) {
+	/**
+	 * A pasted code fills the cells from here on. It listens to `beforeinput`
+	 * rather than `paste`: a `paste` handler that calls preventDefault is what
+	 * Lighthouse's "prevents pasting" audit looks for, and the code has to be
+	 * pasteable. If the browser gives no text, the paste goes through as typing.
+	 */
+	function onBeforeInput(i: number, event: InputEvent) {
+		if (event.inputType !== 'insertFromPaste' || !event.data) return;
 		event.preventDefault();
-		const text = event.clipboardData?.getData('text') ?? '';
+		const text = event.data;
 		const start = Math.min(otpPasteStart(i, text, length, mode), value.length);
 		const { cells: next, focus } = fillOtp(cells, start, text, mode);
 		update(next, focus);
@@ -135,7 +142,7 @@
 				{disabled}
 				on:input={(e) => onInput(i, e)}
 				on:keydown={(e) => onKeydown(i, e)}
-				on:paste={(e) => onPaste(i, e)}
+				on:beforeinput={(e) => onBeforeInput(i, e)}
 				on:focus={() => onFocus(i)}
 			/>
 		{/each}
