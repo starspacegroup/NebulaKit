@@ -12,7 +12,14 @@
  * Policy lives in src/lib/agent-discovery.ts; this module only formats it.
  * Format follows RFC 9309; Content-Signal follows contentsignals.org.
  */
-import { AI_CRAWLERS, CONTENT_SIGNAL, CRAWLER_ALLOW, CRAWLER_DISALLOW } from '$lib/agent-discovery';
+import {
+	AI_CRAWLERS,
+	CONTENT_SIGNAL,
+	CRAWLER_ALLOW,
+	CRAWLER_DISALLOW,
+	LINK_PREVIEW_BOTS,
+	LINK_PREVIEW_OPEN_PATHS
+} from '$lib/agent-discovery';
 import { site } from '$lib/site.config';
 import type { RequestHandler } from './$types';
 
@@ -23,13 +30,16 @@ import type { RequestHandler } from './$types';
  * `Allow` precedes `Disallow` for readability only — conformant parsers resolve
  * conflicts by longest-match, not by line order (RFC 9309 §2.2.2).
  */
-function group(userAgents: readonly string[]): string {
+function group(
+	userAgents: readonly string[],
+	disallow: readonly string[] = CRAWLER_DISALLOW
+): string {
 	return [
 		...userAgents.map((ua) => `User-agent: ${ua}`),
 		`Content-Signal: ${CONTENT_SIGNAL}`,
 		'Allow: /',
 		...CRAWLER_ALLOW.map((path) => `Allow: ${path}`),
-		...CRAWLER_DISALLOW.map((path) => `Disallow: ${path}`)
+		...disallow.map((path) => `Disallow: ${path}`)
 	].join('\n');
 }
 
@@ -53,6 +63,15 @@ export const GET: RequestHandler = ({ url }) => {
 		'# several operators only honour rules written against their own token.',
 		'',
 		group(AI_CRAWLERS),
+		'',
+		'# Link-preview bots (X, Facebook, LinkedIn, Slack, Discord, Telegram, WhatsApp).',
+		'# The share image lives under /media/, so they may fetch it; the private',
+		'# surfaces stay Disallowed.',
+		'',
+		group(
+			LINK_PREVIEW_BOTS,
+			CRAWLER_DISALLOW.filter((path) => !LINK_PREVIEW_OPEN_PATHS.includes(path))
+		),
 		'',
 		`Sitemap: ${url.origin}/sitemap.xml`,
 		''

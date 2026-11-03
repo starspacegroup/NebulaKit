@@ -96,10 +96,12 @@ describe('robots.txt', () => {
 
 	it('keeps private surfaces disallowed for every group', async () => {
 		const text = await (await robotsGet(event('/robots.txt'))).text();
-		// One Disallow per path per group (wildcard + the AI group).
+		// One Disallow per path per group: wildcard, the AI group, and the
+		// link-preview group — which may fetch share images from /media/ and
+		// nothing else (see the robots-link-previews test).
 		for (const path of CRAWLER_DISALLOW) {
 			const occurrences = text.split(`Disallow: ${path}\n`).length - 1;
-			expect(occurrences).toBe(2);
+			expect(occurrences, path).toBe(path === '/media/' ? 2 : 3);
 		}
 	});
 
