@@ -6,6 +6,7 @@
  * DELETE /api/cms/[type]/[id] - Delete an item
  */
 import { sanitizeRichtextFields } from '$lib/cms/sanitize';
+import { dateHasArrived, isLiveItem } from '$lib/cms/schedule';
 import { LockedContentError } from '$lib/cms/types';
 import { getContentTypeRoutePrefix } from '$lib/cms/utils';
 import { runTimestampProofJob } from '$lib/content-proof/proof-job';
@@ -95,6 +96,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 				seoDescription: body.seoDescription,
 				seoImage: body.seoImage,
 				showInCommandPalette: body.showInCommandPalette,
+				publishedAt: body.publishedAt,
 				tagIds: body.tagIds
 			},
 			// Provenance actor comes from the session, never the request body.
@@ -105,7 +107,9 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 			throw error(404, 'Content item not found');
 		}
 
-		if (!existing.publishedAt && item.publishedAt && contentType.settings.enableTimestampProof) {
+		// First time live: it had no date, or its date was still ahead before this save.
+		const wasLive = Boolean(existing.publishedAt) && dateHasArrived(existing.publishedAt);
+		if (!wasLive && isLiveItem(item) && contentType.settings.enableTimestampProof) {
 			const publicUrl = `${url.origin}${getContentTypeRoutePrefix(contentType)}/${item.slug}`;
 			platform?.context?.waitUntil(runTimestampProofJob(db, item, publicUrl));
 		}

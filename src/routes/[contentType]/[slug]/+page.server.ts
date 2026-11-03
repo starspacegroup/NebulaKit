@@ -11,6 +11,7 @@ import {
 	isContentTypeSlug,
 	syncContentTypes
 } from '$lib/services/cms';
+import { isLiveItem } from '$lib/cms/schedule';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -45,8 +46,8 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
 		throw error(404, 'Content not found');
 	}
 
-	// Only show published items on public routes
-	if (item.status !== 'published') {
+	// Only show published items on public routes, and not ones scheduled for later
+	if (!isLiveItem(item)) {
 		throw error(404, 'Content not found');
 	}
 

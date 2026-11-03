@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { dateHasArrived, fromLocalInputValue, toLocalInputValue } from '$lib/cms/schedule';
 	import ImageField from '$lib/components/ImageField.svelte';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 	import TaskListField from '$lib/components/TaskListField.svelte';
@@ -53,6 +54,9 @@
 	let formTitle: string = item?.title || '';
 	let formSlug: string = item?.slug || '';
 	let formStatus: 'draft' | 'published' | 'archived' = item?.status || 'draft';
+	// Publish time: editable until the item has gone live, then fixed.
+	const hasGoneLive = Boolean(item?.publishedAt) && dateHasArrived(item.publishedAt);
+	let formPublishAt: string = hasGoneLive ? '' : toLocalInputValue(item?.publishedAt);
 	let formFields: Record<string, any> = { ...getDefaultFields(), ...(item?.fields || {}) };
 	let formSeoTitle: string = item?.seoTitle || '';
 	let formSeoDescription: string = item?.seoDescription || '';
@@ -92,6 +96,10 @@
 				fields: formFields,
 				showInCommandPalette: formShowInCommandPalette
 			};
+			if (formStatus === 'published' && !hasGoneLive) {
+				// Empty means publish now; a future time schedules it.
+				body.publishedAt = fromLocalInputValue(formPublishAt);
+			}
 			// On edit, keep the (prefilled) slug; on create, only send an explicit override.
 			if (isEdit || formSlug.trim()) body.slug = formSlug.trim();
 			if (contentType.settings?.hasSEO !== false) {
@@ -341,6 +349,23 @@
 							<option value="archived">Archived</option>
 						</select>
 					</div>
+					{#if formStatus === 'published'}
+						{#if hasGoneLive}
+							<span class="field-help">Live since {new Date(item.publishedAt).toLocaleString()}.</span>
+						{:else}
+							<div class="form-group">
+								<label for="form-publish-at">Publish at</label>
+								<input id="form-publish-at" type="datetime-local" bind:value={formPublishAt} />
+								<span class="field-help">
+									{#if formPublishAt && !dateHasArrived(fromLocalInputValue(formPublishAt))}
+										Scheduled. Hidden from visitors until then.
+									{:else}
+										Leave empty to publish now. A future time schedules it.
+									{/if}
+								</span>
+							</div>
+						{/if}
+					{/if}
 					<label class="checkbox-label">
 						<input type="checkbox" bind:checked={formShowInCommandPalette} />
 						<span>Show in command palette</span>
@@ -526,6 +551,7 @@
 		margin-bottom: var(--spacing-xs);
 	}
 
+	.form-group input[type='datetime-local'],
 	.form-group input[type='text'],
 	.form-group input[type='url'],
 	.form-group input[type='email'],
