@@ -79,6 +79,72 @@ describe('scheduled publishing in routes', () => {
 		});
 	});
 
+	describe('public item page: proof at go-live', () => {
+		const waitUntil = vi.fn();
+
+		beforeEach(() => {
+			waitUntil.mockReset();
+			vi.doMock('$lib/content-proof/proof-job', () => ({
+				runTimestampProofJob: vi.fn().mockResolvedValue(undefined)
+			}));
+		});
+
+		async function visit(row: Record<string, unknown>, settings = typeRow.settings) {
+			const { load } = await import('../../src/routes/[contentType]/[slug]/+page.server.js');
+			const db = createMockDB();
+			db._all.push({ results: [] });
+			db._first.push({ id: 'ct-1' }, { ...typeRow, settings }, row);
+			await load({
+				params: { contentType: 'blog', slug: 'hello' },
+				platform: { env: { DB: db }, context: { waitUntil } },
+				locals: {},
+				url: new URL('https://site.test/blog/hello')
+			} as any);
+		}
+
+		const justWentLive = () => ({ published_at: new Date(Date.now() - 5_000).toISOString() });
+
+		it('starts the proof for an item that just went live without one', async () => {
+			await visit(itemRow(justWentLive()));
+			expect(waitUntil).toHaveBeenCalledTimes(1);
+		});
+
+		it('does nothing when a proof was already requested', async () => {
+			await visit(
+				itemRow({ ...justWentLive(), timestamp_proof_requested_at: '2026-11-03T00:00:00Z' })
+			);
+			expect(waitUntil).not.toHaveBeenCalled();
+		});
+
+		it('does nothing when the type has not opted in', async () => {
+			await visit(itemRow(justWentLive()), '{"listPageSize":12}');
+			expect(waitUntil).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('sitemap cache', () => {
+		it('expires when the next scheduled item goes live', async () => {
+			const { GET } = await import('../../src/routes/sitemap.xml/+server.js');
+			const db = createMockDB();
+			db._first.push({ seconds: 30 });
+			const res = await GET({
+				url: new URL('https://site.test/sitemap.xml'),
+				platform: { env: { DB: db } }
+			} as any);
+			expect(res.headers.get('Cache-Control')).toBe('public, max-age=31');
+		});
+
+		it('keeps the normal lifetime when nothing is scheduled', async () => {
+			const { GET } = await import('../../src/routes/sitemap.xml/+server.js');
+			const db = createMockDB();
+			const res = await GET({
+				url: new URL('https://site.test/sitemap.xml'),
+				platform: { env: { DB: db } }
+			} as any);
+			expect(res.headers.get('Cache-Control')).toBe('public, max-age=600');
+		});
+	});
+
 	describe('public list', () => {
 		it('asks the database for live items only', async () => {
 			const { load } = await import('../../src/routes/[contentType]/+page.server.js');

@@ -6,6 +6,7 @@
  * DELETE /api/cms/[type]/[id] - Delete an item
  */
 import { sanitizeRichtextFields } from '$lib/cms/sanitize';
+import { startGoLiveProof } from '$lib/cms/go-live';
 import { dateHasArrived, isLiveItem } from '$lib/cms/schedule';
 import { LockedContentError } from '$lib/cms/types';
 import { getContentTypeRoutePrefix } from '$lib/cms/utils';
@@ -111,7 +112,7 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request, u
 		const wasLive = Boolean(existing.publishedAt) && dateHasArrived(existing.publishedAt);
 		if (!wasLive && isLiveItem(item) && contentType.settings.enableTimestampProof) {
 			const publicUrl = `${url.origin}${getContentTypeRoutePrefix(contentType)}/${item.slug}`;
-			platform?.context?.waitUntil(runTimestampProofJob(db, item, publicUrl));
+			platform?.context?.waitUntil(startGoLiveProof(db, item, publicUrl, runTimestampProofJob));
 		}
 
 		return json({ item });

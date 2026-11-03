@@ -9,14 +9,18 @@ There is no `scheduled` status. A scheduled item is `published` with a `publishe
 in the future. Every public surface checks the date, so nothing has to run when the time arrives:
 the item starts passing the check.
 
-| Surface | Scheduled item |
-| --- | --- |
-| Public list (`/blog`) | Hidden until its time. `listContentItems` takes `liveOnly: true`. |
-| Public item page | `404` until its time. |
+| Surface                  | Scheduled item                                                      |
+| ------------------------ | ------------------------------------------------------------------- |
+| Public list (`/blog`)    | Hidden until its time. `listContentItems` takes `liveOnly: true`.   |
+| Public item page         | `404` until its time.                                               |
 | Sitemap, command palette | Left out until its time (`liveSql()` in `src/lib/cms/schedule.ts`). |
-| Admin list | Shown with a **scheduled** badge. Admin APIs are not date-filtered. |
+| Admin list               | Shown with a **scheduled** badge. Admin APIs are not date-filtered. |
 
-Pages that cache, such as the sitemap (10 minutes), show the item when their cache expires.
+The sitemap's cache never outlives the next scheduled item: `Cache-Control: max-age` is the normal
+lifetime or the seconds until the next go-live, whichever is shorter (`maxAgeFor()` in
+`src/lib/cms/go-live.ts`). A post scheduled for 09:00 is in the sitemap a second after 09:00 even
+with an hour-long cache, though a crawler or CDN that already holds an older copy keeps it until its
+own expiry.
 
 ## Rules
 
@@ -32,14 +36,26 @@ Pages that cache, such as the sitemap (10 minutes), show the item when their cac
 
 ## Timestamp proof
 
-If a content type has `enableTimestampProof`, the proof job starts when an item first goes live from
-a save. A scheduled item has no public page yet, so the job does not start when it is scheduled, and
-nothing starts it automatically at go-live. Re-request the proof after the date, or add a cron route
-that finds live items with no proof. See `src/lib/content-proof/proof-job.ts`.
+If a content type has `enableTimestampProof`, a proof is requested when an item goes live. For an item
+published now the save request starts it. A scheduled item is saved earlier, so the proof starts the
+first time anything sees it live:
+
+- a visitor opening the item page, or
+- the catch-up route `POST /api/cron/publish-scheduled` (`CRON_SECRET` bearer, like the other cron
+  routes), for an item nobody has opened yet. It is optional: without it the proof starts on the first
+  visit.
+
+Both go through `startGoLiveProof()`, which claims the item with a single conditional `UPDATE` on
+`timestamp_proof_requested_at` before running the job, so the proof runs once however many callers
+race. Only items that went live in the last 7 days are considered (`PROOF_CATCHUP_DAYS`): an older
+item without a proof predates the type opting in, and a proof dated now would say something untrue
+about when it existed.
 
 ## Code
 
 - `src/lib/cms/schedule.ts` — date logic, `liveSql()`, and the `datetime-local` helpers.
+- `src/lib/cms/go-live.ts` — the proof claim, the catch-up scan and the bounded cache lifetime.
+- `src/routes/api/cron/publish-scheduled/` — the catch-up route.
 - `src/lib/services/cms.ts` — create and update store the date; the list, sitemap and palette
   queries filter on it.
 - `src/lib/components/CmsItemEditor.svelte` — the **Publish at** field.

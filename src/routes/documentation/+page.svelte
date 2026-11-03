@@ -201,7 +201,11 @@ bun run deploy`;
 							Scheduled publishing: set an item to <strong>Published</strong> and pick a future
 							<strong>Publish at</strong> time. It stays hidden from visitors, the sitemap and the
 							command palette until that time, with no job to run. The admin list marks it
-							<em>scheduled</em>. Details in <code>docs/CMS_SCHEDULING.md</code>.
+							<em>scheduled</em>. If the type uses timestamp proofs, the first visit after go-live
+							starts the proof; an optional
+							<code>POST /api/cron/publish-scheduled</code> (same <code>CRON_SECRET</code> bearer as
+							the other cron routes) catches items nobody has opened. Details in
+							<code>docs/CMS_SCHEDULING.md</code>.
 						</li>
 						<li>
 							Chat exposes only enabled entries from its known model allowlist. Unknown or disabled

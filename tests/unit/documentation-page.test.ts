@@ -356,6 +356,7 @@ describe('Documentation Page', () => {
 			render(Page);
 			expect(screen.getByText(/Scheduled publishing:/i)).toBeInTheDocument();
 			expect(document.body.textContent).toMatch(/docs\/CMS_SCHEDULING\.md/);
+			expect(document.body.textContent).toMatch(/api\/cron\/publish-scheduled/);
 		});
 
 		it('lists the endpoints published by the API catalog', () => {
