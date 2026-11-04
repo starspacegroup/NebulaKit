@@ -14,6 +14,12 @@ Downstream projects surveyed (2026-07-06):
 | CMS-heavy downstream site             | Large — CMS v2 (WYSIWYG + Svelte embeds + R2 media), task board |
 | Two near-stock downstream deployments | Near-stock (one removed the simulated-SSO "PRETEND" providers)  |
 
+## Core feature — planned
+
+### Self-editing AI: owner drags a box, says the change, previews, applies (2026-10-26)
+
+The owner changes the live site by dragging a box over part of it and saying or typing what to change. The AI shows a preview, and the change is versioned with undo. Tier 1 covers content and settings and applies instantly. Tier 2 covers code and goes through git and a Pages preview. Full plan: [docs/SELF_EDITING_AI_PLAN.md](./docs/SELF_EDITING_AI_PLAN.md). Mockups: [docs/design/self-editing-ai/](./docs/design/self-editing-ai/).
+
 ## Upstream candidates — new modules
 
 ### Payments: Stripe integration + PPP region pricing (from the payments/credits app)
