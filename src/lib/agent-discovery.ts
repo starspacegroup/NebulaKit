@@ -102,7 +102,10 @@ export const CRAWLER_DISALLOW: readonly string[] = [
 	'/cart',
 	'/reset',
 	'/setup',
-	'/media/'
+	'/media/',
+	// Cloudflare email obfuscation links (/cdn-cgi/l/email-protection) are not
+	// pages; crawling them only logs 404s in Search Console (David 2026-10-27).
+	'/cdn-cgi/'
 ];
 
 /**
