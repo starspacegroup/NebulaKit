@@ -80,8 +80,11 @@ changing its triggers.
 ## Admin page
 
 `/admin/scheduled-jobs` (admin only) lists each job with its schedule, last run,
-status and next expected run, and the 25 most recent runs. **Run now** posts JSON
-to `POST /api/admin/scheduled-jobs/run` with an admin session. It runs the same
+status and next expected run, and the 25 most recent runs. The page's load calls
+`requireAdmin` itself, so a direct `/admin/scheduled-jobs/__data.json` fetch is
+refused (401/403) like the page; the admin layout's redirect does not cover that
+fetch. **Run now** posts JSON to `POST /api/admin/scheduled-jobs/run` with an owner
+session (`requireOwner`). It runs the same
 job through the same claim, so pressing it during a scheduled run is skipped, and
 pressing it twice in a minute runs once. It is JSON-only, like the site API. The
 bearer secret never reaches the browser.

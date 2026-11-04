@@ -428,6 +428,7 @@ describe('Lean model: login throttle', () => {
 
 	it('MAX_ATTEMPTS is the model constant', () => {
 		expect(throttle.MAX_ATTEMPTS).toBe(model.maxAttempts);
+		expect(throttle.EMAIL_MAX_ATTEMPTS).toBe(model.emailMaxAttempts);
 	});
 });
 

@@ -36,8 +36,9 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 		throw error(400, 'Email and password are required.');
 	}
 
-	// A brake on guessing: counts failures per address and per email in KV, and
-	// fails open when KV is missing (src/lib/server/login-throttle.ts).
+	// A brake on guessing: 8 failures per address, 64 per email from all addresses,
+	// so one address cannot lock someone else out. Fails open when KV is missing
+	// (src/lib/server/login-throttle.ts).
 	const kv = platform.env.KV;
 	const ip = clientAddress(request);
 	if (await isThrottled(kv, ip, email)) {

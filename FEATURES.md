@@ -22,7 +22,10 @@ types are not dynamically imported. See [docs/CMS_EMBEDS.md](./docs/CMS_EMBEDS.m
 NebulaKit implements its authentication boundary in the application rather than delegating it to
 Auth.js.
 
-- Password signup and login with password hashing
+- Password signup and login with password hashing, and a login throttle
+  (`src/lib/server/login-throttle.ts`): 8 failures per client IP (a success does not reset
+  it), 64 per email from all IPs in a fixed 15-minute window. One address cannot lock
+  another user out; this is proved in `proofs/` (`single_ip_cannot_lock_out`).
 - GitHub OAuth client routes
 - Discord OAuth client routes
 - Signed session cookies
