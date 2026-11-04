@@ -235,6 +235,8 @@ export interface CreateContentItemInput {
 	seoImage?: string;
 	authorId?: string;
 	showInCommandPalette?: boolean;
+	/** When to go live. A future time schedules it; omit or null for now. Only used when status is `published`. */
+	publishedAt?: string | null;
 	tagIds?: string[];
 }
 
@@ -248,6 +250,8 @@ export interface UpdateContentItemInput {
 	seoDescription?: string;
 	seoImage?: string;
 	showInCommandPalette?: boolean;
+	/** Publish time for an item that has not gone live yet; ignored once it has. null publishes now. */
+	publishedAt?: string | null;
 	tagIds?: string[];
 }
 
@@ -263,6 +267,8 @@ export interface PaginatedResult<T> {
 /** Query filters for listing content items */
 export interface ContentItemFilters {
 	status?: ContentItemStatus;
+	/** Public pages: hide published items whose publish time is still in the future. */
+	liveOnly?: boolean;
 	authorId?: string;
 	tagSlug?: string;
 	search?: string;

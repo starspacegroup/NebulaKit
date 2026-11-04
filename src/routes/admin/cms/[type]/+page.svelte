@@ -6,6 +6,7 @@
   (/admin/cms/[type]/new and /admin/cms/[type]/[id]).
 -->
 <script lang="ts">
+	import { isScheduledItem } from '$lib/cms/schedule';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { browser } from '$app/environment';
 	import { replaceState } from '$app/navigation';
@@ -118,8 +119,15 @@
 		refreshItems();
 	}
 
+	// A published item whose date is still ahead is shown as Scheduled.
+	function statusLabel(item: { status: string; publishedAt: string | null }): string {
+		return isScheduledItem(item) ? 'scheduled' : item.status;
+	}
+
 	function getStatusColor(status: string): string {
 		switch (status) {
+			case 'scheduled':
+				return 'var(--color-info, #3b82f6)';
 			case 'published':
 				return 'var(--color-success, #22c55e)';
 			case 'draft':
@@ -314,8 +322,11 @@
 								</span>
 							</td>
 							<td>
-								<span class="status-badge" style="--badge-color: {getStatusColor(item.status)}">
-									{item.status}
+								<span
+									class="status-badge"
+									style="--badge-color: {getStatusColor(statusLabel(item))}"
+								>
+									{statusLabel(item)}
 								</span>
 							</td>
 							<td class="td-date">{formatDate(item.createdAt)}</td>

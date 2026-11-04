@@ -15,6 +15,7 @@
  * IDs, or a transient error) the static routes are still served. A partial
  * sitemap is useful; a 500 tells the crawler the site has no sitemap at all.
  */
+import { maxAgeFor } from '$lib/cms/go-live';
 import { SITEMAP_ROUTES, absoluteUrl, escapeXml } from '$lib/agent-discovery';
 import { listPublishedContentForSitemap } from '$lib/services/cms';
 import { listPages } from '@nebulakit/builder';
@@ -140,7 +141,7 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 			'Content-Type': 'application/xml; charset=utf-8',
 			// Short TTL: publishing a post should show up quickly, but a burst of
 			// crawlers shouldn't each trigger a fresh D1 scan.
-			'Cache-Control': 'public, max-age=600'
+			'Cache-Control': `public, max-age=${await maxAgeFor(db, 600)}`
 		}
 	});
 };

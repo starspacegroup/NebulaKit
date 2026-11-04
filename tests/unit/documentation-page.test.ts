@@ -464,6 +464,13 @@ describe('Documentation Page', () => {
 			expect(section.textContent).toMatch(/browser credentials omitted/i);
 		});
 
+		it('documents scheduled publishing', () => {
+			render(Page);
+			expect(screen.getByText(/Scheduled publishing:/i)).toBeInTheDocument();
+			expect(document.body.textContent).toMatch(/docs\/CMS_SCHEDULING\.md/);
+			expect(document.body.textContent).toMatch(/api\/cron\/publish-scheduled/);
+		});
+
 		it('lists the endpoints published by the API catalog', () => {
 			render(Page);
 			const section = screen

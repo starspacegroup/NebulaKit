@@ -11,10 +11,14 @@ import {
 	isContentTypeSlug,
 	syncContentTypes
 } from '$lib/services/cms';
+import { awaitingGoLiveProof, startGoLiveProof } from '$lib/cms/go-live';
+import { isLiveItem } from '$lib/cms/schedule';
+import { getContentTypeRoutePrefix } from '$lib/cms/utils';
+import { runTimestampProofJob } from '$lib/content-proof/proof-job';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, platform, locals }) => {
+export const load: PageServerLoad = async ({ params, platform, locals, url }) => {
 	const typeSlug = params.contentType;
 	const itemSlug = params.slug;
 
@@ -45,9 +49,16 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
 		throw error(404, 'Content not found');
 	}
 
-	// Only show published items on public routes
-	if (item.status !== 'published') {
+	// Only show published items on public routes, and not ones scheduled for later
+	if (!isLiveItem(item)) {
 		throw error(404, 'Content not found');
+	}
+
+	// A scheduled item's timestamp proof could not start when it was saved, so
+	// the first visit after go-live starts it. The claim makes this safe to race.
+	if (contentType.settings.enableTimestampProof && awaitingGoLiveProof(item)) {
+		const publicUrl = `${url.origin}${getContentTypeRoutePrefix(contentType)}/${item.slug}`;
+		platform?.context?.waitUntil(startGoLiveProof(db, item, publicUrl, runTimestampProofJob));
 	}
 
 	// Attribute this view to the item. pageViewsHandler runs after the load and

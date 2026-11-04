@@ -42,6 +42,7 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 	// Parse query params
 	const filters: ContentItemFilters = {
 		status: 'published', // Public routes only show published items
+		liveOnly: true, // ...and not ones scheduled for later
 		search: url.searchParams.get('search') || undefined,
 		tagSlug: url.searchParams.get('tag') || undefined,
 		page: parseInt(url.searchParams.get('page') || '1'),

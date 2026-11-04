@@ -6,6 +6,8 @@
  */
 import type { ContentItemFilters } from '$lib/cms/types';
 import { sanitizeRichtextFields } from '$lib/cms/sanitize';
+import { startGoLiveProof } from '$lib/cms/go-live';
+import { isLiveItem } from '$lib/cms/schedule';
 import { getContentTypeRoutePrefix, validateFields } from '$lib/cms/utils';
 import { runTimestampProofJob } from '$lib/content-proof/proof-job';
 import { createContentItem, getContentTypeBySlug, listContentItems } from '$lib/services/cms';
@@ -92,6 +94,7 @@ export const POST: RequestHandler = async ({ platform, locals, params, request, 
 			seoDescription: body.seoDescription,
 			seoImage: body.seoImage,
 			showInCommandPalette: body.showInCommandPalette,
+			publishedAt: body.publishedAt,
 			authorId: user.id,
 			tagIds: body.tagIds
 		});
@@ -101,9 +104,10 @@ export const POST: RequestHandler = async ({ platform, locals, params, request, 
 		}
 
 		// An item created straight into 'published' is a first publish too.
-		if (item.publishedAt && contentType.settings.enableTimestampProof) {
+		// A scheduled item has no public page yet, so its proof waits for go-live.
+		if (isLiveItem(item) && contentType.settings.enableTimestampProof) {
 			const publicUrl = `${url.origin}${getContentTypeRoutePrefix(contentType)}/${item.slug}`;
-			platform?.context?.waitUntil(runTimestampProofJob(db, item, publicUrl));
+			platform?.context?.waitUntil(startGoLiveProof(db, item, publicUrl, runTimestampProofJob));
 		}
 
 		return json({ item }, { status: 201 });
