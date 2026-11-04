@@ -135,6 +135,29 @@ export const CRAWLER_ALLOW: readonly string[] = ['/api/health'];
 export const CONTENT_SIGNAL = 'search=yes, ai-input=yes, ai-train=yes';
 
 /**
+ * Link-preview fetchers: the bots that build the card when someone pastes a
+ * link into X, Facebook, LinkedIn, Slack, Discord, Telegram or WhatsApp.
+ *
+ * The card's image is a `/media/` file, and the wildcard group disallows
+ * `/media/`. These bots honour robots.txt for the image fetch, so under the
+ * wildcard rules every share card came out with the title and no picture.
+ * They get their own group with `/media/` open. Everything private stays
+ * disallowed for them too.
+ */
+export const LINK_PREVIEW_BOTS: readonly string[] = [
+	'Twitterbot',
+	'facebookexternalhit',
+	'LinkedInBot',
+	'Slackbot',
+	'Discordbot',
+	'TelegramBot',
+	'WhatsApp'
+];
+
+/** Paths a link-preview bot may fetch although other crawlers may not. */
+export const LINK_PREVIEW_OPEN_PATHS: readonly string[] = ['/media/'];
+
+/**
  * AI crawlers named explicitly in robots.txt.
  *
  * Naming them matters even when the policy matches the wildcard group: several
