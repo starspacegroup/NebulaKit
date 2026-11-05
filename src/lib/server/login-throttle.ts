@@ -115,8 +115,9 @@ export async function recordFailure(
 				await kv.put(key, String(next), { expirationTtl: WINDOW_SECONDS });
 			})(),
 			(async () => {
-				// The email window is fixed at the first failure. A refreshed one would let
-				// a single slow address (8 per IP window) pile up to the email limit.
+				// The email window is fixed at the first failure so it caps the DISTRIBUTED
+				// rate at 64 failures per 15 min. (Single-IP safety does not depend on it:
+				// Dafny's timed model shows a sliding window would also be single-IP safe.)
 				const key = keyFor('email', email);
 				const cur = await read(kv, key);
 				const [count, expiresAt, t] = [big(cur.count), big(cur.expiresAt ?? 0), big(now)];
