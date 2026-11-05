@@ -16,7 +16,7 @@ import type { RequestHandler } from './$types';
  * JSON-only, like the site API: a cross-site form post carries the cookie but
  * cannot set `Content-Type: application/json` without a CORS preflight.
  */
-export const POST: RequestHandler = async ({ request, locals, platform }) => {
+export const POST: RequestHandler = async ({ request, locals, platform, url }) => {
 	requireOwner(locals);
 
 	const type = request.headers.get('content-type') ?? '';
@@ -31,6 +31,6 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const env = platform?.env;
 	if (!env?.DB) throw error(503, 'Database not available');
 
-	const result = await executeJob(env.DB, env, job, { trigger: 'manual' });
+	const result = await executeJob(env.DB, env, job, { trigger: 'manual', origin: url?.origin });
 	return json(result);
 };

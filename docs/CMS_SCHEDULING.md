@@ -42,8 +42,9 @@ first time anything sees it live:
 
 - a visitor opening the item page, or
 - the catch-up route `POST /api/cron/publish-scheduled` (`CRON_SECRET` bearer, like the other cron
-  routes), for an item nobody has opened yet. It is optional: without it the proof starts on the first
-  visit.
+  routes), for an item nobody has opened yet. It is a registered scheduled job (`publish-scheduled`,
+  hourly at :37 by the cron Worker; see SCHEDULED_JOBS.md). Without the Worker the proof starts on the
+  first visit.
 
 Both go through `startGoLiveProof()`, which claims the item with a single conditional `UPDATE` on
 `timestamp_proof_requested_at` before running the job, so the proof runs once however many callers

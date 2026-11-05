@@ -243,6 +243,10 @@ describe('cron route /api/cron/publish-scheduled', () => {
 
 	it('runs the catch-up and reports how many it started', async () => {
 		const res = await post({ secret: 's3cret', auth: 'Bearer s3cret', db: mockDb() });
-		expect(await res.json()).toEqual({ started: 0 });
+		expect(await res.json()).toMatchObject({
+			job: 'publish-scheduled',
+			outcome: 'succeeded',
+			detail: { started: 0 }
+		});
 	});
 });

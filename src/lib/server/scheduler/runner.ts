@@ -31,6 +31,8 @@ export interface ExecuteOptions {
 	/** When the scheduler meant the job to run (ms). Retries share it, hence share a slot. Defaults to now. */
 	scheduledAtMs?: number;
 	params?: URLSearchParams;
+	/** Origin of the triggering request. Defaults to empty; jobs that need it must check. */
+	origin?: string;
 	/** Injected by tests. */
 	clock?: () => number;
 }
@@ -105,7 +107,14 @@ export async function executeJob(
 	try {
 		detail = await withTimeout(
 			(signal) =>
-				job.run({ db, env, now, signal, params: options.params ?? new URLSearchParams() }),
+				job.run({
+					db,
+					env,
+					now,
+					signal,
+					params: options.params ?? new URLSearchParams(),
+					origin: options.origin ?? ''
+				}),
 			job.timeoutMs
 		);
 	} catch (thrown) {

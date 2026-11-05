@@ -11,6 +11,8 @@ export interface JobContext {
 	signal: AbortSignal;
 	/** Query parameters of the cron request. Empty for a manual run. */
 	params: URLSearchParams;
+	/** Origin of the request that triggered the run (e.g. https://www.example.com), for jobs that build absolute URLs. */
+	origin: string;
 }
 
 /** A JSON-serializable summary of what a run did. Stored on its run row. */

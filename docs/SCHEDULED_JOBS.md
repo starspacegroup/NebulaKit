@@ -33,11 +33,12 @@ and `bun run check` do not look at it.
 
 ## The jobs
 
-| Job id             | Cron (UTC)   | Route                        | What it does                                                            |
-| ------------------ | ------------ | ---------------------------- | ----------------------------------------------------------------------- |
-| `prune-view-stats` | `17 3 * * *` | `/api/cron/prune-view-stats` | Deletes counters older than 400 days                                    |
-| `lighthouse`       | `43 4 * * *` | `/api/cron/lighthouse`       | PageSpeed Insights sweep (see below)                                    |
-| `prune-audit`      | `29 5 * * *` | `/api/cron/prune-audit`      | Deletes audit rows older than 365 days and sign-in events older than 90 |
+| Job id              | Cron (UTC)   | Route                         | What it does                                                                                          |
+| ------------------- | ------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `prune-view-stats`  | `17 3 * * *` | `/api/cron/prune-view-stats`  | Deletes counters older than 400 days                                                                  |
+| `lighthouse`        | `43 4 * * *` | `/api/cron/lighthouse`        | PageSpeed Insights sweep (see below)                                                                  |
+| `prune-audit`       | `29 5 * * *` | `/api/cron/prune-audit`       | Deletes audit rows older than 365 days and sign-in events older than 90                               |
+| `publish-scheduled` | `37 * * * *` | `/api/cron/publish-scheduled` | Starts timestamp proofs for scheduled items that went live ([CMS_SCHEDULING.md](./CMS_SCHEDULING.md)) |
 
 See [LIGHTHOUSE_MONITORING.md](./LIGHTHOUSE_MONITORING.md) and
 [ADMIN_STATS.md](./ADMIN_STATS.md).

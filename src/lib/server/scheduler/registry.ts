@@ -9,12 +9,14 @@
 import { LIGHTHOUSE_JOB } from './jobs/lighthouse';
 import { PRUNE_AUDIT_JOB } from './jobs/prune-audit';
 import { PRUNE_VIEW_STATS_JOB } from './jobs/prune-view-stats';
+import { PUBLISH_SCHEDULED_JOB } from './jobs/publish-scheduled';
 import type { ScheduledJob } from './types';
 
 export const SCHEDULED_JOBS: readonly ScheduledJob[] = [
 	PRUNE_VIEW_STATS_JOB,
 	LIGHTHOUSE_JOB,
-	PRUNE_AUDIT_JOB
+	PRUNE_AUDIT_JOB,
+	PUBLISH_SCHEDULED_JOB
 ];
 
 export function getScheduledJob(id: string): ScheduledJob | undefined {

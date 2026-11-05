@@ -44,7 +44,8 @@ export async function handleCronRequest(
 	const result = await executeJob(env.DB, env, job, {
 		trigger: 'cron',
 		scheduledAtMs: scheduledTimeFrom(event.request, Date.now()),
-		params: event.url.searchParams
+		params: event.url.searchParams,
+		origin: event.url.origin
 	});
 	return json(result, { status: STATUS_BY_OUTCOME[result.outcome] });
 }
