@@ -204,7 +204,7 @@
 			</div>
 		{/if}
 
-		<form on:submit|preventDefault={handleSubmit} class="setup-form">
+		<form method="POST" on:submit|preventDefault={handleSubmit} class="setup-form">
 			{#if !hasExistingConfig}
 				<div class="form-group">
 					<label for={setupSecretField}>

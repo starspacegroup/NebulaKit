@@ -136,7 +136,7 @@
 			on:select={(event) => handleSSOLogin(event.detail.provider)}
 		/>
 
-		<form on:submit|preventDefault={handleSubmit}>
+		<form method="POST" on:submit|preventDefault={handleSubmit}>
 			{#if error}
 				<div class="error-message">{error}</div>
 			{/if}
