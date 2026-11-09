@@ -29,7 +29,8 @@ export const PERMISSIONS = [
 	'pii',
 	'api-keys',
 	'contact',
-	'lighthouse'
+	'lighthouse',
+	'shop'
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -59,7 +60,8 @@ export const PERMISSION_LABELS: Record<Permission, { label: string; detail: stri
 		label: 'Contact forms',
 		detail: 'Submissions from the public form. Names and emails.'
 	},
-	lighthouse: { label: 'Lighthouse', detail: 'Performance audits of the public site.' }
+	lighthouse: { label: 'Lighthouse', detail: 'Performance audits of the public site.' },
+	shop: { label: 'Shop', detail: 'Add, edit, archive and delete products, and set their prices.' }
 };
 
 /**
