@@ -7,6 +7,7 @@
 		"customize": "bun scripts/customize.mjs",
 		"check:bindings": "node scripts/check-bindings.mjs",
 		"check:migrations": "node scripts/check-migrations.mjs",
+		"build:dafny": "node scripts/build-dafny.mjs",
 		"setup:cf": "node scripts/setup-cf.mjs",
 		"palette:scan": "bun scripts/palette-scan.mjs",
 		"generate:encryption-key": "node scripts/generate-encryption-key.mjs",
@@ -67,6 +68,7 @@
 		"@tiptap/extension-placeholder": "^2.27.2",
 		"@tiptap/pm": "^2.27.2",
 		"@tiptap/starter-kit": "^2.27.2",
+		"bignumber.js": "^11.1.5",
 		"xss": "^1.0.15"
 	},
 	"type": "module"

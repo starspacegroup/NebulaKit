@@ -32,6 +32,7 @@
 		{ path: '/admin/pages', label: 'Pages', icon: 'layout', permission: 'pages' },
 		{ path: '/admin/redirects', label: 'Redirects', icon: 'link', permission: 'pages' },
 		{ path: '/admin/products', label: 'Products', icon: 'bag', permission: 'shop' },
+		{ path: '/admin/auctions', label: 'Auctions', icon: 'bag', permission: 'shop' },
 		{ path: '/admin/api-keys', label: 'API Keys', icon: 'key', permission: 'api-keys' },
 		{
 			path: '/admin/contact-form-submissions',

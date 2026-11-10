@@ -40,7 +40,8 @@ export const CRON_PATHS: Readonly<Record<string, string>> = {
 	'17 3 * * *': '/api/cron/prune-view-stats',
 	'43 4 * * *': '/api/cron/lighthouse',
 	'29 5 * * *': '/api/cron/prune-audit',
-	'37 * * * *': '/api/cron/publish-scheduled'
+	'37 * * * *': '/api/cron/publish-scheduled',
+	'*/5 * * * *': '/api/cron/settle-auctions'
 };
 
 /** Retries after the first attempt. */
