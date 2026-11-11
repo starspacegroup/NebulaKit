@@ -346,7 +346,9 @@ session_id` — then reject intent mismatch and, for `link`, require the row's `
 
 ## UI fix: stray vertical scrollbar on the tab bar (2026-11-05, from davis9001.com)
 
-- [ ] `src/lib/ui/Tabs.svelte`: `.tabs__list` sets `overflow-x: auto`. CSS then computes
+- [x] (done: `overflow-y: hidden` added, `margin-bottom: -1px` removed; the other `overflow-x: auto`
+      rows named below have no negative margins or transforms, so need no change; no screenshot taken)
+      `src/lib/ui/Tabs.svelte`: `.tabs__list` sets `overflow-x: auto`. CSS then computes
       `overflow-y` as `auto` too, and `.tabs__tab { margin-bottom: -1px }` pushes the active
       underline one pixel past the box, so a small vertical scrollbar shows at the right end of the
       tab row (seen on the davis9001.com admin tabs, same pattern).
