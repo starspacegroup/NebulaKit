@@ -66,19 +66,28 @@ export function createSqliteD1(migrationFiles?: string[]): D1Database {
 			.sort();
 	for (const file of files) db.exec(readFileSync(join(dir, file), 'utf8'));
 
+	// D1 runs a batch as one atomic unit, so two batches never interleave.
+	// A queue gives the same guarantee here, which lets tests race real writers.
+	let queue: Promise<unknown> = Promise.resolve();
+	const runBatch = async (statements: Statement[]) => {
+		db.exec('BEGIN');
+		try {
+			const out = [];
+			for (const statement of statements) out.push(await statement.run());
+			db.exec('COMMIT');
+			return out;
+		} catch (err) {
+			db.exec('ROLLBACK');
+			throw err;
+		}
+	};
+
 	const d1 = {
 		prepare: (sql: string) => new Statement(db, sql),
-		batch: async (statements: Statement[]) => {
-			db.exec('BEGIN');
-			try {
-				const out = [];
-				for (const statement of statements) out.push(await statement.run());
-				db.exec('COMMIT');
-				return out;
-			} catch (err) {
-				db.exec('ROLLBACK');
-				throw err;
-			}
+		batch: (statements: Statement[]) => {
+			const result = queue.then(() => runBatch(statements));
+			queue = result.catch(() => undefined);
+			return result;
 		},
 		exec: async (sql: string) => {
 			db.exec(sql);

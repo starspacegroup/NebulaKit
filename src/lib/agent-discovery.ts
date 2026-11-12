@@ -49,6 +49,7 @@ export const SITEMAP_ROUTES: readonly SitemapRoute[] = [
 	{ path: '/components', changefreq: 'weekly', priority: 0.7 },
 	{ path: '/modules', changefreq: 'weekly', priority: 0.7 },
 	{ path: '/shop', changefreq: 'daily', priority: 0.7 },
+	{ path: '/auctions', changefreq: 'hourly', priority: 0.7 },
 	{ path: '/chat', changefreq: 'monthly', priority: 0.6 },
 	{ path: '/contact', changefreq: 'monthly', priority: 0.5 },
 	{ path: '/privacy', changefreq: 'yearly', priority: 0.3 },
