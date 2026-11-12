@@ -1,7 +1,7 @@
-// Verify dafny/AuctionCore.dfy, compile it to JS, and wrap the CommonJS output as an ES module at
-// packages/commerce/src/generated/auction-core.js. Needs `dafny` (4.11) on PATH.
-// Run: bun run build:dafny. The generated file is committed; tests/unit/dafny-fresh.test.ts fails
-// if it no longer matches the .dfy (when dafny is installed).
+// Verify each proved Dafny module, compile it to JS, and wrap the CommonJS output as an ES module.
+// Needs `dafny` (4.11) on PATH.
+// Run: bun run build:dafny. The generated files are committed; tests/unit/dafny-fresh.test.ts fails
+// if one no longer matches its .dfy (when dafny is installed).
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,6 +16,11 @@ export const MODULES = [
 		source: 'dafny/AuctionCore.dfy',
 		module: 'AuctionCore',
 		out: 'packages/commerce/src/generated/auction-core.js'
+	},
+	{
+		source: 'dafny/LoginThrottle.dfy',
+		module: 'LoginThrottleCore',
+		out: 'src/lib/server/generated/login-throttle-core.js'
 	}
 ];
 

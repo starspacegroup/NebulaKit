@@ -343,3 +343,18 @@ session_id` — then reject intent mismatch and, for `link`, require the row's `
 - Not claimed: no sibling test suite or coverage run was executed. These are source-reading results,
   so the nabu conclusion is "that branch has no test that reaches it and no gate measures the file,"
   not a measured coverage percentage.
+
+## UI fix: stray vertical scrollbar on the tab bar (2026-11-05, from davis9001.com)
+
+- [x] (done: `overflow-y: hidden` added, `margin-bottom: -1px` removed; the other `overflow-x: auto`
+      rows named below have no negative margins or transforms, so need no change; no screenshot taken)
+      `src/lib/ui/Tabs.svelte`: `.tabs__list` sets `overflow-x: auto`. CSS then computes
+      `overflow-y` as `auto` too, and `.tabs__tab { margin-bottom: -1px }` pushes the active
+      underline one pixel past the box, so a small vertical scrollbar shows at the right end of the
+      tab row (seen on the davis9001.com admin tabs, same pattern).
+      Fix: add `overflow-y: hidden;` to `.tabs__list` and delete `margin-bottom: -1px` from
+      `.tabs__tab` (the 2px selected underline then sits just above the 1px list border).
+      Check the other `overflow-x: auto` rows for the same trap (`Table.svelte`, `DataTable.svelte`,
+      `Carousel.svelte`, `AuditLog.svelte`, `NotificationPreferences.svelte`): any row whose
+      children use negative margins or a transform needs `overflow-y: hidden` too.
+      Verify with a headless screenshot of a Tabs demo at desktop width; no vertical scrollbar.

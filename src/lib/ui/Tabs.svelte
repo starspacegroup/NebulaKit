@@ -73,6 +73,7 @@
 		display: flex;
 		gap: var(--spacing-xs);
 		overflow-x: auto;
+		overflow-y: hidden;
 		border-bottom: 1px solid var(--color-border);
 	}
 
@@ -81,7 +82,6 @@
 	}
 
 	.tabs__tab {
-		margin-bottom: -1px;
 		padding: var(--spacing-sm) var(--spacing-md);
 		border: 0;
 		border-bottom: 2px solid transparent;

@@ -14,6 +14,7 @@ import {
 import { PERMISSIONS, parsePermissions } from '$lib/access/permissions';
 import { effectiveRole } from '$lib/access/roles';
 import { auditAround } from '$lib/server/audit';
+import { gatedResponse, isReachableWhileGated, readSiteMode } from '$lib/server/site-mode';
 import { withSecurityHeaders } from '$lib/server/security-headers';
 import { trackSessionSeen } from '$lib/server/sign-ins';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
@@ -379,6 +380,25 @@ export const redirectsHandler: Handle = async ({ event, resolve }) => {
 	}
 };
 
+/**
+ * Coming-soon gate (docs/COMING_SOON.md, `lib/server/site-mode.ts`). With
+ * `site_mode` on, a signed-out visitor gets the holding page; an admin (any
+ * role above user) and the allowlisted routes pass through.
+ *
+ * Runs AFTER authHandler so `locals.user` is filled in, and BEFORE
+ * pageViewsHandler so a gated visit is not counted as a page view of the real
+ * site. The off state is cached, so a launched site pays no KV read per request.
+ *
+ * Exported for direct unit testing (sequence() needs Kit's request store).
+ */
+export const siteModeHandler: Handle = async ({ event, resolve }) => {
+	if ((await readSiteMode(event.platform?.env?.KV)) === 'off') return resolve(event);
+	if (event.locals.user?.isAdmin || isReachableWhileGated(event.url.pathname)) {
+		return resolve(event);
+	}
+	return gatedResponse(event.request.method);
+};
+
 // Combine all hooks
 export const handle = sequence(
 	securityHeadersHandler,
@@ -388,5 +408,6 @@ export const handle = sequence(
 	agentDiscoveryHandler,
 	auditHandler,
 	authHandler,
+	siteModeHandler,
 	pageViewsHandler
 );

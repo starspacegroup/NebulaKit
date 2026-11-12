@@ -18,6 +18,7 @@
  */
 import { formatMoney, type Order } from '@nebulakit/commerce';
 import { emailTheme, site } from '$lib/site.config';
+import { guardTheme } from '$lib/utils/contrast-guard';
 
 export type EmailTheme = { readonly [K in keyof typeof emailTheme]: string };
 
@@ -59,9 +60,24 @@ interface Resolved {
 	siteUrl: string;
 }
 
+/** Where each email colour is read as text, [foreground, background]. */
+export const EMAIL_THEME_PAIRS = [
+	['text', 'surface'],
+	['muted', 'surface'],
+	['onAccent', 'accent']
+] as const;
+
+/**
+ * A caller's theme is someone's brand, unchecked; its text colours are moved
+ * until they read at 4.5:1. The site default is left exactly as written.
+ */
+export function guardEmailTheme(theme: EmailTheme) {
+	return guardTheme({ ...theme }, EMAIL_THEME_PAIRS);
+}
+
 function resolve(ctx: EmailContext): Resolved {
 	return {
-		theme: ctx.theme ?? emailTheme,
+		theme: ctx.theme ? guardEmailTheme(ctx.theme).theme : emailTheme,
 		siteName: ctx.siteName ?? site.name,
 		siteUrl: ctx.siteUrl ?? site.url
 	};
