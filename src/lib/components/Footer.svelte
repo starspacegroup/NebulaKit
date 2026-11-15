@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { site, repoUrl } from '$lib/site.config';
+	import { publicSignInEnabled } from '$lib/public-sign-in';
 	import BuiltWithNebulaKit from './BuiltWithNebulaKit.svelte';
 
 	const currentYear = new Date().getFullYear();
@@ -46,8 +47,10 @@
 					<ul class="footer-links">
 						<li><a href="/">Home</a></li>
 						<li><a href="/chat">Chat</a></li>
-						<li><a href="/auth/login">Sign In</a></li>
-						<li><a href="/auth/signup">Sign Up</a></li>
+						{#if publicSignInEnabled(site)}
+							<li><a href="/auth/login">Sign In</a></li>
+							<li><a href="/auth/signup">Sign Up</a></li>
+						{/if}
 					</ul>
 				</div>
 

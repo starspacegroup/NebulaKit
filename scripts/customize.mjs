@@ -151,6 +151,10 @@ function gatherNext(current) {
 		'Keep the "Proudly built with NebulaKit" badge in the footer?',
 		current.showBuiltWithBadge
 	);
+	next.publicSignIn = askYesNo(
+		'Let visitors sign in and sign up? (No for a shop where only admins sign in — docs/PUBLIC_SIGN_IN.md)',
+		current.publicSignIn
+	);
 	return next;
 }
 
@@ -274,7 +278,14 @@ export const site = {
 	 * goes, with no hard feelings. Other wordings and every other form of the
 	 * badge live at https://nebulakit.starspace.group/badge.
 	 */
-	showBuiltWithBadge: ${c.showBuiltWithBadge === false ? 'false' : 'true'}
+	showBuiltWithBadge: ${c.showBuiltWithBadge === false ? 'false' : 'true'},
+	/**
+	 * Invite visitors to sign in and sign up (nav, footer, command palette,
+	 * home page, \`/auth/signup\`). Set \`false\` for a shop or any site where only
+	 * admins sign in: the links go, sign-up is refused, and admins sign in at
+	 * the unlinked \`/auth/login\`. See docs/PUBLIC_SIGN_IN.md.
+	 */
+	publicSignIn: ${c.publicSignIn === false ? 'false' : 'true'}
 } as const;
 
 /** Full GitHub URL, derived from {@link site.repo}. */

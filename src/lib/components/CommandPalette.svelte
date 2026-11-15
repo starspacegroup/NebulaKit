@@ -4,6 +4,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { site } from '$lib/site.config';
+	import { publicSignInEnabled } from '$lib/public-sign-in';
 	import {
 		resolvedTheme,
 		systemTheme,
@@ -164,22 +165,24 @@
 						icon: '↩️'
 					}
 				]
-			: [
-					{
-						id: 'login',
-						label: 'Sign In',
-						description: 'Go to login page',
-						action: () => goto('/auth/login'),
-						icon: '🔐'
-					},
-					{
-						id: 'signup',
-						label: 'Sign Up',
-						description: 'Create a new account',
-						action: () => goto('/auth/signup'),
-						icon: '✨'
-					}
-				]),
+			: !publicSignInEnabled(site)
+				? []
+				: [
+						{
+							id: 'login',
+							label: 'Sign In',
+							description: 'Go to login page',
+							action: () => goto('/auth/login'),
+							icon: '🔐'
+						},
+						{
+							id: 'signup',
+							label: 'Sign Up',
+							description: 'Create a new account',
+							action: () => goto('/auth/signup'),
+							icon: '✨'
+						}
+					]),
 		{
 			id: 'theme-light',
 			label: 'Light Theme',

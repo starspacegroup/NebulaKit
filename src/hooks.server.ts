@@ -34,6 +34,7 @@ import {
 import { recordRequest } from '$lib/utils/usage';
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
+import { robotsTagFor } from '$lib/public-sign-in';
 
 // Auth handling hook.
 //
@@ -322,6 +323,25 @@ export const securityHeadersHandler: Handle = async ({ event, resolve }) =>
 	withSecurityHeaders(await resolve(event));
 
 /**
+ * `X-Robots-Tag: noindex` on every /auth and /api/auth response
+ * (public-sign-in.ts). Decorates only; a fetch passthrough's immutable
+ * headers get a copy.
+ */
+export const authRobotsHandler: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	const tag = robotsTagFor(event.url.pathname);
+	if (!tag || response.headers.has('X-Robots-Tag')) return response;
+	try {
+		response.headers.set('X-Robots-Tag', tag);
+		return response;
+	} catch {
+		const copy = new Response(response.body, response);
+		copy.headers.set('X-Robots-Tag', tag);
+		return copy;
+	}
+};
+
+/**
  * Canonical host (src/lib/server/canonical-host.ts): `www.<site host>` is sent
  * to the host in site.config (301 for GET/HEAD, 308 otherwise) because the
  * session cookie is host-only, and every other non-canonical host (localhost,
@@ -402,6 +422,7 @@ export const siteModeHandler: Handle = async ({ event, resolve }) => {
 // Combine all hooks
 export const handle = sequence(
 	securityHeadersHandler,
+	authRobotsHandler,
 	usageHandler,
 	canonicalHostHandler,
 	redirectsHandler,

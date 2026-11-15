@@ -14,11 +14,15 @@
  * If you add a real OAuth authorization server or bearer-token API to your
  * site, publish those documents then — and update this file in the same change.
  */
+import { publicSignInEnabled } from '$lib/public-sign-in';
 import { site } from '$lib/site.config';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ url }) => {
 	const origin = url.origin;
+	const signupLine = publicSignInEnabled(site)
+		? `\n- \`POST ${origin}/api/auth/signup\` — create an account.`
+		: '';
 
 	const body = `# Authentication — ${site.name}
 
@@ -66,8 +70,7 @@ identity, and current roles so sessions can be revoked server-side.
 Sign-in routes:
 
 - \`POST ${origin}/api/auth/login\` — \`{ "email", "password" }\`. Returns \`200\`
-  with a \`Set-Cookie\`, \`400\` if fields are missing, \`401\` on bad credentials.
-- \`POST ${origin}/api/auth/signup\` — create an account.
+  with a \`Set-Cookie\`, \`400\` if fields are missing, \`401\` on bad credentials.${signupLine}
 - \`GET ${origin}/api/auth/github\`, \`GET ${origin}/api/auth/discord\` — begin an
   OAuth sign-in **with that provider as the identity source**. These are not
   endpoints this site issues tokens from.
