@@ -132,7 +132,9 @@ p{font-size:1.125rem;line-height:1.5;margin:.5rem 0;color:#c4c9d4}
  * with `Retry-After`, so a client does not treat a refused write as done.
  */
 export function gatedResponse(method: string): Response {
-	const headers = { 'cache-control': 'no-store' };
+	// noindex: this 200 answers every URL, so a crawler would otherwise index
+	// the holding page once per path.
+	const headers = { 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' };
 	if (method === 'GET' || method === 'HEAD') {
 		return new Response(method === 'HEAD' ? null : holdingPageHtml(), {
 			status: 200,
