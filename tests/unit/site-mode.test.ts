@@ -20,7 +20,9 @@ function run(opts: { kv?: any; user?: any; path?: string; method?: string }) {
 	const resolve = vi.fn(async () => new Response('real page'));
 	const event: any = {
 		url: new URL(`https://example.com${opts.path ?? '/'}`),
-		request: new Request(`https://example.com${opts.path ?? '/'}`, { method: opts.method ?? 'GET' }),
+		request: new Request(`https://example.com${opts.path ?? '/'}`, {
+			method: opts.method ?? 'GET'
+		}),
 		platform: { env: { KV: opts.kv } },
 		locals: { user: opts.user }
 	};
@@ -102,6 +104,14 @@ describe('holding page', () => {
 		const res = gatedResponse('POST');
 		expect(res.status).toBe(503);
 		expect(res.headers.get('retry-after')).toBe('3600');
+	});
+
+	it('tells crawlers not to index it, on every method', () => {
+		// The same page answers every URL as a 200, so without this a crawler
+		// indexes the holding page once per path.
+		for (const method of ['GET', 'HEAD', 'POST']) {
+			expect(gatedResponse(method).headers.get('x-robots-tag')).toBe('noindex, nofollow');
+		}
 	});
 });
 

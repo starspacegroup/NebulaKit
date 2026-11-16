@@ -7,6 +7,7 @@ Status: the gate is built (issue #11, first slice). The admin interface, preview
 KV key `site_mode` holds `{ "mode": "off" | "coming-soon", "updatedAt": "<ISO>" }`. When the mode is `coming-soon`, `siteModeHandler` (`src/hooks.server.ts`) answers a signed-out visitor with a holding page built from `site.name` and `site.tagline`.
 
 - A page read (GET, HEAD) gets `200` with `Cache-Control: no-store`. Before launch, the holding page is the site.
+- Every gated response carries `X-Robots-Tag: noindex, nofollow`, so a crawler does not index the holding page once per path.
 - Any other method gets `503` with `Retry-After`.
 - An admin (any role above user) passes through on their session.
 - A missing binding, a KV error, or an unreadable value means `off`. A bad row never takes a site down.
