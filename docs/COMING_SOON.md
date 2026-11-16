@@ -26,4 +26,6 @@ Each isolate caches the mode for 30 seconds, including the `off` state, so a lau
 
 ## Not yet true
 
-`sitemap.xml`, the API catalog and `/auth.md` still advertise routes that return the holding page while the gate is on. Shrinking them is the next slice.
+`robots.txt` now omits its `Sitemap:` line while the gate is on, because `/sitemap.xml` is not on the allowlist and a crawler would get the holding page. Its cache drops to 60 seconds so the line returns soon after launch.
+
+The API catalog and `/auth.md` still advertise routes that return the holding page while the gate is on. Shrinking them is the next slice.
