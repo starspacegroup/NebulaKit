@@ -122,6 +122,7 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | Opt-in sign-in tracking (`/admin/sign-ins`)            | `SIGN_IN_TRACKING.md`                                       |
 | Agent discovery, Markdown negotiation, WebMCP          | `AGENT_READINESS.md`                                        |
 | D1/KV/R2 provisioning, the shared-resource incident    | `CLOUDFLARE_SETUP.md`                                       |
+| Cloudflare free-plan limits, caching, what broke in a production fork | `LESSONS_FROM_PINFOOL.md` |
 | CMS embed registry and manifest split                  | `CMS_EMBEDS.md`                                             |
 | Command palette + per-item visibility                  | `COMMAND_PALETTE.md`                                        |
 | `/documentation` route (kept in sync per AGENTS.md §7) | `DOCUMENTATION_PAGE.md`                                     |
