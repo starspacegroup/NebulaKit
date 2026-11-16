@@ -12,6 +12,7 @@ import {
 	writeSiteMode
 } from '$lib/server/site-mode';
 import { siteModeHandler } from '../../src/hooks.server';
+import { GET as robotsGET } from '../../src/routes/robots.txt/+server';
 
 const kvWith = (value: string | null) => ({ get: vi.fn(async () => value), put: vi.fn() }) as any;
 const ON = JSON.stringify({ mode: 'coming-soon' });
@@ -159,5 +160,29 @@ describe('siteModeHandler', () => {
 	it('refuses a signed-out write with 503', async () => {
 		const { result } = run({ kv: kvWith(ON), path: '/api/v1/orders', method: 'POST' });
 		expect((await result).status).toBe(503);
+	});
+});
+
+describe('robots.txt while gated', () => {
+	beforeEach(() => resetSiteModeCache());
+
+	const robots = async (kv?: any) => {
+		const res = await robotsGET({
+			url: new URL('https://example.com/robots.txt'),
+			platform: { env: { KV: kv } }
+		} as any);
+		return { body: await res.text(), cache: res.headers.get('cache-control') };
+	};
+
+	it('advertises the sitemap when the site is open', async () => {
+		const { body, cache } = await robots(kvWith(null));
+		expect(body).toContain('Sitemap: https://example.com/sitemap.xml');
+		expect(cache).toBe('public, max-age=3600');
+	});
+
+	it('drops the sitemap line and shortens the cache in coming-soon mode', async () => {
+		const { body, cache } = await robots(kvWith(ON));
+		expect(body).not.toContain('Sitemap:');
+		expect(cache).toBe('public, max-age=60');
 	});
 });

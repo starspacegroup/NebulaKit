@@ -20,6 +20,7 @@ import {
 	LINK_PREVIEW_BOTS,
 	LINK_PREVIEW_OPEN_PATHS
 } from '$lib/agent-discovery';
+import { readSiteMode } from '$lib/server/site-mode';
 import { site } from '$lib/site.config';
 import type { RequestHandler } from './$types';
 
@@ -43,7 +44,10 @@ function group(
 	].join('\n');
 }
 
-export const GET: RequestHandler = ({ url }) => {
+export const GET: RequestHandler = async ({ url, platform }) => {
+	// While coming-soon mode is on, /sitemap.xml answers a crawler with the
+	// holding page, so robots.txt must not point at it (AGENTS.md §8).
+	const gated = (await readSiteMode(platform?.env?.KV)) !== 'off';
 	const body = [
 		`# robots.txt for ${site.name}`,
 		'#',
@@ -73,7 +77,7 @@ export const GET: RequestHandler = ({ url }) => {
 			CRAWLER_DISALLOW.filter((path) => !LINK_PREVIEW_OPEN_PATHS.includes(path))
 		),
 		'',
-		`Sitemap: ${url.origin}/sitemap.xml`,
+		...(gated ? [] : [`Sitemap: ${url.origin}/sitemap.xml`]),
 		''
 	].join('\n');
 
@@ -82,7 +86,7 @@ export const GET: RequestHandler = ({ url }) => {
 			'Content-Type': 'text/plain; charset=utf-8',
 			// Long-lived but revalidatable: crawlers re-read robots.txt often, and a
 			// stale copy silently governs crawl behaviour until it expires.
-			'Cache-Control': 'public, max-age=3600'
+			'Cache-Control': gated ? 'public, max-age=60' : 'public, max-age=3600'
 		}
 	});
 };
