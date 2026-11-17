@@ -26,11 +26,11 @@ import {
 	deviceBucket,
 	languageBucket,
 	osBucket,
-	recordPageView,
 	referrerHostFrom,
 	utcDay,
 	utcHour
 } from '$lib/utils/page-views';
+import { recordPageViewBuffered } from '$lib/utils/page-view-buffer';
 import { recordRequest } from '$lib/utils/usage';
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
@@ -222,11 +222,16 @@ export const pageViewsHandler: Handle = async ({ event, resolve }) => {
 		};
 		// Fire-and-forget: a visitor never waits on a counter write, and a stats
 		// failure never breaks the page.
-		const write = recordPageView(db, view).catch(() => {});
-		if (event.platform?.context?.waitUntil) {
-			event.platform.context.waitUntil(write);
-		} else {
-			await write;
+		// Buffered (src/lib/utils/page-view-buffer.ts): counters are summed in memory and
+		// written as one upsert per counter per flush, so a busy day or a crawler burst does
+		// not spend the free-plan write allowance. A quiet site still writes every view.
+		const write = recordPageViewBuffered(db, view)?.catch(() => {});
+		if (write) {
+			if (event.platform?.context?.waitUntil) {
+				event.platform.context.waitUntil(write);
+			} else {
+				await write;
+			}
 		}
 	}
 

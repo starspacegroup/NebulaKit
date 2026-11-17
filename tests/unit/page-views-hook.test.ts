@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/environment', () => ({ dev: false, browser: false, building: false }));
 
-vi.mock('$lib/utils/page-views', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('../../src/lib/utils/page-views')>();
-	return { ...actual, recordPageView: vi.fn().mockResolvedValue(undefined) };
+vi.mock('$lib/utils/page-view-buffer', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../../src/lib/utils/page-view-buffer')>();
+	return { ...actual, recordPageViewBuffered: vi.fn().mockResolvedValue(undefined) };
 });
 
-import { recordPageView } from '$lib/utils/page-views';
+import { recordPageViewBuffered } from '$lib/utils/page-view-buffer';
 import { pageViewsHandler } from '../../src/hooks.server';
 
 function htmlResponse(status = 200) {
@@ -47,7 +47,7 @@ describe('page views hook', () => {
 
 		await pageViewsHandler({ event, resolve });
 
-		expect(recordPageView).toHaveBeenCalledWith(
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({
 				pathKey: '/blog',
@@ -66,7 +66,7 @@ describe('page views hook', () => {
 
 		await pageViewsHandler({ event, resolve });
 
-		expect(recordPageView).toHaveBeenCalledWith(
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ pathKey: '/[contentType]/[slug]', contentId: 'item-1' })
 		);
@@ -77,7 +77,7 @@ describe('page views hook', () => {
 
 		await pageViewsHandler({ event: createEvent(), resolve });
 
-		expect(recordPageView).toHaveBeenCalledWith(
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ contentId: undefined })
 		);
@@ -93,7 +93,7 @@ describe('page views hook', () => {
 			vi.useRealTimers();
 		}
 
-		expect(recordPageView).toHaveBeenCalledWith(
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ day: '2026-07-23', hour: 14 })
 		);
@@ -105,7 +105,7 @@ describe('page views hook', () => {
 
 		await pageViewsHandler({ event, resolve });
 
-		expect(recordPageView).toHaveBeenCalledWith(
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ country: 'IN' })
 		);
@@ -116,7 +116,7 @@ describe('page views hook', () => {
 
 		await pageViewsHandler({ event: createEvent(), resolve });
 
-		expect(recordPageView).toHaveBeenCalledWith(
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ country: undefined })
 		);
@@ -139,7 +139,7 @@ describe('page views hook', () => {
 
 		await pageViewsHandler({ event, resolve });
 
-		const recorded = vi.mocked(recordPageView).mock.calls[0][1];
+		const recorded = vi.mocked(recordPageViewBuffered).mock.calls[0][1];
 		expect(recorded).toMatchObject({
 			os: 'Android',
 			browser: 'Chrome',
@@ -198,12 +198,12 @@ describe('page views hook', () => {
 
 		const response = await pageViewsHandler({ event, resolve });
 
-		expect(recordPageView).not.toHaveBeenCalled();
+		expect(recordPageViewBuffered).not.toHaveBeenCalled();
 		expect(response).toBeDefined();
 	});
 
 	it('swallows recording failures without breaking the response', async () => {
-		vi.mocked(recordPageView).mockRejectedValueOnce(new Error('D1 down'));
+		vi.mocked(recordPageViewBuffered).mockRejectedValueOnce(new Error('D1 down'));
 		const resolve = vi.fn().mockResolvedValue(htmlResponse());
 
 		const response = await pageViewsHandler({ event: createEvent(), resolve });
