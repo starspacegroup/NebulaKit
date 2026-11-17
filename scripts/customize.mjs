@@ -28,7 +28,7 @@ import { join, extname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseSiteConfig } from './site-config-parse.mjs';
-import { applySite } from './site-config-write.mjs';
+import { applyCronTarget, applySite } from './site-config-write.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DRY = process.argv.includes('--dry');
@@ -292,6 +292,19 @@ for (const file of walk(ROOT)) {
 }
 updateStatus(next);
 
+// The cron Worker (its name already follows the slug) needs the site's origin to call, and
+// refuses to run on the shipped placeholder.
+const cronConfigPath = join(ROOT, 'cron-worker/wrangler.toml');
+let cronTargetSet = false;
+if (existsSync(cronConfigPath)) {
+	const toml = readFileSync(cronConfigPath, 'utf8');
+	const updated = applyCronTarget(toml, next.url);
+	if (updated !== toml) {
+		cronTargetSet = true;
+		if (!DRY) writeFileSync(cronConfigPath, updated);
+	}
+}
+
 // The default share image is made from the site's own name, tagline, address and accent, so a link
 // to this site never shares as the template. Needs a Chromium; if there is none the rename still
 // stands and the bullet below says what to run.
@@ -315,6 +328,12 @@ console.log(
 		"  password manager will not offer another template site's credentials here."
 );
 console.log('\nStill needs a human/agent (see CUSTOMIZE.md → "Semantic steps"):');
+console.log(
+	cronTargetSet
+		? `  • cron-worker/wrangler.toml: TARGET_URL is now ${new URL(next.url).origin}. Still to do: \`wrangler secret put CRON_SECRET\`\n` +
+				'    (the same value as on the Pages project) and `cd cron-worker && bunx wrangler deploy`. Until then no scheduled job runs.'
+		: '  • cron-worker/wrangler.toml: check TARGET_URL, set CRON_SECRET, and deploy the Worker (docs/SCHEDULED_JOBS.md).'
+);
 console.log("  • wrangler.toml still has the TEMPLATE's Cloudflare resource IDs —");
 console.log('    run `wrangler d1/kv/r2 create` and paste your own database_id / ids.');
 console.log('  • Rewrite src/routes/documentation/+page.svelte to describe YOUR app.');
