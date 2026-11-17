@@ -174,6 +174,17 @@ See [docs/LIGHTHOUSE_MONITORING.md](./docs/LIGHTHOUSE_MONITORING.md).
 
 See [docs/SCHEDULED_JOBS.md](./docs/SCHEDULED_JOBS.md).
 
+## Share images
+
+- Every page is shared with an image: its own photo when it has one (a product, a CMS
+  item, the first picture on a built page), otherwise the site's card
+- The site's card is generated from `site.config.ts` by `bun run og:generate`, and
+  `customize.mjs` runs it, so a renamed site never shares as NebulaKit
+- Never an SVG (platforms show it blank); tests fail if a page, the default image or a
+  renamed site loses any of this
+
+See [docs/SHARE_IMAGES.md](./docs/SHARE_IMAGES.md).
+
 ## Status page
 
 - A public status page at `/status`, and the same data as JSON at `/api/status`:

@@ -36,6 +36,8 @@ export function parseSiteConfig(src) {
 		repo: str('repo'),
 		author: str('author'),
 		authorUrl: str('authorUrl'),
-		showBuiltWithBadge: bool('showBuiltWithBadge')
+		showBuiltWithBadge: bool('showBuiltWithBadge'),
+		// emailTheme.accent: the brand colour, which the share card and the email header use.
+		accent: str('accent')
 	};
 }

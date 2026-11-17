@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { site } from '$lib/site.config';
 	import type { PageData } from './$types';
 
@@ -57,9 +58,12 @@
 	const tone = $derived(snap?.stale ? 'stale' : (snap?.overall ?? 'stale'));
 </script>
 
+<SharingMeta
+	title="{site.name} status"
+	description="Live status and incident history for {site.name}."
+/>
+
 <svelte:head>
-	<title>{site.name} status</title>
-	<meta name="description" content="Live status and incident history for {site.name}." />
 	<link rel="alternate" type="application/json" href="/api/status" title="Status feed" />
 </svelte:head>
 

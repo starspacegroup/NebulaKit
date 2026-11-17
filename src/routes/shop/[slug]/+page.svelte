@@ -29,6 +29,7 @@
 	title={data.product.name}
 	description={data.product.description.slice(0, 160)}
 	image={data.product.imageUrl ?? ''}
+	imageAlt={data.product.name}
 	structured={{
 		breadcrumb: [
 			{ name: 'Shop', path: '/shop' },
