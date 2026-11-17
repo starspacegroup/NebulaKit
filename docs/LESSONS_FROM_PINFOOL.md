@@ -177,6 +177,10 @@ All paths are in `nebulakit-pinfool-site`.
 
 ## 7. Suggested tasks for NebulaKit
 
+> **Status 2026-11-17:** tasks 1 and 2 are done on branch `cost-guards` (`read-cache.ts`, `page-view-buffer.ts`),
+> task 5 is partly done (`bun run check:queries` flags `kv.put`; the baseline lists what exists), and the rules
+> are in `docs/FREE_TIER_GUARD_RAILS.md`. Tasks 3, 4 and 6 are still open.
+
 1. Port `cached()` and its tests into `src/lib/server/`, and use it for settings, CMS pages and
    sitemap data.
 2. Audit the hooks for per-request writes; batch or sample them.
