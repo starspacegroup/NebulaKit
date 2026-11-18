@@ -66,6 +66,8 @@ test.describe('Theme System', () => {
 		// Find theme switcher button
 		const themeSwitcher = page.locator('button[aria-label*="theme" i]').first();
 		await expect(themeSwitcher).toBeVisible();
+		// The click handler is attached on hydration; a click before then does nothing.
+		await page.waitForLoadState('networkidle');
 
 		const initialTheme = await page.locator('html').getAttribute('data-theme');
 		await themeSwitcher.click();
@@ -92,6 +94,8 @@ test.describe('Theme System', () => {
 
 		const themeSwitcher = page.locator('button[aria-label*="theme" i]').first();
 		await expect(themeSwitcher).toBeVisible();
+		// The click handler is attached on hydration; a click before then does nothing.
+		await page.waitForLoadState('networkidle');
 
 		const initialTheme = await page.locator('html').getAttribute('data-theme');
 

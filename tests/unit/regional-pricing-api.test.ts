@@ -116,6 +116,9 @@ describe('migration 0022', () => {
 			.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'commerce_%'")
 			.all<{ name: string }>();
 		expect(tables.results.map((t) => t.name).sort()).toEqual([
+			// 0026, auctions: not this migration's, but part of the schema it is read against
+			'commerce_auction_bids',
+			'commerce_auctions',
 			'commerce_order_items',
 			'commerce_order_regional',
 			'commerce_orders',

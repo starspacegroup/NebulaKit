@@ -172,7 +172,7 @@ describe('users page: role-aware actions', () => {
 		render(UsersPage, page(user({ isOwner: true })));
 		expect(screen.getByText('Owner')).toBeInTheDocument();
 		expect(screen.getByText('Superadmin')).toBeInTheDocument();
-		expect(screen.getByText('2 of 9 areas')).toBeInTheDocument();
+		expect(screen.getByText('2 of 10 areas')).toBeInTheDocument();
 	});
 });
 
