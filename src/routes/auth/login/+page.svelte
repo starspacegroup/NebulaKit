@@ -2,6 +2,8 @@
 	import { page } from '$app/stores';
 	import AuthProviderButtons from '$lib/components/AuthProviderButtons.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { publicSignInEnabled } from '$lib/public-sign-in';
+	import { site } from '$lib/site.config';
 	import { rememberNext, takeNext } from '$lib/utils/after-login';
 	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
@@ -176,9 +178,11 @@
 			</button>
 		</form>
 
-		<div class="auth-footer">
-			<p>Don't have an account? <a href="/auth/signup">Sign up</a></p>
-		</div>
+		{#if publicSignInEnabled(site)}
+			<div class="auth-footer">
+				<p>Don't have an account? <a href="/auth/signup">Sign up</a></p>
+			</div>
+		{/if}
 	</div>
 </div>
 

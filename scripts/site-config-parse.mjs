@@ -36,6 +36,7 @@ export function parseSiteConfig(src) {
 		repo: str('repo'),
 		author: str('author'),
 		authorUrl: str('authorUrl'),
-		showBuiltWithBadge: bool('showBuiltWithBadge')
+		showBuiltWithBadge: bool('showBuiltWithBadge'),
+		publicSignIn: bool('publicSignIn')
 	};
 }

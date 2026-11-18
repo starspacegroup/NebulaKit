@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { site } from '$lib/site.config';
+	import { publicSignInEnabled } from '$lib/public-sign-in';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 
@@ -386,13 +387,15 @@
 									</div>
 								{/if}
 							{:else}
-								<a
-									href="/auth/login"
-									class:active={$page.url.pathname.startsWith('/auth')}
-									on:click={closeMobileMenu}
-								>
-									Sign In
-								</a>
+								{#if publicSignInEnabled(site)}
+									<a
+										href="/auth/login"
+										class:active={$page.url.pathname.startsWith('/auth')}
+										on:click={closeMobileMenu}
+									>
+										Sign In
+									</a>
+								{/if}
 								<ThemeSwitcher variant="inline" simpleToggle={true} />
 							{/if}
 						</div>

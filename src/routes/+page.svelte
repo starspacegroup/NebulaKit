@@ -3,12 +3,14 @@
 	import { page } from '$app/stores';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { site } from '$lib/site.config';
+	import { publicSignInEnabled } from '$lib/public-sign-in';
 	import { openCommandPalette } from '$lib/stores/commandPalette';
 	import { onMount } from 'svelte';
 
 	let mounted = false;
 	let searchInput = '';
 	let focusedOption = -1;
+	const showSignIn = publicSignInEnabled(site);
 	let toastMessage = '';
 	let showToast = false;
 
@@ -384,53 +386,55 @@
 				</div>
 
 				<div class="command-options">
-					<button
-						class="command-option"
-						class:focused={focusedOption === 0}
-						on:click={() => handleAction('login')}
-						on:mouseenter={() => (focusedOption = 0)}
-						on:mouseleave={() => (focusedOption = -1)}
-					>
-						<svg
-							class="option-icon"
-							width="20"
-							height="20"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-							xmlns="http://www.w3.org/2000/svg"
+					{#if showSignIn}
+						<button
+							class="command-option"
+							class:focused={focusedOption === 0}
+							on:click={() => handleAction('login')}
+							on:mouseenter={() => (focusedOption = 0)}
+							on:mouseleave={() => (focusedOption = -1)}
 						>
-							<path d="M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-							<path d="M10 12c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z" />
-						</svg>
-						<span>Log in</span>
-					</button>
+							<svg
+								class="option-icon"
+								width="20"
+								height="20"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+								xmlns="http://www.w3.org/2000/svg"
+							>
+								<path d="M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+								<path d="M10 12c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z" />
+							</svg>
+							<span>Log in</span>
+						</button>
 
-					<button
-						class="command-option"
-						class:focused={focusedOption === 1}
-						on:click={() => handleAction('signup')}
-						on:mouseenter={() => (focusedOption = 1)}
-						on:mouseleave={() => (focusedOption = -1)}
-					>
-						<svg
-							class="option-icon"
-							width="20"
-							height="20"
-							viewBox="0 0 20 20"
-							fill="none"
-							xmlns="http://www.w3.org/2000/svg"
+						<button
+							class="command-option"
+							class:focused={focusedOption === 1}
+							on:click={() => handleAction('signup')}
+							on:mouseenter={() => (focusedOption = 1)}
+							on:mouseleave={() => (focusedOption = -1)}
 						>
-							<path
-								d="M6 7h3V4a1 1 0 0 1 2 0v3h3a1 1 0 0 1 0 2h-3v3a1 1 0 0 1-2 0V9H6a1 1 0 0 1 0-2z"
-								fill="currentColor"
-							/>
-							<path
-								d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 14.4A6.4 6.4 0 1 1 10 3.6a6.4 6.4 0 0 1 0 12.8z"
-								fill="currentColor"
-							/>
-						</svg>
-						<span>Sign up</span>
-					</button>
+							<svg
+								class="option-icon"
+								width="20"
+								height="20"
+								viewBox="0 0 20 20"
+								fill="none"
+								xmlns="http://www.w3.org/2000/svg"
+							>
+								<path
+									d="M6 7h3V4a1 1 0 0 1 2 0v3h3a1 1 0 0 1 0 2h-3v3a1 1 0 0 1-2 0V9H6a1 1 0 0 1 0-2z"
+									fill="currentColor"
+								/>
+								<path
+									d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 14.4A6.4 6.4 0 1 1 10 3.6a6.4 6.4 0 0 1 0 12.8z"
+									fill="currentColor"
+								/>
+							</svg>
+							<span>Sign up</span>
+						</button>
+					{/if}
 
 					<button
 						class="command-option ask"

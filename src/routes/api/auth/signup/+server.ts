@@ -2,6 +2,8 @@ import { trackSignIn } from '$lib/server/sign-ins';
 import { createAuthSession } from '$lib/utils/db';
 import { hashPassword, validatePassword } from '$lib/utils/passwords';
 import { buildSessionCookieHeader, createSessionUser } from '$lib/utils/session';
+import { publicSignInEnabled } from '$lib/public-sign-in';
+import { site } from '$lib/site.config';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -10,6 +12,8 @@ interface ExistingUser {
 }
 
 export const POST: RequestHandler = async ({ platform, request, url }) => {
+	if (!publicSignInEnabled(site)) throw error(404, 'Not found');
+
 	if (!platform?.env?.DB) {
 		throw error(500, 'Database not available');
 	}
