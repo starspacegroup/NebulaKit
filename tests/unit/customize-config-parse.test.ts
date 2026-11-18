@@ -66,4 +66,10 @@ describe('customize config parsing', () => {
 		// rename — so absence means "on", the shipped default.
 		expect(parseSiteConfig(`name: 'Acme',`).showBuiltWithBadge).toBe(true);
 	});
+
+	it('reads publicSignIn both ways, and absence keeps sign-in public', () => {
+		expect(parseSiteConfig(`publicSignIn: false`).publicSignIn).toBe(false);
+		expect(parseSiteConfig(`publicSignIn: true`).publicSignIn).toBe(true);
+		expect(parseSiteConfig(`name: 'Acme',`).publicSignIn).toBe(true);
+	});
 });

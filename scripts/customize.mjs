@@ -157,6 +157,10 @@ function gatherNext(current) {
 		'Keep the "Proudly built with NebulaKit" badge in the footer?',
 		current.showBuiltWithBadge
 	);
+	next.publicSignIn = askYesNo(
+		'Let visitors sign in and sign up? (No for a shop where only admins sign in — docs/PUBLIC_SIGN_IN.md)',
+		current.publicSignIn
+	);
 	return next;
 }
 

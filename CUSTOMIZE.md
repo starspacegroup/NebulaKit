@@ -124,6 +124,17 @@ fails `tests/unit/share-images.test.ts`. See [docs/SHARE_IMAGES.md](docs/SHARE_I
 
 ---
 
+## Step 5a — Public sign-in
+
+A shop's visitors never sign in. Set `publicSignIn: false` in
+`src/lib/site.config.ts` and the Sign In / Sign Up links leave every public page,
+sign-up returns 404, and admins sign in at the unlinked `/auth/login`. A new
+domain that links sign-in forms everywhere can be flagged by Google Safe
+Browsing; see [docs/PUBLIC_SIGN_IN.md](docs/PUBLIC_SIGN_IN.md). `bun run
+customize` asks.
+
+---
+
 ## Step 5b — The badge (optional, 10 seconds)
 
 Your app's footer carries a **"Proudly built with NebulaKit"** badge. It is a

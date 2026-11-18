@@ -1,9 +1,13 @@
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
+import { publicSignInEnabled } from '$lib/public-sign-in';
+import { site } from '$lib/site.config';
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url, platform }) => {
+	if (!publicSignInEnabled(site)) throw error(404, 'Not found');
+
 	if (locals.user) {
 		const errorCode = url.searchParams.get('error');
 

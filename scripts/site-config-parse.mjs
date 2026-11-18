@@ -37,6 +37,7 @@ export function parseSiteConfig(src) {
 		author: str('author'),
 		authorUrl: str('authorUrl'),
 		showBuiltWithBadge: bool('showBuiltWithBadge'),
+		publicSignIn: bool('publicSignIn'),
 		// emailTheme.accent: the brand colour, which the share card and the email header use.
 		accent: str('accent')
 	};
