@@ -10,5 +10,6 @@
 	"repo": "your-org/acme",
 	"author": "Your Name",
 	"authorUrl": "https://example.com",
+	"accent": "#0e7c86",
 	"showBuiltWithBadge": true
 }

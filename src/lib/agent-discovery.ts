@@ -50,6 +50,7 @@ export const SITEMAP_ROUTES: readonly SitemapRoute[] = [
 	{ path: '/modules', changefreq: 'weekly', priority: 0.7 },
 	{ path: '/shop', changefreq: 'daily', priority: 0.7 },
 	{ path: '/auctions', changefreq: 'hourly', priority: 0.7 },
+	{ path: '/status', changefreq: 'hourly', priority: 0.4 },
 	{ path: '/chat', changefreq: 'monthly', priority: 0.6 },
 	{ path: '/contact', changefreq: 'monthly', priority: 0.5 },
 	{ path: '/privacy', changefreq: 'yearly', priority: 0.3 },
@@ -116,7 +117,7 @@ export const CRAWLER_DISALLOW: readonly string[] = [
  * over `/api/`. The health endpoint is the `status` link in the API catalog, so
  * it has to stay reachable for the catalog to be honest.
  */
-export const CRAWLER_ALLOW: readonly string[] = ['/api/health'];
+export const CRAWLER_ALLOW: readonly string[] = ['/api/health', '/api/status'];
 
 /**
  * Content Signals (contentsignals.org) — how this site's content may be used

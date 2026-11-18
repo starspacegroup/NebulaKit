@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 
@@ -15,10 +16,13 @@
 	const typedMax = $derived(form && 'max' in form && form.max ? String(form.max) : '');
 </script>
 
-<svelte:head>
-	<title>{a.title} · Auction</title>
-	<meta name="description" content={data.description.slice(0, 160) || `Bid on ${a.title}.`} />
-</svelte:head>
+<!-- The product's own photo is the share image; without one the site's default is used. -->
+<SharingMeta
+	title="{a.title} · Auction"
+	description={data.description.slice(0, 160) || `Bid on ${a.title}.`}
+	image={data.imageUrl ?? ''}
+	imageAlt={a.title}
+/>
 
 <article class="auction">
 	<p><a href="/auctions">← Auctions</a></p>

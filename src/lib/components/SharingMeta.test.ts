@@ -1,6 +1,7 @@
 import { render } from '@testing-library/svelte';
 import { describe, expect, it, beforeEach } from 'vitest';
 import SharingMeta from './SharingMeta.svelte';
+import { site } from '$lib/site.config';
 
 describe('SharingMeta', () => {
 	beforeEach(() => {
@@ -92,12 +93,81 @@ describe('SharingMeta', () => {
 		expect(ogImage?.getAttribute('content')).toBe('https://example.com/image.png');
 	});
 
-	it('should not render og:image when image is not provided', () => {
+	it('shares with the site default image when the page has none, so no link is imageless', () => {
 		render(SharingMeta, {
 			props: { title: 'Test' }
 		});
 		const ogImage = document.querySelector('meta[property="og:image"]');
-		expect(ogImage).not.toBeInTheDocument();
+		expect(ogImage?.getAttribute('content')).toBe('http://localhost/og-image.png');
+		expect(document.querySelector('meta[name="twitter:image"]')?.getAttribute('content')).toBe(
+			'http://localhost/og-image.png'
+		);
+		// the default's own size and description, not the page's
+		expect(document.querySelector('meta[property="og:image:width"]')?.getAttribute('content')).toBe(
+			'1200'
+		);
+		expect(
+			document.querySelector('meta[property="og:image:height"]')?.getAttribute('content')
+		).toBe('630');
+		expect(document.querySelector('meta[property="og:image:alt"]')?.getAttribute('content')).toBe(
+			site.ogImage.alt
+		);
+	});
+
+	it.each([
+		['an SVG, which platforms do not render', 'https://example.com/art.svg'],
+		['an SVG with a query', 'https://example.com/art.svg?v=2'],
+		['a javascript: URL', 'javascript:alert(1)'],
+		['a data: URL', 'data:image/png;base64,AAAA'],
+		['a protocol-relative URL', '//cdn.example.com/x.png'],
+		['only whitespace', '   '],
+		['not a URL at all', 'http://']
+	])('falls back to the site default for %s', (_name, image) => {
+		render(SharingMeta, { props: { title: 'Test', image } });
+		expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content')).toBe(
+			'http://localhost/og-image.png'
+		);
+		expect(document.querySelector('meta[name="twitter:image"]')?.getAttribute('content')).toBe(
+			'http://localhost/og-image.png'
+		);
+	});
+
+	it("makes a root-relative image absolute, and keeps the page's own size and alt", () => {
+		render(SharingMeta, {
+			props: {
+				title: 'Mug',
+				image: '/media/mug.jpg',
+				imageAlt: 'A blue mug',
+				imageWidth: 800,
+				imageHeight: 600
+			}
+		});
+		expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content')).toBe(
+			'http://localhost/media/mug.jpg'
+		);
+		expect(document.querySelector('meta[property="og:image:alt"]')?.getAttribute('content')).toBe(
+			'A blue mug'
+		);
+		expect(document.querySelector('meta[property="og:image:width"]')?.getAttribute('content')).toBe(
+			'800'
+		);
+	});
+
+	it("leaves the size tags out for the page's own image when it does not say", () => {
+		render(SharingMeta, { props: { title: 'Mug', image: 'https://cdn.example.com/mug.jpg' } });
+		expect(document.querySelector('meta[property="og:image:width"]')).toBeNull();
+		expect(document.querySelector('meta[property="og:image:height"]')).toBeNull();
+	});
+
+	it('puts the resolved image in the structured data too', () => {
+		render(SharingMeta, { props: { title: 'Test' } });
+		const ld = JSON.parse(
+			document.head.querySelector('script[type="application/ld+json"]')?.textContent ?? '{}'
+		);
+		const images = (ld['@graph'] as Array<Record<string, unknown>>).filter(
+			(n) => n['@type'] === 'ImageObject' && n.url === 'http://localhost/og-image.png'
+		);
+		expect(images.length).toBeGreaterThan(0);
 	});
 
 	it('should render og:image:alt when image and imageAlt are provided', () => {

@@ -24,6 +24,7 @@
 					{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' },
 					{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
 					{ path: '/admin/scheduled-jobs', label: 'Scheduled Jobs', icon: 'clock' },
+					{ path: '/admin/status', label: 'Status page', icon: 'activity' },
 					{ path: '/admin/audit', label: 'Audit log', icon: 'activity' }
 				]
 			: []),

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -11,10 +12,7 @@
 		}) + ' UTC';
 </script>
 
-<svelte:head>
-	<title>Auctions</title>
-	<meta name="description" content="Bid on what is up for auction on this site." />
-</svelte:head>
+<SharingMeta title="Auctions" description="Bid on what is up for auction on this site." />
 
 <section class="auctions">
 	<header>
