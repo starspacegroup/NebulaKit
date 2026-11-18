@@ -26,7 +26,13 @@ export const FLUSH_AT_VIEWS = 50;
 const BATCH_SIZE = 50;
 
 type Counter = {
-	table: 'page_view_daily' | 'page_view_hourly' | 'referrer_daily' | 'country_view_daily' | 'content_view_daily' | 'view_dimension_daily';
+	table:
+		| 'page_view_daily'
+		| 'page_view_hourly'
+		| 'referrer_daily'
+		| 'country_view_daily'
+		| 'content_view_daily'
+		| 'view_dimension_daily';
 	/** Key columns after `day`, in table order, as bound values. */
 	key: Array<string | number>;
 	day: string;

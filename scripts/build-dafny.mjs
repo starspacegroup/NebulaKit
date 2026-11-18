@@ -10,13 +10,7 @@ const work = mkdtempSync(join(process.env.TMPDIR || join(homedir(), '.tmp'), 'da
 try {
 	execFileSync(
 		'dafny',
-		[
-			'build',
-			'--target:js',
-			join(root, 'dafny/LoginThrottle.dfy'),
-			'--output',
-			join(work, 'out')
-		],
+		['build', '--target:js', join(root, 'dafny/LoginThrottle.dfy'), '--output', join(work, 'out')],
 		{
 			stdio: ['ignore', 'inherit', 'inherit'],
 			env: { ...process.env, NODE_PATH: join(root, 'node_modules') }
