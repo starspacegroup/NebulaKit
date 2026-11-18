@@ -22,13 +22,13 @@ have to learn it again.
 
 ## The limits (Workers Free)
 
-| Limit                    | Number    | Resets   | When reached                          |
-| ------------------------ | --------- | -------- | ------------------------------------- |
-| D1 rows read per day     | 5,000,000 | 00:00 UTC | every D1 read fails                   |
-| D1 rows written per day  | 100,000   | 00:00 UTC | every D1 write fails                  |
-| KV reads per day         | 100,000   | 00:00 UTC | reads fail                            |
-| KV writes per day        | 1,000     | 00:00 UTC | `put` fails                           |
-| Worker requests per day  | 100,000   | 00:00 UTC | the site stops serving                |
+| Limit                   | Number    | Resets    | When reached           |
+| ----------------------- | --------- | --------- | ---------------------- |
+| D1 rows read per day    | 5,000,000 | 00:00 UTC | every D1 read fails    |
+| D1 rows written per day | 100,000   | 00:00 UTC | every D1 write fails   |
+| KV reads per day        | 100,000   | 00:00 UTC | reads fail             |
+| KV writes per day       | 1,000     | 00:00 UTC | `put` fails            |
+| Worker requests per day | 100,000   | 00:00 UTC | the site stops serving |
 
 "Rows read" counts rows **scanned**, not rows returned. 00:00 UTC is 7 PM Eastern.
 

@@ -7,7 +7,8 @@ export type Scene = 'mug' | 'tote' | 'box' | 'top' | 'side' | 'front';
 
 const SHAPES: Record<Scene, string> = {
 	mug: '<path d="M130 110h120v100a30 30 0 0 1-30 30h-60a30 30 0 0 1-30-30z" fill="#fff"/><path d="M250 130h20a25 25 0 0 1 0 50h-20" fill="none" stroke="#fff" stroke-width="14"/><ellipse cx="190" cy="110" rx="60" ry="10" fill="#0003"/>',
-	front: '<path d="M130 110h120v100a30 30 0 0 1-30 30h-60a30 30 0 0 1-30-30z" fill="#fff"/><path d="M250 130h20a25 25 0 0 1 0 50h-20" fill="none" stroke="#fff" stroke-width="14"/><ellipse cx="190" cy="110" rx="60" ry="10" fill="#0003"/>',
+	front:
+		'<path d="M130 110h120v100a30 30 0 0 1-30 30h-60a30 30 0 0 1-30-30z" fill="#fff"/><path d="M250 130h20a25 25 0 0 1 0 50h-20" fill="none" stroke="#fff" stroke-width="14"/><ellipse cx="190" cy="110" rx="60" ry="10" fill="#0003"/>',
 	side: '<path d="M110 120h130v90a30 30 0 0 1-30 30h-70a30 30 0 0 1-30-30z" fill="#fff"/><path d="M240 140h40a25 25 0 0 1 0 50h-40" fill="none" stroke="#fff" stroke-width="14"/>',
 	top: '<circle cx="200" cy="150" r="80" fill="#fff"/><circle cx="200" cy="150" r="62" fill="#0004"/><path d="M280 150h40" stroke="#fff" stroke-width="14" stroke-linecap="round"/>',
 	tote: '<path d="M140 120h120l12 130H128z" fill="#fff"/><path d="M165 120v-25a35 35 0 0 1 70 0v25" fill="none" stroke="#fff" stroke-width="12"/>',

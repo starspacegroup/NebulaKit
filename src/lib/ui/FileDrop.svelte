@@ -40,8 +40,7 @@
 	]
 		.filter(Boolean)
 		.join(', ');
-	$: describedBy =
-		[hint && `${id}-hint`].filter(Boolean).join(' ') || undefined;
+	$: describedBy = [hint && `${id}-hint`].filter(Boolean).join(' ') || undefined;
 	$: callToAction =
 		prompt || (multiple ? 'Drop files here or choose files' : 'Drop a file here or choose a file');
 

@@ -3,3 +3,5 @@ node_modules
 build
 coverage
 .wrangler
+src/lib/server/generated
+tests/fixtures/lean-auth-model.json

@@ -159,7 +159,8 @@ describe('read cache', () => {
 		const store = new Map<string, string>();
 		vi.stubGlobal('caches', {
 			default: {
-				match: async (r: Request) => (store.has(r.url) ? new Response(store.get(r.url)!) : undefined),
+				match: async (r: Request) =>
+					store.has(r.url) ? new Response(store.get(r.url)!) : undefined,
 				put: async (r: Request, res: Response) => void store.set(r.url, await res.text())
 			}
 		});

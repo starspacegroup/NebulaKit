@@ -26,9 +26,17 @@ const BASELINE = join(ROOT, 'scripts', 'check-queries.baseline.json');
 export const MARK = /cost-guard:\s*ok/i;
 
 export const RULES = [
-	{ id: 'offset', re: /\bOFFSET\b/, why: 'OFFSET reads every skipped row; use keyset pagination or cap the depth' },
-	{ id: 'like', re: /\bLIKE\s+'%/i, why: "leading-wildcard LIKE scans the whole table" },
-	{ id: 'kv-put', re: /\b(?:kv|KV)\??\.put\(/, why: 'KV allows 1,000 writes a day on the free plan; do not write KV on a request path' }
+	{
+		id: 'offset',
+		re: /\bOFFSET\b/,
+		why: 'OFFSET reads every skipped row; use keyset pagination or cap the depth'
+	},
+	{ id: 'like', re: /\bLIKE\s+'%/i, why: 'leading-wildcard LIKE scans the whole table' },
+	{
+		id: 'kv-put',
+		re: /\b(?:kv|KV)\??\.put\(/,
+		why: 'KV allows 1,000 writes a day on the free plan; do not write KV on a request path'
+	}
 ];
 
 /**
@@ -77,7 +85,9 @@ export const keyOf = (f) => `${f.file}|${f.rule}|${f.text}`;
 
 /** @param {string} [root] */
 export function scanRepo(root = ROOT) {
-	return walk(join(root, 'src')).flatMap((p) => scanText(relative(root, p), readFileSync(p, 'utf8')));
+	return walk(join(root, 'src')).flatMap((p) =>
+		scanText(relative(root, p), readFileSync(p, 'utf8'))
+	);
 }
 
 /**
@@ -94,7 +104,14 @@ export function newFindings(found, baseline) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
 	const found = scanRepo();
 	if (process.argv.includes('--update')) {
-		writeFileSync(BASELINE, JSON.stringify(found.map(({ file, rule, text }) => ({ file, rule, text })), null, '\t') + '\n');
+		writeFileSync(
+			BASELINE,
+			JSON.stringify(
+				found.map(({ file, rule, text }) => ({ file, rule, text })),
+				null,
+				'\t'
+			) + '\n'
+		);
 		console.log(`check-queries: baseline written, ${found.length} finding(s)`);
 		process.exit(0);
 	}

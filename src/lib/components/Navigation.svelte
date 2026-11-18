@@ -119,10 +119,7 @@
 				{#if user?.isPretend}
 					<span class="pretend-badge" aria-label="Pretend login session">PRETEND</span>
 				{/if}
-				<button
-					class="command-palette-btn"
-					on:click={onCommandPaletteClick}
-				>
+				<button class="command-palette-btn" on:click={onCommandPaletteClick}>
 					<!-- The visible text is the shortcut hint, so the accessible name has to
 					     contain it (WCAG 2.5.3 Label in Name). A bare aria-label replaced it. -->
 					<span class="sr-only">Open command palette,</span>
