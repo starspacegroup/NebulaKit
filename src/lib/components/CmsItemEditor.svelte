@@ -351,7 +351,9 @@
 					</div>
 					{#if formStatus === 'published'}
 						{#if hasGoneLive}
-							<span class="field-help">Live since {new Date(item.publishedAt).toLocaleString()}.</span>
+							<span class="field-help"
+								>Live since {new Date(item.publishedAt).toLocaleString()}.</span
+							>
 						{:else}
 							<div class="form-group">
 								<label for="form-publish-at">Publish at</label>

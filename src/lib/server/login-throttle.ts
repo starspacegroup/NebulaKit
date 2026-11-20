@@ -91,7 +91,12 @@ export async function isThrottled(
 			read(kv, keyFor('ip', ip)),
 			read(kv, keyFor('email', email))
 		]);
-		return core.Throttled(big(byIp.count), big(byEmail.count), big(byEmail.expiresAt ?? 0), big(now));
+		return core.Throttled(
+			big(byIp.count),
+			big(byEmail.count),
+			big(byEmail.expiresAt ?? 0),
+			big(now)
+		);
 	} catch {
 		return false;
 	}

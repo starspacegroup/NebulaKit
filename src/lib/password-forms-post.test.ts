@@ -14,7 +14,9 @@ function svelteFiles(dir: string): string[] {
 }
 
 describe('forms with a password field', () => {
-	const files = svelteFiles('src').filter((f) => readFileSync(f, 'utf8').includes('type="password"'));
+	const files = svelteFiles('src').filter((f) =>
+		readFileSync(f, 'utf8').includes('type="password"')
+	);
 	for (const f of files) {
 		it(`${f}: every <form> is method="POST"`, () => {
 			const src = readFileSync(f, 'utf8');

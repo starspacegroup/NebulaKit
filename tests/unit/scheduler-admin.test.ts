@@ -110,7 +110,10 @@ describe('the admin page data', () => {
 	});
 
 	it('lists every registered job with a next run and no history on a fresh database', async () => {
-		const data = (await load({ locals: ADMIN, platform: { env: { DB: createSqliteD1() } } } as never)) as any;
+		const data = (await load({
+			locals: ADMIN,
+			platform: { env: { DB: createSqliteD1() } }
+		} as never)) as any;
 		expect(data.jobs.map((j: any) => j.id)).toEqual(SCHEDULED_JOBS.map((j) => j.id));
 		for (const job of data.jobs) {
 			expect(job).toMatchObject({ health: 'never-run', lastRun: null });
@@ -120,7 +123,9 @@ describe('the admin page data', () => {
 	});
 
 	it('needs a database', async () => {
-		await expect(load({ locals: ADMIN, platform: { env: {} } } as never)).rejects.toMatchObject({ status: 503 });
+		await expect(load({ locals: ADMIN, platform: { env: {} } } as never)).rejects.toMatchObject({
+			status: 503
+		});
 	});
 
 	it('reports the last run and its status, newest first in history', async () => {

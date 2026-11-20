@@ -1,0 +1,117 @@
+[
+	{
+		"file": "src/lib/server/analytics-config.ts",
+		"rule": "kv-put",
+		"text": "await kv.put(ANALYTICS_CONFIG_KEY, JSON.stringify(config));"
+	},
+	{
+		"file": "src/lib/server/login-throttle.ts",
+		"rule": "kv-put",
+		"text": "await kv.put(key, String(next), { expirationTtl: WINDOW_SECONDS });"
+	},
+	{
+		"file": "src/lib/server/login-throttle.ts",
+		"rule": "kv-put",
+		"text": "await kv.put(key, `${next}:${num(nextExpiresAt)}`, {"
+	},
+	{
+		"file": "src/lib/server/oauth-finalization.ts",
+		"rule": "kv-put",
+		"text": "if (!marker) await platform.env.KV.put('admin_first_login_completed', 'true');"
+	},
+	{
+		"file": "src/lib/server/secret-store.ts",
+		"rule": "kv-put",
+		"text": "await env.KV.put(AUTO_KEY_KV_KEY, generated);"
+	},
+	{
+		"file": "src/lib/server/secret-store.ts",
+		"rule": "kv-put",
+		"text": "await platform!.env.KV.put(kvKey, JSON.stringify(sealed));"
+	},
+	{
+		"file": "src/lib/server/sign-ins.ts",
+		"rule": "kv-put",
+		"text": "await kv.put(SIGN_IN_TRACKING_KEY, JSON.stringify(setting));"
+	},
+	{
+		"file": "src/lib/server/site-mode.ts",
+		"rule": "kv-put",
+		"text": "await kv.put(SITE_MODE_KEY, JSON.stringify({ mode, updatedAt: new Date().toISOString() }));"
+	},
+	{
+		"file": "src/lib/server/stats-token.ts",
+		"rule": "kv-put",
+		"text": "await kv.put(STATS_TOKEN_KEY, JSON.stringify(stored));"
+	},
+	{
+		"file": "src/lib/services/cms.ts",
+		"rule": "offset",
+		"text": "LIMIT ? OFFSET ?`"
+	},
+	{
+		"file": "src/lib/services/contact.ts",
+		"rule": "offset",
+		"text": "`SELECT * FROM contact_form_submissions ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`"
+	},
+	{
+		"file": "src/routes/api/admin/ai-keys/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put(`ai_key:${id}`, JSON.stringify(sealedKey));"
+	},
+	{
+		"file": "src/routes/api/admin/ai-keys/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put('ai_keys_list', JSON.stringify(keyIds));"
+	},
+	{
+		"file": "src/routes/api/admin/ai-keys/[id]/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put(`ai_key:${id}`, JSON.stringify(updatedKey));"
+	},
+	{
+		"file": "src/routes/api/admin/ai-keys/[id]/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put(`ai_key:${id}`, JSON.stringify(updatedKey));"
+	},
+	{
+		"file": "src/routes/api/admin/ai-keys/[id]/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put('ai_keys_list', JSON.stringify(updatedKeyIds));"
+	},
+	{
+		"file": "src/routes/api/admin/ai-keys/[id]/toggle/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put(`ai_key:${id}`, JSON.stringify(updatedKey));"
+	},
+	{
+		"file": "src/routes/api/admin/auth-keys/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put(`auth_config:${data.provider}`, JSON.stringify(authConfig));"
+	},
+	{
+		"file": "src/routes/api/admin/auth-keys/[id]/+server.ts",
+		"rule": "kv-put",
+		"text": "await kv.put(`auth_config:${target.provider}`, JSON.stringify(authConfig));"
+	},
+	{
+		"file": "src/routes/api/admin/settings/reset-route/+server.ts",
+		"rule": "kv-put",
+		"text": "await platform.env.KV.put('reset_route_disabled', 'true');"
+	},
+	{
+		"file": "src/routes/api/setup/+server.ts",
+		"rule": "kv-put",
+		"text": "await kv.put('auth_config:github', JSON.stringify(authConfig));"
+	},
+	{
+		"file": "src/routes/api/setup/+server.ts",
+		"rule": "kv-put",
+		"text": "await kv.put('github_owner_id', adminGithubId);"
+	},
+	{
+		"file": "src/routes/api/setup/+server.ts",
+		"rule": "kv-put",
+		"text": "await kv.put('github_owner_username', adminGithubUsername);"
+	}
+]

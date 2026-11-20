@@ -28,6 +28,7 @@ Changes fall into two tiers. The AI must say which tier a request is in, and it 
 **Tier 1 — content and settings (instant).** Text, images, CMS entries, FAQ items, navigation labels, theme tokens and feature toggles. These are already data in D1/KV/R2, so the change is a database write with a version row. The preview renders from a draft copy of the data. Apply copies the draft to live. Most owner requests should land here.
 
 **Tier 2 — code and layout (through git).** Anything that needs new markup, components or routes. The flow:
+
 - The AI writes a diff against the site's own GitHub repository.
 - It pushes the diff to a branch (`ai/<version>`).
 - Cloudflare Pages builds a preview deployment of that branch. The preview step shows that preview URL in a frame, with the dashed overlay.
