@@ -8,6 +8,8 @@
 		"check:bindings": "node scripts/check-bindings.mjs",
 		"check:migrations": "node scripts/check-migrations.mjs",
 		"check:queries": "node scripts/check-queries.mjs",
+		"build:dafny": "node scripts/build-dafny.mjs",
+		"og:generate": "bun scripts/generate-og-image.mjs",
 		"setup:cf": "node scripts/setup-cf.mjs",
 		"palette:scan": "bun scripts/palette-scan.mjs",
 		"generate:encryption-key": "node scripts/generate-encryption-key.mjs",

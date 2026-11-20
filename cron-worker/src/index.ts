@@ -40,8 +40,17 @@ export const CRON_PATHS: Readonly<Record<string, string>> = {
 	'17 3 * * *': '/api/cron/prune-view-stats',
 	'43 4 * * *': '/api/cron/lighthouse',
 	'29 5 * * *': '/api/cron/prune-audit',
-	'37 * * * *': '/api/cron/publish-scheduled'
+	'37 * * * *': '/api/cron/publish-scheduled',
+	'*/5 * * * *': '/api/cron/settle-auctions',
+	'* * * * *': '/api/cron/status-check'
 };
+
+/** The route that takes the outside view of the website along with its tick. */
+export const STATUS_CHECK_PATH = '/api/cron/status-check';
+/** What the outside probe fetches: the app serving, no database behind it. */
+export const STATUS_PING_PATH = '/api/status/ping';
+/** A website that has not answered by now is down for the status page. */
+export const PROBE_TIMEOUT_MS = 8000;
 
 /** Retries after the first attempt. */
 export const MAX_RETRIES = 3;
@@ -126,6 +135,33 @@ export async function deliver(
 	return last;
 }
 
+/**
+ * Fetch the site's ping route from here, outside the app, and describe what came back as the
+ * query string the status check reads (`?web=ok&ms=120&http=200`). Never throws: a site that
+ * does not answer is a `web=fail` observation, which is exactly the thing worth reporting.
+ * If the site is down far enough that the check itself cannot be delivered, nothing is
+ * recorded, and the public page says its checks are delayed instead of showing an all-clear.
+ */
+export async function probeWebsite(
+	env: Env,
+	deps: Dependencies = realDependencies
+): Promise<string> {
+	const target = targetFor(env, STATUS_PING_PATH);
+	if (typeof target === 'string') return '';
+	const started = Date.now();
+	try {
+		const response = await deps.fetch(target, {
+			headers: { 'user-agent': 'NebulaKit status probe' },
+			signal: AbortSignal.timeout(PROBE_TIMEOUT_MS)
+		});
+		await response.text().catch(() => '');
+		const ms = Date.now() - started;
+		return `?web=${response.ok ? 'ok' : 'fail'}&ms=${ms}&http=${response.status}`;
+	} catch {
+		return '?web=fail';
+	}
+}
+
 export async function runScheduled(
 	event: ScheduledEventLike,
 	env: Env,
@@ -136,7 +172,8 @@ export async function runScheduled(
 		console.error(`No route is mapped to cron "${event.cron}"; add it to CRON_PATHS.`);
 		return null;
 	}
-	const result = await deliver(env, path, event.scheduledTime, deps);
+	const route = path === STATUS_CHECK_PATH ? path + (await probeWebsite(env, deps)) : path;
+	const result = await deliver(env, route, event.scheduledTime, deps);
 	if (result.ok) {
 		console.log(`${path} ok (${result.status}) after ${result.attempts} attempt(s)`);
 	} else {

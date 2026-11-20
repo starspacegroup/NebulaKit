@@ -3,6 +3,7 @@
 -- rows read grew with the catalogue on every visit (PinFool: ~2,800 rows a call, 2026-11-16; see
 -- docs/FREE_TIER_GUARD_RAILS.md). These two indexes turn both queries into a range seek that stops at
 -- LIMIT. `unlisted`/`draft` filters (sites that add them) need their own index; see the guide.
+-- Numbered 0029 (was 0026 on this branch before main shipped 0026_commerce_auctions; never applied remotely).
 CREATE INDEX IF NOT EXISTS idx_commerce_products_listing
 	ON commerce_products (active, created_at DESC, slug);
 CREATE INDEX IF NOT EXISTS idx_commerce_products_created

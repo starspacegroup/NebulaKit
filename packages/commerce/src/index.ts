@@ -6,9 +6,11 @@ export * from './cart';
 export * from './orders';
 export * from './validation';
 export * from './store';
+export * from './auction';
+export * from './auction-store';
 export * from './payments';
 export * from './stripe-events';
 export * from './printful';
 
 /** Kept in step with packages/commerce/package.json by tests/unit/nebulakit-packages.test.ts. */
-export const COMMERCE_VERSION = '0.2.0';
+export const COMMERCE_VERSION = '0.4.0';

@@ -768,10 +768,10 @@ bun run db:migrate:list</code
 					<p>
 						<code>cms</code>, <code>pages</code>, <code>users</code> (view the list),
 						<code>users-manage</code> (change roles and delete, below their own role),
-						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code> and
-						<code>lighthouse</code>. Settings, auth keys, AI keys, the analytics connection, setup
-						and reset stay with the owner and superadmins. Only the owner or a superadmin can change
-						an admin's areas.
+						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code>,
+						<code>lighthouse</code> and <code>shop</code>. Settings, auth keys, AI keys, the
+						analytics connection, setup and reset stay with the owner and superadmins. Only the
+						owner or a superadmin can change an admin's areas.
 					</p>
 				</div>
 				<div class="callout-card">

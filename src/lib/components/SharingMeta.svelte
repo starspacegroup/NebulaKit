@@ -7,13 +7,18 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { site } from '$lib/site.config';
+	import { resolveShareImage } from '$lib/seo/share-image';
 	import { jsonLdScript, sharingGraph, type SharingGraphInput } from '$lib/seo/structured-data';
 
 	/** Page title (displayed in browser tab and social shares) */
 	export let title: string;
 	/** Page description for search engines and social shares */
 	export let description: string = '';
-	/** Absolute or root-relative URL to the page's share image */
+	/**
+	 * The page's own share image: absolute or root-relative. Leave it empty (or pass something
+	 * unusable, like an SVG) and the site's default share image is used, so a shared link is
+	 * never imageless. See `$lib/seo/share-image.ts`.
+	 */
 	export let image: string = '';
 	/** Alt text for the share image */
 	export let imageAlt: string = '';
@@ -40,9 +45,9 @@
 	export let author: string = '';
 	/** If true, adds noindex/nofollow robots meta */
 	export let noindex: boolean = false;
-	/** Width of the share image in pixels */
+	/** Width of the page's own share image in pixels; 0 omits the tag */
 	export let imageWidth: number = 0;
-	/** Height of the share image in pixels */
+	/** Height of the page's own share image in pixels; 0 omits the tag */
 	export let imageHeight: number = 0;
 
 	/**
@@ -53,17 +58,25 @@
 	export let structured: SharingGraphInput['extra'] = {};
 
 	$: fullTitle = siteName ? `${title} - ${siteName}` : title;
-	// Resolve root-relative image paths to absolute URLs for OG/Twitter compliance
-	$: absoluteImage = image && image.startsWith('/') ? `${$page.url.origin}${image}` : image;
+	// Every page is shared with an image: its own when usable, the site's default otherwise.
+	// Absolute, because OG and Twitter crawlers do not resolve relative paths.
+	$: shared = resolveShareImage({
+		image,
+		imageAlt,
+		imageWidth,
+		imageHeight,
+		title,
+		origin: $page.url.origin
+	});
 	$: jsonLd = jsonLdScript(
 		sharingGraph({
 			path: $page.url.pathname,
 			title,
 			description,
-			image,
-			imageAlt,
-			imageWidth,
-			imageHeight,
+			image: shared.src,
+			imageAlt: shared.alt,
+			imageWidth: shared.width,
+			imageHeight: shared.height,
 			type,
 			publishedTime,
 			modifiedTime,
@@ -97,15 +110,13 @@
 		<meta property="og:description" content={description} />
 	{/if}
 	<meta property="og:type" content={type} />
-	{#if absoluteImage}
-		<meta property="og:image" content={absoluteImage} />
-		<meta property="og:image:alt" content={imageAlt || title} />
-		{#if imageWidth}
-			<meta property="og:image:width" content={String(imageWidth)} />
-		{/if}
-		{#if imageHeight}
-			<meta property="og:image:height" content={String(imageHeight)} />
-		{/if}
+	<meta property="og:image" content={shared.src} />
+	<meta property="og:image:alt" content={shared.alt} />
+	{#if shared.width}
+		<meta property="og:image:width" content={String(shared.width)} />
+	{/if}
+	{#if shared.height}
+		<meta property="og:image:height" content={String(shared.height)} />
 	{/if}
 	{#if url}
 		<meta property="og:url" content={url} />
@@ -119,12 +130,8 @@
 	{#if description}
 		<meta name="twitter:description" content={description} />
 	{/if}
-	{#if absoluteImage}
-		<meta name="twitter:image" content={absoluteImage} />
-		{#if imageAlt || title}
-			<meta name="twitter:image:alt" content={imageAlt || title} />
-		{/if}
-	{/if}
+	<meta name="twitter:image" content={shared.src} />
+	<meta name="twitter:image:alt" content={shared.alt} />
 	{#if twitterSite}
 		<meta name="twitter:site" content={twitterSite} />
 	{/if}

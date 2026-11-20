@@ -1,13 +1,14 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	export let data: PageData;
 	export let form: ActionData;
 </script>
 
+<SharingMeta title="Contact" description="Get in touch — send us a message." />
+
 <svelte:head>
-	<title>Contact</title>
-	<meta name="description" content="Get in touch — send us a message." />
 	{#if data.turnstileSiteKey}
 		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 	{/if}

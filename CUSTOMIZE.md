@@ -114,8 +114,24 @@ Replace the visual identity. A tab favicon alone is **not** enough — phone hom
 tiles and PWA installs read `apple-touch-icon` and the web manifest. Full checklist
 (sizes, `app.html` wiring, light/dark tab favicons) is in
 [docs/INITIAL_CUSTOMIZATION.md](docs/INITIAL_CUSTOMIZATION.md) → "Web-app icon set".
-Assets to replace: `static/og-image.{png,svg}`, `static/favicon*.png`,
+Assets to replace: `static/favicon*.png`,
 `static/apple-touch-icon.png`, `static/icon-{192,512}.png`, `static/site.webmanifest`.
+
+The share image, `static/og-image.{png,svg}`, is generated from your name, tagline, URL and accent
+colour: `customize` does it, and `bun run og:generate` redoes it after any of them change (needs
+Chromium: `bunx playwright install chromium`). A renamed site that still ships the stock artwork
+fails `tests/unit/share-images.test.ts`. See [docs/SHARE_IMAGES.md](docs/SHARE_IMAGES.md).
+
+---
+
+## Step 5a — Public sign-in
+
+A shop's visitors never sign in. Set `publicSignIn: false` in
+`src/lib/site.config.ts` and the Sign In / Sign Up links leave every public page,
+sign-up returns 404, and admins sign in at the unlinked `/auth/login`. A new
+domain that links sign-in forms everywhere can be flagged by Google Safe
+Browsing; see [docs/PUBLIC_SIGN_IN.md](docs/PUBLIC_SIGN_IN.md). `bun run
+customize` asks.
 
 ---
 
