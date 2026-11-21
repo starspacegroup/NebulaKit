@@ -990,8 +990,7 @@
 		padding: var(--spacing-2xl) var(--spacing-md);
 	}
 
-	.hero input,
-	.hero textarea {
+	.hero input {
 		-webkit-user-select: text;
 		user-select: text;
 	}
