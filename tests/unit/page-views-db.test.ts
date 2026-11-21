@@ -16,6 +16,7 @@ import {
 	COUNTER_TABLES,
 	pruneViewStats,
 	recordPageView,
+	listTrafficSplit,
 	recordViewportSample,
 	referrerHostFrom,
 	utcDay,
@@ -168,7 +169,9 @@ describe('recordPageView', () => {
 		});
 
 		expect(ctl.batches).toHaveLength(1);
-		const [pageStmt, hourStmt, referrerStmt, countryStmt, ...dimStmts] = ctl.batches[0];
+		const [classStmt, pageStmt, hourStmt, referrerStmt, countryStmt, ...dimStmts] = ctl.batches[0];
+		expect(classStmt.query).toContain('traffic_class_daily');
+		expect(classStmt.binds).toEqual(['2026-07-16', 'human']);
 		expect(pageStmt.query).toContain('page_view_daily');
 		expect(pageStmt.query).toContain('ON CONFLICT');
 		expect(pageStmt.binds).toEqual(['2026-07-16', '/blog', 1]);
@@ -202,8 +205,9 @@ describe('recordPageView', () => {
 			language: 'hi-IN'
 		});
 
-		const batch = ctl.batches[0];
-		expect(batch).toHaveLength(8);
+		// The first statement is the class counter; the rest are the detailed counters.
+		const batch = ctl.batches[0].slice(1);
+		expect(ctl.batches[0]).toHaveLength(9);
 		// The route id is stored, never the resolved URL — that's what bounds
 		// cardinality no matter how many posts exist.
 		expect(batch[0].binds).toEqual(['2026-07-16', '/blog/[slug]', 0]);
@@ -398,7 +402,8 @@ describe('page-view queries', () => {
 			view_dimension_daily:
 				"INSERT INTO view_dimension_daily (day, dimension, value) VALUES (?, 'viewport', ?)",
 			platform_usage_daily: 'INSERT INTO platform_usage_daily (day) VALUES (?)',
-			content_view_daily: 'INSERT INTO content_view_daily (day, content_id) VALUES (?, ?)'
+			content_view_daily: 'INSERT INTO content_view_daily (day, content_id) VALUES (?, ?)',
+			traffic_class_daily: 'INSERT INTO traffic_class_daily (day, class) VALUES (?, ?)'
 		};
 		expect(Object.keys(seeds)).toEqual([...COUNTER_TABLES]);
 		for (const [table, sql] of Object.entries(seeds)) {
@@ -414,7 +419,7 @@ describe('page-view queries', () => {
 
 		const result = await pruneViewStats(db, '2025-06-01');
 
-		expect(result.deleted).toBe(7);
+		expect(result.deleted).toBe(COUNTER_TABLES.length);
 		expect(result.budgetExhausted).toBe(false);
 		expect(Object.keys(result.tables)).toEqual([...COUNTER_TABLES]);
 		for (const table of COUNTER_TABLES) {
@@ -449,5 +454,50 @@ describe('page-view queries', () => {
 		const third = await pruneViewStats(db, '2025-01-01', 5);
 		expect(third).toMatchObject({ budgetExhausted: false, deleted: 3 });
 		expect(third.tables.referrer_daily).toBe(1);
+	});
+});
+
+describe('bots are counted by class only', () => {
+	it('writes one class counter and no detailed counter for a bot or likely bot', async () => {
+		const ctl = createMockDb();
+		await recordPageView(ctl.db, {
+			day: '2026-07-16',
+			hour: 1,
+			pathKey: '/blog',
+			signedIn: false,
+			referrerHost: 'x.com',
+			trafficClass: 'likely-bot'
+		});
+		expect(ctl.batches).toHaveLength(0);
+		expect(ctl.calls).toHaveLength(1);
+		expect(ctl.calls[0].query).toContain('traffic_class_daily');
+		expect(ctl.calls[0].binds).toEqual(['2026-07-16', 'likely-bot']);
+	});
+
+	it('reads the split back, with classes that have no rows as zero', async () => {
+		const db = createSqliteD1();
+		await recordPageView(db, { day: '2026-07-16', hour: 1, pathKey: '/a', signedIn: false });
+		await recordPageView(db, { day: '2026-07-16', hour: 1, pathKey: '/a', signedIn: false });
+		await recordPageView(db, {
+			day: '2026-07-16',
+			hour: 1,
+			pathKey: '/a',
+			signedIn: false,
+			trafficClass: 'bot'
+		});
+		await recordPageView(db, {
+			day: '2026-07-10',
+			hour: 1,
+			pathKey: '/a',
+			signedIn: false,
+			trafficClass: 'likely-bot'
+		});
+		expect(await listTrafficSplit(db, '2026-07-01')).toEqual({ human: 2, likelyBot: 1, bot: 1 });
+		expect(await listTrafficSplit(db, '2026-07-12')).toEqual({ human: 2, likelyBot: 0, bot: 1 });
+		// The detailed counters hold only the two real visits.
+		const row = await db
+			.prepare('SELECT SUM(views) AS v FROM page_view_daily')
+			.first<{ v: number }>();
+		expect(row?.v).toBe(2);
 	});
 });

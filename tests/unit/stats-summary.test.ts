@@ -12,7 +12,8 @@ vi.mock('$lib/utils/page-views', async (importOriginal) => {
 		listReferrers: vi.fn().mockResolvedValue([{ referrerHost: '(direct)', views: 5 }]),
 		listCountries: vi.fn().mockResolvedValue([{ country: 'US', views: 5 }]),
 		listDimension: vi.fn().mockResolvedValue([{ value: 'Chrome', views: 5 }]),
-		listTopContent: vi.fn().mockResolvedValue([])
+		listTopContent: vi.fn().mockResolvedValue([]),
+		listTrafficSplit: vi.fn().mockResolvedValue({ human: 5, likelyBot: 2, bot: 1 })
 	};
 });
 
@@ -32,7 +33,7 @@ vi.mock('$lib/utils/usage', async (importOriginal) => {
 	};
 });
 
-import { listDailyViews, listHourlyViews } from '$lib/utils/page-views';
+import { listDailyViews, listHourlyViews, listTrafficSplit } from '$lib/utils/page-views';
 import { getUsage } from '$lib/utils/usage';
 import { loadStatsSummary } from '../../src/lib/server/stats-summary';
 
@@ -130,5 +131,17 @@ describe('loadStatsSummary', () => {
 			})
 		} as never;
 		await expect(loadStatsSummary(db, 30, NOW)).rejects.toThrow('database is gone');
+	});
+
+	it('carries the split of views by who they probably came from', async () => {
+		const summary = await loadStatsSummary(createDb(), 7, new Date('2026-10-10T09:30:00Z'));
+		expect(summary.traffic?.classes).toEqual({ human: 5, likelyBot: 2, bot: 1 });
+	});
+
+	it('loses only the split, not the traffic panel, when the class table is missing', async () => {
+		vi.mocked(listTrafficSplit).mockRejectedValueOnce(new Error('no such table'));
+		const summary = await loadStatsSummary(createDb(), 7, new Date('2026-10-10T09:30:00Z'));
+		expect(summary.traffic?.classes).toBeNull();
+		expect(summary.traffic?.daily).toHaveLength(1);
 	});
 });
