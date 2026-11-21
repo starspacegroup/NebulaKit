@@ -976,6 +976,10 @@
 
 <style>
 	.hero {
+		/* Hero copy is display text, not something to drag-select by accident.
+		   Form fields inside it stay editable. */
+		-webkit-user-select: none;
+		user-select: none;
 		position: relative;
 		min-height: 100vh;
 		display: flex;
@@ -984,6 +988,12 @@
 		overflow: hidden;
 		background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-background) 100%);
 		padding: var(--spacing-2xl) var(--spacing-md);
+	}
+
+	.hero input,
+	.hero textarea {
+		-webkit-user-select: text;
+		user-select: text;
 	}
 
 	/* Fade-out effect at the bottom of hero */
