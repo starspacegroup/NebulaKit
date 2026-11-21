@@ -24,7 +24,7 @@ An optional Google Analytics tag can be connected alongside it at
 
 ## Setup
 
-1. **Apply the migrations** (`0007`–`0009`):
+1. **Apply the migrations** (`0007`–`0009`, and `0027` for the bot split):
 
    ```bash
    bun run db:migrate:local     # or db:migrate for remote
@@ -67,10 +67,12 @@ Two server hooks in `src/hooks.server.ts` do all the writing, both **after**
 `resolve()` and both fire-and-forget via `waitUntil` — no visitor ever waits on a
 counter, and a stats failure never breaks a page.
 
-**`pageViewsHandler`** records a _human page view_. It is deliberately narrow: a
-matched route id, `GET`, status 200, `text/html`, not an `/admin`, `/api` or
-`/setup` route, and not a bot UA. It runs last in the sequence so `locals.user`
-is populated and the signed-in count is accurate.
+**`pageViewsHandler`** records a _page view_. It is deliberately narrow: a
+matched route id, `GET`, status 200, `text/html`, and not an `/admin`, `/api` or
+`/setup` route. It runs last in the sequence so `locals.user` is populated and
+the signed-in count is accurate. Each view is also classed as probably real, a
+likely bot or a known bot (see "Real visitors and bots" below); only the probably-real
+ones reach the detailed counters.
 
 When the request was for a CMS item, the content route has already put that
 item's id in `locals.viewedContentId`, and the hook reads it back — so
@@ -106,9 +108,38 @@ and it is usually bot traffic.
 
 ---
 
+## Real visitors and bots
+
+Every page view is classed from its request headers (`src/lib/utils/traffic-class.ts`). The
+headers are read once and never stored; only the class is counted.
+
+| Class        | Dashboard label | Meaning                                                                                                                                                                                 |
+| ------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `human`      | Probably real   | Behaves like a browser                                                                                                                                                                  |
+| `likely-bot` | Likely bots     | Does not say it is a bot, but is automation, a script, has no User-Agent, or a "browser" missing headers every real browser sends (`Accept-Language`, and `Sec-Fetch-*` from Chrome 80) |
+| `bot`        | Known bots      | Names itself (search engines, link previews, monitors, SEO tools), or Cloudflare has verified it                                                                                        |
+
+If Cloudflare Bot Management is on the plan, a bot score under 30 also makes a view a likely
+bot. Nothing else is needed from the plan: the rules work without it.
+
+`traffic_class_daily` counts **every** view by class: at most three rows a day. The detailed
+counters (pages, referrers, countries, audience, content, the charts) count **probably-real
+views only**, so they describe visitors, not crawlers. The "Who is visiting" card on the
+dashboard shows the split for the selected window. Bots used to be dropped before counting;
+now they are counted by class and nothing else.
+
+It is a guess, and says so. A scraper that copies a browser's headers looks real, and a
+real visitor with a privacy tool that strips headers can look like a likely bot. The rules
+lean toward "probably real" when unsure: hiding a visitor costs more than counting a bot.
+To change what counts as a bot, edit `BOT_UA`, `AUTOMATION_UA` or `classifyTraffic()`; the
+rules are pure and covered by `tests/unit/traffic-class.test.ts`. The numbers before
+migration 0027 have no split.
+
+---
+
 ## Schema
 
-Six page-view counter tables plus the usage meter, all upserted on
+Seven page-view counter tables plus the usage meter, all upserted on
 `PRIMARY KEY (day, …)`:
 
 ```yaml
@@ -118,6 +149,7 @@ referrer_daily: { day, referrer_host, views }
 country_view_daily: { day, country, views }
 view_dimension_daily: { day, dimension, value, views } # os|browser|device|language|viewport
 content_view_daily: { day, content_id, views } # per CMS item — see the warning below
+traffic_class_daily: { day, class, views } # human | likely-bot | bot — 3 rows/day
 platform_usage_daily: { day, requests, not_found, bot, updated_at }
 ```
 
@@ -259,7 +291,7 @@ GET /api/stats/summary?window=7
 Authorization: Bearer nks_…
 ```
 
-The response is the object `/admin` renders (`stats`, `traffic`, `usage`,
+The response is the object `/admin` renders (`stats`, `traffic` (including `classes`: views by who they probably came from), `usage`,
 `trafficWindow`, `trafficNowHour`) plus `site: { name, url }` and
 `generatedAt`. Both readers call `loadStatsSummary()` in
 `src/lib/server/stats-summary.ts`, so they cannot disagree. `window` takes the
@@ -325,6 +357,8 @@ contrast. Re-validate if you change one.
 | `migrations/0007_page_view_stats.sql`        | The five page-view counter tables       |
 | `migrations/0008_platform_usage.sql`         | The usage meter table                   |
 | `migrations/0009_user_can_view_stats.sql`    | The per-admin grant                     |
+| `migrations/0027_traffic_class_daily.sql`    | Views by class (human / bots)           |
+| `src/lib/utils/traffic-class.ts`             | The bot / likely-bot / human rules      |
 | `src/hooks.server.ts`                        | `pageViewsHandler`, `usageHandler`      |
 | `src/lib/utils/page-views.ts`                | Bucketing + counter reads/writes        |
 | `src/lib/utils/usage.ts`                     | Buffered request counting + projection  |
@@ -350,7 +384,7 @@ contrast. Re-validate if you change one.
 
 - **`signed_in` counts signed-in _views_, not signed-in _visitors_.** There are no
   visitors to count, by design.
-- **Bot detection is a UA regex.** Cheap, and good enough to keep the human number
-  honest; it is not adversarial.
+- **Bot detection is a set of header rules, not a verdict.** Cheap, and good enough to keep
+  the probably-real number honest; it is not adversarial, and a careful scraper passes.
 - **Viewport needs JavaScript.** The other four audience dimensions come from
   headers and work without it.

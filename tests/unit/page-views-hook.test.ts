@@ -26,7 +26,10 @@ function createEvent(overrides: Record<string, any> = {}) {
 		request: {
 			method: 'GET',
 			headers: new Headers({
-				'user-agent': 'Mozilla/5.0',
+				'user-agent':
+					'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36',
+				'accept-language': 'en-US,en;q=0.9',
+				'sec-fetch-site': 'none',
 				referer: 'https://news.ycombinator.com/item?id=1'
 			})
 		},
@@ -54,6 +57,53 @@ describe('page views hook', () => {
 				signedIn: true,
 				referrerHost: 'news.ycombinator.com'
 			})
+		);
+	});
+
+	it('classes an ordinary browser visit as probably real', async () => {
+		await pageViewsHandler({
+			event: createEvent(),
+			resolve: vi.fn().mockResolvedValue(htmlResponse())
+		});
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ trafficClass: 'human' })
+		);
+	});
+
+	it('still counts a crawler, but as a bot, so it can be told apart', async () => {
+		const event = createEvent({
+			request: {
+				method: 'GET',
+				headers: new Headers({ 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' })
+			}
+		});
+		await pageViewsHandler({ event, resolve: vi.fn().mockResolvedValue(htmlResponse()) });
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ trafficClass: 'bot' })
+		);
+	});
+
+	it('classes a script with no browser headers as a likely bot', async () => {
+		const event = createEvent({
+			request: { method: 'GET', headers: new Headers({ 'user-agent': 'python-requests/2.31' }) }
+		});
+		await pageViewsHandler({ event, resolve: vi.fn().mockResolvedValue(htmlResponse()) });
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ trafficClass: 'likely-bot' })
+		);
+	});
+
+	it("uses Cloudflare's verdict when the edge gives one", async () => {
+		const event = createEvent({
+			platform: { env: { DB: {} }, cf: { verifiedBotCategory: 'Search Engine Crawler' } }
+		});
+		await pageViewsHandler({ event, resolve: vi.fn().mockResolvedValue(htmlResponse()) });
+		expect(recordPageViewBuffered).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ trafficClass: 'bot' })
 		);
 	});
 
@@ -170,16 +220,6 @@ describe('page views hook', () => {
 		['api route', { event: { route: { id: '/api/chat' } } }],
 		['setup route', { event: { route: { id: '/setup' } } }],
 		['unmatched route', { event: { route: { id: null } } }],
-		[
-			'bot user-agent',
-			{
-				event: {
-					request: new Request('https://example.com/blog', {
-						headers: { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }
-					})
-				}
-			}
-		],
 		['missing DB', { event: { platform: undefined } }],
 		[
 			'POST request',

@@ -2,6 +2,7 @@
 	import StatBarChart from '$lib/components/StatBarChart.svelte';
 	import PagedRows from '$lib/components/admin/PagedRows.svelte';
 	import { fillDailySeries, fillHourlySeries } from '$lib/utils/stats-timeseries';
+	import { TRAFFIC_CLASS_LABELS, percentOf, splitTotal } from '$lib/utils/traffic-class';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -9,6 +10,15 @@
 	$: stats = data.stats;
 	$: traffic = data.traffic;
 	$: trafficWindow = data.trafficWindow;
+	// Who the views probably came from, for the window. Null before migration 0027.
+	$: split = traffic?.classes ?? null;
+	$: splitRows = split
+		? [
+				{ key: 'human', label: TRAFFIC_CLASS_LABELS.human, count: split.human },
+				{ key: 'likely-bot', label: TRAFFIC_CLASS_LABELS['likely-bot'], count: split.likelyBot },
+				{ key: 'bot', label: TRAFFIC_CLASS_LABELS.bot, count: split.bot }
+			]
+		: [];
 
 	const TRAFFIC_WINDOW_OPTIONS = [
 		{ value: 1, label: '1 day' },
@@ -341,6 +351,38 @@
 			</div>
 
 			{#if traffic}
+				{#if split && splitTotal(split) > 0}
+					<article class="chart-card chart-card--wide" aria-label="Who is visiting">
+						<header class="chart-head">
+							<span class="chart-title">Who is visiting</span>
+							<span class="chart-sub">
+								{splitTotal(split).toLocaleString()} page loads ·
+								{#if hourly}last 24 hours (UTC){:else}last {trafficWindow} days{/if}
+							</span>
+						</header>
+						<ul class="split">
+							{#each splitRows as row (row.key)}
+								<li class="split__row split__row--{row.key}">
+									<span class="split__label">{row.label}</span>
+									<span class="split__count">{row.count.toLocaleString()}</span>
+									<span class="split__pct">{percentOf(row.count, split)}%</span>
+								</li>
+							{/each}
+						</ul>
+						<div class="split__bar" aria-hidden="true">
+							{#each splitRows as row (row.key)}
+								<span class="split__seg split__seg--{row.key}" style="flex: {row.count} 1 0"></span>
+							{/each}
+						</div>
+						<p class="chart-note">
+							Everything below counts <strong>probably real</strong> visitors only. Known bots name themselves
+							(search engines, link previews, monitors). Likely bots do not, but do not act like a browser
+							(automation, scripts, a missing User-Agent). It is a guess made from request headers, which
+							are never stored, so a careful scraper can still look real.
+						</p>
+					</article>
+				{/if}
+
 				<article class="chart-card chart-card--wide">
 					<header class="chart-head">
 						<span class="chart-title">Page views</span>
@@ -729,6 +771,48 @@
 	}
 
 	/* Cards + tables */
+	.split {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-md) var(--spacing-xl, 2rem);
+		list-style: none;
+		margin: 0 0 var(--spacing-sm);
+		padding: 0;
+	}
+	.split__row {
+		display: grid;
+		grid-template-columns: auto auto;
+		column-gap: 0.5rem;
+		align-items: baseline;
+	}
+	.split__label {
+		grid-column: 1 / -1;
+		color: var(--color-text-secondary);
+		font-size: 0.85rem;
+	}
+	.split__count {
+		font-size: 1.5rem;
+		font-weight: 700;
+	}
+	.split__pct {
+		color: var(--color-text-secondary);
+	}
+	.split__bar {
+		display: flex;
+		height: 0.6rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: var(--color-border);
+	}
+	.split__seg--human {
+		background: var(--chart-views, var(--color-primary-solid));
+	}
+	.split__seg--likely-bot {
+		background: var(--color-warning, #d97706);
+	}
+	.split__seg--bot {
+		background: var(--color-text-secondary);
+	}
 	.card-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
