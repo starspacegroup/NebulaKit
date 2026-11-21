@@ -115,3 +115,23 @@ export function applySite(existing, c) {
 	}
 	return out;
 }
+
+/**
+ * `toml` (cron-worker/wrangler.toml) with `TARGET_URL` set to the origin of `siteUrl`, when it is
+ * still the shipped placeholder. The Worker refuses to call a placeholder, so until this is set
+ * none of the scheduled jobs run, including the status page's checks, and nothing says why.
+ * A value someone already chose is left alone. Returns the text unchanged when there is nothing
+ * to do, so callers can compare.
+ *
+ * @param {string} toml
+ * @param {string} siteUrl
+ */
+export function applyCronTarget(toml, siteUrl) {
+	let origin;
+	try {
+		origin = new URL(siteUrl).origin;
+	} catch {
+		return toml;
+	}
+	return toml.replace(/^(TARGET_URL\s*=\s*)"[^"\n]*REPLACE_ME[^"\n]*"/m, `$1"${origin}"`);
+}

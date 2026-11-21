@@ -12,8 +12,9 @@ Cron Trigger -> cron-worker (Worker) -- POST + Bearer CRON_SECRET --> /api/cron/
 ## Deploy it
 
 1. Set `CRON_SECRET` on the Pages project to a long random value.
-2. In `cron-worker/wrangler.toml`, set `TARGET_URL` to your site's origin and
-   rename `name` if `nebulakit-cron` is taken on your account.
+2. In `cron-worker/wrangler.toml`, set `TARGET_URL` to your site's origin and make sure `name` is free on your
+   account. `bun run customize` does both: it names the Worker `<slug>-cron` and sets `TARGET_URL` from your
+   production URL, replacing the placeholder only.
 3. Deploy and set the same secret on the Worker:
 
    ```bash
