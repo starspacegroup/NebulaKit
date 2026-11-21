@@ -117,7 +117,7 @@ export async function loadStatsSummary(
 		// Empty on a site with no CMS traffic, and missing entirely before
 		// migration 0014 — either way the panel just doesn't render.
 		listTopContent(db, sinceDay).catch(() => []),
-		// Missing before migration 0027: the panel then shows no split, nothing else is lost.
+		// Missing before migration 0030: the panel then shows no split, nothing else is lost.
 		listTrafficSplit(db, sinceDay).catch(() => null)
 	]).then(
 		([

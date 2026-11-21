@@ -24,7 +24,7 @@ An optional Google Analytics tag can be connected alongside it at
 
 ## Setup
 
-1. **Apply the migrations** (`0007`–`0009`, and `0027` for the bot split):
+1. **Apply the migrations** (`0007`–`0009`, and `0030` for the bot split):
 
    ```bash
    bun run db:migrate:local     # or db:migrate for remote
@@ -133,7 +133,7 @@ real visitor with a privacy tool that strips headers can look like a likely bot.
 lean toward "probably real" when unsure: hiding a visitor costs more than counting a bot.
 To change what counts as a bot, edit `BOT_UA`, `AUTOMATION_UA` or `classifyTraffic()`; the
 rules are pure and covered by `tests/unit/traffic-class.test.ts`. The numbers before
-migration 0027 have no split.
+migration 0030 have no split.
 
 ---
 
@@ -357,7 +357,7 @@ contrast. Re-validate if you change one.
 | `migrations/0007_page_view_stats.sql`        | The five page-view counter tables       |
 | `migrations/0008_platform_usage.sql`         | The usage meter table                   |
 | `migrations/0009_user_can_view_stats.sql`    | The per-admin grant                     |
-| `migrations/0027_traffic_class_daily.sql`    | Views by class (human / bots)           |
+| `migrations/0030_traffic_class_daily.sql`    | Views by class (human / bots)           |
 | `src/lib/utils/traffic-class.ts`             | The bot / likely-bot / human rules      |
 | `src/hooks.server.ts`                        | `pageViewsHandler`, `usageHandler`      |
 | `src/lib/utils/page-views.ts`                | Bucketing + counter reads/writes        |

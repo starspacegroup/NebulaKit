@@ -10,7 +10,7 @@
 	$: stats = data.stats;
 	$: traffic = data.traffic;
 	$: trafficWindow = data.trafficWindow;
-	// Who the views probably came from, for the window. Null before migration 0027.
+	// Who the views probably came from, for the window. Null before migration 0030.
 	$: split = traffic?.classes ?? null;
 	$: splitRows = split
 		? [
