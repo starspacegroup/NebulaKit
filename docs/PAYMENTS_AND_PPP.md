@@ -6,6 +6,11 @@
 > charging)**, the long design that follows it. They answer different questions and
 > do not conflict. Companion to the "Payments: Stripe integration" and "Credits /
 > points ledger" entries in [ROADMAP.md](../ROADMAP.md).
+>
+> **How a shopper pays** (the on-page card form, hosted Checkout fallback, webhook,
+> cancel, request limits) is [CHECKOUT.md](CHECKOUT.md). Regional pricing feeds it: the
+> PaymentIntent's amount is the order total `priceCheckout` computed, regional
+> multiplier included, and nothing from the browser.
 
 ## What is built: regional pricing as a multiplier
 
@@ -81,6 +86,18 @@ Decisions that differ from the plan below: PPP is **off by default** here (the p
 said on-by-default; charging less than the catalog on a fresh template is a pricing
 decision the owner must make, and the index only fits shops whose margin it fits), and
 it adds a small amount of schema (two tables) where the Stripe design needed none.
+
+### How the regional price reaches Stripe (2026-11-23)
+
+Both checkout modes charge the order's own total. On-page checkout creates (or, when the
+cart changes before payment, updates) one PaymentIntent for exactly `order.totalCents`;
+hosted Checkout sends the regional unit prices as `price_data` lines. The regional
+multiplier, tax and shipping arithmetic is integer-only and proved in
+`dafny/PaymentCore.dfy` (`RegionalNeverRaises`, `TaxBounded`), wrapped by
+`packages/commerce/src/payment-core.ts`, with fast-check properties in
+`tests/unit/payment-core.test.ts`. Amounts are in the currency's minor unit;
+`formatMoney` now formats zero-decimal (JPY) and three-decimal (KWD) currencies
+correctly, and `isChargeableAmount` refuses what Stripe cannot charge.
 
 ### Not built
 
@@ -224,6 +241,11 @@ PPP is layer 0. Sequencing:
    visitors see.
 
 Layers 1–2 are the minimum for "the kit can take a payment, correctly, anywhere."
+
+Status 2026-11-23: a slice of layer 2 is built without the SDK — PaymentIntents for the
+on-page card form, hosted Checkout Sessions, a deduplicating signed webhook, and a
+read-only `/admin/orders` (see [CHECKOUT.md](CHECKOUT.md)). `currency_options`,
+bootstrap, entitlements, credits and money-moving admin actions (refunds) are not.
 
 ## Risks & sharp edges to document in the kit
 

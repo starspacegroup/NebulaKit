@@ -58,6 +58,10 @@ the architecture.
 - Sanitize CMS rich text on every create and every update, before you store it. Sanitize it again at
   the render boundary, for legacy rows. Keep URL validation and embed validation canonical. Never
   give unsanitized CMS content to `{@html}`.
+- Never trust an amount from the client. The server computes prices, discounts, tax, shipping, totals,
+  and currency from the catalog and the site settings. The amount of a PaymentIntent is the total of
+  the order. Only the signed and deduplicated Stripe webhook marks an order paid. See
+  `docs/CHECKOUT.md`. The money core is proved in `dafny/PaymentCore.dfy`.
 - Minimize PII in APIs and logs. A reveal of PII must be explicit, audited, short-lived, and
   owner-only.
 - Parameterize D1 statements. Never put user input into SQL, HTML, redirects, headers, or provider
