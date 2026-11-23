@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { invalidateAll } from '$app/navigation';
 	import { onMount, setContext } from 'svelte';
-	import { detectBrowserTimeZone, TZ_COOKIE } from '$lib/utils/timezone';
+	import { detectBrowserTimeZone, TIME_ZONE_SOURCE_LABELS, TZ_COOKIE } from '$lib/utils/timezone';
 	import { writable } from 'svelte/store';
 	import PiiPrivacyToggle from '$lib/components/admin/PiiPrivacyToggle.svelte';
 	import { heldPermissions } from '$lib/access/permissions';
@@ -291,10 +291,8 @@
 			title="Times in admin views use this time zone"
 		>
 			Times shown in <strong>{data.timeZoneLabel}</strong>
-			<span class="clock-why">
-				{#if data.timeZoneSource === 'setting'}set in Settings{:else if data.timeZoneSource === 'browser'}your
-					browser's zone{:else}UTC until your browser's zone is known{/if}
-			</span>
+			<span class="clock-why">{TIME_ZONE_SOURCE_LABELS[data.timeZoneSource]}</span>
+			<a href="/profile#time-zone" class="clock-change">Change my time zone</a>
 		</p>
 	</aside>
 	<main class="admin-content">
@@ -336,6 +334,12 @@
 		color: var(--color-text);
 		font-weight: 600;
 		display: block;
+	}
+
+	.clock-change {
+		display: inline-block;
+		margin-top: var(--spacing-xs);
+		color: var(--color-primary);
 	}
 
 	.clock-why {

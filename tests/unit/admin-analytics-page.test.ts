@@ -47,6 +47,7 @@ const STATS_ADMIN = {
 	canViewStats: true,
 	timeZone: 'UTC',
 	timeZoneSetting: 'auto',
+	timeZonePersonal: 'auto',
 	timeZoneSource: 'default' as const,
 	timeZoneLabel: 'UTC (UTC+00:00)'
 };
@@ -77,6 +78,7 @@ const pageData = (
 	canViewStats: true,
 	timeZone: 'UTC',
 	timeZoneSetting: 'auto',
+	timeZonePersonal: 'auto',
 	timeZoneSource: 'default' as const,
 	timeZoneLabel: 'UTC (UTC+00:00)',
 	canManageAnalytics: true
@@ -251,6 +253,7 @@ describe('Admin sidebar', () => {
 		canViewStats: true,
 		timeZone: 'UTC',
 		timeZoneSetting: 'auto',
+		timeZonePersonal: 'auto',
 		timeZoneSource: 'default' as const,
 		timeZoneLabel: 'UTC (UTC+00:00)',
 		canManageAnalytics

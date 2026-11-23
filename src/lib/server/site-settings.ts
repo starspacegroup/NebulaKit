@@ -53,3 +53,40 @@ export async function saveAdminTimeZoneSetting(
 	await writeSiteSetting(db, ADMIN_TIMEZONE_KEY, value);
 	return value;
 }
+
+/** A user's own zone: a canonical IANA name, or 'auto' when they have no preference. */
+export async function readUserTimeZone(
+	db: D1Database | undefined,
+	userId: string | undefined
+): Promise<string> {
+	if (!db || !userId) return TZ_AUTO;
+	try {
+		const row = await db
+			.prepare('SELECT time_zone FROM users WHERE id = ?')
+			.bind(userId)
+			.first<{ time_zone: string | null }>();
+		return (row?.time_zone && canonicalTimeZone(row.time_zone)) || TZ_AUTO;
+	} catch {
+		// Before migration 0033 the column does not exist: no preference.
+		return TZ_AUTO;
+	}
+}
+
+/**
+ * Store the signed-in user's own zone ('auto' clears it). The id comes from the
+ * session, never the request. Returns the stored value, or null when the zone is
+ * unknown or the user has no row.
+ */
+export async function saveUserTimeZone(
+	db: D1Database,
+	userId: string,
+	input: unknown
+): Promise<string | null> {
+	const value = input === TZ_AUTO ? TZ_AUTO : canonicalTimeZone(input);
+	if (!value) return null;
+	const result = await db
+		.prepare('UPDATE users SET time_zone = ? WHERE id = ?')
+		.bind(value === TZ_AUTO ? null : value, userId)
+		.run();
+	return (result.meta?.changes ?? 1) > 0 ? value : null;
+}

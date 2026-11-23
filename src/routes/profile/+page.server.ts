@@ -1,10 +1,12 @@
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
 import { isDevAuthSimulationEnabled } from '$lib/utils/dev-auth';
 import { getUserAuthState, type OAuthAccountConnection } from '$lib/utils/user-auth-state';
+import { readAdminTimeZoneSetting, readUserTimeZone } from '$lib/server/site-settings';
+import { describeZone, resolveTimeZone, timeZoneSource, TZ_COOKIE } from '$lib/utils/timezone';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, platform, url }) => {
+export const load: PageServerLoad = async ({ locals, platform, url, cookies }) => {
 	// Require authentication
 	if (!locals.user) {
 		throw redirect(302, '/auth/login');
@@ -89,6 +91,14 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 		}
 	}
 
+	// Which clock is in effect for this user, and why (docs/ADMIN_TIMEZONE.md).
+	const [timeZoneSetting, timeZonePersonal] = await Promise.all([
+		readAdminTimeZoneSetting(platform?.env?.DB),
+		readUserTimeZone(platform?.env?.DB, locals.user.id)
+	]);
+	const tzCookie = cookies?.get(TZ_COOKIE);
+	const timeZone = resolveTimeZone(timeZoneSetting, tzCookie, timeZonePersonal);
+
 	const devAuthSimulationEnabled = isDevAuthSimulationEnabled(url, platform);
 
 	return {
@@ -97,6 +107,9 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 		hasPassword,
 		loginEmails,
 		configuredProviders: await getConfiguredAuthProviders(platform),
-		devAuthSimulationEnabled
+		devAuthSimulationEnabled,
+		timeZonePersonal,
+		timeZoneSource: timeZoneSource(timeZoneSetting, tzCookie, timeZonePersonal),
+		timeZoneLabel: describeZone(timeZone)
 	};
 };

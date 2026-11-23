@@ -72,7 +72,10 @@ describe('Profile Page', () => {
 					github: false,
 					discord: false
 				},
-				devAuthSimulationEnabled: false
+				devAuthSimulationEnabled: false,
+				timeZonePersonal: 'auto',
+				timeZoneSource: 'default' as const,
+				timeZoneLabel: 'UTC (UTC+00:00)'
 			});
 		});
 
@@ -126,7 +129,10 @@ describe('Profile Page', () => {
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
 				configuredProviders: { github: false, discord: false },
-				devAuthSimulationEnabled: false
+				devAuthSimulationEnabled: false,
+				timeZonePersonal: 'auto',
+				timeZoneSource: 'default' as const,
+				timeZoneLabel: 'UTC (UTC+00:00)'
 			};
 
 			const { container, getByText } = render(ProfilePage.default, {
@@ -161,7 +167,10 @@ describe('Profile Page', () => {
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
 				configuredProviders: { github: false, discord: false },
-				devAuthSimulationEnabled: false
+				devAuthSimulationEnabled: false,
+				timeZonePersonal: 'auto',
+				timeZoneSource: 'default' as const,
+				timeZoneLabel: 'UTC (UTC+00:00)'
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -191,7 +200,10 @@ describe('Profile Page', () => {
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
 				configuredProviders: { github: false, discord: false },
-				devAuthSimulationEnabled: false
+				devAuthSimulationEnabled: false,
+				timeZonePersonal: 'auto',
+				timeZoneSource: 'default' as const,
+				timeZoneLabel: 'UTC (UTC+00:00)'
 			};
 
 			const { container } = render(ProfilePage.default, {
@@ -223,7 +235,10 @@ describe('Profile Page', () => {
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
 				configuredProviders: { github: false, discord: false },
-				devAuthSimulationEnabled: false
+				devAuthSimulationEnabled: false,
+				timeZonePersonal: 'auto',
+				timeZoneSource: 'default' as const,
+				timeZoneLabel: 'UTC (UTC+00:00)'
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -252,7 +267,10 @@ describe('Profile Page', () => {
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
 				configuredProviders: { github: false, discord: false },
-				devAuthSimulationEnabled: false
+				devAuthSimulationEnabled: false,
+				timeZonePersonal: 'auto',
+				timeZoneSource: 'default' as const,
+				timeZoneLabel: 'UTC (UTC+00:00)'
 			};
 
 			const { getByText } = render(ProfilePage.default, {
@@ -281,7 +299,10 @@ describe('Profile Page', () => {
 				hasPassword: false,
 				loginEmails: ['test@example.com'],
 				configuredProviders: { github: false, discord: false },
-				devAuthSimulationEnabled: false
+				devAuthSimulationEnabled: false,
+				timeZonePersonal: 'auto',
+				timeZoneSource: 'default' as const,
+				timeZoneLabel: 'UTC (UTC+00:00)'
 			};
 
 			const { container } = render(ProfilePage.default, {

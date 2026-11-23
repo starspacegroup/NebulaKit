@@ -30,6 +30,7 @@ const base = {
 	canViewStats: false,
 	timeZone: 'UTC',
 	timeZoneSetting: 'auto',
+	timeZonePersonal: 'auto',
 	timeZoneSource: 'default' as const,
 	timeZoneLabel: 'UTC (UTC+00:00)',
 	canManageAnalytics: false
@@ -44,7 +45,12 @@ const user = (extra: Record<string, unknown>) => ({
 });
 
 describe('admin nav follows the permission list', () => {
-	const links = () => screen.getAllByRole('link').map((a) => a.getAttribute('href'));
+	// The sidebar's time zone link goes to the profile, not an admin area.
+	const links = () =>
+		screen
+			.getAllByRole('link')
+			.map((a) => a.getAttribute('href'))
+			.filter((href) => href !== '/profile#time-zone');
 
 	it('shows an admin only the areas they hold', () => {
 		render(AdminLayout, {

@@ -8,6 +8,12 @@
 	export let label = '';
 	/** Only the owner may change it; everyone else sees the value. */
 	export let canEdit = false;
+	/** What the control sets: the site's zone, or the signed-in user's own. */
+	export let scope: 'site' | 'personal' = 'site';
+	/** Where the zone in use comes from, in words ("your preference"). */
+	export let sourceText = '';
+
+	const endpoint = scope === 'personal' ? '/api/profile/timezone' : '/api/admin/settings/timezone';
 
 	const zones = supportedTimeZones();
 
@@ -29,7 +35,7 @@
 		}
 		saving = true;
 		try {
-			const res = await fetch('/api/admin/settings/timezone', {
+			const res = await fetch(endpoint, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ timeZone: mode === 'auto' ? TZ_AUTO : zone })
@@ -51,29 +57,45 @@
 	}
 </script>
 
-<section class="tz-setting" aria-labelledby="tz-heading" data-testid="timezone-setting">
-	<h2 id="tz-heading">Admin time zone</h2>
-	<p class="hint">
-		Every date and time in the admin area, and the days and hours on the Dashboard charts, use this
-		zone. Visitors and customers are not affected.
-	</p>
+<section
+	id={scope === 'personal' ? 'time-zone' : undefined}
+	class="tz-setting"
+	aria-labelledby="tz-heading-{scope}"
+	data-testid={scope === 'personal' ? 'personal-timezone-setting' : 'timezone-setting'}
+>
+	<h2 id="tz-heading-{scope}">{scope === 'personal' ? 'Time zone' : 'Admin time zone'}</h2>
+	{#if scope === 'personal'}
+		<p class="hint">
+			Dates and times you see in the admin area, and the days and hours on the Dashboard charts, use
+			this zone. It overrides the site's zone, for you only.
+		</p>
+	{:else}
+		<p class="hint">
+			Every date and time in the admin area, and the days and hours on the Dashboard charts, use
+			this zone unless a user sets their own. Visitors and customers are not affected.
+		</p>
+	{/if}
 
 	<fieldset disabled={!canEdit || saving}>
-		<legend class="visually-hidden">Admin time zone</legend>
+		<legend class="visually-hidden">Time zone</legend>
 		<label class="choice">
 			<input type="radio" bind:group={mode} value="auto" />
-			Automatic (browser). Each admin sees their own browser's zone, read without asking.
+			{#if scope === 'personal'}
+				No personal choice: use the site setting, else my browser's zone
+			{:else}
+				Automatic (browser). Each admin sees their own browser's zone, read without asking.
+			{/if}
 		</label>
 		<label class="choice">
 			<input type="radio" bind:group={mode} value="fixed" />
-			A fixed zone for everyone
+			{scope === 'personal' ? 'A zone of my own' : 'A fixed zone for everyone'}
 		</label>
 		{#if mode === 'fixed'}
 			<label class="zone-field">
 				Zone
 				<input
 					type="text"
-					list="tz-zones"
+					list="tz-zones-{scope}"
 					bind:value={zone}
 					placeholder="Search, e.g. Asia/Kolkata"
 					autocomplete="off"
@@ -83,13 +105,16 @@
 					data-testid="timezone-input"
 				/>
 			</label>
-			<datalist id="tz-zones">
+			<datalist id="tz-zones-{scope}">
 				{#each zones as name (name)}<option value={name}></option>{/each}
 			</datalist>
 		{/if}
 	</fieldset>
 
-	<p class="now">Currently showing <strong data-testid="timezone-current">{label}</strong>.</p>
+	<p class="now">
+		Currently showing <strong data-testid="timezone-current">{label}</strong>{#if sourceText}
+			<span data-testid="timezone-source">({sourceText})</span>{/if}.
+	</p>
 
 	{#if canEdit}
 		<button type="button" class="save" on:click={save} disabled={saving}>Save time zone</button>

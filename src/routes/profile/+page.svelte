@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import TimeZoneSetting from '$lib/components/admin/TimeZoneSetting.svelte';
+	import { TIME_ZONE_SOURCE_LABELS } from '$lib/utils/timezone';
 	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
@@ -213,6 +215,14 @@
 				{/if}
 			</div>
 		</div>
+
+		<TimeZoneSetting
+			scope="personal"
+			setting={data.timeZonePersonal ?? 'auto'}
+			label={data.timeZoneLabel ?? ''}
+			sourceText={data.timeZoneSource ? TIME_ZONE_SOURCE_LABELS[data.timeZoneSource] : ''}
+			canEdit={true}
+		/>
 
 		<div class="profile-details">
 			<div class="detail-item">

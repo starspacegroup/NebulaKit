@@ -604,6 +604,7 @@ describe('Documentation Page', () => {
 		const text = document.body.textContent ?? '';
 		expect(text).toMatch(/tz<\/code>|tz cookie|`tz`|tz\s+cookie/);
 		expect(text).toMatch(/UTC days/);
+		expect(text).toMatch(/their\s+own\s+zone/);
 		expect(text).toMatch(/docs\/ADMIN_TIMEZONE\.md/);
 	});
 

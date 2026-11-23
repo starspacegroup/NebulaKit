@@ -2,6 +2,7 @@
 	import { formatDate as formatZonedDate } from '$lib/utils/timezone';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import SetupSummary from '$lib/components/admin/SetupSummary.svelte';
+	import { TIME_ZONE_SOURCE_LABELS } from '$lib/utils/timezone';
 	import TimeZoneSetting from '$lib/components/admin/TimeZoneSetting.svelte';
 	import { fieldName } from '$lib/utils/form-fields';
 	import type { PageData } from './$types';
@@ -186,6 +187,7 @@
 	<TimeZoneSetting
 		setting={data.timeZoneSetting}
 		label={data.timeZoneLabel}
+		sourceText={TIME_ZONE_SOURCE_LABELS[data.timeZoneSource]}
 		canEdit={!!(data.user?.isOwner || data.user?.isSuperAdmin)}
 	/>
 

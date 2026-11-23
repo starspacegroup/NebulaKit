@@ -277,3 +277,175 @@ describe('admin date and time formatting goes through the timezone helpers', () 
 		expect(offenders).toEqual([]);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Per-user preference
+// ---------------------------------------------------------------------------
+import { load as dashboardLoad } from '../../src/routes/admin/+page.server';
+import {
+	GET as profileGET,
+	PUT as profilePUT
+} from '../../src/routes/api/profile/timezone/+server';
+import { readUserTimeZone, saveUserTimeZone } from '../../src/lib/server/site-settings';
+
+async function addUser(id: string) {
+	await db.prepare('INSERT INTO users (id, email) VALUES (?, ?)').bind(id, `${id}@x.test`).run();
+}
+
+function profilePut(user: unknown, body: unknown, env: object | null = { DB: db }) {
+	return profilePUT({
+		locals: { user },
+		platform: env ? { env } : undefined,
+		request: new Request('https://x.test/api/profile/timezone', {
+			method: 'PUT',
+			headers: { 'content-type': 'application/json' },
+			body: typeof body === 'string' ? body : JSON.stringify(body)
+		})
+	} as never);
+}
+
+describe('layout: the user zone comes first', () => {
+	it('beats the site setting and the cookie, for that user only', async () => {
+		await addUser('ann');
+		await addUser('bob');
+		await saveAdminTimeZoneSetting(db, 'Asia/Tokyo');
+		await saveUserTimeZone(db, 'ann', 'America/New_York');
+		const ann = await layout({ user: { id: 'ann', isAdmin: true }, tz: 'Europe/Paris' });
+		const bob = await layout({ user: { id: 'bob', isAdmin: true }, tz: 'Europe/Paris' });
+		expect(ann).toMatchObject({
+			timeZone: 'America/New_York',
+			timeZonePersonal: 'America/New_York',
+			timeZoneSource: 'personal'
+		});
+		expect(bob).toMatchObject({
+			timeZone: 'Asia/Tokyo',
+			timeZonePersonal: 'auto',
+			timeZoneSource: 'setting'
+		});
+	});
+
+	it('falls back to the site zone, then the cookie, when the personal one is cleared', async () => {
+		await addUser('ann');
+		await saveUserTimeZone(db, 'ann', 'America/New_York');
+		await saveUserTimeZone(db, 'ann', 'auto');
+		expect(
+			(await layout({ user: { id: 'ann', isAdmin: true }, tz: 'Europe/Paris' })).timeZone
+		).toBe('Europe/Paris');
+	});
+
+	it('survives a database without the column', async () => {
+		const noColumn = {
+			prepare: () => ({
+				bind: () => ({
+					first: async () => {
+						throw new Error('no such column');
+					}
+				})
+			})
+		};
+		expect(await readUserTimeZone(noColumn as never, 'ann')).toBe('auto');
+	});
+
+	it('ignores a corrupt stored value', async () => {
+		await addUser('ann');
+		await db.prepare("UPDATE users SET time_zone = 'Mars/Olympus' WHERE id = 'ann'").run();
+		expect(await readUserTimeZone(db, 'ann')).toBe('auto');
+	});
+});
+
+describe("the dashboard rebuilds per request in that user's zone", () => {
+	it('gives two users with different zones different anchors and bucket zones', async () => {
+		await addUser('ann');
+		await addUser('bob');
+		await saveUserTimeZone(db, 'ann', 'Pacific/Kiritimati'); // UTC+14
+		await saveUserTimeZone(db, 'bob', 'Pacific/Pago_Pago'); // UTC-11
+		const run = async (id: string) => {
+			const parentData = await layout({ user: { id, isOwner: true } });
+			return (await dashboardLoad({
+				parent: async () => parentData,
+				locals: { user: { id, isOwner: true } },
+				platform: { env: { DB: db } },
+				url: new URL('https://x.test/admin?window=7')
+			} as never)) as { bucketZone: string; trafficToday: string };
+		};
+		const [ann, bob] = [await run('ann'), await run('bob')];
+		expect(ann.bucketZone).toBe('Pacific/Kiritimati');
+		expect(bob.bucketZone).toBe('Pacific/Pago_Pago');
+		expect(ann.trafficToday).not.toBe(bob.trafficToday);
+	});
+});
+
+describe('PUT /api/profile/timezone', () => {
+	it('rejects the unauthenticated', async () => {
+		expect(await statusOf(profilePut(null, { timeZone: 'UTC' }))).toBe(401);
+		expect(await statusOf(profileGET({ locals: {}, platform: { env: { DB: db } } } as never))).toBe(
+			401
+		);
+	});
+
+	it('lets any signed-in user set, read and clear their own', async () => {
+		await addUser('ann');
+		const ann = { id: 'ann' };
+		const res = await profilePut(ann, { timeZone: 'Asia/Kolkata' });
+		expect(await res.json()).toEqual({ success: true, timeZone: 'Asia/Kolkata' });
+		const got = await profileGET({ locals: { user: ann }, platform: { env: { DB: db } } } as never);
+		expect(await got.json()).toEqual({ timeZone: 'Asia/Kolkata' });
+		await profilePut(ann, { timeZone: 'auto' });
+		expect(await readUserTimeZone(db, 'ann')).toBe('auto');
+		const raw = await db
+			.prepare('SELECT time_zone FROM users WHERE id = ?')
+			.bind('ann')
+			.first<{ time_zone: string | null }>();
+		expect(raw?.time_zone).toBeNull();
+	});
+
+	it("cannot set another user's zone, whatever the body or URL says", async () => {
+		await addUser('ann');
+		await addUser('bob');
+		await profilePut(
+			{ id: 'ann' },
+			{ timeZone: 'Asia/Tokyo', id: 'bob', userId: 'bob', user_id: 'bob' }
+		);
+		expect(await readUserTimeZone(db, 'ann')).toBe('Asia/Tokyo');
+		expect(await readUserTimeZone(db, 'bob')).toBe('auto');
+	});
+
+	it.each([
+		{ timeZone: 'Nope/Zone' },
+		{ timeZone: '' },
+		{ timeZone: 7 },
+		{ timeZone: null },
+		{ timeZone: '+05:00' },
+		{ timeZone: "UTC'; DROP TABLE users;--" },
+		{}
+	])('rejects %j and stores nothing', async (body) => {
+		await addUser('ann');
+		await profilePut({ id: 'ann' }, { timeZone: 'Asia/Tokyo' });
+		expect(await statusOf(profilePut({ id: 'ann' }, body))).toBe(400);
+		expect(await readUserTimeZone(db, 'ann')).toBe('Asia/Tokyo');
+	});
+
+	it('rejects a non-JSON body, a missing database and a failing write', async () => {
+		expect(await statusOf(profilePut({ id: 'ann' }, 'nope'))).toBe(400);
+		expect(await statusOf(profilePut({ id: 'ann' }, { timeZone: 'UTC' }, null))).toBe(503);
+		const broken = {
+			prepare: () => {
+				throw new Error('boom');
+			}
+		};
+		expect(await statusOf(profilePut({ id: 'ann' }, { timeZone: 'UTC' }, { DB: broken }))).toBe(
+			500
+		);
+	});
+
+	it('does not claim success for a user with no row', async () => {
+		expect(await statusOf(profilePut({ id: 'ghost' }, { timeZone: 'UTC' }))).toBe(400);
+	});
+
+	it('is audited with the zone only', () => {
+		expect(AUDIT_RULES['PUT /api/profile/timezone']).toMatchObject({
+			action: 'user.timezone',
+			body: ['timeZone']
+		});
+	});
+});

@@ -423,3 +423,52 @@ describe('hourly chart labels', () => {
 		);
 	});
 });
+
+describe('precedence with a personal zone', () => {
+	it('is personal, then site, then cookie, then UTC', () => {
+		expect(resolveTimeZone('Asia/Tokyo', 'Europe/Paris', 'America/New_York')).toBe(
+			'America/New_York'
+		);
+		expect(resolveTimeZone('Asia/Tokyo', 'Europe/Paris', 'auto')).toBe('Asia/Tokyo');
+		expect(resolveTimeZone('auto', 'Europe/Paris', 'auto')).toBe('Europe/Paris');
+		expect(resolveTimeZone('auto', undefined, 'auto')).toBe('UTC');
+		expect(resolveTimeZone('Asia/Tokyo', undefined, 'Not/AZone')).toBe('Asia/Tokyo');
+		expect(timeZoneSource('Asia/Tokyo', 'Europe/Paris', 'America/New_York')).toBe('personal');
+		expect(timeZoneSource('Asia/Tokyo', 'Europe/Paris', null)).toBe('setting');
+		expect(timeZoneSource('auto', 'Europe/Paris', 'auto')).toBe('browser');
+		expect(timeZoneSource('auto', 'x', 'auto')).toBe('default');
+	});
+
+	it('property: the first valid explicit level wins, and the result is always valid', () => {
+		const level = fc.oneof(
+			fc.string(),
+			fc.constantFrom(...ZONES),
+			fc.constant('auto'),
+			fc.anything()
+		);
+		fc.assert(
+			fc.property(level, level, level, (setting, cookie, personal) => {
+				const got = resolveTimeZone(setting, cookie, personal);
+				expect(isValidTimeZone(got)).toBe(true);
+				const explicit = (v: unknown) =>
+					typeof v === 'string' && v !== 'auto' && isValidTimeZone(v);
+				const expected = explicit(personal)
+					? canonicalTimeZone(personal)
+					: explicit(setting)
+						? canonicalTimeZone(setting)
+						: (canonicalTimeZone(cookie) ?? 'UTC');
+				expect(got).toBe(expected);
+				expect(timeZoneSource(setting, cookie, personal)).toBe(
+					explicit(personal)
+						? 'personal'
+						: explicit(setting)
+							? 'setting'
+							: canonicalTimeZone(cookie)
+								? 'browser'
+								: 'default'
+				);
+			}),
+			{ numRuns: 500 }
+		);
+	});
+});

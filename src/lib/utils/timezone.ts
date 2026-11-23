@@ -50,27 +50,42 @@ export function isValidTimeZone(value: unknown): value is string {
 }
 
 /**
- * Which zone to use. Precedence: an explicit site setting, else a valid browser
- * cookie, else UTC. The cookie is untrusted user input and is validated; the
- * result is always a zone `Intl.DateTimeFormat` accepts.
+ * Which zone to use. Precedence: the user's own explicit zone, else the site's
+ * explicit zone, else a valid browser cookie, else UTC. The cookie is untrusted
+ * user input and is validated; the result is always a zone `Intl.DateTimeFormat`
+ * accepts. `'auto'`, null and anything invalid mean "no choice at this level".
  */
-export function resolveTimeZone(setting?: unknown, cookie?: unknown): string {
-	if (typeof setting === 'string' && setting !== TZ_AUTO) {
-		const explicit = canonicalTimeZone(setting);
-		if (explicit) return explicit;
+export function resolveTimeZone(setting?: unknown, cookie?: unknown, personal?: unknown): string {
+	for (const candidate of [personal, setting]) {
+		if (typeof candidate === 'string' && candidate !== TZ_AUTO) {
+			const explicit = canonicalTimeZone(candidate);
+			if (explicit) return explicit;
+		}
 	}
 	return canonicalTimeZone(cookie) ?? TZ_FALLBACK;
 }
 
 /** Where the resolved zone came from, for the "why this clock" hint. */
-export type TimeZoneSource = 'setting' | 'browser' | 'default';
+export type TimeZoneSource = 'personal' | 'setting' | 'browser' | 'default';
 
-export function timeZoneSource(setting?: unknown, cookie?: unknown): TimeZoneSource {
-	if (typeof setting === 'string' && setting !== TZ_AUTO && canonicalTimeZone(setting)) {
-		return 'setting';
-	}
+export function timeZoneSource(
+	setting?: unknown,
+	cookie?: unknown,
+	personal?: unknown
+): TimeZoneSource {
+	const explicit = (v: unknown) => typeof v === 'string' && v !== TZ_AUTO && !!canonicalTimeZone(v);
+	if (explicit(personal)) return 'personal';
+	if (explicit(setting)) return 'setting';
 	return canonicalTimeZone(cookie) ? 'browser' : 'default';
 }
+
+/** Words for each source, shown beside the active zone. */
+export const TIME_ZONE_SOURCE_LABELS: Record<TimeZoneSource, string> = {
+	personal: 'your preference',
+	setting: 'site setting',
+	browser: "your browser's zone",
+	default: "UTC until your browser's zone is known"
+};
 
 /** Every zone the runtime knows, for the settings picker. Empty if unsupported. */
 export function supportedTimeZones(): string[] {

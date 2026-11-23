@@ -5,13 +5,20 @@ in one zone. Public and customer-facing pages are not affected.
 
 ## Which zone
 
-1. The site setting, when it is an IANA zone (`/admin/settings`, owner only). Stored in
+1. The user's own zone, when set (`/profile#time-zone`, any signed-in user, their own only).
+   Stored in `users.time_zone` (migration `0033`; NULL means no personal choice). A column rather
+   than a per-user row in `site_settings`: it is one value owned by one user, it goes away with the
+   user, and it needs no key-naming convention. `PUT /api/profile/timezone` takes the user from the
+   session, never from the body or URL, validates with `Intl`, and clears on `auto`. It is audited as
+   `user.timezone`, but the audit hook only records admins and owners, so a plain user's change is
+   not logged.
+2. The site setting, when it is an IANA zone (`/admin/settings`, owner only). Stored in
    `site_settings` under `admin_timezone` (migration `0032`; a generic key/value table, because
    `commerce_settings` is shop-specific). Audited as `settings.admin_timezone`.
-2. Otherwise the browser's zone, from the `tz` cookie.
-3. Otherwise UTC.
+3. Otherwise the browser's zone, from the `tz` cookie.
+4. Otherwise UTC.
 
-The default setting is `auto`, which means step 2. `resolveTimeZone(setting, cookie)` in
+The default setting is `auto`, which means step 2. `resolveTimeZone(setting, cookie, personal)` in
 `src/lib/utils/timezone.ts` is the only place that decides, and it never returns a zone
 `Intl.DateTimeFormat` rejects.
 
@@ -37,7 +44,8 @@ machine's locale instead, which is why admin numbers use `formatNumber`.
 The admin layout load returns `timeZone`, `timeZoneSetting`, `timeZoneSource` and `timeZoneLabel`.
 Every admin page reads `data.timeZone` (layout data merges into page data) and formats with
 `formatDate` / `formatTime` / `formatDateTime`. The zone is named in the sidebar and under the
-Dashboard title, and in Settings.
+Dashboard title, and in Settings and the profile. The sidebar says where the zone comes from (your preference, site
+setting, browser) and links to the control.
 
 Rule, enforced by `tests/unit/admin-timezone.test.ts`: no bare `toLocale*String()` in
 `src/routes/admin` or `src/lib/components/admin`.
@@ -54,6 +62,9 @@ split into zone days, but UTC hours can be regrouped.
 | Views by page, referrers, countries, audience, traffic split, top content | Stored per UTC day with a dimension, so they cannot be re-bucketed. Their window is whole UTC days, and the page says so.                                                                                                                                                                                                                                                  |
 | Platform usage meter                                                      | Stays on UTC days and the UTC month: Cloudflare's limits reset at 00:00 UTC.                                                                                                                                                                                                                                                                                               |
 | Users and content by month                                                | Rebuilt in the zone from per-minute counts of `created_at` (UTC), so DST is respected.                                                                                                                                                                                                                                                                                     |
+
+The Dashboard load reads the layout's zone on every request, so two admins with different zones
+get different buckets and "today" from the same counters (`tests/unit/admin-timezone.test.ts`).
 
 `/api/stats/summary` (external dashboards) is unchanged: it buckets in UTC.
 
