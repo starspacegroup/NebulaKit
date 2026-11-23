@@ -14,7 +14,12 @@ const config = {
 			directives: {
 				'object-src': ['none'],
 				'base-uri': ['self'],
-				'frame-ancestors': ['self']
+				'frame-ancestors': ['self'],
+				// The cart's card form (docs/CHECKOUT.md) is Stripe's frames: the Payment Element from
+				// js.stripe.com and 3-D Secure from hooks.stripe.com. Exactly those, nothing wider.
+				// script-src / connect-src stay open (security-headers.ts says why); a site that
+				// tightens them must add https://js.stripe.com and https://api.stripe.com.
+				'frame-src': ['self', 'https://js.stripe.com', 'https://hooks.stripe.com']
 			}
 		},
 		alias: {

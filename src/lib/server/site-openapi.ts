@@ -39,6 +39,14 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 			body: 'Checkout'
 		}
 	},
+	'/api/v1/checkout/cancel': {
+		post: {
+			summary:
+				'Back out of an unpaid order: Stripe closes the payment first, then the order is cancelled',
+			scope: null,
+			body: 'CheckoutCancel'
+		}
+	},
 	'/api/v1/checkout/quote': {
 		post: {
 			summary: 'Price a cart without ordering, regional pricing included',
@@ -96,7 +104,7 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 	'/api/v1/webhooks/stripe': {
 		post: {
 			summary:
-				'Stripe checkout events: completed, async succeeded/failed, expired (Stripe-Signature, not an API key; 503 until configured)',
+				'Stripe events: checkout session completed/async/expired, payment_intent succeeded/canceled/payment_failed, charge.refunded (Stripe-Signature, not an API key; 503 until configured; deduplicated by event id)',
 			scope: null
 		}
 	}
@@ -178,8 +186,22 @@ export function siteOpenApi() {
 								properties: { productId: { type: 'string' }, quantity: { type: 'integer' } }
 							}
 						},
-						shippingAddress: { type: 'object' }
+						shippingAddress: { type: 'object' },
+						onSite: {
+							type: 'boolean',
+							description: "Pay in the site's own card form (answer carries payment.clientSecret)"
+						},
+						checkoutKey: {
+							type: 'string',
+							format: 'uuid',
+							description: 'One id per checkout; a repeat submit reuses its order and payment'
+						}
 					}
+				},
+				CheckoutCancel: {
+					type: 'object',
+					required: ['orderId'],
+					properties: { orderId: { type: 'string', format: 'uuid' } }
 				},
 				Quote: {
 					type: 'object',

@@ -115,7 +115,13 @@ export interface CommerceEnv {
 	COMMERCE_PRICES_INCLUDE_TAX?: string;
 	COMMERCE_FLAT_SHIPPING_CENTS?: string;
 	STRIPE_SECRET_KEY?: string;
+	/** Public; drawn into the cart's card form. `pk_test_…` / `pk_live_…`. */
+	STRIPE_PUBLISHABLE_KEY?: string;
 	STRIPE_WEBHOOK_SECRET?: string;
+	/** The old signing secret while rolling it or changing accounts; remove once quiet. */
+	STRIPE_WEBHOOK_SECRET_PREVIOUS?: string;
+	/** `onpage` (default) or `hosted`; see src/lib/server/checkout-mode.ts. */
+	CHECKOUT_MODE?: string;
 }
 
 export function taxRuleFromEnv(env: CommerceEnv): TaxRule {
