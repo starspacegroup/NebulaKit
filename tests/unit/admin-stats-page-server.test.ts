@@ -49,7 +49,7 @@ const OWNER = { id: 'u1', isOwner: true };
 /** `load` is typed as possibly-void (PageServerLoad allows it); narrow it once
  *  here so the assertions below can read the payload directly. */
 async function run(event: any) {
-	const data = await load(event);
+	const data = await load({ parent: async () => ({ timeZone: 'UTC' }), ...event });
 	if (!data) throw new Error('load returned no data');
 	return data;
 }
@@ -65,7 +65,7 @@ function createDb() {
 						? { draft: 1, published: 4, archived: 0 }
 						: { count: query.includes('is_admin') ? 2 : 7 }
 				),
-			all: vi.fn().mockResolvedValue({ results: [{ ym: '2026-07', count: 7 }] })
+			all: vi.fn().mockResolvedValue({ results: [{ ts: '2026-07-15T10:00:00Z', count: 7 }] })
 		}))
 	} as any;
 }
@@ -272,7 +272,7 @@ describe('/admin dashboard load — shape', () => {
 			})
 		};
 
-		await expect(load(createEvent({ platform: { env: { DB: db } } }))).rejects.toHaveProperty(
+		await expect(run(createEvent({ platform: { env: { DB: db } } }))).rejects.toHaveProperty(
 			'status',
 			500
 		);

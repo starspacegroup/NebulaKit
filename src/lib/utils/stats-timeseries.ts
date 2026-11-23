@@ -5,7 +5,13 @@
  * absent). Charts need a *dense*, gap-filled series and pre-computed SVG
  * geometry. Both are pure functions so they can be unit-tested without a
  * browser — the .svelte chart component just renders what these return.
+ *
+ * Zones: stored counters are UTC buckets (a UTC day, a UTC hour). Where a
+ * function takes a `zone` it re-buckets or re-labels into that zone; see
+ * docs/ADMIN_TIMEZONE.md for exactly what that can and cannot do.
  */
+
+import { addDays, dayKey, formatTime, monthKey, zoneParts } from '$lib/utils/timezone';
 
 const MONTH_ABBR = [
 	'Jan',
@@ -151,6 +157,76 @@ export function formatHourLabel(hourKey: string): string {
 }
 
 /**
+ * Label for the UTC-hour bucket starting at `start`, in `zone`: "14:00", the day
+ * ("Jul 23") when the bucket starts at local midnight, and "05:30" for a bucket
+ * that starts at half past in a half-hour zone. The bucket itself is still the
+ * UTC hour; only its label moves.
+ */
+export function formatZonedHourLabel(start: Date, zone: string): string {
+	const p = zoneParts(start, zone);
+	if (p.hour === 0 && p.minute === 0) {
+		return `${MONTH_ABBR[p.month - 1] ?? '?'} ${p.day}`;
+	}
+	return formatTime(start, zone);
+}
+
+/** A bucket carrying view totals, keyed by a UTC hour. */
+export interface HourlyViewsRow {
+	hourKey: string;
+	views: number;
+	signedIn: number;
+}
+
+/** A day bucket carrying view totals. */
+export interface DayViewsRow {
+	day: string;
+	views: number;
+	signedIn: number;
+}
+
+/**
+ * Re-bucket UTC-hour counters into days of `zone`. Each hour goes to the zone
+ * day in which it STARTS. That is exact for any zone whose offset is a whole
+ * number of hours, and for a :30 or :45 zone it misplaces at most the one hour
+ * that straddles local midnight (its first half-hour belongs to the previous
+ * day). Nothing is lost or counted twice: every row lands in exactly one day.
+ */
+export function bucketHourlyToDays(rows: HourlyViewsRow[], zone: string): DayViewsRow[] {
+	const days = new Map<string, DayViewsRow>();
+	for (const row of rows) {
+		const start = new Date(`${row.hourKey.slice(0, 10)}T${row.hourKey.slice(11, 13)}:00:00Z`);
+		if (Number.isNaN(start.getTime())) continue;
+		const day = dayKey(start, zone);
+		const entry = days.get(day) ?? { day, views: 0, signedIn: 0 };
+		entry.views += row.views;
+		entry.signedIn += row.signedIn;
+		days.set(day, entry);
+	}
+	return [...days.values()].sort((a, b) => (a.day < b.day ? -1 : 1));
+}
+
+/** Month counters from minute-granular UTC timestamps, re-bucketed into `zone` months. */
+export function bucketTimestampsToMonths(
+	rows: { ts: string | null; count: number }[],
+	zone: string
+): MonthCount[] {
+	const counts = new Map<string, number>();
+	for (const row of rows) {
+		if (!row.ts) continue;
+		const d = new Date(row.ts);
+		if (Number.isNaN(d.getTime())) continue;
+		const ym = monthKey(d, zone);
+		counts.set(ym, (counts.get(ym) ?? 0) + (row.count ?? 0));
+	}
+	return [...counts.entries()].map(([ym, count]) => ({ ym, count }));
+}
+
+/** First local day of a window of `days` days ending on `today` (a zone-local day key). */
+export function windowStartDay(today: string, days: number): string {
+	return addDays(today, -days);
+}
+
+/**
  * Expand sparse hourly counts into a dense series over the `hours` buckets
  * ending at `endHourKey` (inclusive, 'YYYY-MM-DDTHH' UTC), zeros included.
  * Returns MonthlyPoint-shaped points so StatBarChart can plot hours directly.
@@ -158,7 +234,8 @@ export function formatHourLabel(hourKey: string): string {
 export function fillHourlySeries(
 	rows: HourCount[],
 	endHourKey: string,
-	hours: number
+	hours: number,
+	zone?: string
 ): MonthlyPoint[] {
 	const counts = new Map<string, number>();
 	for (const row of rows) {
@@ -177,7 +254,12 @@ export function fillHourlySeries(
 		const hourKey = `${iso.slice(0, 10)}T${iso.slice(11, 13)}`;
 		const count = counts.get(hourKey) ?? 0;
 		cumulative += count;
-		series.push({ ym: hourKey, label: formatHourLabel(hourKey), count, cumulative });
+		series.push({
+			ym: hourKey,
+			label: zone ? formatZonedHourLabel(cursor, zone) : formatHourLabel(hourKey),
+			count,
+			cumulative
+		});
 		cursor.setUTCHours(cursor.getUTCHours() + 1);
 	}
 	return series;

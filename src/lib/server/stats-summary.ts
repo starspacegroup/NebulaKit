@@ -1,4 +1,5 @@
-import { fillMonthlySeries, type MonthCount } from '$lib/utils/stats-timeseries';
+import { bucketTimestampsToMonths, fillMonthlySeries } from '$lib/utils/stats-timeseries';
+import { dayKey, TZ_FALLBACK } from '$lib/utils/timezone';
 import {
 	listCountries,
 	listDailyViews,
@@ -45,7 +46,9 @@ export function parseTrafficWindow(raw: string | null | undefined): TrafficWindo
 export async function loadStatsSummary(
 	db: D1Database,
 	trafficWindow: TrafficWindow,
-	now: Date = new Date()
+	now: Date = new Date(),
+	/** The admin zone. Re-buckets what can be re-bucketed; see docs/ADMIN_TIMEZONE.md. */
+	zone: string = TZ_FALLBACK
 ) {
 	const [userCount, adminCount, contentCount, contactCount, chatCount, contentBreakdown] =
 		await Promise.all([
@@ -77,22 +80,24 @@ export async function loadStatsSummary(
 				.catch(() => null)
 		]);
 
-	// Monthly creation counts. strftime returns NULL for any unparseable
-	// timestamp; fillMonthlySeries drops those and gap-fills the rest.
+	// Monthly creation counts, bucketed in the admin zone. created_at is UTC, so
+	// the rows are counted per UTC minute and months are decided here, where DST
+	// is known (SQLite's strftime can only shift by a fixed offset). strftime
+	// returns NULL for an unparseable timestamp; those rows are dropped.
 	const [usersByMonthRes, contentByMonthRes] = await Promise.all([
 		db
 			.prepare(
-				`SELECT strftime('%Y-%m', created_at) as ym, COUNT(*) as count
-				 FROM users GROUP BY ym ORDER BY ym`
+				`SELECT strftime('%Y-%m-%dT%H:%M:00Z', created_at) as ts, COUNT(*) as count
+				 FROM users GROUP BY ts`
 			)
-			.all<MonthCount>()
+			.all<{ ts: string | null; count: number }>()
 			.catch(() => null),
 		db
 			.prepare(
-				`SELECT strftime('%Y-%m', created_at) as ym, COUNT(*) as count
-				 FROM content_items GROUP BY ym ORDER BY ym`
+				`SELECT strftime('%Y-%m-%dT%H:%M:00Z', created_at) as ts, COUNT(*) as count
+				 FROM content_items GROUP BY ts`
 			)
-			.all<MonthCount>()
+			.all<{ ts: string | null; count: number }>()
 			.catch(() => null)
 	]);
 
@@ -100,6 +105,13 @@ export async function loadStatsSummary(
 	// The 1-day window is plotted hourly (a two-bar day chart is useless), so
 	// it needs the trailing-24h counters as well. Wider windows skip the query.
 	const sinceHour = utcHourKey(new Date(now.getTime() - (TRAFFIC_HOURS - 1) * 60 * 60 * 1000));
+	// Outside UTC the daily views chart is rebuilt from the hourly totals (the
+	// daily counters are UTC days and cannot be split), so those need the whole
+	// window, plus a day of slack either side for the zone's offset.
+	const rebucket = zone !== TZ_FALLBACK && trafficWindow !== 1;
+	const sinceWindowHour = utcHourKey(
+		new Date(now.getTime() - (trafficWindow + 2) * 24 * 60 * 60 * 1000)
+	);
 	// Each query fails soft on its own, and the block as a whole degrades to
 	// null: a database that hasn't run migration 0007 loses the Traffic panel,
 	// not the whole summary.
@@ -113,7 +125,11 @@ export async function loadStatsSummary(
 		listDimension(db, 'device', sinceDay).catch(() => []),
 		listDimension(db, 'language', sinceDay).catch(() => []),
 		listDimension(db, 'viewport', sinceDay).catch(() => []),
-		trafficWindow === 1 ? listHourlyViews(db, sinceHour).catch(() => []) : Promise.resolve([]),
+		trafficWindow === 1
+			? listHourlyViews(db, sinceHour).catch(() => [])
+			: rebucket
+				? listHourlyViews(db, sinceWindowHour).catch(() => [])
+				: Promise.resolve([]),
 		// Empty on a site with no CMS traffic, and missing entirely before
 		// migration 0014 — either way the panel just doesn't render.
 		listTopContent(db, sinceDay).catch(() => []),
@@ -158,6 +174,12 @@ export async function loadStatsSummary(
 		// Anchor for the hourly chart: the client must not re-derive it from its
 		// own clock, or SSR and hydration disagree across an hour boundary.
 		trafficNowHour: utcHourKey(now),
+		/** The zone the views chart and its window are bucketed in. */
+		bucketZone: zone,
+		/** Today in `timeZone`; the views chart's last day. Server-computed so SSR and hydration agree. */
+		trafficToday: dayKey(now, zone),
+		/** Today in UTC; the usage chart stays on UTC days (Cloudflare's limits reset at 00:00 UTC). */
+		usageToday: utcDay(now),
 		traffic,
 		usage,
 		stats: {
@@ -171,8 +193,12 @@ export async function loadStatsSummary(
 				published: contentBreakdown?.published ?? 0,
 				archived: contentBreakdown?.archived ?? 0
 			},
-			usersByMonth: fillMonthlySeries(usersByMonthRes?.results ?? []),
-			contentByMonth: fillMonthlySeries(contentByMonthRes?.results ?? [])
+			usersByMonth: fillMonthlySeries(
+				bucketTimestampsToMonths(usersByMonthRes?.results ?? [], zone)
+			),
+			contentByMonth: fillMonthlySeries(
+				bucketTimestampsToMonths(contentByMonthRes?.results ?? [], zone)
+			)
 		}
 	};
 }

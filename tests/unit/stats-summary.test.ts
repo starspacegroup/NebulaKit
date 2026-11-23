@@ -48,7 +48,7 @@ function createDb() {
 						? { draft: 1, published: 4, archived: 0 }
 						: { count: query.includes('is_admin') ? 2 : 7 }
 				),
-			all: vi.fn().mockResolvedValue({ results: [{ ym: '2026-09', count: 7 }] })
+			all: vi.fn().mockResolvedValue({ results: [{ ts: '2026-09-15T10:00:00Z', count: 7 }] })
 		}))
 	} as never;
 }

@@ -28,6 +28,10 @@ const data = (classes: unknown) =>
 		traffic: traffic(classes),
 		trafficWindow: 30,
 		trafficNowHour: '2026-11-17T09',
+		trafficToday: '2026-11-17',
+		usageToday: '2026-11-17',
+		timeZone: 'UTC',
+		timeZoneLabel: 'UTC (UTC+00:00)',
 		canViewStats: true,
 		usage: null
 	}) as any;
