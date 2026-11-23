@@ -34,7 +34,13 @@
 		{#if data.actor || data.action}<a href="/admin/audit">Clear</a>{/if}
 	</form>
 
-	<AuditLog label="Admin actions" events={data.events} pageSize={25} exportable={false} />
+	<AuditLog
+		label="Admin actions"
+		events={data.events}
+		pageSize={25}
+		exportable={false}
+		timeZone={data.timeZone}
+	/>
 </section>
 
 <style>

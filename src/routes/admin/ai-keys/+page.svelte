@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate as formatZonedDate } from '$lib/utils/timezone';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { fieldName } from '$lib/utils/form-fields';
 	import { onMount } from 'svelte';
@@ -483,7 +484,7 @@
 						</div>
 					</div>
 					<div class="key-meta">
-						<span>Added {new Date(key.createdAt).toLocaleDateString()}</span>
+						<span>Added {formatZonedDate(key.createdAt, data.timeZone)}</span>
 					</div>
 				</div>
 			{/each}

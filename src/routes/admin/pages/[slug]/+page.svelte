@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '$lib/utils/timezone';
 	import PageEditor from '@nebulakit/builder/PageEditor.svelte';
 	import type { PageDocument, PageRevisionSummary } from '@nebulakit/builder';
 	import type { PageData } from './$types';
@@ -76,11 +77,7 @@
 		}
 	}
 
-	const when = (stamp: string) =>
-		new Date(stamp.replace(' ', 'T') + 'Z').toLocaleString(undefined, {
-			dateStyle: 'medium',
-			timeStyle: 'short'
-		});
+	const when = (stamp: string) => formatDateTime(stamp, data.timeZone);
 </script>
 
 <svelte:head><title>Edit {title}</title></svelte:head>

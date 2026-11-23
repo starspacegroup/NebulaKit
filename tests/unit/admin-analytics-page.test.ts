@@ -44,7 +44,11 @@ const STATS_ADMIN = {
 	email: 'admin@test.com',
 	isOwner: false,
 	isAdmin: true,
-	canViewStats: true
+	canViewStats: true,
+	timeZone: 'UTC',
+	timeZoneSetting: 'auto',
+	timeZoneSource: 'default' as const,
+	timeZoneLabel: 'UTC (UTC+00:00)'
 };
 
 const CONNECTED = {
@@ -71,6 +75,10 @@ const pageData = (
 	canRevealPii: true,
 	piiRevealed: false,
 	canViewStats: true,
+	timeZone: 'UTC',
+	timeZoneSetting: 'auto',
+	timeZoneSource: 'default' as const,
+	timeZoneLabel: 'UTC (UTC+00:00)',
 	canManageAnalytics: true
 });
 
@@ -241,6 +249,10 @@ describe('Admin sidebar', () => {
 		canRevealPii: true,
 		piiRevealed: false,
 		canViewStats: true,
+		timeZone: 'UTC',
+		timeZoneSetting: 'auto',
+		timeZoneSource: 'default' as const,
+		timeZoneLabel: 'UTC (UTC+00:00)',
 		canManageAnalytics
 	});
 

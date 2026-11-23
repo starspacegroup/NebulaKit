@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '$lib/utils/timezone';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
 
@@ -13,9 +14,9 @@
 		timed_out: 'Timed out'
 	};
 
-	/** Run rows carry unix seconds; the page shows the viewer's own time. */
+	/** Run rows carry unix seconds; the page shows shown in the admin time zone. */
 	function when(seconds: number | null): string {
-		return seconds === null ? '—' : new Date(seconds * 1000).toLocaleString();
+		return seconds === null ? '—' : formatDateTime(seconds * 1000, data.timeZone);
 	}
 
 	function iso(seconds: number): string {
@@ -109,7 +110,7 @@
 					</td>
 					<td>
 						{#if job.nextRunAt}
-							<time datetime={job.nextRunAt}>{new Date(job.nextRunAt).toLocaleString()}</time>
+							<time datetime={job.nextRunAt}>{formatDateTime(job.nextRunAt, data.timeZone)}</time>
 						{:else}
 							—
 						{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '$lib/utils/timezone';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 
@@ -20,12 +21,7 @@
 	const v = $derived(
 		form && 'values' in form && form.values && form.action === 'create' ? form.values : blank
 	);
-	const when = (iso: string) =>
-		new Date(iso).toLocaleString('en-US', {
-			dateStyle: 'medium',
-			timeStyle: 'short',
-			timeZone: 'UTC'
-		}) + ' UTC';
+	const when = (iso: string) => formatDateTime(iso, data.timeZone);
 	const phaseLabel: Record<string, string> = {
 		scheduled: 'Scheduled',
 		live: 'Live',

@@ -28,6 +28,10 @@ const base = {
 	canRevealPii: false,
 	piiRevealed: true,
 	canViewStats: false,
+	timeZone: 'UTC',
+	timeZoneSetting: 'auto',
+	timeZoneSource: 'default' as const,
+	timeZoneLabel: 'UTC (UTC+00:00)',
 	canManageAnalytics: false
 };
 const user = (extra: Record<string, unknown>) => ({

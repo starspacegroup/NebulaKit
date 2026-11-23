@@ -1,12 +1,13 @@
 <script lang="ts">
+	import { formatDateTime, NO_DATE } from '$lib/utils/timezone';
 	import type { PageData } from './$types';
 	import ObfuscatedText from '$lib/components/admin/ObfuscatedText.svelte';
 
 	export let data: PageData;
 
 	function formatDate(value: string): string {
-		const d = new Date(value);
-		return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
+		const shown = formatDateTime(value, data.timeZone);
+		return shown === NO_DATE ? value : shown;
 	}
 </script>
 

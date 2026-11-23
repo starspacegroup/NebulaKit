@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate as formatZonedDate, formatDateTime } from '$lib/utils/timezone';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 
@@ -74,8 +75,8 @@
 						<td>{k.name}</td>
 						<td><code>{k.prefix}…</code></td>
 						<td>{k.scopes.join(', ')}</td>
-						<td>{k.expiresAt ? new Date(k.expiresAt).toLocaleDateString() : 'never'}</td>
-						<td>{k.lastUsedAt ?? 'never'}</td>
+						<td>{k.expiresAt ? formatZonedDate(k.expiresAt, data.timeZone) : 'never'}</td>
+						<td>{k.lastUsedAt ? formatDateTime(k.lastUsedAt, data.timeZone) : 'never'}</td>
 						<td>{status(k)}</td>
 						<td>
 							{#if !k.revokedAt}
@@ -100,7 +101,7 @@
 			<tbody>
 				{#each data.calls as c, i (i)}
 					<tr>
-						<td>{c.calledAt}</td>
+						<td>{formatDateTime(c.calledAt, data.timeZone)}</td>
 						<td>{keyName(c.keyId)}</td>
 						<td><code>{c.method} {c.path}</code></td>
 						<td>{c.status}</td>
