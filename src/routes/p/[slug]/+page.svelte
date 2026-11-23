@@ -25,6 +25,6 @@
 		text-align: center;
 		padding: 0.5rem;
 		background: var(--color-surface);
-		color: var(--color-warning);
+		color: var(--color-warning-text);
 	}
 </style>
