@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseSiteConfig } from '../../scripts/site-config-parse.mjs';
-import { applySite, renderConfig } from '../../scripts/site-config-write.mjs';
+import { applyCronTarget, applySite, renderConfig } from '../../scripts/site-config-write.mjs';
+import { site } from '../../src/lib/site.config';
 
 const current = readFileSync(resolve(process.cwd(), 'src/lib/site.config.ts'), 'utf8');
 const next = (over: Record<string, unknown> = {}) => ({
@@ -76,5 +77,39 @@ describe('writing the site object back', () => {
 		const text = renderConfig(next());
 		expect(text).toContain('export const site = {');
 		expect(text).toContain('export const repoUrl');
+	});
+});
+
+describe('the cron Worker', () => {
+	const toml = readFileSync(resolve(process.cwd(), 'cron-worker/wrangler.toml'), 'utf8');
+	const placeholder = 'TARGET_URL = "https://REPLACE_ME.example"';
+
+	it('is named for the site, so two sites on one Cloudflare account do not overwrite each other', () => {
+		expect(toml).toMatch(new RegExp(`^name = "${site.slug}-cron"$`, 'm'));
+	});
+
+	it('gets the site origin in place of the shipped placeholder', () => {
+		expect(toml).toContain(placeholder);
+		const out = applyCronTarget(toml, 'https://acme.example/some/path?x=1');
+		expect(out).toContain('TARGET_URL = "https://acme.example"');
+		expect(out).not.toContain('REPLACE_ME');
+		// nothing else in the file moved
+		expect(out.replace('TARGET_URL = "https://acme.example"', placeholder)).toBe(toml);
+	});
+
+	it('leaves a value someone already chose alone', () => {
+		const chosen = toml.replace(placeholder, 'TARGET_URL = "https://www.chosen.example"');
+		expect(applyCronTarget(chosen, 'https://acme.example')).toBe(chosen);
+	});
+
+	it('changes nothing when the URL is not one, rather than writing a broken value', () => {
+		for (const bad of ['', 'not a url', 'acme.example']) {
+			expect(applyCronTarget(toml, bad)).toBe(toml);
+		}
+	});
+
+	it('is idempotent', () => {
+		const once = applyCronTarget(toml, 'https://acme.example');
+		expect(applyCronTarget(once, 'https://other.example')).toBe(once);
 	});
 });
