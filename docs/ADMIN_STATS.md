@@ -380,6 +380,12 @@ contrast. Re-validate if you change one.
 
 ---
 
+## Time zones
+
+The dashboard follows the admin time zone (`docs/ADMIN_TIMEZONE.md`). Counters are stored per UTC
+hour and UTC day, so only some of it can follow the zone. The platform-usage meter and the
+breakdown tables (paths, referrers, countries, audience) stay on UTC days.
+
 ## Known limits
 
 - **`signed_in` counts signed-in _views_, not signed-in _visitors_.** There are no

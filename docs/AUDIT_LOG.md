@@ -12,7 +12,7 @@ owner can answer "who deleted that?" and "who turned that on?" without guessing.
 | Settings and keys | `settings.*`, `ai_key.*`, `auth_key.*`, `api_key.create`, `api_key.revoke`                      |
 | Pages (builder)   | `page.create`, `page.save`, `page.delete`, `page.restore`                                       |
 | Shop (`/api/v1`)  | `product.create/update/delete`, `order.update`                                                  |
-| Site              | `site.reset`, `settings.site_updates`, `contact.resolve`                                        |
+| Site              | `site.reset`, `settings.site_updates`, `settings.admin_timezone`, `contact.resolve`             |
 
 **Secrets are never written.** A key, token or setting change records _that_ it changed, not the
 value. Two layers enforce it: the row detail is built from an allowlist of body fields (never the

@@ -960,6 +960,26 @@ bun run db:migrate:list</code
 			</p>
 		</section>
 
+		<section id="admin-time-zone" class="docs-section">
+			<h2>Admin Time Zone</h2>
+			<p>
+				Every date and time in the admin area, and the days and hours on the Dashboard charts, are
+				shown in one zone. By default (<code>auto</code>) that is the browser's own zone, read with
+				<code>Intl.DateTimeFormat().resolvedOptions().timeZone</code> without asking, and handed to
+				the server in a <code>tz</code> cookie so server rendering matches. The owner can pin a
+				fixed IANA zone in <a href="/admin/settings">/admin/settings</a>; that beats the browser.
+				With neither, the zone is UTC. The zone is named in the sidebar and on the Dashboard header.
+			</p>
+			<p>
+				Counters are stored per UTC hour and per UTC day, so the Dashboard re-buckets what it can
+				and says so: the 24-hour chart keeps UTC hours labelled in your zone, longer windows are
+				rebuilt from the hourly totals into days of your zone, and the breakdown tables and the
+				platform usage meter stay on UTC days. Apply migration <code>0032</code> with
+				<code>bun run db:migrate:local</code>. Public pages are not affected. Details:
+				<code>docs/ADMIN_TIMEZONE.md</code>.
+			</p>
+		</section>
+
 		<section id="sign-in-tracking" class="docs-section">
 			<h2>Sign-in Tracking</h2>
 			<p>
