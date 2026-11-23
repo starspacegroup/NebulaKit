@@ -1,3 +1,5 @@
+import { currencyExponent, ratePpm, regionalUnitMinor, taxMinor, totalMinor } from './payment-core';
+
 /**
  * Checkout money rules, in integer cents.
  *
@@ -21,24 +23,24 @@ export interface TaxRule {
  */
 export const NO_TAX: TaxRule = { enabled: false, ratePercent: 0, pricesIncludeTax: false };
 
-function usableRate(rule: TaxRule): number {
-	if (!rule.enabled) return 0;
-	const percent = rule.ratePercent;
-	// A stored rate beyond 100% is corrupt, and charging it is worse than charging nothing.
-	if (!Number.isFinite(percent) || percent <= 0 || percent > 100) return 0;
-	return percent / 100;
+/** The rule's rate in millionths; 0 when off or unusable (a rate beyond 100% is corrupt). */
+function usablePpm(rule: TaxRule): number {
+	return rule.enabled ? ratePpm(rule.ratePercent) : 0;
 }
 
 export function isCents(value: unknown): value is number {
 	return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
-/** Tax on a subtotal: added on top for tax-exclusive prices, extracted for tax-inclusive ones. */
+/**
+ * Tax on a subtotal: added on top for tax-exclusive prices, extracted for tax-inclusive ones.
+ * Integer arithmetic, half up (dafny/PaymentCore.dfy `TaxOn`): a float rate such as 0.0825 is
+ * never multiplied, so a total cannot land a cent off on binary rounding.
+ */
 export function calculateTaxCents(subtotalCents: number, rule: TaxRule = NO_TAX): number {
-	const rate = usableRate(rule);
-	if (rate === 0 || !isCents(subtotalCents) || subtotalCents === 0) return 0;
-	if (rule.pricesIncludeTax) return Math.round(subtotalCents - subtotalCents / (1 + rate));
-	return Math.round(subtotalCents * rate);
+	const ppm = usablePpm(rule);
+	if (ppm === 0 || !isCents(subtotalCents) || subtotalCents === 0) return 0;
+	return taxMinor(subtotalCents, ppm, rule.pricesIncludeTax);
 }
 
 /** What the customer pays. Inclusive tax is already inside the subtotal, so it is never added twice. */
@@ -48,7 +50,7 @@ export function calculateTotalCents(
 	taxCents: number,
 	rule: TaxRule = NO_TAX
 ): number {
-	return subtotalCents + shippingCents + (rule.pricesIncludeTax ? 0 : taxCents);
+	return totalMinor(subtotalCents, shippingCents, taxCents, rule.pricesIncludeTax);
 }
 
 /**
@@ -73,14 +75,20 @@ export function regionalPriceCents(
 	floorCents = REGIONAL_PRICE_FLOOR_CENTS
 ): number {
 	if (!Number.isFinite(multiplier)) return baseCents;
-	const percent = Math.round(multiplier * 100);
-	if (percent < 1 || percent >= 100) return baseCents;
-	return Math.max(Math.round((baseCents * percent) / 100), Math.min(baseCents, floorCents));
+	return regionalUnitMinor(baseCents, Math.round(multiplier * 100), floorCents);
 }
 
+/**
+ * An amount in the currency's minor units, formatted. "Cents" is the template's word for the
+ * minor unit: for a zero-decimal currency (JPY) 500 is ¥500, for a three-decimal one (KWD) 5120 is
+ * 5.120 KWD.
+ */
 export function formatMoney(cents: number, currency = 'usd', locale = 'en-US'): string {
+	const exponent = currencyExponent(currency);
 	return new Intl.NumberFormat(locale, {
 		style: 'currency',
-		currency: currency.toUpperCase()
-	}).format(cents / 100);
+		currency: currency.toUpperCase(),
+		minimumFractionDigits: exponent,
+		maximumFractionDigits: exponent
+	}).format(cents / 10 ** exponent);
 }

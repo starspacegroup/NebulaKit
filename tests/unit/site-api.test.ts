@@ -418,9 +418,20 @@ describe('checkout and orders API', () => {
 				headers: { 'stripe-signature': `t=${t},v1=${sig}` }
 			});
 		}
+		// Each is a new Stripe event (its own `evt_` id) saying how much was taken, and in what.
+		let eventCount = 0;
 		const completed = (id: string, status = 'paid', sessionId = 'cs_test_1') => ({
+			id: `evt_site_${++eventCount}`,
 			type: 'checkout.session.completed',
-			data: { object: { id: sessionId, payment_status: status, metadata: { orderId: id } } }
+			data: {
+				object: {
+					id: sessionId,
+					payment_status: status,
+					amount_total: res.json.order.totalCents,
+					currency: 'usd',
+					metadata: { orderId: id }
+				}
+			}
 		});
 
 		expect((await signed(completed(orderId), 'whsec_wrong')).status).toBe(400);
@@ -433,6 +444,7 @@ describe('checkout and orders API', () => {
 		expect(
 			(
 				await signed({
+					id: 'evt_site_no_order',
 					type: 'checkout.session.completed',
 					data: { object: { payment_status: 'paid' } }
 				})

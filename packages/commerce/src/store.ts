@@ -212,6 +212,8 @@ export async function createOrder(
 		paymentProvider: string;
 		/** Written beside the order when regional pricing was on; see migration 0022. */
 		regional?: OrderRegionalPricing | null;
+		/** The cart page's id for this checkout (migration 0034); unique, so a double submit finds this order. */
+		checkoutKey?: string | null;
 	}
 ): Promise<Order> {
 	const orderId = crypto.randomUUID();
@@ -219,8 +221,8 @@ export async function createOrder(
 		db
 			.prepare(
 				`INSERT INTO commerce_orders
-				 (id, status, email, currency, subtotal_cents, shipping_cents, tax_cents, total_cents, shipping_address, payment_provider)
-				 VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)`
+				 (id, status, email, currency, subtotal_cents, shipping_cents, tax_cents, total_cents, shipping_address, payment_provider, checkout_key)
+				 VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 			)
 			.bind(
 				orderId,
@@ -231,14 +233,137 @@ export async function createOrder(
 				cart.taxCents,
 				cart.totalCents,
 				details.shippingAddress ? JSON.stringify(details.shippingAddress) : null,
-				details.paymentProvider
+				details.paymentProvider,
+				details.checkoutKey ?? null
 			),
+		...itemStatements(db, orderId, cart),
+		...regionalStatements(db, orderId, details.regional)
+	];
+	// One batch: an order never exists without its lines (or its audit row).
+	try {
+		await db.batch(statements);
+	} catch (err) {
+		if (details.checkoutKey && isUniqueViolation(err)) {
+			throw new CommerceConflictError('This checkout already has an order');
+		}
+		throw err;
+	}
+	return (await getOrder(db, orderId)) as Order;
+}
+
+function itemStatements(db: D1Database, orderId: string, cart: PricedCart) {
+	return cart.lines.map((line) =>
+		db
+			.prepare(
+				`INSERT INTO commerce_order_items
+					 (id, order_id, product_id, name, unit_price_cents, quantity, line_total_cents)
+					 VALUES (?, ?, ?, ?, ?, ?, ?)`
+			)
+			.bind(
+				crypto.randomUUID(),
+				orderId,
+				line.product.id,
+				line.product.name,
+				line.unitPriceCents,
+				line.quantity,
+				line.lineTotalCents
+			)
+	);
+}
+
+function regionalStatements(
+	db: D1Database,
+	orderId: string,
+	regional: OrderRegionalPricing | null | undefined
+) {
+	return regional
+		? [
+				db
+					.prepare(
+						`INSERT INTO commerce_order_regional
+						 (order_id, multiplier_percent, countries, base_subtotal_cents)
+						 VALUES (?, ?, ?, ?)`
+					)
+					.bind(
+						orderId,
+						Math.round(regional.multiplier * 100),
+						JSON.stringify(regional.countries),
+						regional.baseSubtotalCents
+					)
+			]
+		: [];
+}
+
+/** The order a cart checkout made, by the cart page's checkout key (migration 0034). */
+export async function findOrderByCheckoutKey(
+	db: D1Database,
+	checkoutKey: string
+): Promise<Order | null> {
+	const row = await db
+		.prepare('SELECT id FROM commerce_orders WHERE checkout_key = ?')
+		.bind(checkoutKey)
+		.first<Row>();
+	return row ? getOrder(db, row.id as string) : null;
+}
+
+/**
+ * Reprice a pending order in place: the cart changed between the first "Pay" and the payment, so
+ * the order's lines, totals, email, address and regional audit are replaced with a fresh server-side
+ * pricing, and `payment_revision` moves from `expectedRevision` to `expectedRevision + 1`.
+ *
+ * One batch, which D1 runs as one transaction. The first statement is a compare-and-set on
+ * (pending, expected revision) that stamps a fresh nonce; every later statement only acts on the
+ * row carrying that nonce. So a reprice that lost a race, or an order paid a moment ago, changes
+ * nothing at all — never the totals without the lines, never lines on a paid order.
+ *
+ * Returns the repriced order and its new revision, or null when it was not repriced.
+ */
+export async function repriceOrder(
+	db: D1Database,
+	orderId: string,
+	expectedRevision: number,
+	cart: PricedCart,
+	details: {
+		email: string;
+		shippingAddress: ShippingAddress | null;
+		regional?: OrderRegionalPricing | null;
+	}
+): Promise<{ order: Order; revision: number } | null> {
+	const nonce = crypto.randomUUID();
+	const ours = `EXISTS (SELECT 1 FROM commerce_orders WHERE id = ? AND payment_nonce = ? AND status = 'pending')`;
+	await db.batch([
+		db
+			.prepare(
+				`UPDATE commerce_orders
+				 SET email = ?, currency = ?, subtotal_cents = ?, shipping_cents = ?, tax_cents = ?,
+				     total_cents = ?, shipping_address = ?, payment_revision = payment_revision + 1,
+				     payment_nonce = ?, updated_at = datetime('now')
+				 WHERE id = ? AND status = 'pending' AND payment_revision = ?`
+			)
+			.bind(
+				details.email,
+				cart.currency,
+				cart.subtotalCents,
+				cart.shippingCents,
+				cart.taxCents,
+				cart.totalCents,
+				details.shippingAddress ? JSON.stringify(details.shippingAddress) : null,
+				nonce,
+				orderId,
+				expectedRevision
+			),
+		db
+			.prepare(`DELETE FROM commerce_order_items WHERE order_id = ? AND ${ours}`)
+			.bind(orderId, orderId, nonce),
+		db
+			.prepare(`DELETE FROM commerce_order_regional WHERE order_id = ? AND ${ours}`)
+			.bind(orderId, orderId, nonce),
 		...cart.lines.map((line) =>
 			db
 				.prepare(
 					`INSERT INTO commerce_order_items
 					 (id, order_id, product_id, name, unit_price_cents, quantity, line_total_cents)
-					 VALUES (?, ?, ?, ?, ?, ?, ?)`
+					 SELECT ?, ?, ?, ?, ?, ?, ? WHERE ${ours}`
 				)
 				.bind(
 					crypto.randomUUID(),
@@ -247,7 +372,9 @@ export async function createOrder(
 					line.product.name,
 					line.unitPriceCents,
 					line.quantity,
-					line.lineTotalCents
+					line.lineTotalCents,
+					orderId,
+					nonce
 				)
 		),
 		...(details.regional
@@ -256,20 +383,35 @@ export async function createOrder(
 						.prepare(
 							`INSERT INTO commerce_order_regional
 							 (order_id, multiplier_percent, countries, base_subtotal_cents)
-							 VALUES (?, ?, ?, ?)`
+							 SELECT ?, ?, ?, ? WHERE ${ours}`
 						)
 						.bind(
 							orderId,
 							Math.round(details.regional.multiplier * 100),
 							JSON.stringify(details.regional.countries),
-							details.regional.baseSubtotalCents
+							details.regional.baseSubtotalCents,
+							orderId,
+							nonce
 						)
 				]
 			: [])
-	];
-	// One batch: an order never exists without its lines (or its audit row).
-	await db.batch(statements);
-	return (await getOrder(db, orderId)) as Order;
+	]);
+	const row = await db
+		.prepare('SELECT payment_revision, payment_nonce FROM commerce_orders WHERE id = ?')
+		.bind(orderId)
+		.first<Row>();
+	if (!row || row.payment_nonce !== nonce) return null;
+	const order = await getOrder(db, orderId);
+	return order ? { order, revision: Number(row.payment_revision) } : null;
+}
+
+/** How many times a pending order has been repriced (migration 0034). 0 for one never repriced. */
+export async function getPaymentRevision(db: D1Database, orderId: string): Promise<number | null> {
+	const row = await db
+		.prepare('SELECT payment_revision FROM commerce_orders WHERE id = ?')
+		.bind(orderId)
+		.first<Row>();
+	return row ? Number(row.payment_revision ?? 0) : null;
 }
 
 export async function getOrder(db: D1Database, id: string): Promise<Order | null> {
