@@ -461,6 +461,12 @@ export const AUDIT_RULES: Record<string, AuditRule> = {
 		param: 'id',
 		body: ['status']
 	},
+	'PUT /api/admin/settings/timezone': {
+		action: 'settings.admin_timezone',
+		targetType: 'setting',
+		summary: 'Changed the admin time zone',
+		body: ['timeZone']
+	},
 	'PUT /api/v1/site/updates': {
 		action: 'settings.site_updates',
 		targetType: 'setting',

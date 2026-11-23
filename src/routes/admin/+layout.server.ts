@@ -10,7 +10,10 @@ import {
 	canViewStats as computeCanViewStats
 } from '$lib/server/stats-guard';
 
-export const load: LayoutServerLoad = async ({ locals, cookies }) => {
+import { readAdminTimeZoneSetting } from '$lib/server/site-settings';
+import { describeZone, resolveTimeZone, timeZoneSource, TZ_COOKIE } from '$lib/utils/timezone';
+
+export const load: LayoutServerLoad = async ({ locals, cookies, platform }) => {
 	// Check if user is authenticated
 	if (!locals.user) {
 		throw redirect(302, '/auth/login?error=unauthorized');
@@ -29,8 +32,19 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 	const canRevealPii = computeCanRevealPii(locals.user);
 	const piiRevealed = isPiiRevealed(locals.user, cookies.get(PII_REVEAL_COOKIE));
 
+	// Admin clock (docs/ADMIN_TIMEZONE.md): the site setting wins, else the
+	// browser's zone from the `tz` cookie, else UTC. The cookie is user input; it
+	// is validated inside resolveTimeZone and never trusted beyond that.
+	const timeZoneSetting = await readAdminTimeZoneSetting(platform?.env?.DB);
+	const tzCookie = cookies.get(TZ_COOKIE);
+	const timeZone = resolveTimeZone(timeZoneSetting, tzCookie);
+
 	return {
 		user: locals.user,
+		timeZone,
+		timeZoneSetting,
+		timeZoneSource: timeZoneSource(timeZoneSetting, tzCookie),
+		timeZoneLabel: describeZone(timeZone),
 		canRevealPii,
 		piiRevealed,
 		// Whether the Dashboard shows stats. The page load checks this itself too.
