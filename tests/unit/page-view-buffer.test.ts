@@ -46,6 +46,9 @@ function expected(views: PageViewRecord[]) {
 	const out = new Map<string, number>();
 	const add = (k: string, n = 1) => out.set(k, (out.get(k) ?? 0) + n);
 	for (const v of views) {
+		// Every view is counted by class; only a probably-real visitor gets the detailed counters.
+		add(`traffic_class_daily|${v.day}|${v.trafficClass ?? 'human'}|views`);
+		if ((v.trafficClass ?? 'human') !== 'human') continue;
 		add(`page_view_daily|${v.day}|${v.pathKey}|views`);
 		add(`page_view_daily|${v.day}|${v.pathKey}|signed`, v.signedIn ? 1 : 0);
 		add(`page_view_hourly|${v.day}|${v.hour}|views`);
@@ -138,7 +141,8 @@ describe('page view buffer', () => {
 			os: fc.option(fc.constantFrom('Linux', 'iOS'), { nil: undefined }),
 			browser: fc.option(fc.constantFrom('Firefox', 'Safari'), { nil: undefined }),
 			device: fc.option(fc.constantFrom('desktop', 'phone'), { nil: undefined }),
-			language: fc.option(fc.constantFrom('en', 'fr'), { nil: undefined })
+			language: fc.option(fc.constantFrom('en', 'fr'), { nil: undefined }),
+			trafficClass: fc.option(fc.constantFrom('human', 'likely-bot', 'bot'), { nil: undefined })
 		});
 		await fc.assert(
 			fc.asyncProperty(
@@ -173,9 +177,24 @@ describe('page view buffer', () => {
 					if (p) await p;
 				}
 				await flushPageViews(db, n * 100);
-				expect(writes.length).toBeLessThanOrEqual(n * 8);
+				expect(writes.length).toBeLessThanOrEqual(n * 9);
 			}),
 			{ numRuns: 30 }
 		);
+	});
+
+	it('counts a bot by class only: no page, referrer, country or audience counter moves', async () => {
+		_resetPageViewBuffer();
+		const { db, writes } = fakeDb();
+		await flushPageViews(db, 0);
+		addPageView(view({ trafficClass: 'bot' }));
+		addPageView(view({ trafficClass: 'likely-bot' }));
+		addPageView(view({ trafficClass: 'likely-bot' }));
+		await flushPageViews(db, 1);
+		expect(writes.map((w) => w.table)).toEqual(['traffic_class_daily', 'traffic_class_daily']);
+		expect(writes.map((w) => w.binds)).toEqual([
+			['2026-11-17', 'bot', 1],
+			['2026-11-17', 'likely-bot', 2]
+		]);
 	});
 });
