@@ -59,6 +59,10 @@
 		--tone: var(--color-warning);
 	}
 
+	.alert--warning .alert__icon {
+		color: var(--color-on-warning);
+	}
+
 	.alert--danger {
 		--tone: var(--color-danger);
 	}

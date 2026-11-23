@@ -18,6 +18,8 @@
 	--color-danger: #dc2626; /* destructive accents (callouts, delete affordances); 4.8:1 on white */
 	--color-success: #1a7f37;
 	--color-warning: #ffc107;
+	--color-on-warning: #1f2328; /* text on a warning-coloured fill: 10:1 */
+	--color-warning-text: #8a5a00; /* amber as TEXT on a light ground: 5.9:1 on white (the fill colour is 1.6:1) */
 
 	/* Solid fills with white text on them (UI kit buttons). Separate from
 	   --color-primary because the dark theme's primary is tuned for text on a
@@ -92,6 +94,8 @@
 	--color-danger: #ef4444; /* destructive accents; 5.26:1 on the dark background */
 	--color-success: #10b981;
 	--color-warning: #f59e0b;
+	--color-on-warning: #1a1a1a; /* 8:1 on the dark theme's amber */
+	--color-warning-text: #fbbf24; /* amber as text on the dark ground: 11:1 */
 	--color-primary-solid: #2563eb;
 	--color-primary-solid-hover: #1d4ed8;
 	--color-danger-solid: #dc2626;

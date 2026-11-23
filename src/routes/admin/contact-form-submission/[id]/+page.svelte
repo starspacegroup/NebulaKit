@@ -124,7 +124,7 @@
 		border-radius: var(--radius-sm);
 		font-size: 0.8rem;
 		background: color-mix(in srgb, var(--color-warning) 15%, transparent);
-		color: var(--color-warning);
+		color: var(--color-warning-text);
 	}
 
 	.badge.resolved {
