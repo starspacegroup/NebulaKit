@@ -1,7 +1,7 @@
 /**
  * Buffered page-view counters (docs/FREE_TIER_GUARD_RAILS.md).
  *
- * `recordPageView` costs one D1 batch of 8-9 upserts per page view (day, hour, referrer, country,
+ * `recordPageView` costs one D1 batch of 9-10 upserts per page view (class, day, hour, referrer, country,
  * four audience dimensions, optionally a content item). On the Workers free plan D1 allows 100,000
  * rows written a day, so a busy day or a crawler burst could spend most of it on counters alone.
  *
@@ -32,7 +32,8 @@ type Counter = {
 		| 'referrer_daily'
 		| 'country_view_daily'
 		| 'content_view_daily'
-		| 'view_dimension_daily';
+		| 'view_dimension_daily'
+		| 'traffic_class_daily';
 	/** Key columns after `day`, in table order, as bound values. */
 	key: Array<string | number>;
 	day: string;
@@ -69,6 +70,11 @@ function bump(
 
 /** Add one view to the buffer. Pure bookkeeping: no database, no clock. */
 export function addPageView(view: PageViewRecord): void {
+	const klass = view.trafficClass ?? 'human';
+	bump('traffic_class_daily', view.day, [klass], 0);
+	pendingViews += 1;
+	// Bots and likely bots are counted by class only: the charts and breakdowns are of real visitors.
+	if (klass !== 'human') return;
 	const s = view.signedIn ? 1 : 0;
 	bump('page_view_daily', view.day, [view.pathKey], s);
 	bump('page_view_hourly', view.day, [view.hour], s);
@@ -84,7 +90,6 @@ export function addPageView(view: PageViewRecord): void {
 	for (const [dimension, value] of dimensions) {
 		bump('view_dimension_daily', view.day, [dimension, value || '(unknown)'], 0);
 	}
-	pendingViews += 1;
 }
 
 const SQL: Record<Counter['table'], string> = {
@@ -107,7 +112,10 @@ const SQL: Record<Counter['table'], string> = {
 		ON CONFLICT (day, content_id) DO UPDATE SET views = views + excluded.views`,
 	view_dimension_daily: `INSERT INTO view_dimension_daily (day, dimension, value, views)
 		VALUES (?, ?, ?, ?)
-		ON CONFLICT (day, dimension, value) DO UPDATE SET views = views + excluded.views`
+		ON CONFLICT (day, dimension, value) DO UPDATE SET views = views + excluded.views`,
+	traffic_class_daily: `INSERT INTO traffic_class_daily (day, class, views)
+		VALUES (?, ?, ?)
+		ON CONFLICT (day, class) DO UPDATE SET views = views + excluded.views`
 };
 
 function takeAll(): Counter[] {

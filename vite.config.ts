@@ -102,6 +102,9 @@ export default defineConfig({
 				'scripts/',
 				// Dependency-free config data — nothing to unit test.
 				'src/lib/site.config.ts',
+				// Compiled from a Dafny proof (scripts/build-dafny.mjs): it is verified, not unit tested,
+				// and tests/unit/dafny-fresh.test.ts keeps it equal to its source.
+				'**/generated/**',
 				// Package manifests are data; their versions are checked by nebulakit-packages.test.ts.
 				'packages/*/package.json',
 				// Svelte components contain UI logic that's hard to unit test branches

@@ -5,8 +5,7 @@
 status: done locally 2026-10-25 (branch `port/cron`); not deployed
 
 - Pages cannot run Cron Triggers, so `cron-worker/` (standalone Worker, retries with backoff, never throws) calls the shared-secret `/api/cron/*` routes. Typed job registry, one authorization helper, idempotent per-minute claims with a lease, run history (migration 0023), bounded retention deletes, and `/admin/scheduled-jobs` with **Run now**. A test fails if the registry, the Worker triggers and the Worker path map drift. See [docs/SCHEDULED_JOBS.md](../docs/SCHEDULED_JOBS.md).
-- Open: `wrangler deploy` of the Worker and a real scheduled tick were not exercised (no Cloudflare access from the build host). `bun run customize` does not yet rename the Worker or set its `TARGET_URL`.
-
+- Open: `wrangler deploy` of the Worker and a real scheduled tick were not exercised (no Cloudflare access from the build host). `bun run customize` now names the Worker `<slug>-cron` and sets its `TARGET_URL` to the production URL's origin (2026-11-17); `CRON_SECRET` and the deploy stay manual.
 ## Secrets encrypted at rest
 
 status: done 2026-10-25 (branch `port/secrets`, local commits only)

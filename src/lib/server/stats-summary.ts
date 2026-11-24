@@ -5,6 +5,7 @@ import {
 	listDimension,
 	listHourlyViews,
 	listReferrers,
+	listTrafficSplit,
 	listTopContent,
 	listViewsByPath,
 	utcDay,
@@ -115,7 +116,9 @@ export async function loadStatsSummary(
 		trafficWindow === 1 ? listHourlyViews(db, sinceHour).catch(() => []) : Promise.resolve([]),
 		// Empty on a site with no CMS traffic, and missing entirely before
 		// migration 0014 — either way the panel just doesn't render.
-		listTopContent(db, sinceDay).catch(() => [])
+		listTopContent(db, sinceDay).catch(() => []),
+		// Missing before migration 0030: the panel then shows no split, nothing else is lost.
+		listTrafficSplit(db, sinceDay).catch(() => null)
 	]).then(
 		([
 			daily,
@@ -128,12 +131,15 @@ export async function loadStatsSummary(
 			languages,
 			viewports,
 			hourly,
-			topContent
+			topContent,
+			classes
 		]) => ({
 			daily,
 			hourly,
 			byPath,
 			topContent,
+			/** Views in the window by who they probably came from; the lists below are real visitors only. */
+			classes,
 			referrers,
 			countries,
 			audience: { os, browsers, devices, languages, viewports }

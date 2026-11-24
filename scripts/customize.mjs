@@ -22,11 +22,13 @@
  * This deliberately does NOT touch prose taglines/descriptions in docs, or
  * Cloudflare resource IDs — those need judgment. See the warnings it prints.
  */
+import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseSiteConfig } from './site-config-parse.mjs';
+import { applyCronTarget, applySite } from './site-config-write.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DRY = process.argv.includes('--dry');
@@ -147,6 +149,10 @@ function gatherNext(current) {
 	next.repo = ask('GitHub repo (owner/name)', current.repo);
 	next.author = ask('Footer author', current.author);
 	next.authorUrl = ask('Footer author URL', current.authorUrl);
+	next.accent = ask(
+		'Brand accent colour (#rrggbb, used on the share card and in emails)',
+		current.accent
+	);
 	next.showBuiltWithBadge = askYesNo(
 		'Keep the "Proudly built with NebulaKit" badge in the footer?',
 		current.showBuiltWithBadge
@@ -177,6 +183,8 @@ function validate(next) {
 		errors.push(`slug "${next.slug}" must be lowercase alphanumeric + dashes`);
 	if (!Number.isInteger(next.devPort) || next.devPort < 1 || next.devPort > 65535)
 		errors.push(`devPort "${next.devPort}" must be a port number`);
+	if (next.accent !== undefined && !/^#[0-9a-fA-F]{6}$/.test(next.accent))
+		errors.push(`accent "${next.accent}" must be a #rrggbb colour`);
 	if (next.repo && !/^[^/]+\/[^/]+$/.test(next.repo))
 		errors.push(`repo "${next.repo}" must be "owner/name"`);
 	return errors;
@@ -228,71 +236,6 @@ function walk(dir, files = []) {
 	return files;
 }
 
-/** Regenerate site.config.ts from the canonical template with the new values. */
-function renderConfig(c) {
-	const q = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
-	return `/**
- * Single source of truth for app identity, branding, and local-dev config.
- *
- * When you spin up a new app from this template, DO NOT hand-edit the scattered
- * references. Run \`bun run customize\` (see CUSTOMIZE.md at the repo root), which
- * rewrites this file and syncs the surfaces that cannot import it — wrangler.toml
- * (Cloudflare resource names), tests, and docs.
- *
- * Everything that runs (Vite, Playwright, and every Svelte component) imports its
- * name/port/URL from here, so these values live in exactly one place.
- *
- * This module must stay dependency-free (no \`$app\`, no Node APIs) so that
- * vite.config.ts and playwright.config.ts can import it directly.
- */
-export const site = {
-	/** Product name shown in the UI, page titles, and social meta. */
-	name: ${q(c.name)},
-	/** Short name for tight spaces (browser tab, PWA \`short_name\`). */
-	shortName: ${q(c.shortName)},
-	/** One-line tagline for the footer and hero. */
-	tagline: ${q(c.tagline)},
-	/** Longer description for the meta description and OG/Twitter cards. */
-	description: ${q(c.description)},
-	/**
-	 * URL-safe slug. Drives the Cloudflare resource names in wrangler.toml
-	 * (\`<slug>-db\`, \`<slug>-files\`, \`<slug>-queue\`). Those files can't import this
-	 * module, so \`bun run customize\` keeps them in sync — don't edit them by hand.
-	 */
-	slug: ${q(c.slug)},
-	/** Local dev + preview port. Owned here; Vite and Playwright both read it. */
-	devPort: ${c.devPort},
-	/** Production URL, no trailing slash. Used for canonical + OG URLs. */
-	url: ${q(c.url)},
-	/** GitHub repository in \`owner/name\` form. */
-	repo: ${q(c.repo)},
-	/** Attribution shown in the footer. */
-	author: ${q(c.author)},
-	/** URL for the footer attribution link. */
-	authorUrl: ${q(c.authorUrl)},
-	/**
-	 * Show the "Proudly built with NebulaKit" badge in the footer.
-	 *
-	 * A courtesy rather than a condition — NebulaKit is MIT-licensed and nothing
-	 * here checks this value but the footer. Set it to \`false\` and the badge
-	 * goes, with no hard feelings. Other wordings and every other form of the
-	 * badge live at https://nebulakit.starspace.group/badge.
-	 */
-	showBuiltWithBadge: ${c.showBuiltWithBadge === false ? 'false' : 'true'},
-	/**
-	 * Invite visitors to sign in and sign up (nav, footer, command palette,
-	 * home page, \`/auth/signup\`). Set \`false\` for a shop or any site where only
-	 * admins sign in: the links go, sign-up is refused, and admins sign in at
-	 * the unlinked \`/auth/login\`. See docs/PUBLIC_SIGN_IN.md.
-	 */
-	publicSignIn: ${c.publicSignIn === false ? 'false' : 'true'}
-} as const;
-
-/** Full GitHub URL, derived from {@link site.repo}. */
-export const repoUrl = \`https://github.com/\${site.repo}\`;
-`;
-}
-
 function updateStatus(next) {
 	const path = join(ROOT, 'INITIAL_CUSTOMIZATION_STATUS.md');
 	if (!existsSync(path)) return;
@@ -330,7 +273,12 @@ for (const [from, to] of replacements) console.log(`  ${from}  →  ${to}`);
 console.log('');
 
 // Rewrite the canonical config first.
-if (!DRY) writeFileSync(join(ROOT, 'src/lib/site.config.ts'), renderConfig(next));
+// Only the `site` object is rewritten. The rest of the file (emailTheme, repoUrl, anything a site
+// has added) is the site's own, and regenerating the whole file from a canned copy deleted it.
+if (!DRY) {
+	const configPath = join(ROOT, 'src/lib/site.config.ts');
+	writeFileSync(configPath, applySite(readFileSync(configPath, 'utf8'), next));
+}
 
 // Propagate old tokens through every other text surface.
 const changed = [];
@@ -344,6 +292,32 @@ for (const file of walk(ROOT)) {
 }
 updateStatus(next);
 
+// The cron Worker (its name already follows the slug) needs the site's origin to call, and
+// refuses to run on the shipped placeholder.
+const cronConfigPath = join(ROOT, 'cron-worker/wrangler.toml');
+let cronTargetSet = false;
+if (existsSync(cronConfigPath)) {
+	const toml = readFileSync(cronConfigPath, 'utf8');
+	const updated = applyCronTarget(toml, next.url);
+	if (updated !== toml) {
+		cronTargetSet = true;
+		if (!DRY) writeFileSync(cronConfigPath, updated);
+	}
+}
+
+// The default share image is made from the site's own name, tagline, address and accent, so a link
+// to this site never shares as the template. Needs a Chromium; if there is none the rename still
+// stands and the bullet below says what to run.
+let shareImage = 'skipped';
+if (!DRY) {
+	try {
+		execFileSync('bun', ['scripts/generate-og-image.mjs'], { cwd: ROOT, stdio: 'inherit' });
+		shareImage = 'generated';
+	} catch {
+		shareImage = 'failed';
+	}
+}
+
 console.log(`${DRY ? 'Would update' : 'Updated'} ${changed.length + 1} files:`);
 console.log('  src/lib/site.config.ts (regenerated)');
 for (const f of changed) console.log(`  ${f}`);
@@ -354,10 +328,23 @@ console.log(
 		"  password manager will not offer another template site's credentials here."
 );
 console.log('\nStill needs a human/agent (see CUSTOMIZE.md → "Semantic steps"):');
+console.log(
+	cronTargetSet
+		? `  • cron-worker/wrangler.toml: TARGET_URL is now ${new URL(next.url).origin}. Still to do: \`wrangler secret put CRON_SECRET\`\n` +
+				'    (the same value as on the Pages project) and `cd cron-worker && bunx wrangler deploy`. Until then no scheduled job runs.'
+		: '  • cron-worker/wrangler.toml: check TARGET_URL, set CRON_SECRET, and deploy the Worker (docs/SCHEDULED_JOBS.md).'
+);
 console.log("  • wrangler.toml still has the TEMPLATE's Cloudflare resource IDs —");
 console.log('    run `wrangler d1/kv/r2 create` and paste your own database_id / ids.');
 console.log('  • Rewrite src/routes/documentation/+page.svelte to describe YOUR app.');
 console.log('  • Make the home hero yours — words, motif, rules — per docs/HERO.md.');
 console.log('  • Curate the command palette — run `bun run palette:scan` for suggestions.');
-console.log('  • Replace brand assets (og-image, favicons, icon set) per CUSTOMIZE.md.');
+console.log(
+	shareImage === 'generated'
+		? '  • Share image: generated from your name, tagline and accent (static/og-image.*). Replace it only for real\n' +
+				'    artwork. Favicons and the icon set are still yours to replace (CUSTOMIZE.md).'
+		: '  • Share image: run `bun run og:generate` (needs Chromium: `bunx playwright install chromium`). Until you do,\n' +
+				`    every link to ${next.name} is shared with the template's artwork, and tests/unit/share-images.test.ts fails.\n` +
+				'    Favicons and the icon set are also yours to replace (CUSTOMIZE.md).'
+);
 console.log('  • Set INITIAL_CUSTOMIZATION_STATUS.md → status: complete when finished.');

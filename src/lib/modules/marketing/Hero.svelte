@@ -54,12 +54,22 @@
 
 <style>
 	.hero {
+		/* Hero copy is display text, not something to drag-select by accident.
+		   Form fields inside it stay editable. */
+		-webkit-user-select: none;
+		user-select: none;
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--spacing-xl);
 		min-width: 0;
 		padding: var(--spacing-2xl) var(--spacing-md);
 		color: var(--color-text);
+	}
+
+	.hero :global(input),
+	.hero :global(textarea) {
+		-webkit-user-select: text;
+		user-select: text;
 	}
 
 	.hero__copy,

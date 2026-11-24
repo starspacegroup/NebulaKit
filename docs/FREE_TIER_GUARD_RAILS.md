@@ -36,7 +36,7 @@ have to learn it again.
 
 1. **Index every list.** A query with `ORDER BY ... LIMIT` needs an index on its `WHERE` columns then
    its `ORDER BY` columns, or it sorts the whole table. Check with `EXPLAIN QUERY PLAN`: you want
-   `SEARCH ... USING INDEX`, not `SCAN` plus `USE TEMP B-TREE FOR ORDER BY`. `migrations/0026_product_list_index.sql`
+   `SEARCH ... USING INDEX`, not `SCAN` plus `USE TEMP B-TREE FOR ORDER BY`. `migrations/0029_product_list_index.sql`
    is the pattern. If you add a filter (`draft`, `unlisted`, `nsfw`), the index must include it.
 2. **No `OFFSET` on a big table.** Every skipped row is a row read. Use keyset pagination
    (`WHERE (created_at, slug) < (?, ?)`) or cap the page depth.
@@ -73,7 +73,7 @@ have to learn it again.
   accepted one with `cost-guard: ok <reason>` on the line or the line above. Existing findings are in
   `scripts/check-queries.baseline.json`; new ones fail the check. `--update` rewrites the baseline.
   It is not part of `validate:all`; add it to CI when you want it to gate.
-- `migrations/0026_product_list_index.sql`: the product list indexes.
+- `migrations/0029_product_list_index.sql`: the product list indexes.
 
 ## Known gaps
 

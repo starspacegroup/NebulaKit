@@ -14,6 +14,7 @@
 
 import type { D1Database } from '@cloudflare/workers-types';
 import { deleteInBatches } from '$lib/server/bounded-delete';
+import { emptySplit, type TrafficClass, type TrafficSplit } from '$lib/utils/traffic-class';
 
 export interface PageViewRecord {
 	day: string; // 'YYYY-MM-DD' (UTC)
@@ -30,6 +31,8 @@ export interface PageViewRecord {
 	browser?: string;
 	device?: string;
 	language?: string;
+	/** Who the view probably came from. Absent means a real visitor. Only those get the detailed counters. */
+	trafficClass?: TrafficClass;
 }
 
 export interface DailyViews {
@@ -196,7 +199,21 @@ export function referrerHostFrom(referrer: string | null, ownHost: string): stri
 /** Record one page view as a batch of counter upserts. Fire-and-forget from the
  *  hook (via waitUntil); throws only to its caller's catch. */
 export async function recordPageView(db: D1Database, view: PageViewRecord): Promise<void> {
+	const klass = view.trafficClass ?? 'human';
+	const classCounter = db
+		.prepare(
+			`INSERT INTO traffic_class_daily (day, class, views)
+			 VALUES (?, ?, 1)
+			 ON CONFLICT (day, class) DO UPDATE SET views = views + 1`
+		)
+		.bind(view.day, klass);
+	// Bots and likely bots are counted by class only: the charts and breakdowns are of real visitors.
+	if (klass !== 'human') {
+		await classCounter.run();
+		return;
+	}
 	const statements = [
+		classCounter,
 		db
 			.prepare(
 				`INSERT INTO page_view_daily (day, path_key, views, signed_in)
@@ -265,6 +282,24 @@ export async function recordPageView(db: D1Database, view: PageViewRecord): Prom
 	}
 
 	await db.batch(statements);
+}
+
+/** Views in the window by who they probably came from. */
+export async function listTrafficSplit(db: D1Database, sinceDay: string): Promise<TrafficSplit> {
+	const result = await db
+		.prepare(
+			`SELECT class, SUM(views) AS views FROM traffic_class_daily
+			 WHERE day >= ? GROUP BY class`
+		)
+		.bind(sinceDay)
+		.all<{ class: string; views: number }>();
+	const split = emptySplit();
+	for (const r of result.results ?? []) {
+		if (r.class === 'human') split.human = r.views;
+		else if (r.class === 'likely-bot') split.likelyBot = r.views;
+		else if (r.class === 'bot') split.bot = r.views;
+	}
+	return split;
 }
 
 export async function listDailyViews(db: D1Database, sinceDay: string): Promise<DailyViews[]> {
@@ -436,7 +471,8 @@ export const COUNTER_TABLES = [
 	'country_view_daily',
 	'view_dimension_daily',
 	'platform_usage_daily',
-	'content_view_daily'
+	'content_view_daily',
+	'traffic_class_daily'
 ] as const;
 
 /** Rows one prune run may delete in total, across all counter tables. */

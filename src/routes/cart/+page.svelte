@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { formatMoney } from '@nebulakit/commerce';
@@ -144,10 +145,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Cart</title>
-	<meta name="robots" content="noindex" />
-</svelte:head>
+<SharingMeta title="Cart" noindex={true} />
 
 <section class="cart">
 	<h1>Cart</h1>

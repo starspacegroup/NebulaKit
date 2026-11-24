@@ -12,8 +12,9 @@ Cron Trigger -> cron-worker (Worker) -- POST + Bearer CRON_SECRET --> /api/cron/
 ## Deploy it
 
 1. Set `CRON_SECRET` on the Pages project to a long random value.
-2. In `cron-worker/wrangler.toml`, set `TARGET_URL` to your site's origin and
-   rename `name` if `nebulakit-cron` is taken on your account.
+2. In `cron-worker/wrangler.toml`, set `TARGET_URL` to your site's origin and make sure `name` is free on your
+   account. `bun run customize` does both: it names the Worker `<slug>-cron` and sets `TARGET_URL` from your
+   production URL, replacing the placeholder only.
 3. Deploy and set the same secret on the Worker:
 
    ```bash
@@ -33,12 +34,14 @@ and `bun run check` do not look at it.
 
 ## The jobs
 
-| Job id              | Cron (UTC)   | Route                         | What it does                                                                                          |
-| ------------------- | ------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `prune-view-stats`  | `17 3 * * *` | `/api/cron/prune-view-stats`  | Deletes counters older than 400 days                                                                  |
-| `lighthouse`        | `43 4 * * *` | `/api/cron/lighthouse`        | PageSpeed Insights sweep (see below)                                                                  |
-| `prune-audit`       | `29 5 * * *` | `/api/cron/prune-audit`       | Deletes audit rows older than 365 days and sign-in events older than 90                               |
-| `publish-scheduled` | `37 * * * *` | `/api/cron/publish-scheduled` | Starts timestamp proofs for scheduled items that went live ([CMS_SCHEDULING.md](./CMS_SCHEDULING.md)) |
+| Job id              | Cron (UTC)    | Route                         | What it does                                                                                          |
+| ------------------- | ------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `prune-view-stats`  | `17 3 * * *`  | `/api/cron/prune-view-stats`  | Deletes counters older than 400 days                                                                  |
+| `lighthouse`        | `43 4 * * *`  | `/api/cron/lighthouse`        | PageSpeed Insights sweep (see below)                                                                  |
+| `prune-audit`       | `29 5 * * *`  | `/api/cron/prune-audit`       | Deletes audit rows older than 365 days and sign-in events older than 90                               |
+| `status-check`      | `* * * * *`   | `/api/cron/status-check`      | Checks the website and database for the public status page                                            |
+| `settle-auctions`   | `*/5 * * * *` | `/api/cron/settle-auctions`   | Closes ended auctions, orders and emails winners, reminds and lapses unpaid ones                      |
+| `publish-scheduled` | `37 * * * *`  | `/api/cron/publish-scheduled` | Starts timestamp proofs for scheduled items that went live ([CMS_SCHEDULING.md](./CMS_SCHEDULING.md)) |
 
 See [LIGHTHOUSE_MONITORING.md](./LIGHTHOUSE_MONITORING.md) and
 [ADMIN_STATS.md](./ADMIN_STATS.md).

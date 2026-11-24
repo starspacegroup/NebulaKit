@@ -346,6 +346,25 @@ export async function transitionOrder(
 	return getOrder(db, id);
 }
 
+/**
+ * Set where a pending order ships. Only a pending order can change address: once
+ * it is paid, the address is what the customer was charged shipping for.
+ */
+export async function setOrderShippingAddress(
+	db: D1Database,
+	id: string,
+	address: ShippingAddress
+): Promise<boolean> {
+	const result = await db
+		.prepare(
+			`UPDATE commerce_orders SET shipping_address = ?, updated_at = datetime('now')
+			 WHERE id = ? AND status = 'pending'`
+		)
+		.bind(JSON.stringify(address), id)
+		.run();
+	return (result.meta?.changes ?? 0) > 0;
+}
+
 /** Record the provider's reference (e.g. a Stripe session id) without moving the order. */
 export async function setPaymentReference(
 	db: D1Database,
