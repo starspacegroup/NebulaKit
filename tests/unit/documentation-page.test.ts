@@ -583,6 +583,7 @@ describe('Documentation Page', () => {
 			}
 			expect(section.textContent).toMatch(/Layout/);
 			expect(section.textContent).toMatch(/MIT-licensed/);
+			expect(section.textContent).toMatch(/CodeBlock\s+\(highlighted code/);
 		});
 	});
 

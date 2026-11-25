@@ -41,6 +41,18 @@
 	--chart-content: #9d174d;
 	--chart-usage: #b45309;
 
+	/* Code samples (CodeBlock). Each token colour is stepped against --color-surface, the block's
+	   ground, and must clear 4.5:1 there; validate:contrast checks every one in both themes. */
+	--code-keyword: #7a2fb5;
+	--code-string: #0b6b3a;
+	--code-comment: #5a6169;
+	--code-number: #a8470a;
+	--code-tag: #1a5fb4;
+	--code-attr: #8a4e00;
+	--code-function: #0b6a85;
+	--code-variable: #a3205c;
+	--code-punct: #4b5563;
+
 	/* Spacing */
 	--spacing-xs: 0.25rem;
 	--spacing-sm: 0.5rem;
@@ -107,6 +119,16 @@
 	--chart-users: #10a396;
 	--chart-content: #d6336c;
 	--chart-usage: #d97706;
+	/* Code samples: stepped for the dark surface, not derived from the light values. */
+	--code-keyword: #c9a9fb;
+	--code-string: #7ee0a5;
+	--code-comment: #9aa3ad;
+	--code-number: #f5a46c;
+	--code-tag: #7db7ff;
+	--code-attr: #f0c36b;
+	--code-function: #5fd3e0;
+	--code-variable: #f78fb3;
+	--code-punct: #aeb6c0;
 }
 
 /* Reset and base styles */

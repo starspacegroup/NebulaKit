@@ -67,7 +67,7 @@ describe('layout widths', () => {
 		expect(block(docsPage, '.docs-container')).toContain('max-width: var(--layout-page-max-width)');
 		// Child combinators, so text inside a callout card still fills its track.
 		expect(docsPage).toMatch(
-			/\.docs-section > p,\n\t\.docs-section > ul,\n\t\.docs-section > ol,\n\t\.docs-section > pre \{\n\t\tmax-width: var\(--layout-prose-max-width\);/
+			/\.docs-section > p,\n\t\.docs-section > ul,\n\t\.docs-section > ol,\n\t\.docs-section > :global\(\.code\) \{\n\t\tmax-width: var\(--layout-prose-max-width\);/
 		);
 	});
 

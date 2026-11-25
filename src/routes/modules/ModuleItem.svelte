@@ -1,5 +1,6 @@
 <!-- One module entry: its name, what it is for, the live demo, its accessibility promise and the code. -->
 <script lang="ts">
+	import CodeDisclosure from '$lib/components/CodeDisclosure.svelte';
 	import { moduleEntry } from '$lib/modules/catalog';
 
 	export let id: string;
@@ -7,10 +8,6 @@
 	export let wide = false;
 
 	$: entry = moduleEntry(id);
-
-	// A code block that scrolls sideways must take the keyboard to be reachable. Spread, because
-	// the compiler's lint would flag a literal tabindex on a non-interactive element.
-	const scrollable = { tabindex: 0 };
 </script>
 
 <article
@@ -25,11 +22,7 @@
 	</header>
 	<div class="demo"><slot /></div>
 	<p class="a11y"><strong>Accessibility.</strong> {entry.a11y}</p>
-	<details>
-		<summary>Code</summary>
-		<pre role="region" aria-label="{entry.name} code" {...scrollable}><code>{entry.code}</code
-			></pre>
-	</details>
+	<CodeDisclosure name={entry.name} code={entry.code} />
 </article>
 
 <style>
@@ -84,19 +77,5 @@
 		.demo {
 			padding: var(--spacing-md);
 		}
-	}
-
-	summary {
-		cursor: pointer;
-		font-size: 0.9rem;
-	}
-
-	pre {
-		overflow-x: auto;
-		margin: var(--spacing-sm) 0 0;
-		padding: var(--spacing-md);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
-		font-size: 0.8rem;
 	}
 </style>

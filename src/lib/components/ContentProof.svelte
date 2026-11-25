@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
 	import type { ContentItemParsed } from '$lib/cms/types';
+	import CodeBlock from '$lib/ui/CodeBlock.svelte';
 
 	export let item: ContentItemParsed;
 
@@ -52,7 +53,9 @@
 			</div>
 			<div class="proof-row">
 				<span class="proof-label">Verify independently</span>
-				<pre class="proof-command"><code>{verifyCommand}</code></pre>
+				<div class="proof-command">
+					<CodeBlock code={verifyCommand} language="sh" label="Verify command" />
+				</div>
 				<p class="proof-note">
 					Requires FreeTSA's CA certificate (<a
 						href="https://www.freetsa.org/files/cacert.pem"
@@ -157,15 +160,7 @@
 	}
 
 	.proof-command {
-		font-family: 'Fira Code', 'Consolas', monospace;
-		font-size: 0.75rem;
-		background: var(--color-bg, var(--color-surface));
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		padding: var(--spacing-sm);
-		overflow-x: auto;
-		white-space: pre-wrap;
-		word-break: break-all;
+		min-width: 0;
 	}
 
 	.proof-note {

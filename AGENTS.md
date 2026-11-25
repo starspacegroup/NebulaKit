@@ -21,6 +21,8 @@ the architecture.
   local D1 migration gate. Add migration-sensitive tests. See `migrations/README.md`.
 - Use theme tokens from `src/app.css`. Do not hardcode colors. Add the light value and the dark value
   together. Run contrast validation. See `docs/THEME_SYSTEM.md`.
+- Code samples use `CodeBlock` from `$lib/ui`, never a bare `<pre>`. Its colours are the `--code-*`
+  tokens; add a new token kind in the light and dark theme together. See `docs/UI_KIT.md`.
 - Put logs, generated analysis, debug traces, and temporary files in the ignored `.llm-outputs/`
   directory.
 - NebulaKit is a starter template. People create apps from it with "Use this template". Keep the

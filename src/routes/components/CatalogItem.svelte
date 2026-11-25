@@ -1,5 +1,6 @@
 <!-- One catalog entry: its name, what it is for, the live demo, and the code. -->
 <script lang="ts">
+	import CodeDisclosure from '$lib/components/CodeDisclosure.svelte';
 	import { catalogEntry } from '$lib/ui/catalog';
 
 	export let id: string;
@@ -13,10 +14,7 @@
 		<p>{entry.summary}</p>
 	</header>
 	<div class="demo"><slot /></div>
-	<details>
-		<summary>Code</summary>
-		<pre><code>{entry.code}</code></pre>
-	</details>
+	<CodeDisclosure name={entry.name} code={entry.code} />
 </article>
 
 <style>
@@ -66,33 +64,5 @@
 
 	.demo > :global(*) {
 		max-width: 100%;
-	}
-
-	details {
-		margin: 0;
-		padding: 0;
-		border: 0;
-		background: none;
-	}
-
-	summary {
-		width: max-content;
-		padding: 0;
-		background: none;
-		color: var(--color-primary);
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	pre {
-		max-width: 100%;
-		margin: var(--spacing-sm) 0 0;
-		padding: var(--spacing-md);
-		overflow-x: auto;
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
-		font-size: 0.8125rem;
-		line-height: 1.55;
 	}
 </style>
