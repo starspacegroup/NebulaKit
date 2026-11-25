@@ -130,9 +130,7 @@ export async function saveMerchantSettings(db: D1Database, s: MerchantSettings):
 }
 
 /** What an admin may change; the cursor and last run belong to the job. */
-export function validateMerchantInput(
-	body: Record<string, unknown>
-):
+export function validateMerchantInput(body: Record<string, unknown>):
 	| {
 			ok: true;
 			value: Pick<MerchantSettings, 'enabled' | 'accountId' | 'dataSourceId' | 'feedLabel'>;
