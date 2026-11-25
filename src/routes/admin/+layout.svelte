@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { invalidateAll } from '$app/navigation';
-	import { setContext } from 'svelte';
+	import { onMount, setContext } from 'svelte';
+	import { detectBrowserTimeZone, TIME_ZONE_SOURCE_LABELS, TZ_COOKIE } from '$lib/utils/timezone';
 	import { writable } from 'svelte/store';
 	import PiiPrivacyToggle from '$lib/components/admin/PiiPrivacyToggle.svelte';
 	import { heldPermissions } from '$lib/access/permissions';
@@ -64,6 +65,25 @@
 		});
 		await invalidateAll();
 	}
+
+	// The browser's own zone, read without asking (Intl needs no permission) and
+	// handed to the server in a plain cookie so SSR can format in it. Rewritten
+	// only when it differs. The server validates it and ignores it whenever the
+	// site pins an explicit zone. Not HttpOnly on purpose: this script writes it.
+	// It is never put in a URL. If the cookie was missing or stale and the site
+	// follows the browser, reload the data once so the page re-renders in it.
+	onMount(() => {
+		const zone = detectBrowserTimeZone();
+		if (!zone) return;
+		const current = document.cookie
+			.split('; ')
+			.find((c) => c.startsWith(`${TZ_COOKIE}=`))
+			?.slice(TZ_COOKIE.length + 1);
+		if (current !== undefined && decodeURIComponent(current) === zone) return;
+		const secure = location.protocol === 'https:' ? '; Secure' : '';
+		document.cookie = `${TZ_COOKIE}=${encodeURIComponent(zone)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+		if (data.timeZoneSetting === 'auto' && data.timeZone !== zone) void invalidateAll();
+	});
 
 	setContext('piiRevealed', piiRevealed);
 	setContext('canRevealPii', data.canRevealPii);
@@ -265,6 +285,15 @@
 			{/each}
 			<PiiPrivacyToggle />
 		</nav>
+		<p
+			class="admin-clock"
+			data-testid="admin-clock"
+			title="Times in admin views use this time zone"
+		>
+			Times shown in <strong>{data.timeZoneLabel}</strong>
+			<span class="clock-why">{TIME_ZONE_SOURCE_LABELS[data.timeZoneSource]}</span>
+			<a href="/profile#time-zone" class="clock-change">Change my time zone</a>
+		</p>
 	</aside>
 	<main class="admin-content">
 		<slot />
@@ -292,6 +321,29 @@
 		font-weight: 700;
 		color: var(--color-text);
 		margin-bottom: var(--spacing-xl);
+	}
+
+	.admin-clock {
+		margin-top: var(--spacing-lg);
+		font-size: 0.8125rem;
+		color: var(--color-text-secondary);
+		line-height: 1.4;
+	}
+
+	.admin-clock strong {
+		color: var(--color-text);
+		font-weight: 600;
+		display: block;
+	}
+
+	.clock-change {
+		display: inline-block;
+		margin-top: var(--spacing-xs);
+		color: var(--color-primary);
+	}
+
+	.clock-why {
+		display: block;
 	}
 
 	.admin-nav {

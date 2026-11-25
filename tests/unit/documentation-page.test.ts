@@ -598,6 +598,16 @@ describe('Documentation Page', () => {
 		expect(scoped.getAllByText(/requirePermission/).length).toBeGreaterThan(0);
 	});
 
+	it('documents the admin time zone, its cookie and what cannot be re-bucketed', () => {
+		render(Page);
+		expect(screen.getByRole('heading', { name: /Admin Time Zone/i })).toBeInTheDocument();
+		const text = document.body.textContent ?? '';
+		expect(text).toMatch(/tz<\/code>|tz cookie|`tz`|tz\s+cookie/);
+		expect(text).toMatch(/UTC days/);
+		expect(text).toMatch(/their\s+own\s+zone/);
+		expect(text).toMatch(/docs\/ADMIN_TIMEZONE\.md/);
+	});
+
 	it('documents the audit log, its privacy limits and its retention endpoint', () => {
 		render(Page);
 		const section = screen.getByRole('heading', { name: /^Audit Log$/ }).closest('section');

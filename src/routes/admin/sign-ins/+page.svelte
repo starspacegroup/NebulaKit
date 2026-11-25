@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '$lib/utils/timezone';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 
@@ -43,7 +44,7 @@
 		<button type="submit">Save</button>
 		<p class="status">
 			Currently <strong>{data.tracking.enabled ? 'on' : 'off'}</strong>{data.tracking.updatedAt
-				? `, changed ${data.tracking.updatedAt.slice(0, 10)}`
+				? `, changed ${formatDateTime(data.tracking.updatedAt, data.timeZone)}`
 				: ''}.
 		</p>
 	</form>
@@ -69,9 +70,15 @@
 						{#each data.sessions as s (s.id)}
 							<tr>
 								<td>{s.email ?? 'Unknown account'}{s.own ? ' (you)' : ''}</td>
-								<td>{s.createdAt ?? '—'}</td>
-								<td>{s.lastSeenAt ?? (data.tracking.enabled ? '—' : 'not recorded')}</td>
-								<td>{s.expiresAt.slice(0, 16).replace('T', ' ')}</td>
+								<td>{formatDateTime(s.createdAt, data.timeZone)}</td>
+								<td
+									>{s.lastSeenAt
+										? formatDateTime(s.lastSeenAt, data.timeZone)
+										: data.tracking.enabled
+											? '—'
+											: 'not recorded'}</td
+								>
+								<td>{formatDateTime(s.expiresAt, data.timeZone)}</td>
 								<td>
 									<form method="POST" action="?/revoke" use:enhance>
 										<input type="hidden" name="id" value={s.id} />

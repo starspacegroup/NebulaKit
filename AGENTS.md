@@ -90,6 +90,12 @@ the architecture.
   500x600 elements in every frame. `preserveAspectRatio="slice"` scales the 400-unit viewBox about 4
   times, so a `stdDeviation` of 40 on a path becomes a blur kernel of about 160px. Each of these
   faults alone added about 10 seconds of total blocking time. The Lighthouse score fell from 100 to 60.
+- Admin dates and times use the helpers in `src/lib/utils/timezone.ts` (`formatDate`, `formatTime`,
+  `formatDateTime`, `dayKey`). Use the zone from `data.timeZone` in the admin layout. Admin numbers use
+  `formatNumber`. A bare `toLocaleString()` call uses the zone and locale of the machine. It shows the
+  wrong clock and causes a hydration mismatch. `tests/unit/admin-timezone.test.ts` fails on a bare call
+  in `src/routes/admin` or `src/lib/components/admin`. The `tz` cookie is untrusted input. Only
+  `resolveTimeZone` may read it. See `docs/ADMIN_TIMEZONE.md`.
 - Add a dependency only when its security, runtime, bundle, and maintenance costs are justified.
 
 ## Verification

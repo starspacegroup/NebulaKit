@@ -10,7 +10,10 @@ import {
 	canViewStats as computeCanViewStats
 } from '$lib/server/stats-guard';
 
-export const load: LayoutServerLoad = async ({ locals, cookies }) => {
+import { readAdminTimeZoneSetting, readUserTimeZone } from '$lib/server/site-settings';
+import { describeZone, resolveTimeZone, timeZoneSource, TZ_COOKIE } from '$lib/utils/timezone';
+
+export const load: LayoutServerLoad = async ({ locals, cookies, platform }) => {
 	// Check if user is authenticated
 	if (!locals.user) {
 		throw redirect(302, '/auth/login?error=unauthorized');
@@ -29,8 +32,24 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 	const canRevealPii = computeCanRevealPii(locals.user);
 	const piiRevealed = isPiiRevealed(locals.user, cookies.get(PII_REVEAL_COOKIE));
 
+	// Admin clock (docs/ADMIN_TIMEZONE.md): the user's own zone, then the site setting, else the
+	// browser's zone from the `tz` cookie, else UTC. The cookie is user input; it
+	// is validated inside resolveTimeZone and never trusted beyond that.
+	// The user's own zone comes first; the id is the session's, never the request's.
+	const [timeZoneSetting, timeZonePersonal] = await Promise.all([
+		readAdminTimeZoneSetting(platform?.env?.DB),
+		readUserTimeZone(platform?.env?.DB, locals.user.id)
+	]);
+	const tzCookie = cookies.get(TZ_COOKIE);
+	const timeZone = resolveTimeZone(timeZoneSetting, tzCookie, timeZonePersonal);
+
 	return {
 		user: locals.user,
+		timeZone,
+		timeZoneSetting,
+		timeZonePersonal,
+		timeZoneSource: timeZoneSource(timeZoneSetting, tzCookie, timeZonePersonal),
+		timeZoneLabel: describeZone(timeZone),
 		canRevealPii,
 		piiRevealed,
 		// Whether the Dashboard shows stats. The page load checks this itself too.

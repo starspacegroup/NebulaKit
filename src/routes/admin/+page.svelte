@@ -1,7 +1,13 @@
 <script lang="ts">
 	import StatBarChart from '$lib/components/StatBarChart.svelte';
 	import PagedRows from '$lib/components/admin/PagedRows.svelte';
-	import { fillDailySeries, fillHourlySeries } from '$lib/utils/stats-timeseries';
+	import { formatNumber } from '$lib/utils/format-number';
+	import {
+		bucketHourlyToDays,
+		fillDailySeries,
+		fillHourlySeries,
+		windowStartDay
+	} from '$lib/utils/stats-timeseries';
 	import { TRAFFIC_CLASS_LABELS, percentOf, splitTotal } from '$lib/utils/traffic-class';
 	import type { PageData } from './$types';
 
@@ -30,24 +36,52 @@
 	// Views chart: the 1-day window is plotted as 24 hourly buckets (a day series
 	// over one day is just two bars); wider windows stay daily. Both are
 	// gap-filled so quiet hours/days render as zero bars, not missing ones.
+	//
+	// Time zone (docs/ADMIN_TIMEZONE.md). Counters are stored per UTC hour and per
+	// UTC day. The 24-hour chart keeps its UTC hour buckets and only labels them in
+	// the admin zone. A daily window outside UTC is rebuilt from the hourly totals
+	// into days of that zone; with no hourly rows it falls back to UTC days, and
+	// the caption says which. The breakdown tables below are per UTC day and
+	// cannot be re-bucketed.
 	const TRAFFIC_HOURS = 24;
+	$: zone = data.timeZone;
 	$: hourly = trafficWindow === 1;
+	$: zoneDays = !!traffic && !hourly && zone !== 'UTC' && traffic.hourly.length > 0;
+	$: viewRows = !traffic
+		? []
+		: hourly
+			? traffic.hourly
+			: zoneDays
+				? bucketHourlyToDays(traffic.hourly, zone).filter(
+						(d) =>
+							d.day >= windowStartDay(data.trafficToday, trafficWindow) &&
+							d.day <= data.trafficToday
+					)
+				: traffic.daily;
 	$: viewsSeries = !traffic
 		? []
 		: hourly
 			? fillHourlySeries(
 					traffic.hourly.map((h) => ({ hourKey: h.hourKey, count: h.views })),
 					data.trafficNowHour,
-					TRAFFIC_HOURS
+					TRAFFIC_HOURS,
+					zone
 				)
 			: fillDailySeries(
-					traffic.daily.map((d) => ({ day: d.day, count: d.views })),
-					utcDayOffset(-trafficWindow),
-					utcDayOffset(0)
+					(viewRows as { day: string; views: number }[]).map((d) => ({
+						day: d.day,
+						count: d.views
+					})),
+					windowStartDay(zoneDays ? data.trafficToday : data.usageToday, trafficWindow),
+					zoneDays ? data.trafficToday : data.usageToday
 				);
+	$: bucketNote = hourly
+		? `last 24 hours, labelled in ${zone}`
+		: zoneDays
+			? `last ${trafficWindow} days, days of ${zone}`
+			: `last ${trafficWindow} days (UTC days)`;
 
 	// Totals follow the chart's window so the caption and the bars agree.
-	$: viewRows = traffic ? (hourly ? traffic.hourly : traffic.daily) : [];
 	$: totalViews = viewRows.reduce((sum, r) => sum + r.views, 0);
 	$: signedInViews = viewRows.reduce((sum, r) => sum + r.signedIn, 0);
 
@@ -56,14 +90,10 @@
 	$: usageSeries = data.usage
 		? fillDailySeries(
 				data.usage.days.map((d) => ({ day: d.day, count: d.requests })),
-				utcDayOffset(-29),
-				utcDayOffset(0)
+				windowStartDay(data.usageToday, 29),
+				data.usageToday
 			)
 		: [];
-
-	function utcDayOffset(days: number): string {
-		return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-	}
 
 	// Per-card maxima for the in-row meters. Each meter reads "share of this
 	// card's biggest row", so every table doubles as a bar chart.
@@ -192,6 +222,7 @@
 <div class="stats-page">
 	<header class="page-head">
 		<h1>Dashboard</h1>
+		<p class="zone-note" data-testid="stats-zone">Time zone: {data.timeZoneLabel}</p>
 		{#if data.canViewStats}
 			<p class="lede">
 				First-party, cookie-free analytics — aggregate counters only, no per-visitor data.
@@ -212,23 +243,23 @@
 				<div class="tiles">
 					<div class="tile">
 						<span class="tile-label">Users</span>
-						<span class="tile-value">{stats.totalUsers.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(stats.totalUsers)}</span>
 					</div>
 					<div class="tile">
 						<span class="tile-label">Admins</span>
-						<span class="tile-value">{stats.totalAdmins.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(stats.totalAdmins)}</span>
 					</div>
 					<div class="tile">
 						<span class="tile-label">Content items</span>
-						<span class="tile-value">{stats.totalContent.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(stats.totalContent)}</span>
 					</div>
 					<div class="tile">
 						<span class="tile-label">Contact forms</span>
-						<span class="tile-value">{stats.totalContactSubmissions.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(stats.totalContactSubmissions)}</span>
 					</div>
 					<div class="tile">
 						<span class="tile-label">Chat messages</span>
-						<span class="tile-value">{stats.totalChatMessages.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(stats.totalChatMessages)}</span>
 					</div>
 				</div>
 			{:else}
@@ -246,7 +277,7 @@
 					<article class="chart-card">
 						<header class="chart-head">
 							<span class="chart-title">New users</span>
-							<span class="chart-sub">{stats.totalUsers.toLocaleString()} total</span>
+							<span class="chart-sub">{formatNumber(stats.totalUsers)} total</span>
 						</header>
 						<StatBarChart
 							series={stats.usersByMonth}
@@ -258,7 +289,7 @@
 					<article class="chart-card">
 						<header class="chart-head">
 							<span class="chart-title">New content</span>
-							<span class="chart-sub">{stats.totalContent.toLocaleString()} total</span>
+							<span class="chart-sub">{formatNumber(stats.totalContent)} total</span>
 						</header>
 						<StatBarChart
 							series={stats.contentByMonth}
@@ -278,19 +309,20 @@
 				<p class="panel-note">
 					Billable Function invocations — a larger set than page views (bots, API calls, 404s and
 					non-GET all count). A floor, not a billing-grade figure; the Cloudflare dashboard is
-					authoritative.
+					authoritative. Days and months here are UTC, not the admin time zone, because Cloudflare's
+					limits reset at 00:00 UTC.
 				</p>
 				<div class="tiles">
 					<div class="tile">
 						<span class="tile-label">Today</span>
-						<span class="tile-value">{data.usage.today.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(data.usage.today)}</span>
 						<span class="tile-sub">
 							{data.usage.projection.percentUsed.toFixed(1)}% of the free daily allowance
 						</span>
 					</div>
 					<div class="tile">
 						<span class="tile-label">Projected today</span>
-						<span class="tile-value">{data.usage.projection.projectedToday.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(data.usage.projection.projectedToday)}</span>
 						<span class="tile-sub" class:warn={data.usage.projection.willExhaustToday}>
 							{#if data.usage.projection.willExhaustToday}
 								Free allowance gone in ~{formatHours(data.usage.projection.hoursToLimit)}
@@ -301,7 +333,7 @@
 					</div>
 					<div class="tile">
 						<span class="tile-label">Month to date</span>
-						<span class="tile-value">{data.usage.monthToDate.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(data.usage.monthToDate)}</span>
 						<span class="tile-sub">
 							{data.usage.projection.monthPercentOfPaidAllowance.toFixed(2)}% of the paid-plan
 							allowance
@@ -309,19 +341,19 @@
 					</div>
 					<div class="tile">
 						<span class="tile-label">Peak day</span>
-						<span class="tile-value">{data.usage.peakDay.toLocaleString()}</span>
+						<span class="tile-value">{formatNumber(data.usage.peakDay)}</span>
 						<span class="tile-sub">{data.usage.peakDayOn ?? 'no data yet'}</span>
 					</div>
 					<div class="tile">
 						<span class="tile-label">Bots today</span>
-						<span class="tile-value">{data.usage.todayBot.toLocaleString()}</span>
-						<span class="tile-sub">{data.usage.todayNotFound.toLocaleString()} not-found</span>
+						<span class="tile-value">{formatNumber(data.usage.todayBot)}</span>
+						<span class="tile-sub">{formatNumber(data.usage.todayNotFound)} not-found</span>
 					</div>
 				</div>
 				<article class="chart-card chart-card--wide">
 					<header class="chart-head">
 						<span class="chart-title">Requests over time</span>
-						<span class="chart-sub">last 30 days</span>
+						<span class="chart-sub">last 30 UTC days</span>
 					</header>
 					<StatBarChart
 						series={usageSeries}
@@ -356,15 +388,15 @@
 						<header class="chart-head">
 							<span class="chart-title">Who is visiting</span>
 							<span class="chart-sub">
-								{splitTotal(split).toLocaleString()} page loads ·
-								{#if hourly}last 24 hours (UTC){:else}last {trafficWindow} days{/if}
+								{formatNumber(splitTotal(split))} page loads ·
+								{bucketNote}
 							</span>
 						</header>
 						<ul class="split">
 							{#each splitRows as row (row.key)}
 								<li class="split__row split__row--{row.key}">
 									<span class="split__label">{row.label}</span>
-									<span class="split__count">{row.count.toLocaleString()}</span>
+									<span class="split__count">{formatNumber(row.count)}</span>
 									<span class="split__pct">{percentOf(row.count, split)}%</span>
 								</li>
 							{/each}
@@ -387,8 +419,8 @@
 					<header class="chart-head">
 						<span class="chart-title">Page views</span>
 						<span class="chart-sub">
-							{totalViews.toLocaleString()} views · {signedInViews.toLocaleString()} signed-in views ·
-							{#if hourly}last 24 hours (UTC){:else}last {trafficWindow} days{/if}
+							{formatNumber(totalViews)} views · {formatNumber(signedInViews)} signed-in views ·
+							{bucketNote}
 						</span>
 					</header>
 					<StatBarChart
@@ -399,8 +431,18 @@
 					/>
 					{#if hourly}
 						<p class="chart-note">
-							Hourly buckets, UTC. The tables below count whole UTC days, so they also include
-							yesterday.
+							Hourly buckets are UTC hours, labelled in {zone}{#if zone !== 'UTC'}; a half-hour zone
+								shows buckets starting at :30{/if}. The tables below count whole UTC days, so they
+							also include yesterday.
+						</p>
+					{:else if zoneDays}
+						<p class="chart-note">
+							Days are days of {zone}, rebuilt from hourly totals. The tables below are stored per
+							UTC day and cannot be re-bucketed, so their window is whole UTC days.
+						</p>
+					{:else if zone !== 'UTC'}
+						<p class="chart-note">
+							No hourly totals for this window, so days here are UTC days, not days of {zone}.
 						</p>
 					{/if}
 				</article>
@@ -426,8 +468,8 @@
 													<span class="cell-label"><code>{row.pathKey}</code></span>
 													<span class="meter" style={meterStyle(row.views, byPathMax)}></span>
 												</td>
-												<td class="num">{row.views.toLocaleString()}</td>
-												<td class="num">{row.signedIn.toLocaleString()}</td>
+												<td class="num">{formatNumber(row.views)}</td>
+												<td class="num">{formatNumber(row.signedIn)}</td>
 											</tr>
 										{/each}
 									</tbody>
@@ -464,7 +506,7 @@
 													</span>
 													<span class="meter" style={meterStyle(row.views, topContentMax)}></span>
 												</td>
-												<td class="num">{row.views.toLocaleString()}</td>
+												<td class="num">{formatNumber(row.views)}</td>
 											</tr>
 										{/each}
 									</tbody>
@@ -481,7 +523,7 @@
 							{#if referrerBuckets.length > 0}
 								<ul class="chip-row">
 									{#each referrerBuckets as b (b.bucket)}
-										<li class="chip">{b.bucket} · {b.views.toLocaleString()}</li>
+										<li class="chip">{b.bucket} · {formatNumber(b.views)}</li>
 									{/each}
 								</ul>
 							{/if}
@@ -495,7 +537,7 @@
 													<span class="cell-label">{ref.referrerHost}</span>
 													<span class="meter" style={meterStyle(ref.views, referrersMax)}></span>
 												</td>
-												<td class="num">{ref.views.toLocaleString()}</td>
+												<td class="num">{formatNumber(ref.views)}</td>
 											</tr>
 										{/each}
 									</tbody>
@@ -527,7 +569,7 @@
 													</span>
 													<span class="meter" style={meterStyle(row.views, countriesMax)}></span>
 												</td>
-												<td class="num">{row.views.toLocaleString()}</td>
+												<td class="num">{formatNumber(row.views)}</td>
 												<td class="num">
 													{countryTotal > 0
 														? ((row.views / countryTotal) * 100).toFixed(1)
@@ -579,7 +621,7 @@
 														<span class="cell-label">{audienceLabel(card.key, row.value)}</span>
 														<span class="meter" style={meterStyle(row.views, card.max)}></span>
 													</td>
-													<td class="num">{row.views.toLocaleString()}</td>
+													<td class="num">{formatNumber(row.views)}</td>
 												</tr>
 											{/each}
 										</tbody>
@@ -605,7 +647,7 @@
 									<span class="cell-label">{row.label}</span>
 									<span class="meter" style={meterStyle(row.count, contentStatusMax)}></span>
 								</td>
-								<td class="num">{row.count.toLocaleString()}</td>
+								<td class="num">{formatNumber(row.count)}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -624,6 +666,12 @@
 
 	.page-head h1 {
 		margin: 0;
+	}
+
+	.zone-note {
+		margin: 0.25rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--color-text-secondary);
 	}
 
 	.lede {

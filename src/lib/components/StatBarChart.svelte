@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { buildBarChartGeometry, type MonthlyPoint } from '$lib/utils/stats-timeseries';
+	import { formatNumber } from '$lib/utils/format-number';
 
 	/** Dense monthly series (gap-filled) to plot. */
 	export let series: MonthlyPoint[] = [];
@@ -114,7 +115,7 @@
 			{#if hoveredPoint}
 				<!-- clamped so edge tooltips never overflow the card on phones -->
 				<div class="tooltip" style={`left:clamp(18%, ${tooltipLeftPct}%, 82%)`} aria-hidden="true">
-					<span class="tt-count">{hoveredPoint.count.toLocaleString()}</span>
+					<span class="tt-count">{formatNumber(hoveredPoint.count)}</span>
 					<span class="tt-unit">{unit}</span>
 					<span class="tt-month">{hoveredPoint.label}</span>
 				</div>

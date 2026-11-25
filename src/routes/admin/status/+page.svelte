@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime, NO_DATE } from '$lib/utils/timezone';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 
@@ -25,17 +26,11 @@
 
 	function when(sql: string | null | undefined): string {
 		if (!sql) return '';
-		const d = new Date(sql.includes('T') ? sql : sql.replace(' ', 'T') + 'Z');
-		return Number.isNaN(d.getTime())
-			? ''
-			: d.toLocaleString('en-GB', {
-					timeZone: 'UTC',
-					day: 'numeric',
-					month: 'short',
-					hour: '2-digit',
-					minute: '2-digit',
-					hour12: false
-				}) + ' UTC';
+		const when = formatDateTime(
+			sql.includes('T') ? sql : sql.replace(' ', 'T') + 'Z',
+			data.timeZone
+		);
+		return when === NO_DATE ? '' : when;
 	}
 	const nameOf = (id: string) => data.components.find((c) => c.id === id)?.name ?? id;
 	const mine = (incident: number) =>
