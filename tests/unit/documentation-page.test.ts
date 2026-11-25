@@ -644,3 +644,43 @@ describe('Documentation Page', () => {
 		expect(screen.getByText(/Example Co\. pages are marked/)).toBeInTheDocument();
 	});
 });
+
+// AGENTS.md §7 — the feed routes, the Google admin page, migration 0037 and the sync job are
+// user-visible, so the documentation has to say where each lives and what is off by default.
+describe('Documentation Page: Google listings', () => {
+	it('documents the feeds, the health page, the markup and the optional sync', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: 'Google Listings', level: 2 })
+				.closest('section') as HTMLElement
+		);
+		for (const text of [
+			'/feeds/google-products.xml',
+			'/feeds/google-products.tsv',
+			'/admin/products/google',
+			'/api/cron/google-merchant-sync',
+			'google-merchant-sync',
+			'docs/GOOGLE_LISTINGS.md',
+			'packages/commerce/src/google-listing.ts',
+			'0037'
+		]) {
+			expect(scoped.getAllByText(text).length, text).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/never in D1/i)).toBeInTheDocument();
+		expect(
+			scoped.getByRole('heading', { name: /Merchant API sync \(optional, off\)/ })
+		).toBeInTheDocument();
+		expect(
+			scoped.getByText(/the price on the page, the price in the cart and the price in the feed/i)
+		).toBeInTheDocument();
+	});
+
+	it('links to the section from the contents', () => {
+		render(Page);
+		expect(screen.getByRole('link', { name: 'Google Listings' })).toHaveAttribute(
+			'href',
+			'#google-listings'
+		);
+	});
+});

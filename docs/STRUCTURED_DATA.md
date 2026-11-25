@@ -32,8 +32,11 @@ the `blog` type, Article otherwise, tags as keywords), `/shop` (ItemList), `/sho
   build the `<script>` by hand; use `jsonLdScript`.
 - `noindex` pages emit no graph. Pass `structured={null}` to opt a page out explicitly.
 - Honesty: there is no `SearchAction`, because the site has no public search route with a shareable
-  result URL (the command palette is an overlay). There is no `availability` on offers, because the
-  shop keeps no stock count. If either changes, change the builder and its test together.
+  result URL (the command palette is an overlay). `availability` on an offer is the owner's
+  statement (`InStock` unless the product says otherwise), because the shop keeps no stock count.
+  `aggregateRating` and `review` are emitted only with real reviews, which the template has none
+  of. If any of this changes, change the builder and its test together. Product offers, shipping,
+  returns and the price rule are in [GOOGLE_LISTINGS.md](./GOOGLE_LISTINGS.md).
 - The only `sameAs` is the GitHub repository from `site.repo`. Add the downstream organisation's
   real profiles in `organizationNode()` when customizing.
 

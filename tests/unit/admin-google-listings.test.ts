@@ -90,7 +90,7 @@ describe('the Google fields of the product form', () => {
 			excluded: true,
 			additionalImages: ['https://a.example/1.jpg', 'https://a.example/2.jpg']
 		});
-		const again = googleToFormValues({ ...(g as never) });
+		const again = googleToFormValues(g as never);
 		expect(again).toEqual(typed);
 	});
 
@@ -211,9 +211,9 @@ describe('admin products saves the Google fields', () => {
 
 	it('shows a rejected Google field back to the admin without saving', async () => {
 		const db = createSqliteD1(MIGRATIONS);
-		const result = (await (
-			productActions.create as (e: never) => Promise<{ data: { problems: string[] } }>
-		)(post(db, { name: 'Mug', slug: 'mug', price: '12.50', g_gtin: '123' }))) as {
+		const result = (await (productActions.create as unknown as (e: never) => Promise<unknown>)(
+			post(db, { name: 'Mug', slug: 'mug', price: '12.50', g_gtin: '123' })
+		)) as {
 			status: number;
 			data: { problems: string[]; values: { google: { gtin: string } } };
 		};
@@ -356,7 +356,7 @@ describe('/admin/products/google', () => {
 		});
 
 		for (const bad of [
-			{ shipCountries: 'USA' },
+			{ shipCountries: 'USA' } as Record<string, string>,
 			{ handlingDaysMin: 'x' },
 			{ returnCategory: 'finite' },
 			{ returnFeeAmount: 'free', returnCategory: 'finite', returnDays: '3' }

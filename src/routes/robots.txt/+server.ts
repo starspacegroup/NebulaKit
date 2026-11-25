@@ -18,7 +18,8 @@ import {
 	CRAWLER_ALLOW,
 	CRAWLER_DISALLOW,
 	LINK_PREVIEW_BOTS,
-	LINK_PREVIEW_OPEN_PATHS
+	LINK_PREVIEW_OPEN_PATHS,
+	MERCHANT_BOTS
 } from '$lib/agent-discovery';
 import { readSiteMode } from '$lib/server/site-mode';
 import { site } from '$lib/site.config';
@@ -70,10 +71,11 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 		'',
 		'# Link-preview bots (X, Facebook, LinkedIn, Slack, Discord, Telegram, WhatsApp).',
 		'# The share image lives under /media/, so they may fetch it; the private',
-		'# surfaces stay Disallowed.',
+		"# surfaces stay Disallowed. Google's image and shopping fetchers are here",
+		"# too: a product's image_link is often a /media/ file.",
 		'',
 		group(
-			LINK_PREVIEW_BOTS,
+			[...LINK_PREVIEW_BOTS, ...MERCHANT_BOTS],
 			CRAWLER_DISALLOW.filter((path) => !LINK_PREVIEW_OPEN_PATHS.includes(path))
 		),
 		'',

@@ -171,7 +171,48 @@ export function siteOpenApi() {
 						imageUrl: { type: ['string', 'null'] },
 						type: { enum: ['physical', 'digital'] },
 						printfulVariantId: { type: ['integer', 'null'] },
-						active: { type: 'boolean' }
+						active: { type: 'boolean' },
+						google: { $ref: '#/components/schemas/GoogleAttributes' }
+					}
+				},
+				GoogleAttributes: {
+					type: 'object',
+					description:
+						'Google Merchant Center attributes (docs/GOOGLE_LISTINGS.md). Every field is optional; null clears one. Sale price is charged at checkout while the sale window is open.',
+					properties: {
+						brand: { type: ['string', 'null'], maxLength: 70 },
+						gtin: {
+							type: ['string', 'null'],
+							description: '8, 12, 13 or 14 digits with a correct check digit'
+						},
+						mpn: { type: ['string', 'null'], maxLength: 70 },
+						condition: { enum: ['new', 'refurbished', 'used', null] },
+						googleProductCategory: { type: ['string', 'null'] },
+						productType: { type: ['string', 'null'], maxLength: 750 },
+						availability: { enum: ['in_stock', 'out_of_stock', 'preorder', 'backorder', null] },
+						availabilityDate: { type: ['string', 'null'], description: 'ISO 8601' },
+						salePriceCents: { type: ['integer', 'null'], minimum: 0 },
+						saleStartsAt: { type: ['string', 'null'], description: 'ISO 8601 with a zone' },
+						saleEndsAt: { type: ['string', 'null'], description: 'ISO 8601 with a zone' },
+						additionalImages: { type: 'array', maxItems: 10, items: { type: 'string' } },
+						color: { type: ['string', 'null'], maxLength: 100 },
+						size: { type: ['string', 'null'], maxLength: 100 },
+						material: { type: ['string', 'null'], maxLength: 200 },
+						gender: { enum: ['male', 'female', 'unisex', null] },
+						ageGroup: { enum: ['newborn', 'infant', 'toddler', 'kids', 'adult', null] },
+						itemGroupId: { type: ['string', 'null'], maxLength: 50 },
+						identifierExists: { type: ['boolean', 'null'] },
+						weightGrams: { type: ['integer', 'null'], minimum: 1 },
+						lengthMm: { type: ['integer', 'null'], minimum: 10, maximum: 30000 },
+						widthMm: { type: ['integer', 'null'], minimum: 10, maximum: 30000 },
+						heightMm: { type: ['integer', 'null'], minimum: 10, maximum: 30000 },
+						adult: { type: 'boolean' },
+						customLabel0: { type: ['string', 'null'], maxLength: 100 },
+						customLabel1: { type: ['string', 'null'], maxLength: 100 },
+						customLabel2: { type: ['string', 'null'], maxLength: 100 },
+						customLabel3: { type: ['string', 'null'], maxLength: 100 },
+						customLabel4: { type: ['string', 'null'], maxLength: 100 },
+						excluded: { type: 'boolean', description: 'Keep the product out of the Google feed' }
 					}
 				},
 				Checkout: {
