@@ -22,7 +22,7 @@ import { site } from '$lib/site.config';
 import type { Actions, PageServerLoad } from './$types';
 
 /** How many problems the health panel lists. */
-export const PROBLEM_LIMIT = 40;
+const PROBLEM_LIMIT = 40;
 
 function database(platform: App.Platform | undefined) {
 	const db = platform?.env?.DB;
