@@ -81,7 +81,12 @@ declare global {
 				COMMERCE_PRICES_INCLUDE_TAX?: string;
 				COMMERCE_FLAT_SHIPPING_CENTS?: string;
 				STRIPE_SECRET_KEY?: string;
+				/** Public key for the cart's on-page card form (docs/CHECKOUT.md). */
+				STRIPE_PUBLISHABLE_KEY?: string;
 				STRIPE_WEBHOOK_SECRET?: string;
+				STRIPE_WEBHOOK_SECRET_PREVIOUS?: string;
+				/** `onpage` (default) or `hosted`. See src/lib/server/checkout-mode.ts. */
+				CHECKOUT_MODE?: string;
 				/** Transactional email (Resend). See src/lib/server/email.ts. */
 				RESEND_API_KEY?: string;
 				EMAIL_FROM?: string;

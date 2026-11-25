@@ -18,6 +18,11 @@ export const MODULES = [
 		out: 'packages/commerce/src/generated/auction-core.js'
 	},
 	{
+		source: 'dafny/PaymentCore.dfy',
+		module: 'PaymentCore',
+		out: 'packages/commerce/src/generated/payment-core.js'
+	},
+	{
 		source: 'dafny/LoginThrottle.dfy',
 		module: 'LoginThrottleCore',
 		out: 'src/lib/server/generated/login-throttle-core.js'

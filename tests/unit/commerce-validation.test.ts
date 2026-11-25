@@ -93,7 +93,9 @@ describe('validateCheckoutInput', () => {
 			value: {
 				email: 'ada@example.com',
 				lines: [{ productId: 'p1', quantity: 2 }],
-				shippingAddress: { ...address, line2: 'Apt 2', state: 'ME' }
+				shippingAddress: { ...address, line2: 'Apt 2', state: 'ME' },
+				onSite: false,
+				checkoutKey: null
 			}
 		});
 	});
@@ -102,7 +104,13 @@ describe('validateCheckoutInput', () => {
 		const result = validateCheckoutInput({ email: 'a@b.co', lines: [{ quantity: 1 }] });
 		expect(result).toEqual({
 			ok: true,
-			value: { email: 'a@b.co', lines: [{ productId: '', quantity: 1 }], shippingAddress: null }
+			value: {
+				email: 'a@b.co',
+				lines: [{ productId: '', quantity: 1 }],
+				shippingAddress: null,
+				onSite: false,
+				checkoutKey: null
+			}
 		});
 	});
 

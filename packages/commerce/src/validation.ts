@@ -96,7 +96,16 @@ export interface CheckoutInput {
 	email: string;
 	lines: CartLine[];
 	shippingAddress: ShippingAddress | null;
+	/** The shop's own cart asks to pay in its card form (a PaymentIntent) instead of a redirect. */
+	onSite: boolean;
+	/**
+	 * The cart page's random id for this checkout. A second submit with it finds the first one's
+	 * order and payment instead of making another. Not a secret and not trusted for money.
+	 */
+	checkoutKey: string | null;
 }
+
+const CHECKOUT_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function validateShippingAddress(value: unknown): Validated<ShippingAddress> {
 	if (!isRecord(value)) return { ok: false, errors: ['shippingAddress must be an object'] };
@@ -179,7 +188,14 @@ export function validateCheckoutInput(body: unknown): Validated<CheckoutInput> {
 		if (address.ok) shippingAddress = address.value;
 		else errors.push(...address.errors);
 	}
+	let checkoutKey: string | null = null;
+	if (body.checkoutKey !== undefined && body.checkoutKey !== null) {
+		if (typeof body.checkoutKey === 'string' && CHECKOUT_KEY.test(body.checkoutKey))
+			checkoutKey = body.checkoutKey.toLowerCase();
+		else errors.push('checkoutKey must be a UUID');
+	}
+	const onSite = body.onSite === true;
 	return errors.length
 		? { ok: false, errors }
-		: { ok: true, value: { email, lines, shippingAddress } };
+		: { ok: true, value: { email, lines, shippingAddress, onSite, checkoutKey } };
 }

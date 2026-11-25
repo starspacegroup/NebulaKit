@@ -831,7 +831,10 @@ bun run db:migrate:list</code
 						kept in their browser, and check out at <code>/cart</code>. Prices, tax and shipping are
 						always worked out on the server from the catalog; the cart only remembers what to ask
 						for. Physical products ask for a shipping address. With Stripe configured the shopper
-						goes on to pay; without it the order waits for a manual payment.
+						pays by card right on <code>/cart</code> (Stripe's Payment Element, loaded from
+						<code>js.stripe.com</code> only on that page), or on Stripe's hosted page when
+						<code>CHECKOUT_MODE</code> is <code>hosted</code>; without it the order waits for a
+						manual payment. Orders are listed at <code>/admin/orders</code>.
 					</p>
 				</div>
 				<div class="callout-card">
@@ -906,11 +909,18 @@ bun run db:migrate:list</code
 			<p>
 				Shop settings are environment variables, never request fields:
 				<code>COMMERCE_TAX_RATE_PERCENT</code>, <code>COMMERCE_PRICES_INCLUDE_TAX</code>,
-				<code>COMMERCE_FLAT_SHIPPING_CENTS</code>, <code>STRIPE_SECRET_KEY</code> and
-				<code>STRIPE_WEBHOOK_SECRET</code> (webhook URL <code>/api/v1/webhooks/stripe</code>).
-				Without a Stripe key, orders wait for a manual payment. <code>ORCHESTRATOR_KEY_SHA256</code>
+				<code>COMMERCE_FLAT_SHIPPING_CENTS</code>, <code>STRIPE_SECRET_KEY</code>,
+				<code>STRIPE_PUBLISHABLE_KEY</code> and <code>STRIPE_WEBHOOK_SECRET</code> (webhook URL
+				<code>/api/v1/webhooks/stripe</code>), plus optional <code>CHECKOUT_MODE</code>
+				(<code>onpage</code>, the default, or <code>hosted</code>) and
+				<code>STRIPE_WEBHOOK_SECRET_PREVIOUS</code> while rolling the signing secret. Without a
+				Stripe key, orders wait for a manual payment; without the publishable key, the cart sends
+				shoppers to Stripe's hosted page. See <code>docs/CHECKOUT.md</code> for test cards and
+				<code>stripe listen</code>. <code>ORCHESTRATOR_KEY_SHA256</code>
 				connects the Ammoura control room. Apply migrations <code>0016</code>–<code>0018</code> with
-				<code>bun run db:migrate:local</code>.
+				<code>bun run db:migrate:local</code>; on-page checkout also needs <code>0034</code>–<code
+					>0036</code
+				>.
 			</p>
 			<h3 id="orders-payments-email">Payments, status and email</h3>
 			<p>
@@ -918,9 +928,15 @@ bun run db:migrate:list</code
 				so Stripe keeps retrying. It handles <code>checkout.session.completed</code> and
 				<code>checkout.session.async_payment_succeeded</code> (the order becomes paid),
 				<code>checkout.session.async_payment_failed</code> and
-				<code>checkout.session.expired</code> (a pending order is cancelled). A payment that is smaller
-				than the order total, or in another currency, leaves the order pending for a person to check.
-				Replays change nothing a second time.
+				<code>checkout.session.expired</code> (a pending order is cancelled), and for the on-page
+				card form <code>payment_intent.succeeded</code>, <code>payment_intent.canceled</code>,
+				<code>payment_intent.payment_failed</code> and <code>charge.refunded</code> (the last two
+				are recorded on the order's payment history at <code>/admin/orders</code> and never change
+				its status). Only this signed webhook marks an order paid, never the shopper's return to the
+				cart. A payment that is smaller than the order total, or in another currency, leaves the
+				order pending for a person to check. Each event is applied once per event id; a paid order
+				never goes back to unpaid. <code>POST /api/v1/checkout/cancel</code> lets a shopper back out of
+				an unpaid order: Stripe closes the payment first, then the order is cancelled.
 			</p>
 			<p>
 				After paying, the shopper returns to <code>/cart?order=…</code>, which asks

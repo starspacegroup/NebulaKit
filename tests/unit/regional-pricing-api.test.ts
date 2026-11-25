@@ -123,7 +123,9 @@ describe('migration 0022', () => {
 			'commerce_order_regional',
 			'commerce_orders',
 			'commerce_products',
-			'commerce_settings'
+			'commerce_settings',
+			// 0035, Stripe webhook events (on-page checkout): likewise later schema
+			'commerce_stripe_events'
 		]);
 		const columns = await db.prepare('PRAGMA table_info(commerce_orders)').all<{ name: string }>();
 		expect(columns.results.map((c) => c.name)).not.toContain('multiplier');

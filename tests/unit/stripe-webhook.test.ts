@@ -38,7 +38,13 @@ function session(orderId: string, extra: Record<string, unknown> = {}) {
 		...extra
 	};
 }
-const evt = (type: string, object: Record<string, unknown>) => ({ type, data: { object } });
+let eventCount = 0;
+/** A Stripe event; each call is a new event with its own `evt_` id, as Stripe sends them. */
+const evt = (type: string, object: Record<string, unknown>) => ({
+	id: `evt_test_${++eventCount}`,
+	type,
+	data: { object }
+});
 
 async function deliver(payload: unknown, opts: { header?: string; secret?: string } = {}) {
 	const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
@@ -70,8 +76,13 @@ describe('stripe webhook: paid', () => {
 		const id = await seedOrder(db);
 		const event = evt('checkout.session.completed', session(id));
 		expect((await deliver(event)).json).toEqual({ received: true });
-		expect((await deliver(event)).json).toEqual({ received: true });
-		expect((await deliver(event)).json).toEqual({ received: true });
+		// The same event again is recognised by its id and not applied a second time.
+		expect((await deliver(event)).json).toEqual({ received: true, duplicate: true });
+		expect((await deliver(event)).json).toEqual({ received: true, duplicate: true });
+		// A different event about the same payment is applied, and changes nothing.
+		expect((await deliver(evt('checkout.session.completed', session(id)))).json).toEqual({
+			received: true
+		});
 		await flushMail();
 		expect(await statusOf(id)).toBe('paid');
 		expect(sentMails()).toBe(1);
@@ -151,15 +162,16 @@ describe('stripe webhook: paid', () => {
 		expect(await statusOf(id)).toBe('paid');
 	});
 
-	it('accepts a session without amount_total or currency', async () => {
+	it('refuses to mark paid a session that does not say how much, or in what currency', async () => {
+		// Fails closed (dafny/PaymentCore.dfy PaidNeedsMoney): Stripe always sends both, so an
+		// event without them is not one to ship goods on.
+		vi.spyOn(console, 'error').mockImplementation(() => {});
 		const id = await seedOrder(db);
-		await deliver(
-			evt(
-				'checkout.session.completed',
-				session(id, { amount_total: undefined, currency: undefined })
-			)
-		);
-		expect(await statusOf(id)).toBe('paid');
+		for (const extra of [{ amount_total: undefined }, { currency: undefined }]) {
+			const res = await deliver(evt('checkout.session.completed', session(id, extra)));
+			expect(res.json).toEqual({ received: true, ignored: true });
+		}
+		expect(await statusOf(id)).toBe('pending');
 	});
 
 	it('does not revive a cancelled order, and says so in the log', async () => {
@@ -196,7 +208,10 @@ describe('stripe webhook: failed and expired', () => {
 			const updated = await db
 				.prepare('SELECT updated_at FROM commerce_orders')
 				.first('updated_at');
-			expect((await deliver(event)).json).toEqual({ received: true });
+			expect((await deliver(event)).json).toEqual({ received: true, duplicate: true });
+			expect((await deliver(evt(type, session(id, { payment_status: 'unpaid' })))).json).toEqual({
+				received: true
+			});
 			expect(await db.prepare('SELECT updated_at FROM commerce_orders').first('updated_at')).toBe(
 				updated
 			);
