@@ -1,5 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { formatMoney, getProduct } from '@nebulakit/commerce';
+import { getGoogleListingSettings, getProduct } from '@nebulakit/commerce';
+import { productPageModel } from '$lib/shop/listing';
+import { flatShippingFromEnv, type CommerceEnv } from '$lib/server/site-info';
+import { site } from '$lib/site.config';
 import type { PageServerLoad } from './$types';
 
 /** /shop/[slug] — one product. Inactive products are not shown. */
@@ -11,16 +14,11 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 		throw error(404, 'Product not found');
 	}
 	return {
-		product: {
-			id: product.id,
-			slug: product.slug,
-			name: product.name,
-			description: product.description,
-			price: formatMoney(product.priceCents, product.currency),
-			priceCents: product.priceCents,
-			currency: product.currency,
-			imageUrl: product.imageUrl,
-			physical: product.type === 'physical'
-		}
+		product: productPageModel(product, {
+			settings: await getGoogleListingSettings(db),
+			flatShippingCents: flatShippingFromEnv(platform.env as unknown as CommerceEnv),
+			nowMs: Date.now(),
+			siteUrl: site.url
+		})
 	};
 };

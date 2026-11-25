@@ -5,6 +5,7 @@ import {
 	calculateTotalCents,
 	currencyExponent,
 	decidePaymentEvent,
+	EMPTY_GOOGLE,
 	formatMoney,
 	isChargeableAmount,
 	nextPaymentStatus,
@@ -155,7 +156,8 @@ describe('money core: priceCart end to end', () => {
 								printfulVariantId: null,
 								active: true,
 								createdAt: '',
-								updatedAt: ''
+								updatedAt: '',
+								google: EMPTY_GOOGLE
 							}
 						])
 					);
@@ -203,7 +205,8 @@ describe('money core: priceCart end to end', () => {
 			printfulVariantId: null,
 			active: true,
 			createdAt: '',
-			updatedAt: ''
+			updatedAt: '',
+			google: EMPTY_GOOGLE
 		};
 		await fc.assert(
 			fc.asyncProperty(fc.integer(), fc.integer(), async (price, total) => {

@@ -75,6 +75,8 @@ export const SITEMAP_EXCLUDED_ROUTES: Readonly<Record<string, string>> = {
 	setup: 'One-time install wizard; meaningless (and risky) once the site is live.',
 	media: 'R2 binary passthrough, not an HTML page.',
 	'[contentType]': 'Enumerated dynamically from the CMS at request time.',
+	feeds:
+		'Machine feeds for Google Merchant Center (/feeds/google-products.xml and .tsv): not pages, noindex, read by a scheduled fetch.',
 	cart: "The shopper's own cart and checkout — per-visitor, nothing to index.",
 	p: 'Builder pages — published ones are enumerated dynamically at request time.',
 	'[family=landingFamily]':
@@ -155,6 +157,15 @@ export const LINK_PREVIEW_BOTS: readonly string[] = [
 	'TelegramBot',
 	'WhatsApp'
 ];
+
+/**
+ * Google's image and shopping fetchers. A product's `image_link` is often a
+ * `/media/` file (R2), and Merchant Center disapproves an image its crawlers
+ * may not fetch ("image not crawlable"). They join the link-preview group:
+ * `/media/` open, everything private still Disallowed
+ * (docs/GOOGLE_LISTINGS.md; the exact user-agent names are unverified there).
+ */
+export const MERCHANT_BOTS: readonly string[] = ['Googlebot-Image', 'Storebot-Google'];
 
 /** Paths a link-preview bot may fetch although other crawlers may not. */
 export const LINK_PREVIEW_OPEN_PATHS: readonly string[] = ['/media/'];

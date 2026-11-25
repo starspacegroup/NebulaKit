@@ -10,7 +10,8 @@ import {
 	NO_TAX,
 	priceCart,
 	regionalPriceCents,
-	type Product
+	type Product,
+	EMPTY_GOOGLE
 } from '@nebulakit/commerce';
 
 function product(overrides: Partial<Product> = {}): Product {
@@ -25,6 +26,7 @@ function product(overrides: Partial<Product> = {}): Product {
 		type: 'physical',
 		printfulVariantId: null,
 		active: true,
+		google: EMPTY_GOOGLE,
 		createdAt: '',
 		updatedAt: '',
 		...overrides

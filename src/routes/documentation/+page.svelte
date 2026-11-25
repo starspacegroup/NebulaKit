@@ -81,6 +81,7 @@ bun run deploy`;
 			<a href="#admin-analytics">Admin Analytics</a>
 			<a href="#roles-permissions">Roles and Permissions</a>
 			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
+			<a href="#google-listings">Google Listings</a>
 			<a href="#lighthouse">Lighthouse</a>
 			<a href="#scheduled-jobs">Scheduled Jobs</a>
 			<a href="#agent-readiness">Agent Readiness</a>
@@ -951,6 +952,55 @@ bun run db:migrate:list</code
 				each at most once per order: the <code>email_log</code> table refuses a second send. Without
 				a key nothing is sent and the log records what was skipped. Email colours come from
 				<code>emailTheme</code> in <code>src/lib/site.config.ts</code>.
+			</p>
+		</section>
+
+		<section id="google-listings" class="docs-section">
+			<h2>Google Listings</h2>
+			<p>
+				A shop is eligible for free listings and Shopping ads in Google Merchant Center without
+				hand-made spreadsheets. Apply migration <code>0037</code> with
+				<code>bun run db:migrate:local</code>. Each product has an optional
+				<strong>Google listing</strong> section in <a href="/admin/products">/admin/products</a>
+				(brand, GTIN, MPN, condition, category, sale price and window, extra images, color, size, material,
+				gender, age group, item group, weight and size, custom labels). The rules live in one pure module,
+				<code>packages/commerce/src/google-listing.ts</code>.
+			</p>
+			<h3 id="google-feed">The feed</h3>
+			<p>
+				<code>/feeds/google-products.xml</code> (RSS 2.0 with the <code>g:</code> namespace) and
+				<code>/feeds/google-products.tsv</code> list active products. Auctions, products marked
+				"keep out of the Google feed", and products with an error are left out, so one bad product
+				cannot cost the account its standing. Prices are the catalog price in the product's own
+				currency, for example <code>12.99 USD</code>; regional pricing is never applied to what
+				Google sees. Paste the XML address into Merchant Center as a scheduled fetch. The feed is
+				read from the Cloudflare cache for 15 minutes and pages through D1, so a 2000 product
+				catalog costs one pass of reads, not one per visit.
+			</p>
+			<h3 id="google-health">Feed health</h3>
+			<p>
+				<a href="/admin/products/google">/admin/products/google</a> shows the feed address, when it was
+				last fetched, how many products are valid, left out or carry warnings, and the first problems
+				with a link to fix each. It also holds the ship-to countries, delivery times, return policy and
+				default brand that the feed and each product page's structured data use. A section left blank
+				is not claimed anywhere.
+			</p>
+			<h3 id="google-markup">Product page markup</h3>
+			<p>
+				Every <code>/shop/[slug]</code> page emits one JSON-LD <code>Product</code> with an
+				<code>Offer</code> (price, currency, availability, condition, seller, shipping details and return
+				policy when set), inside the page's single Organization and WebSite graph. The price in the markup
+				is the price on the page, the price in the cart and the price in the feed. A sale price is charged
+				at checkout while its window is open.
+			</p>
+			<h3 id="google-sync">Merchant API sync (optional, off)</h3>
+			<p>
+				Turn on <strong>Merchant API sync</strong> in <code>/admin/products/google</code> (owner
+				only) to send changes every ten minutes through the
+				<code>google-merchant-sync</code> scheduled job (<code>/api/cron/google-merchant-sync</code
+				>). The service-account key is stored encrypted in KV, never in D1. Setup, disapproval
+				reasons and what could not be verified:
+				<code>docs/GOOGLE_LISTINGS.md</code>.
 			</p>
 		</section>
 

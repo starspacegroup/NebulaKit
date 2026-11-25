@@ -6,6 +6,7 @@
  * `tests/unit/scheduler-registry.test.ts` reads all four and fails if any
  * disagree, so a job cannot be registered on a schedule nothing fires.
  */
+import { GOOGLE_MERCHANT_SYNC_JOB } from './jobs/google-merchant-sync';
 import { LIGHTHOUSE_JOB } from './jobs/lighthouse';
 import { PRUNE_AUDIT_JOB } from './jobs/prune-audit';
 import { PRUNE_VIEW_STATS_JOB } from './jobs/prune-view-stats';
@@ -20,7 +21,8 @@ export const SCHEDULED_JOBS: readonly ScheduledJob[] = [
 	PRUNE_AUDIT_JOB,
 	PUBLISH_SCHEDULED_JOB,
 	SETTLE_AUCTIONS_JOB,
-	STATUS_CHECK_JOB
+	STATUS_CHECK_JOB,
+	GOOGLE_MERCHANT_SYNC_JOB
 ];
 
 export function getScheduledJob(id: string): ScheduledJob | undefined {

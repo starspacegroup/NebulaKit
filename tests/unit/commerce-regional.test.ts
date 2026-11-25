@@ -18,7 +18,8 @@ import {
 	validateQuoteInput,
 	validateRegionalPricingInput,
 	type Product,
-	type RegionalPricingSettings
+	type RegionalPricingSettings,
+	EMPTY_GOOGLE
 } from '@nebulakit/commerce';
 
 const on = (patch: Partial<RegionalPricingSettings> = {}): RegionalPricingSettings => ({
@@ -352,6 +353,7 @@ describe('priceCart with a regional multiplier', () => {
 		type,
 		printfulVariantId: null,
 		active: true,
+		google: EMPTY_GOOGLE,
 		createdAt: '',
 		updatedAt: ''
 	});

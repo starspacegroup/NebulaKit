@@ -100,6 +100,11 @@ the architecture.
   wrong clock and causes a hydration mismatch. `tests/unit/admin-timezone.test.ts` fails on a bare call
   in `src/routes/admin` or `src/lib/components/admin`. The `tz` cookie is untrusted input. Only
   `resolveTimeZone` may read it. See `docs/ADMIN_TIMEZONE.md`.
+- Product data that goes to Google (the feed, the JSON-LD, the Merchant API sync) is validated and built
+  in one pure module: `packages/commerce/src/google-listing.ts`. Do not add a second set of rules in a
+  route, a component, or a renderer. The price on the page, in the JSON-LD, in the feed, and in the cart
+  must be one number: take it from `priceNow`. `tests/unit/google-markup.test.ts` fails if they
+  disagree. See `docs/GOOGLE_LISTINGS.md`.
 - Add a dependency only when its security, runtime, bundle, and maintenance costs are justified.
 
 ## Verification

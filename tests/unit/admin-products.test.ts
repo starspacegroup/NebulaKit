@@ -8,6 +8,7 @@ import {
 	readProductForm,
 	type ProductFormValues
 } from '../../src/lib/server/admin-products';
+import { BLANK_GOOGLE_VALUES } from '../../src/lib/shop/google-form';
 import { actions, load } from '../../src/routes/admin/products/+page.server';
 import { createProduct, getProduct, listProducts } from '@nebulakit/commerce';
 
@@ -20,7 +21,8 @@ const good: ProductFormValues = {
 	imageUrl: '',
 	type: 'physical',
 	printfulVariantId: '',
-	active: true
+	active: true,
+	google: BLANK_GOOGLE_VALUES
 };
 
 describe('dollars and cents', () => {
