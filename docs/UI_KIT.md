@@ -57,6 +57,19 @@ live in `src/lib/widgets`; see [WIDGET_BOARD.md](./WIDGET_BOARD.md).
    `*.svelte` is excluded from coverage, so this is what keeps the kit tested.
 7. **Charts are readable without sight.** Each chart is `role="img"` with a
    summary label, and carries a visually hidden table of its numbers.
+8. **Code samples use `CodeBlock`, never a bare `<pre>`.** It highlights
+   Svelte/HTML, TypeScript/JavaScript, CSS, JSON, YAML, SQL and shell with the
+   dependency-free tokenizer in `src/lib/utils/code-highlight.ts`. The tokenizer
+   returns tokens, not HTML; the component renders each as a text node, so a
+   sample can never inject markup (there is no raw-HTML insertion). Its colours
+   are the `--code-*` tokens in `src/app.css`, each at least 4.5:1 on
+   `--color-surface` in both themes (`bun run validate:contrast` checks them).
+   The block has a header with the language or file name and a Copy button that
+   appears once the page is interactive, optional `lineNumbers` that are never
+   copied, and long lines scroll inside a keyboard-focusable region without
+   widening the card. A "Code" toggle for a usage sample is
+   `src/lib/components/CodeDisclosure.svelte` (a native `<details>`, 44px
+   target, chevron), which is what `/modules` and `/components` use.
 
 ---
 

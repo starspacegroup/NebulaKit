@@ -56,7 +56,10 @@ describe('ContentProof', () => {
 		expect(downloadLink.getAttribute('href')).toBe(
 			'data:application/timestamp-reply;base64,YmFzZTY0'
 		);
-		expect(screen.getByText(/openssl ts -verify/)).toBeTruthy();
+		// The command is highlighted, so its text is split across spans; read the whole block.
+		expect(screen.getByRole('region', { name: 'Verify command' }).textContent).toContain(
+			'openssl ts -verify'
+		);
 	});
 
 	it('copies the hash to the clipboard when the copy button is clicked', async () => {
@@ -70,7 +73,7 @@ describe('ContentProof', () => {
 		});
 		render(ContentProof, { props: { item } });
 
-		await fireEvent.click(screen.getByText('Copy'));
+		await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
 
 		expect(writeText).toHaveBeenCalledWith('abc123');
 		expect(screen.getByText('Copied')).toBeTruthy();

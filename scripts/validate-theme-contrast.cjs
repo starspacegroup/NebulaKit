@@ -6,7 +6,7 @@
 
 const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
-const { validateThemeContrast } = require('../src/lib/utils/contrast.ts');
+const { validateThemeContrast, getContrastRatio } = require('../src/lib/utils/contrast.ts');
 
 const css = readFileSync(join(__dirname, '../src/app.css'), 'utf8');
 
@@ -38,6 +38,26 @@ function readTheme(selector, blockPattern) {
 	);
 }
 
+/** The --code-* syntax colours of a theme block (CodeBlock tokens). */
+function readCodeTokens(selector, blockPattern) {
+	const block = css.match(blockPattern)?.[1] ?? '';
+	const tokens = Object.fromEntries(
+		[...block.matchAll(/--(code-[\w-]+)\s*:\s*(#[0-9a-fA-F]{3,6})\s*;/g)].map((match) => [
+			match[1],
+			match[2]
+		])
+	);
+	if (Object.keys(tokens).length === 0) {
+		throw new Error(`Could not find --code-* token colours in the ${selector} theme`);
+	}
+	return tokens;
+}
+
+const codeTokens = {
+	light: readCodeTokens(':root', /:root\s*\{([\s\S]*?)\n\}/),
+	dark: readCodeTokens("[data-theme='dark']", /\[data-theme=['"]dark['"]\]\s*\{([\s\S]*?)\n\}/)
+};
+
 const themes = {
 	light: readTheme(':root', /:root\s*\{([\s\S]*?)\n\}/),
 	dark: readTheme("[data-theme='dark']", /\[data-theme=['"]dark['"]\]\s*\{([\s\S]*?)\n\}/)
@@ -68,10 +88,24 @@ for (const [themeName, themeColors] of Object.entries(themes)) {
 		}
 	});
 
-	if (result.isValid) {
+	// Syntax colours are text on the code block's ground (--color-surface): 4.5:1 each.
+	let codeFailures = 0;
+	for (const [token, value] of Object.entries(codeTokens[themeName])) {
+		const ratio = getContrastRatio(value, themeColors.surface);
+		const passes = ratio >= 4.5;
+		if (!passes) codeFailures++;
+		const color = passes ? '\x1b[32m' : '\x1b[31m';
+		console.log(
+			`  ${color}${passes ? '✓ PASS' : '✗ FAIL'}\x1b[0m ${token.padEnd(25)} ${ratio.toFixed(2)}:1 on surface`
+		);
+	}
+
+	if (result.isValid && codeFailures === 0) {
 		console.log(`\n  ✅ ${themeName} theme passes WCAG AA standards`);
 	} else {
-		console.log(`\n  ❌ ${themeName} theme has ${result.failedChecks.length} contrast issue(s)`);
+		console.log(
+			`\n  ❌ ${themeName} theme has ${result.failedChecks.length + codeFailures} contrast issue(s)`
+		);
 		hasErrors = true;
 	}
 }

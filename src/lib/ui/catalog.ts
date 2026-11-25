@@ -877,7 +877,7 @@ toast.danger('Could not reach the server', 0); // 0 = stays until dismissed`
 		name: 'CodeBlock',
 		group: 'Data display',
 		summary:
-			'Code with a file name, optional line numbers that never get copied, and a copy button that says it worked.',
+			'Highlighted code with a file name, optional line numbers that never get copied, a copy button that says it worked, and long lines that scroll inside the block.',
 		code:
 			ui('CodeBlock') +
 			`<CodeBlock filename="src/routes/+page.svelte" language="svelte" lineNumbers code={source} />`

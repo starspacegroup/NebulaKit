@@ -85,6 +85,14 @@ All text/background combinations must meet:
 --color-warning: #ffc107; /* Warning states */
 ```
 
+#### Syntax colours (CodeBlock)
+
+`--code-keyword`, `--code-string`, `--code-comment`, `--code-number`,
+`--code-tag`, `--code-attr`, `--code-function`, `--code-variable` and
+`--code-punct` colour the tokens in a `CodeBlock`. They are text on
+`--color-surface`, so each needs 4.5:1 against it in **both** themes;
+`bun run validate:contrast` fails if one does not.
+
 #### Dark Theme
 
 Apply `data-theme="dark"` to `<html>` or any container:
