@@ -6,6 +6,7 @@
  * cost; none of it is trusted. A cart line names a product and a quantity and
  * nothing else — every price is read from the catalog here.
  */
+import { priceNow } from './google-listing';
 import {
 	calculateTaxCents,
 	calculateTotalCents,
@@ -50,6 +51,8 @@ export interface PricingOptions {
 	regionalMultiplier?: number;
 	/** Which products the multiplier covers; `all` unless the site's settings say `digital`. */
 	regionalScope?: 'digital' | 'all';
+	/** Clock for sale windows, in ms. Defaults to now; tests pass a fixed one. */
+	nowMs?: number;
 }
 
 export class CommercePricingError extends Error {
@@ -89,15 +92,18 @@ export async function priceCart(
 			throw new CommercePricingError('Cart mixes currencies');
 		}
 		currency = product.currency;
+		// The catalog price is the one the shop page and Google show: the sale
+		// price while a sale is on (priceNow), the regular price otherwise.
+		const catalogCents = priceNow(product, options.nowMs ?? Date.now()).priceCents;
 		const covered = (options.regionalScope ?? 'all') === 'all' || product.type === 'digital';
 		const unitPriceCents = covered
-			? regionalPriceCents(product.priceCents, options.regionalMultiplier ?? 1)
-			: product.priceCents;
+			? regionalPriceCents(catalogCents, options.regionalMultiplier ?? 1)
+			: catalogCents;
 		priced.push({
 			product,
 			quantity,
 			unitPriceCents,
-			baseUnitPriceCents: product.priceCents,
+			baseUnitPriceCents: catalogCents,
 			lineTotalCents: unitPriceCents * quantity
 		});
 	}

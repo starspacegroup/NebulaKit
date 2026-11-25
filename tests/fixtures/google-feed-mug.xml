@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
+<channel>
+<title>{NAME}</title>
+<link>{SITE}/</link>
+<description>{DESCRIPTION}</description>
+<item>
+<title>Product mug</title>
+<link>{SITE}/shop/mug</link>
+<description>About mug.</description>
+<g:id>ID</g:id>
+<g:title>Product mug</g:title>
+<g:description>About mug.</g:description>
+<g:link>{SITE}/shop/mug</g:link>
+<g:image_link>{SITE}/media/mug.jpg</g:image_link>
+<g:availability>in_stock</g:availability>
+<g:price>12.99 USD</g:price>
+<g:condition>new</g:condition>
+<g:brand>Acme</g:brand>
+<g:gtin>036000291452</g:gtin>
+<g:color>Blue</g:color>
+<g:shipping_weight>350 g</g:shipping_weight>
+<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0.00 USD</g:price><g:min_handling_time>0</g:min_handling_time><g:max_handling_time>1</g:max_handling_time><g:min_transit_time>2</g:min_transit_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+</item>
+<!-- items: 1, left out: 0 -->
+</channel>
+</rss>

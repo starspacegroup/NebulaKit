@@ -119,6 +119,8 @@ describe('migration 0022', () => {
 			// 0026, auctions: not this migration's, but part of the schema it is read against
 			'commerce_auction_bids',
 			'commerce_auctions',
+			// 0037, Google listings: not this migration's either
+			'commerce_google_sync',
 			'commerce_order_items',
 			'commerce_order_regional',
 			'commerce_orders',

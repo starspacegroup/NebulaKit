@@ -1,5 +1,6 @@
 import { isCents } from './money';
 import type { CartLine } from './cart';
+import { validateGoogleInput } from './google-listing';
 import type { ProductInput, ShippingAddress } from './types';
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; errors: string[] };
@@ -84,6 +85,11 @@ export function validateProductInput(
 		if (id === null || (typeof id === 'number' && Number.isSafeInteger(id) && id > 0))
 			out.printfulVariantId = id as number | null;
 		else errors.push('printfulVariantId must be a positive integer or null');
+	}
+	if (has('google')) {
+		const google = validateGoogleInput(body.google, true);
+		if (google.ok) out.google = google.value;
+		else errors.push(...google.errors.map((e) => `google: ${e}`));
 	}
 	if (has('active')) {
 		if (typeof body.active === 'boolean') out.active = body.active;

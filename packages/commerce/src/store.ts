@@ -7,6 +7,7 @@ import type { D1Database } from '@cloudflare/workers-types';
 import type { PricedCart } from './cart';
 import { canTransition } from './orders';
 import { parseRegionalPricing, type RegionalPricingSettings } from './regional';
+import { EMPTY_GOOGLE, type GoogleAttributes } from './google-listing';
 import type {
 	Order,
 	OrderItem,
@@ -24,6 +25,11 @@ export class CommerceConflictError extends Error {
 	readonly status = 409;
 }
 
+/** One mapper for every place a product row is read (feed pages included). */
+export function productFromRow(row: Record<string, unknown>): Product {
+	return toProduct(row);
+}
+
 function toProduct(row: Row): Product {
 	return {
 		id: row.id as string,
@@ -36,9 +42,111 @@ function toProduct(row: Row): Product {
 		type: row.type as ProductType,
 		printfulVariantId: row.printful_variant_id == null ? null : Number(row.printful_variant_id),
 		active: Number(row.active) === 1,
+		google: toGoogle(row),
 		createdAt: row.created_at as string,
 		updatedAt: row.updated_at as string
 	};
+}
+
+const text = (v: unknown) => (typeof v === 'string' && v !== '' ? v : null);
+const int = (v: unknown) => (v == null ? null : Number(v));
+const flag = (v: unknown) => (v == null ? null : Number(v) === 1);
+
+function imageList(raw: unknown): string[] {
+	if (typeof raw !== 'string' || !raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed) ? parsed.filter((u): u is string => typeof u === 'string') : [];
+	} catch {
+		// an unreadable list reads as "no extra images"; the product still sells
+		return [];
+	}
+}
+
+/** The Google columns of a row (migration 0037). A row from before it reads as all-empty. */
+function toGoogle(row: Row): GoogleAttributes {
+	return {
+		...EMPTY_GOOGLE,
+		brand: text(row.brand),
+		gtin: text(row.gtin),
+		mpn: text(row.mpn),
+		condition: text(row.condition) as GoogleAttributes['condition'],
+		googleProductCategory: text(row.google_product_category),
+		productType: text(row.product_type),
+		availability: text(row.availability) as GoogleAttributes['availability'],
+		availabilityDate: text(row.availability_date),
+		salePriceCents: int(row.sale_price_cents),
+		saleStartsAt: text(row.sale_starts_at),
+		saleEndsAt: text(row.sale_ends_at),
+		additionalImages: imageList(row.additional_images),
+		color: text(row.color),
+		size: text(row.size),
+		material: text(row.material),
+		gender: text(row.gender) as GoogleAttributes['gender'],
+		ageGroup: text(row.age_group) as GoogleAttributes['ageGroup'],
+		itemGroupId: text(row.item_group_id),
+		identifierExists: flag(row.identifier_exists),
+		weightGrams: int(row.weight_grams),
+		lengthMm: int(row.length_mm),
+		widthMm: int(row.width_mm),
+		heightMm: int(row.height_mm),
+		adult: flag(row.adult) === true,
+		customLabel0: text(row.custom_label_0),
+		customLabel1: text(row.custom_label_1),
+		customLabel2: text(row.custom_label_2),
+		customLabel3: text(row.custom_label_3),
+		customLabel4: text(row.custom_label_4),
+		excluded: Number(row.google_excluded ?? 0) === 1
+	};
+}
+
+/** Attribute -> column, fixed here so a request can never name a column. */
+const GOOGLE_COLUMNS: Record<keyof GoogleAttributes, string> = {
+	brand: 'brand',
+	gtin: 'gtin',
+	mpn: 'mpn',
+	condition: 'condition',
+	googleProductCategory: 'google_product_category',
+	productType: 'product_type',
+	availability: 'availability',
+	availabilityDate: 'availability_date',
+	salePriceCents: 'sale_price_cents',
+	saleStartsAt: 'sale_starts_at',
+	saleEndsAt: 'sale_ends_at',
+	additionalImages: 'additional_images',
+	color: 'color',
+	size: 'size',
+	material: 'material',
+	gender: 'gender',
+	ageGroup: 'age_group',
+	itemGroupId: 'item_group_id',
+	identifierExists: 'identifier_exists',
+	weightGrams: 'weight_grams',
+	lengthMm: 'length_mm',
+	widthMm: 'width_mm',
+	heightMm: 'height_mm',
+	adult: 'adult',
+	customLabel0: 'custom_label_0',
+	customLabel1: 'custom_label_1',
+	customLabel2: 'custom_label_2',
+	customLabel3: 'custom_label_3',
+	customLabel4: 'custom_label_4',
+	excluded: 'google_excluded'
+};
+
+/** [column, bound value] for every Google attribute present in a patch. */
+function googleAssignments(google: Partial<GoogleAttributes> | undefined): [string, unknown][] {
+	const out: [string, unknown][] = [];
+	if (!google) return out;
+	for (const [key, column] of Object.entries(GOOGLE_COLUMNS)) {
+		const value = google[key as keyof GoogleAttributes];
+		if (value === undefined) continue;
+		if (key === 'additionalImages')
+			out.push([column, (value as string[]).length ? JSON.stringify(value) : null]);
+		else if (typeof value === 'boolean') out.push([column, value ? 1 : 0]);
+		else out.push([column, value]);
+	}
+	return out;
 }
 
 function parseAddress(raw: unknown): ShippingAddress | null {
@@ -125,25 +233,26 @@ export async function getProduct(db: D1Database, idOrSlug: string): Promise<Prod
 
 export async function createProduct(db: D1Database, input: ProductInput): Promise<Product> {
 	const id = crypto.randomUUID();
+	const columns: [string, unknown][] = [
+		['id', id],
+		['slug', input.slug],
+		['name', input.name],
+		['description', input.description ?? ''],
+		['price_cents', input.priceCents],
+		['currency', input.currency ?? 'usd'],
+		['image_url', input.imageUrl ?? null],
+		['type', input.type ?? 'physical'],
+		['printful_variant_id', input.printfulVariantId ?? null],
+		['active', input.active === false ? 0 : 1],
+		...googleAssignments(input.google)
+	];
 	try {
 		await db
 			.prepare(
-				`INSERT INTO commerce_products
-				 (id, slug, name, description, price_cents, currency, image_url, type, printful_variant_id, active)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+				`INSERT INTO commerce_products (${columns.map(([c]) => c).join(', ')})
+				 VALUES (${columns.map(() => '?').join(', ')})`
 			)
-			.bind(
-				id,
-				input.slug,
-				input.name,
-				input.description ?? '',
-				input.priceCents,
-				input.currency ?? 'usd',
-				input.imageUrl ?? null,
-				input.type ?? 'physical',
-				input.printfulVariantId ?? null,
-				input.active === false ? 0 : 1
-			)
+			.bind(...columns.map(([, v]) => v))
 			.run();
 	} catch (err) {
 		if (isUniqueViolation(err)) throw new CommerceConflictError(`Slug "${input.slug}" is taken`);
@@ -152,7 +261,7 @@ export async function createProduct(db: D1Database, input: ProductInput): Promis
 	return (await getProduct(db, id)) as Product;
 }
 
-const PRODUCT_COLUMNS: Record<keyof ProductInput, string> = {
+const PRODUCT_COLUMNS: Record<Exclude<keyof ProductInput, 'google'>, string> = {
 	slug: 'slug',
 	name: 'name',
 	description: 'description',
@@ -173,10 +282,14 @@ export async function updateProduct(
 	const values: unknown[] = [];
 	// Column names come from the fixed map above, never from the request.
 	for (const [key, column] of Object.entries(PRODUCT_COLUMNS)) {
-		const value = patch[key as keyof ProductInput];
+		const value = patch[key as keyof typeof PRODUCT_COLUMNS];
 		if (value === undefined) continue;
 		sets.push(`${column} = ?`);
 		values.push(typeof value === 'boolean' ? (value ? 1 : 0) : value);
+	}
+	for (const [column, value] of googleAssignments(patch.google)) {
+		sets.push(`${column} = ?`);
+		values.push(value);
 	}
 	if (sets.length) {
 		try {

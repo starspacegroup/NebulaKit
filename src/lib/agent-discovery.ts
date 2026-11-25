@@ -75,6 +75,8 @@ export const SITEMAP_EXCLUDED_ROUTES: Readonly<Record<string, string>> = {
 	setup: 'One-time install wizard; meaningless (and risky) once the site is live.',
 	media: 'R2 binary passthrough, not an HTML page.',
 	'[contentType]': 'Enumerated dynamically from the CMS at request time.',
+	feeds:
+		'Machine feeds for Google Merchant Center (/feeds/google-products.xml and .tsv): not pages, noindex, read by a scheduled fetch.',
 	cart: "The shopper's own cart and checkout — per-visitor, nothing to index.",
 	p: 'Builder pages — published ones are enumerated dynamically at request time.',
 	'[family=landingFamily]':

@@ -1,4 +1,13 @@
 import { validateProductInput, type Product, type ProductInput } from '@nebulakit/commerce';
+import {
+	googleToFormValues,
+	parseGoogleValues,
+	readGoogleForm,
+	type GoogleFormValues
+} from '$lib/shop/google-form';
+import { centsToDollars, dollarsToCents } from '$lib/shop/money-input';
+
+export { centsToDollars, dollarsToCents };
 
 /** What an admin typed, kept so a rejected form can be shown back as typed. */
 export interface ProductFormValues {
@@ -11,22 +20,7 @@ export interface ProductFormValues {
 	type: string;
 	printfulVariantId: string;
 	active: boolean;
-}
-
-const DOLLARS = /^\$?\s*(\d{1,7})(?:\.(\d{1,2}))?$/;
-
-/**
- * Dollars as an admin types them ("12", "12.5", "$12.50") to whole cents.
- * Null for anything else: money never goes through a float.
- */
-export function dollarsToCents(input: string): number | null {
-	const match = DOLLARS.exec(input.trim());
-	if (!match) return null;
-	return Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0') || 0);
-}
-
-export function centsToDollars(cents: number): string {
-	return `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`;
+	google: GoogleFormValues;
 }
 
 export function productToFormValues(product: Product): ProductFormValues {
@@ -39,7 +33,8 @@ export function productToFormValues(product: Product): ProductFormValues {
 		imageUrl: product.imageUrl ?? '',
 		type: product.type,
 		printfulVariantId: product.printfulVariantId == null ? '' : String(product.printfulVariantId),
-		active: product.active
+		active: product.active,
+		google: googleToFormValues(product.google)
 	};
 }
 
@@ -54,7 +49,8 @@ export function readProductForm(form: FormData): ProductFormValues {
 		imageUrl: field('image_url'),
 		type: field('type') || 'physical',
 		printfulVariantId: field('printful_variant_id'),
-		active: form.get('active') === 'on'
+		active: form.get('active') === 'on',
+		google: readGoogleForm(form)
 	};
 }
 
@@ -91,7 +87,9 @@ export function parseProductValues(values: ProductFormValues): ParsedProduct {
 			...checked.errors.filter((e) => !(priceCents === null && e.startsWith('priceCents')))
 		);
 	}
-	return errors.length || !checked.ok
+	const google = parseGoogleValues(values.google);
+	if (!google.ok) errors.push(...google.errors);
+	return errors.length || !checked.ok || !google.ok
 		? { ok: false, errors }
-		: { ok: true, value: checked.value as ProductInput };
+		: { ok: true, value: { ...(checked.value as ProductInput), google: google.value } };
 }

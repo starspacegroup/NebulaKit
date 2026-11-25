@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import GoogleListingFields from '$lib/components/GoogleListingFields.svelte';
+	import { BLANK_GOOGLE_VALUES } from '$lib/shop/google-form';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -13,7 +15,8 @@
 		imageUrl: '',
 		type: 'physical',
 		printfulVariantId: '',
-		active: true
+		active: true,
+		google: BLANK_GOOGLE_VALUES
 	};
 	const createValues = $derived(
 		form && 'values' in form && form.values && form.action === 'create' ? form.values : blank
@@ -33,6 +36,10 @@
 	<p>
 		What the shop sells. Archive a product to hide it from the shop without losing it or any order
 		that names it. Prices are in the product's currency, in dollars and cents.
+	</p>
+	<p>
+		<a href="/admin/products/google">Google listings</a>: the feed address for Merchant Center and
+		what Google would reject.
 	</p>
 
 	<div role="status" aria-live="polite">
@@ -100,6 +107,7 @@
 				<textarea name="description" rows="3" maxlength="5000">{createValues.description}</textarea>
 			</label>
 		</div>
+		<GoogleListingFields values={createValues.google} />
 		<label class="check"
 			><input type="checkbox" name="active" checked={createValues.active} /> Show in the shop</label
 		>
@@ -112,7 +120,7 @@
 		<ul class="list" aria-label="Products">
 			{#each data.products as product (product.id)}
 				{@const v = rejected && rejected.id === product.id ? rejected.values : product.values}
-				<li class:archived={!product.active}>
+				<li id="product-{product.id}" class:archived={!product.active}>
 					<form method="POST" action="?/update" use:enhance class="edit">
 						<input type="hidden" name="id" value={product.id} />
 						<h3>
@@ -163,6 +171,7 @@
 								<textarea name="description" rows="3" maxlength="5000">{v.description}</textarea>
 							</label>
 						</div>
+						<GoogleListingFields values={v.google} open={rejected?.id === product.id} />
 						<input
 							type="hidden"
 							name="active"

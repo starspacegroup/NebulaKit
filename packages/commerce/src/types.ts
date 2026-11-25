@@ -1,3 +1,5 @@
+import type { GoogleAttributes } from './google-listing';
+
 export type ProductType = 'physical' | 'digital';
 
 export interface Product {
@@ -11,6 +13,8 @@ export interface Product {
 	type: ProductType;
 	printfulVariantId: number | null;
 	active: boolean;
+	/** Google Merchant Center attributes (migration 0037); every field optional. */
+	google: GoogleAttributes;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -25,6 +29,8 @@ export interface ProductInput {
 	type?: ProductType;
 	printfulVariantId?: number | null;
 	active?: boolean;
+	/** Only the keys present are written. */
+	google?: Partial<GoogleAttributes>;
 }
 
 export interface ShippingAddress {
