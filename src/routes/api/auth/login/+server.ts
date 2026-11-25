@@ -4,6 +4,7 @@ import {
 	isThrottled,
 	recordFailure
 } from '$lib/server/login-throttle';
+import { readJsonObject } from '$lib/server/request-body';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getConfiguredAuthProviders } from '$lib/utils/auth-provider-config';
 import { verifyPassword } from '$lib/utils/passwords';
@@ -28,7 +29,7 @@ export const POST: RequestHandler = async ({ platform, request, url }) => {
 		throw error(500, 'Database not available');
 	}
 
-	const body = await request.json();
+	const body = await readJsonObject(request);
 	const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
 	const password = typeof body.password === 'string' ? body.password : '';
 
