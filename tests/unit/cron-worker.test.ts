@@ -4,6 +4,7 @@ import worker, {
 	CRON_PATHS,
 	deliver,
 	MAX_RETRIES,
+	probeWebsite,
 	runScheduled,
 	SCHEDULED_TIME_HEADER,
 	type Dependencies,
@@ -188,5 +189,58 @@ describe('runScheduled and the scheduled handler', () => {
 		await worker.scheduled(event, env, { waitUntil: (p) => void (work = p) });
 		await expect(work).resolves.toBeUndefined();
 		expect(error).toHaveBeenCalledWith('Scheduler failed unexpectedly:', expect.any(Error));
+	});
+});
+
+describe('the status probe', () => {
+	it('is mapped to the status check route every minute', () => {
+		expect(CRON_PATHS['* * * * *']).toBe('/api/cron/status-check');
+	});
+
+	it('fetches the ping route from outside and describes the answer as a query string', async () => {
+		const { dependencies, fetchMock } = deps(200);
+		const query = await probeWebsite(env, dependencies);
+		expect(query).toMatch(/^\?web=ok&ms=\d+&http=200$/);
+		const [url] = fetchMock.mock.calls[0] as unknown as [URL, RequestInit];
+		expect(String(url)).toBe('https://app.example/api/status/ping');
+	});
+
+	it('reports an error status or no answer as a failed probe, never throwing', async () => {
+		expect(await probeWebsite(env, deps(503).dependencies)).toMatch(/^\?web=fail&ms=\d+&http=503$/);
+		expect(await probeWebsite(env, deps(new Error('timeout')).dependencies)).toBe('?web=fail');
+	});
+
+	it('sends nothing extra when the target is not configured', async () => {
+		expect(
+			await probeWebsite(
+				{ TARGET_URL: 'https://REPLACE_ME', CRON_SECRET: 'x' },
+				deps().dependencies
+			)
+		).toBe('');
+	});
+
+	it('adds the probe to the status tick and to no other', async () => {
+		const status = deps(200, 200);
+		await runScheduled({ cron: '* * * * *', scheduledTime: TICK }, env, status.dependencies);
+		const urls = status.fetchMock.mock.calls.map((c) => String((c as unknown as [URL])[0]));
+		expect(urls[0]).toBe('https://app.example/api/status/ping');
+		expect(urls[1]).toMatch(
+			/^https:\/\/app\.example\/api\/cron\/status-check\?web=ok&ms=\d+&http=200$/
+		);
+
+		const other = deps(200);
+		await runScheduled({ cron: '17 3 * * *', scheduledTime: TICK }, env, other.dependencies);
+		expect(other.fetchMock).toHaveBeenCalledTimes(1);
+		expect(String((other.fetchMock.mock.calls[0] as unknown as [URL])[0])).toBe(
+			'https://app.example/api/cron/prune-view-stats'
+		);
+	});
+
+	it('still delivers the tick when the website did not answer, saying so', async () => {
+		const down = deps(new Error('no route'), 200);
+		await runScheduled({ cron: '* * * * *', scheduledTime: TICK }, env, down.dependencies);
+		expect(String((down.fetchMock.mock.calls[1] as unknown as [URL])[0])).toBe(
+			'https://app.example/api/cron/status-check?web=fail'
+		);
 	});
 });

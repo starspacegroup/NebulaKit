@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate as formatZonedDate } from '$lib/utils/timezone';
 	import type { PageData } from './$types';
 	import { can, PERMISSIONS, PERMISSION_LABELS, canEditPermissions } from '$lib/access/permissions';
 	import { assignableBy, canActOn, canGrant, effectiveRole, type Role } from '$lib/access/roles';
@@ -248,7 +249,7 @@
 	}
 
 	function formatDate(dateString: string) {
-		return new Date(dateString).toLocaleDateString();
+		return formatZonedDate(dateString, data.timeZone);
 	}
 </script>
 

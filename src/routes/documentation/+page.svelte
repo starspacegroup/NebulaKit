@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { site } from '$lib/site.config';
+	import CodeBlock from '$lib/ui/CodeBlock.svelte';
 
 	type QuickStartLine =
 		| { kind: 'blank' }
@@ -81,6 +82,7 @@ bun run deploy`;
 			<a href="#admin-analytics">Admin Analytics</a>
 			<a href="#roles-permissions">Roles and Permissions</a>
 			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
+			<a href="#google-listings">Google Listings</a>
 			<a href="#lighthouse">Lighthouse</a>
 			<a href="#scheduled-jobs">Scheduled Jobs</a>
 			<a href="#agent-readiness">Agent Readiness</a>
@@ -304,9 +306,10 @@ bun run deploy`;
 				the theme's CSS variables only, works in light and dark, and is usable by keyboard. See them
 				all running, with the code for each, at <a href="/components">/components</a>.
 			</p>
-			<pre><code
-					>{`import { Button, TextInput, Select, Dialog, Tabs, Table, toast } from '$lib/ui';`}</code
-				></pre>
+			<CodeBlock
+				language="ts"
+				code={`import { Button, TextInput, Select, Dialog, Tabs, Table, toast } from '$lib/ui';`}
+			/>
 			<ul>
 				<li>
 					<strong>Actions</strong> — Button (four variants, three sizes, link form, loading state),
@@ -335,9 +338,11 @@ bun run deploy`;
 					Collapsible.
 				</li>
 				<li>
-					<strong>Data display</strong> — Card, Item, Table, DataTable (search, sort, paging, selection),
-					BarChart, LineChart and DonutChart (plain SVG, each with a hidden data table for screen readers),
-					Stat, Carousel, Timeline, Avatar, AvatarGroup, Kbd, CodeBlock, Prose and EmptyState.
+					<strong>Data display</strong> — Card, Item, Table, DataTable (search, sort, paging,
+					selection), BarChart, LineChart and DonutChart (plain SVG, each with a hidden data table
+					for screen readers), Stat, Carousel, Timeline, Avatar, AvatarGroup, Kbd, CodeBlock
+					(highlighted code with a copy button; code samples use it, never a bare
+					<code>&lt;pre&gt;</code>), Prose and EmptyState.
 				</li>
 			</ul>
 			<p>
@@ -365,9 +370,10 @@ bun run deploy`;
 				shown running, with the accessibility behaviour each one keeps, at
 				<a href="/modules">/modules</a>.
 			</p>
-			<pre><code
-					>{`import { SignInForm, PricingTable, DataGrid, KanbanBoard } from '$lib/modules';`}</code
-				></pre>
+			<CodeBlock
+				language="ts"
+				code={`import { SignInForm, PricingTable, DataGrid, KanbanBoard } from '$lib/modules';`}
+			/>
 			<ul>
 				<li>
 					<strong>Account</strong> &mdash; sign-in, sign-up, password reset, profile, sessions, two-factor.
@@ -404,9 +410,10 @@ bun run deploy`;
 				layout through <code>on:change</code>. It stores nothing itself, so where a layout is saved
 				stays your decision.
 			</p>
-			<pre><code
-					>{`<WidgetBoard bind:widgets {columns} on:change={(e) => save(e.detail.widgets)} />`}</code
-				></pre>
+			<CodeBlock
+				language="svelte"
+				code={`<WidgetBoard bind:widgets {columns} on:change={(e) => save(e.detail.widgets)} />`}
+			/>
 			<p>
 				Registering a widget takes three edits and none of them is the board: an entry in
 				<code>src/lib/widgets/manifest.ts</code>, a line in
@@ -546,16 +553,17 @@ bun run deploy`;
 				Migrations are ordered SQL files under <code>migrations/</code> and tracked by D1. Never edit
 				or delete existing migration files once committed to main.
 			</p>
-			<pre><code
-					># Apply pending migrations to local D1
+			<CodeBlock
+				language="sh"
+				code={`# Apply pending migrations to local D1
 bun run db:migrate:local
 
 # Apply pending migrations to remote D1
 bun run db:migrate
 
 # List migration status
-bun run db:migrate:list</code
-				></pre>
+bun run db:migrate:list`}
+			/>
 			<p>
 				When schema changes are needed, create a new file with the next sequence number (for
 				example,
@@ -669,8 +677,10 @@ bun run db:migrate:list</code
 						flag, which defaults to off so existing admins do not gain access on upgrade. Without it,
 						an admin still lands on <code>/admin</code> but sees no stats:
 					</p>
-					<pre><code>UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';</code
-						></pre>
+					<CodeBlock
+						language="sql"
+						code={`UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';`}
+					/>
 					<p>
 						The permission is re-read from the database on every request, so revoking it takes
 						effect without waiting for a sign-out.
@@ -683,10 +693,11 @@ bun run db:migrate:list</code
 						<code>CRON_SECRET</code> and have any scheduler POST to the retention endpoint; rows older
 						than 400 days are removed.
 					</p>
-					<pre><code
-							>curl -X POST https://your-app/api/cron/prune-view-stats \
-  -H "Authorization: Bearer $CRON_SECRET"</code
-						></pre>
+					<CodeBlock
+						language="sh"
+						code={`curl -X POST https://your-app/api/cron/prune-view-stats \\
+  -H "Authorization: Bearer $CRON_SECRET"`}
+					/>
 				</div>
 				<div class="callout-card">
 					<h3>Platform Usage Meter</h3>
@@ -709,10 +720,11 @@ bun run db:migrate:list</code
 						<code>/admin/analytics</code>; it is shown once, and only its hash is stored. The
 						dashboard then sends it as a bearer token:
 					</p>
-					<pre><code
-							>curl https://your-app/api/stats/summary?window=7 \
-  -H "Authorization: Bearer nks_…"</code
-						></pre>
+					<CodeBlock
+						language="sh"
+						code={`curl https://your-app/api/stats/summary?window=7 \\
+  -H "Authorization: Bearer nks_…"`}
+					/>
 					<p>
 						The response is read-only and aggregate-only — exactly what <code>/admin</code> shows. Rotate
 						replaces the token; Revoke cuts the dashboard off on its next read. A site that has never
@@ -768,10 +780,10 @@ bun run db:migrate:list</code
 					<p>
 						<code>cms</code>, <code>pages</code>, <code>users</code> (view the list),
 						<code>users-manage</code> (change roles and delete, below their own role),
-						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code> and
-						<code>lighthouse</code>. Settings, auth keys, AI keys, the analytics connection, setup
-						and reset stay with the owner and superadmins. Only the owner or a superadmin can change
-						an admin's areas.
+						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code>,
+						<code>lighthouse</code> and <code>shop</code>. Settings, auth keys, AI keys, the
+						analytics connection, setup and reset stay with the owner and superadmins. Only the
+						owner or a superadmin can change an admin's areas.
 					</p>
 				</div>
 				<div class="callout-card">
@@ -831,7 +843,10 @@ bun run db:migrate:list</code
 						kept in their browser, and check out at <code>/cart</code>. Prices, tax and shipping are
 						always worked out on the server from the catalog; the cart only remembers what to ask
 						for. Physical products ask for a shipping address. With Stripe configured the shopper
-						goes on to pay; without it the order waits for a manual payment.
+						pays by card right on <code>/cart</code> (Stripe's Payment Element, loaded from
+						<code>js.stripe.com</code> only on that page), or on Stripe's hosted page when
+						<code>CHECKOUT_MODE</code> is <code>hosted</code>; without it the order waits for a
+						manual payment. Orders are listed at <code>/admin/orders</code>.
 					</p>
 				</div>
 				<div class="callout-card">
@@ -906,11 +921,18 @@ bun run db:migrate:list</code
 			<p>
 				Shop settings are environment variables, never request fields:
 				<code>COMMERCE_TAX_RATE_PERCENT</code>, <code>COMMERCE_PRICES_INCLUDE_TAX</code>,
-				<code>COMMERCE_FLAT_SHIPPING_CENTS</code>, <code>STRIPE_SECRET_KEY</code> and
-				<code>STRIPE_WEBHOOK_SECRET</code> (webhook URL <code>/api/v1/webhooks/stripe</code>).
-				Without a Stripe key, orders wait for a manual payment. <code>ORCHESTRATOR_KEY_SHA256</code>
+				<code>COMMERCE_FLAT_SHIPPING_CENTS</code>, <code>STRIPE_SECRET_KEY</code>,
+				<code>STRIPE_PUBLISHABLE_KEY</code> and <code>STRIPE_WEBHOOK_SECRET</code> (webhook URL
+				<code>/api/v1/webhooks/stripe</code>), plus optional <code>CHECKOUT_MODE</code>
+				(<code>onpage</code>, the default, or <code>hosted</code>) and
+				<code>STRIPE_WEBHOOK_SECRET_PREVIOUS</code> while rolling the signing secret. Without a
+				Stripe key, orders wait for a manual payment; without the publishable key, the cart sends
+				shoppers to Stripe's hosted page. See <code>docs/CHECKOUT.md</code> for test cards and
+				<code>stripe listen</code>. <code>ORCHESTRATOR_KEY_SHA256</code>
 				connects the Ammoura control room. Apply migrations <code>0016</code>–<code>0018</code> with
-				<code>bun run db:migrate:local</code>.
+				<code>bun run db:migrate:local</code>; on-page checkout also needs <code>0034</code>–<code
+					>0036</code
+				>.
 			</p>
 			<h3 id="orders-payments-email">Payments, status and email</h3>
 			<p>
@@ -918,9 +940,15 @@ bun run db:migrate:list</code
 				so Stripe keeps retrying. It handles <code>checkout.session.completed</code> and
 				<code>checkout.session.async_payment_succeeded</code> (the order becomes paid),
 				<code>checkout.session.async_payment_failed</code> and
-				<code>checkout.session.expired</code> (a pending order is cancelled). A payment that is smaller
-				than the order total, or in another currency, leaves the order pending for a person to check.
-				Replays change nothing a second time.
+				<code>checkout.session.expired</code> (a pending order is cancelled), and for the on-page
+				card form <code>payment_intent.succeeded</code>, <code>payment_intent.canceled</code>,
+				<code>payment_intent.payment_failed</code> and <code>charge.refunded</code> (the last two
+				are recorded on the order's payment history at <code>/admin/orders</code> and never change
+				its status). Only this signed webhook marks an order paid, never the shopper's return to the
+				cart. A payment that is smaller than the order total, or in another currency, leaves the
+				order pending for a person to check. Each event is applied once per event id; a paid order
+				never goes back to unpaid. <code>POST /api/v1/checkout/cancel</code> lets a shopper back out of
+				an unpaid order: Stripe closes the payment first, then the order is cancelled.
 			</p>
 			<p>
 				After paying, the shopper returns to <code>/cart?order=…</code>, which asks
@@ -935,6 +963,55 @@ bun run db:migrate:list</code
 				each at most once per order: the <code>email_log</code> table refuses a second send. Without
 				a key nothing is sent and the log records what was skipped. Email colours come from
 				<code>emailTheme</code> in <code>src/lib/site.config.ts</code>.
+			</p>
+		</section>
+
+		<section id="google-listings" class="docs-section">
+			<h2>Google Listings</h2>
+			<p>
+				A shop is eligible for free listings and Shopping ads in Google Merchant Center without
+				hand-made spreadsheets. Apply migration <code>0037</code> with
+				<code>bun run db:migrate:local</code>. Each product has an optional
+				<strong>Google listing</strong> section in <a href="/admin/products">/admin/products</a>
+				(brand, GTIN, MPN, condition, category, sale price and window, extra images, color, size, material,
+				gender, age group, item group, weight and size, custom labels). The rules live in one pure module,
+				<code>packages/commerce/src/google-listing.ts</code>.
+			</p>
+			<h3 id="google-feed">The feed</h3>
+			<p>
+				<code>/feeds/google-products.xml</code> (RSS 2.0 with the <code>g:</code> namespace) and
+				<code>/feeds/google-products.tsv</code> list active products. Auctions, products marked
+				"keep out of the Google feed", and products with an error are left out, so one bad product
+				cannot cost the account its standing. Prices are the catalog price in the product's own
+				currency, for example <code>12.99 USD</code>; regional pricing is never applied to what
+				Google sees. Paste the XML address into Merchant Center as a scheduled fetch. The feed is
+				read from the Cloudflare cache for 15 minutes and pages through D1, so a 2000 product
+				catalog costs one pass of reads, not one per visit.
+			</p>
+			<h3 id="google-health">Feed health</h3>
+			<p>
+				<a href="/admin/products/google">/admin/products/google</a> shows the feed address, when it was
+				last fetched, how many products are valid, left out or carry warnings, and the first problems
+				with a link to fix each. It also holds the ship-to countries, delivery times, return policy and
+				default brand that the feed and each product page's structured data use. A section left blank
+				is not claimed anywhere.
+			</p>
+			<h3 id="google-markup">Product page markup</h3>
+			<p>
+				Every <code>/shop/[slug]</code> page emits one JSON-LD <code>Product</code> with an
+				<code>Offer</code> (price, currency, availability, condition, seller, shipping details and return
+				policy when set), inside the page's single Organization and WebSite graph. The price in the markup
+				is the price on the page, the price in the cart and the price in the feed. A sale price is charged
+				at checkout while its window is open.
+			</p>
+			<h3 id="google-sync">Merchant API sync (optional, off)</h3>
+			<p>
+				Turn on <strong>Merchant API sync</strong> in <code>/admin/products/google</code> (owner
+				only) to send changes every ten minutes through the
+				<code>google-merchant-sync</code> scheduled job (<code>/api/cron/google-merchant-sync</code
+				>). The service-account key is stored encrypted in KV, never in D1. Setup, disapproval
+				reasons and what could not be verified:
+				<code>docs/GOOGLE_LISTINGS.md</code>.
 			</p>
 		</section>
 
@@ -957,6 +1034,30 @@ bun run db:migrate:list</code
 				<code>0025</code> (shared with sign-in tracking) with <code>bun run db:migrate:local</code>.
 				Details:
 				<code>docs/AUDIT_LOG.md</code>.
+			</p>
+		</section>
+
+		<section id="admin-time-zone" class="docs-section">
+			<h2>Admin Time Zone</h2>
+			<p>
+				Every date and time in the admin area, and the days and hours on the Dashboard charts, are
+				shown in one zone. By default (<code>auto</code>) that is the browser's own zone, read with
+				<code>Intl.DateTimeFormat().resolvedOptions().timeZone</code> without asking, and handed to
+				the server in a <code>tz</code> cookie so server rendering matches. Each user can set their
+				own zone on their <a href="/profile#time-zone">profile</a>, which wins over everything else.
+				The owner can pin a fixed IANA zone in <a href="/admin/settings">/admin/settings</a>; that
+				beats the browser. With neither, the zone is UTC. The zone is named in the sidebar and on
+				the Dashboard header.
+			</p>
+			<p>
+				Counters are stored per UTC hour and per UTC day, so the Dashboard re-buckets what it can
+				and says so: the 24-hour chart keeps UTC hours labelled in your zone, longer windows are
+				rebuilt from the hourly totals into days of your zone, and the breakdown tables and the
+				platform usage meter stay on UTC days. Apply migration <code>0032</code> and
+				<code>0033</code>
+				with
+				<code>bun run db:migrate:local</code>. Public pages are not affected. Details:
+				<code>docs/ADMIN_TIMEZONE.md</code>.
 			</p>
 		</section>
 
@@ -986,8 +1087,9 @@ bun run db:migrate:list</code
 				NebulaKit follows Test-Driven Development. Write failing tests first, then implementation,
 				then refactor.
 			</p>
-			<pre><code
-					># Run all tests
+			<CodeBlock
+				language="sh"
+				code={`# Run all tests
 bun run test
 
 # Run tests in watch mode
@@ -1000,8 +1102,8 @@ bun run test:coverage
 bun run test:e2e
 
 # Run all tests (unit + E2E)
-bun run test:all</code
-				></pre>
+bun run test:all`}
+			/>
 			<p>
 				Vitest enforces a 95% floor for lines, statements, functions, and branches. A change is not
 				ready when any metric falls below that threshold.
@@ -1010,8 +1112,9 @@ bun run test:all</code
 
 		<section id="project-structure" class="docs-section">
 			<h2>Project Structure</h2>
-			<pre><code
-					>NebulaKit/
+			<CodeBlock
+				language="text"
+				code={`NebulaKit/
 ├── .github/              # Copilot and workflow instructions
 ├── src/
 │   ├── lib/
@@ -1031,8 +1134,8 @@ bun run test:all</code
 ├── tests/                  # unit/integration/e2e tests
 ├── migrations/             # Immutable D1 migration files
 ├── docs/                   # Extended project docs
-└── wrangler.toml           # Cloudflare bindings/config</code
-				></pre>
+└── wrangler.toml           # Cloudflare bindings/config`}
+			/>
 		</section>
 
 		<section id="deployment" class="docs-section">
@@ -1108,10 +1211,11 @@ bun run test:all</code
 				<a href="#scheduled-jobs">Scheduled Jobs</a>). Any scheduler that can POST works too, with
 				the same shared secret as the other background jobs:
 			</p>
-			<pre><code
-					>{`curl -X POST https://your-app.example/api/cron/lighthouse \\
-  -H "Authorization: Bearer $CRON_SECRET"`}</code
-				></pre>
+			<CodeBlock
+				language="sh"
+				code={`curl -X POST https://your-app.example/api/cron/lighthouse \\
+  -H "Authorization: Bearer $CRON_SECRET"`}
+			/>
 			<p>
 				Daily is plenty — PSI's keyless rate limit will not tolerate much more, and these scores do
 				not move hourly. <code>PAGESPEED_API_KEY</code> is optional and only raises that limit. Full
@@ -1132,12 +1236,13 @@ bun run test:all</code
 				<code>/admin/scheduled-jobs</code> lists each job with its last run, status and next
 				expected run, and has a <strong>Run now</strong> button for admins.
 			</p>
-			<pre><code
-					>{`cd cron-worker
+			<CodeBlock
+				language="sh"
+				code={`cd cron-worker
 # set TARGET_URL in wrangler.toml to your site's origin
 bunx wrangler deploy
-bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}</code
-				></pre>
+bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}
+			/>
 			<p>
 				It needs migration <code>0023_scheduled_job_runs.sql</code>. Adding a job and the details
 				are in <code>docs/SCHEDULED_JOBS.md</code>.
@@ -1202,7 +1307,7 @@ bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}</c
 				default. Responses include an <code>x-markdown-tokens</code> estimate so an agent can budget context
 				before reading.
 			</p>
-			<pre><code>curl -H 'Accept: text/markdown' {site.url}/</code></pre>
+			<CodeBlock language="sh" code={`curl -H 'Accept: text/markdown' ${site.url}/`} />
 
 			<h3>In-browser tools (WebMCP)</h3>
 			<p>
@@ -1409,8 +1514,12 @@ bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}</c
 	.docs-section > p,
 	.docs-section > ul,
 	.docs-section > ol,
-	.docs-section > pre {
+	.docs-section > :global(.code) {
 		max-width: var(--layout-prose-max-width);
+	}
+
+	.docs-section :global(.code) {
+		margin-bottom: var(--spacing-md);
 	}
 
 	.docs-section code {

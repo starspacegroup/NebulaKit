@@ -116,11 +116,18 @@ describe('migration 0022', () => {
 			.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'commerce_%'")
 			.all<{ name: string }>();
 		expect(tables.results.map((t) => t.name).sort()).toEqual([
+			// 0026, auctions: not this migration's, but part of the schema it is read against
+			'commerce_auction_bids',
+			'commerce_auctions',
+			// 0037, Google listings: not this migration's either
+			'commerce_google_sync',
 			'commerce_order_items',
 			'commerce_order_regional',
 			'commerce_orders',
 			'commerce_products',
-			'commerce_settings'
+			'commerce_settings',
+			// 0035, Stripe webhook events (on-page checkout): likewise later schema
+			'commerce_stripe_events'
 		]);
 		const columns = await db.prepare('PRAGMA table_info(commerce_orders)').all<{ name: string }>();
 		expect(columns.results.map((c) => c.name)).not.toContain('multiplier');

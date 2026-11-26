@@ -13,8 +13,10 @@
  *
  * Honesty rule (AGENTS.md): nothing here claims what the site does not do. In
  * particular there is no `SearchAction` (the site has no public search route
- * with a shareable result URL) and no `availability` on offers (the shop keeps
- * no stock count).
+ * with a shareable result URL), no `availability` the shop cannot back (the
+ * shop keeps no stock count, so a product is `InStock` unless its owner set
+ * otherwise), and no `aggregateRating`/`review` without real reviews (the
+ * template has none, so none are emitted).
  *
  * Dependency-free apart from site.config, so tests and routes can import it.
  */
@@ -43,15 +45,62 @@ export type Breadcrumb = { name: string; path: string };
 /** An entry in a listing page's `ItemList`. */
 export type ListEntry = { name: string; url: string; description?: string };
 
+/** One shipping destination, as listed in the Google settings. Prices are cents. */
+export type ShippingInput = {
+	country: string;
+	priceCents: number;
+	handlingDaysMin?: number | null;
+	handlingDaysMax?: number | null;
+	transitDaysMin?: number | null;
+	transitDaysMax?: number | null;
+};
+
+/** The site's return policy, already resolved to the countries it applies to. */
+export type ReturnPolicyInput = {
+	category: 'finite' | 'none' | 'unlimited';
+	days?: number | null;
+	fees: 'free' | 'customer' | 'shipping_fee';
+	shippingFeeCents?: number | null;
+	methods?: ('mail' | 'kiosk' | 'store')[];
+	countries: string[];
+};
+
 /** A shop product, as `/shop/[slug]` knows it. */
 export type ProductInput = {
 	name: string;
 	description?: string;
 	sku?: string;
-	/** Price in minor units (cents). */
+	/**
+	 * What the shopper pays today, in minor units (cents). The page, the feed
+	 * and the cart take this from `priceNow` (`@nebulakit/commerce`), so the
+	 * markup cannot name a price the page does not show.
+	 */
 	priceCents: number;
 	/** ISO 4217 code, any case. */
 	currency: string;
+	/** The regular price while a sale is on; becomes a StrikethroughPrice. */
+	listPriceCents?: number | null;
+	/** ISO 8601 end of the sale; the offer is valid until then. */
+	priceValidUntil?: string | null;
+	/** Absolute https image URLs, primary first. When absent the page image node is referenced. */
+	images?: string[];
+	brand?: string | null;
+	/** A valid GTIN-8/12/13/14. */
+	gtin?: string | null;
+	mpn?: string | null;
+	condition?: 'new' | 'refurbished' | 'used' | null;
+	availability?: 'in_stock' | 'out_of_stock' | 'preorder' | 'backorder' | null;
+	color?: string | null;
+	size?: string | null;
+	material?: string | null;
+	gender?: 'male' | 'female' | 'unisex' | null;
+	itemGroupId?: string | null;
+	category?: string | null;
+	adult?: boolean;
+	shipping?: ShippingInput[];
+	returnPolicy?: ReturnPolicyInput | null;
+	/** Emitted only when `reviewCount` > 0. The template has no reviews, so pages pass none. */
+	aggregateRating?: { ratingValue: number; reviewCount: number } | null;
 };
 
 /** What a page tells {@link buildPageGraph} about itself. */
@@ -179,28 +228,169 @@ export function itemListNode(items: ListEntry[], pageUrl: string): JsonLdNode {
 	};
 }
 
+const SCHEMA = 'https://schema.org/';
+
+const AVAILABILITY: Record<NonNullable<ProductInput['availability']>, string> = {
+	in_stock: 'InStock',
+	out_of_stock: 'OutOfStock',
+	preorder: 'PreOrder',
+	backorder: 'BackOrder'
+};
+
+const CONDITION: Record<NonNullable<ProductInput['condition']>, string> = {
+	new: 'NewCondition',
+	refurbished: 'RefurbishedCondition',
+	used: 'UsedCondition'
+};
+
+/** Decimal string of the major unit from whole cents, with integer maths only. */
+function decimal(cents: number): string {
+	const whole = Math.floor(cents / 100);
+	return `${whole}.${String(cents - whole * 100).padStart(2, '0')}`;
+}
+
+function days(
+	min: number | null | undefined,
+	max: number | null | undefined
+): JsonLdNode | undefined {
+	const lo = min ?? max;
+	const hi = max ?? min;
+	if (lo == null || hi == null) return undefined;
+	return { '@type': 'QuantitativeValue', minValue: lo, maxValue: hi, unitCode: 'DAY' };
+}
+
+/**
+ * One `OfferShippingDetails` per destination. Google requires `deliveryTime`,
+ * so a destination with no handling or transit time set emits nothing rather
+ * than a half-valid node. `currency` is the offer's, as Google requires.
+ */
+export function shippingDetailsNodes(shipping: ShippingInput[], currency: string): JsonLdNode[] {
+	const nodes: JsonLdNode[] = [];
+	for (const line of shipping) {
+		const handlingTime = days(line.handlingDaysMin, line.handlingDaysMax);
+		const transitTime = days(line.transitDaysMin, line.transitDaysMax);
+		if (!handlingTime && !transitTime) continue;
+		nodes.push({
+			'@type': 'OfferShippingDetails',
+			shippingRate: {
+				'@type': 'MonetaryAmount',
+				value: decimal(line.priceCents),
+				currency: currency.toUpperCase()
+			},
+			shippingDestination: { '@type': 'DefinedRegion', addressCountry: line.country },
+			deliveryTime: compact({ '@type': 'ShippingDeliveryTime', handlingTime, transitTime })
+		});
+	}
+	return nodes;
+}
+
+const RETURN_CATEGORY = {
+	finite: 'MerchantReturnFiniteReturnWindow',
+	none: 'MerchantReturnNotPermitted',
+	unlimited: 'MerchantReturnUnlimitedWindow'
+} as const;
+const RETURN_FEES = {
+	free: 'FreeReturn',
+	customer: 'ReturnFeesCustomerResponsibility',
+	shipping_fee: 'ReturnShippingFees'
+} as const;
+const RETURN_METHOD = {
+	mail: 'ReturnByMail',
+	kiosk: 'ReturnAtKiosk',
+	store: 'ReturnInStore'
+} as const;
+
+/** `MerchantReturnPolicy`, or undefined when the owner stated none or it has no country. */
+export function returnPolicyNode(
+	policy: ReturnPolicyInput | null | undefined,
+	currency: string
+): JsonLdNode | undefined {
+	if (!policy || policy.countries.length === 0) return undefined;
+	if (policy.category === 'finite' && policy.days == null) return undefined;
+	const fees = policy.category === 'none' ? undefined : RETURN_FEES[policy.fees];
+	return compact({
+		'@type': 'MerchantReturnPolicy',
+		applicableCountry: policy.countries,
+		returnPolicyCategory: `${SCHEMA}${RETURN_CATEGORY[policy.category]}`,
+		merchantReturnDays: policy.category === 'finite' ? (policy.days ?? undefined) : undefined,
+		returnFees: fees ? `${SCHEMA}${fees}` : undefined,
+		returnMethod: policy.methods?.length
+			? policy.methods.map((m) => `${SCHEMA}${RETURN_METHOD[m]}`)
+			: undefined,
+		returnShippingFeesAmount:
+			policy.fees === 'shipping_fee' && policy.shippingFeeCents && policy.category !== 'none'
+				? {
+						'@type': 'MonetaryAmount',
+						value: decimal(policy.shippingFeeCents),
+						currency: currency.toUpperCase()
+					}
+				: undefined
+	});
+}
+
 /**
  * `Product` with a single `Offer`. The price is a decimal string of the major
- * unit, matching how `formatMoney` renders it. No `availability`: the shop has
- * no stock model, and "InStock" would be a guess.
+ * unit, matching how `formatMoney` renders it. `availability` is the owner's
+ * (or InStock: the shop keeps no stock count). Everything optional is left
+ * out when it is not known: an empty claim is worse than none.
  */
 export function productNode(product: ProductInput, pageUrl: string, imageId?: string): JsonLdNode {
+	const currency = product.currency.toUpperCase();
+	const onSale = product.listPriceCents != null && product.listPriceCents > product.priceCents;
+	const shippingDetails = product.shipping?.length
+		? shippingDetailsNodes(product.shipping, currency)
+		: [];
+	const returnPolicy = returnPolicyNode(product.returnPolicy, currency);
+	const images = product.images?.filter(Boolean) ?? [];
+	const gtin = product.gtin && /^\d{8}$|^\d{12,14}$/.test(product.gtin) ? product.gtin : undefined;
 	return compact({
 		'@type': 'Product',
 		'@id': `${pageUrl}#product`,
 		name: product.name,
 		description: product.description,
 		sku: product.sku,
-		image: imageId ? { '@id': imageId } : undefined,
-		brand: { '@id': ORGANIZATION_ID },
-		offers: {
+		mpn: product.mpn,
+		[gtin ? `gtin${gtin.length}` : 'gtin']: gtin,
+		image: images.length ? images : imageId ? { '@id': imageId } : undefined,
+		brand: product.brand ? { '@type': 'Brand', name: product.brand } : { '@id': ORGANIZATION_ID },
+		category: product.category,
+		color: product.color,
+		size: product.size,
+		material: product.material,
+		inProductGroupWithID: product.itemGroupId,
+		audience: product.gender
+			? { '@type': 'PeopleAudience', suggestedGender: product.gender }
+			: undefined,
+		hasAdultConsideration: product.adult ? `${SCHEMA}AdultConsideration` : undefined,
+		aggregateRating:
+			product.aggregateRating && product.aggregateRating.reviewCount > 0
+				? {
+						'@type': 'AggregateRating',
+						ratingValue: product.aggregateRating.ratingValue,
+						reviewCount: product.aggregateRating.reviewCount
+					}
+				: undefined,
+		offers: compact({
 			'@type': 'Offer',
 			'@id': `${pageUrl}#offer`,
 			url: pageUrl,
-			price: (product.priceCents / 100).toFixed(2),
-			priceCurrency: product.currency.toUpperCase(),
-			seller: { '@id': ORGANIZATION_ID }
-		}
+			price: decimal(product.priceCents),
+			priceCurrency: currency,
+			priceValidUntil: product.priceValidUntil || undefined,
+			availability: `${SCHEMA}${AVAILABILITY[product.availability ?? 'in_stock']}`,
+			itemCondition: `${SCHEMA}${CONDITION[product.condition ?? 'new']}`,
+			priceSpecification: onSale
+				? {
+						'@type': 'UnitPriceSpecification',
+						priceType: `${SCHEMA}StrikethroughPrice`,
+						price: decimal(product.listPriceCents as number),
+						priceCurrency: currency
+					}
+				: undefined,
+			seller: { '@id': ORGANIZATION_ID },
+			shippingDetails: shippingDetails.length ? shippingDetails : undefined,
+			hasMerchantReturnPolicy: returnPolicy
+		})
 	});
 }
 

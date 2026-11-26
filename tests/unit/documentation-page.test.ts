@@ -173,7 +173,13 @@ describe('Documentation Page', () => {
 			'ORCHESTRATOR_KEY_SHA256',
 			'GET /api/v1/orders/[id]/status',
 			'RESEND_API_KEY',
-			'checkout.session.async_payment_failed'
+			'checkout.session.async_payment_failed',
+			'STRIPE_PUBLISHABLE_KEY',
+			'CHECKOUT_MODE',
+			'payment_intent.succeeded',
+			'charge.refunded',
+			'POST /api/v1/checkout/cancel',
+			'/admin/orders'
 		]) {
 			expect(scoped.getAllByText(text).length).toBeGreaterThan(0);
 		}
@@ -577,6 +583,7 @@ describe('Documentation Page', () => {
 			}
 			expect(section.textContent).toMatch(/Layout/);
 			expect(section.textContent).toMatch(/MIT-licensed/);
+			expect(section.textContent).toMatch(/CodeBlock\s+\(highlighted code/);
 		});
 	});
 
@@ -596,6 +603,16 @@ describe('Documentation Page', () => {
 		expect(scoped.getAllByText('users-manage').length).toBeGreaterThan(0);
 		expect(scoped.getAllByText('0021').length).toBeGreaterThan(0);
 		expect(scoped.getAllByText(/requirePermission/).length).toBeGreaterThan(0);
+	});
+
+	it('documents the admin time zone, its cookie and what cannot be re-bucketed', () => {
+		render(Page);
+		expect(screen.getByRole('heading', { name: /Admin Time Zone/i })).toBeInTheDocument();
+		const text = document.body.textContent ?? '';
+		expect(text).toMatch(/tz<\/code>|tz cookie|`tz`|tz\s+cookie/);
+		expect(text).toMatch(/UTC days/);
+		expect(text).toMatch(/their\s+own\s+zone/);
+		expect(text).toMatch(/docs\/ADMIN_TIMEZONE\.md/);
 	});
 
 	it('documents the audit log, its privacy limits and its retention endpoint', () => {
@@ -626,5 +643,45 @@ describe('Documentation Page', () => {
 		expect(screen.getByRole('link', { name: '/who' })).toHaveAttribute('href', '/who');
 		expect(screen.getByText(/bun run landing report/)).toBeInTheDocument();
 		expect(screen.getByText(/Example Co\. pages are marked/)).toBeInTheDocument();
+	});
+});
+
+// AGENTS.md §7 — the feed routes, the Google admin page, migration 0037 and the sync job are
+// user-visible, so the documentation has to say where each lives and what is off by default.
+describe('Documentation Page: Google listings', () => {
+	it('documents the feeds, the health page, the markup and the optional sync', () => {
+		render(Page);
+		const scoped = within(
+			screen
+				.getByRole('heading', { name: 'Google Listings', level: 2 })
+				.closest('section') as HTMLElement
+		);
+		for (const text of [
+			'/feeds/google-products.xml',
+			'/feeds/google-products.tsv',
+			'/admin/products/google',
+			'/api/cron/google-merchant-sync',
+			'google-merchant-sync',
+			'docs/GOOGLE_LISTINGS.md',
+			'packages/commerce/src/google-listing.ts',
+			'0037'
+		]) {
+			expect(scoped.getAllByText(text).length, text).toBeGreaterThan(0);
+		}
+		expect(scoped.getByText(/never in D1/i)).toBeInTheDocument();
+		expect(
+			scoped.getByRole('heading', { name: /Merchant API sync \(optional, off\)/ })
+		).toBeInTheDocument();
+		expect(
+			scoped.getByText(/the price on the page, the price in the cart and the price in the feed/i)
+		).toBeInTheDocument();
+	});
+
+	it('links to the section from the contents', () => {
+		render(Page);
+		expect(screen.getByRole('link', { name: 'Google Listings' })).toHaveAttribute(
+			'href',
+			'#google-listings'
+		);
 	});
 });

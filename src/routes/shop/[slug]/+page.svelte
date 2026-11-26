@@ -29,18 +29,13 @@
 	title={data.product.name}
 	description={data.product.description.slice(0, 160)}
 	image={data.product.imageUrl ?? ''}
+	imageAlt={data.product.name}
 	structured={{
 		breadcrumb: [
 			{ name: 'Shop', path: '/shop' },
 			{ name: data.product.name, path: `/shop/${data.product.slug}` }
 		],
-		product: {
-			name: data.product.name,
-			description: data.product.description,
-			sku: data.product.slug,
-			priceCents: data.product.priceCents,
-			currency: data.product.currency
-		}
+		product: data.product.structured
 	}}
 />
 
@@ -50,7 +45,10 @@
 		{#if data.product.imageUrl}<img src={data.product.imageUrl} alt="" />{/if}
 		<div>
 			<h1>{data.product.name}</h1>
-			<p class="price">{data.product.price}</p>
+			<p class="price">
+				{#if data.product.listPrice}<s class="was">{data.product.listPrice}</s>{/if}
+				<span data-testid="product-price">{data.product.price}</span>
+			</p>
 			{#if data.product.description}<p>{data.product.description}</p>{/if}
 			<form onsubmit={add}>
 				<label>
@@ -90,6 +88,11 @@
 	.price {
 		font-size: 1.25rem;
 		font-weight: 600;
+	}
+	.was {
+		margin-right: 0.5rem;
+		color: var(--color-text-secondary);
+		font-weight: 400;
 	}
 	form {
 		display: flex;

@@ -119,6 +119,7 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | --------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Page-view stats, admin stats surface                                  | `ADMIN_STATS.md`                                            |
 | Admin audit log (`/admin/audit`, `admin_actions`)                     | `AUDIT_LOG.md`                                              |
+| Admin time zone (the `tz` cookie, stats bucketing, `site_settings`)   | `ADMIN_TIMEZONE.md`                                         |
 | Opt-in sign-in tracking (`/admin/sign-ins`)                           | `SIGN_IN_TRACKING.md`                                       |
 | Agent discovery, Markdown negotiation, WebMCP                         | `AGENT_READINESS.md`                                        |
 | D1/KV/R2 provisioning, the shared-resource incident                   | `CLOUDFLARE_SETUP.md`                                       |
@@ -134,6 +135,7 @@ Numbering is the part that actually goes wrong here, twice now. An earlier state
 | TDD expectations behind the coverage gate                             | `TDD_WORKFLOW.md`                                           |
 | Theme tokens, contrast validation (AGENTS.md §3)                      | `THEME_SYSTEM.md`, `THEME_IMPLEMENTATION_SUMMARY.md`        |
 | JSON-LD structured data (`SharingMeta` graph)                         | `STRUCTURED_DATA.md`                                        |
+| Google product feed, listing rules, Merchant API sync                 | `GOOGLE_LISTINGS.md`                                        |
 | Chat / voice surfaces                                                 | `UNIFIED_CHAT_INTERFACE.md`, `VOICE_CHAT_IMPLEMENTATION.md` |
 
 ### Test topology

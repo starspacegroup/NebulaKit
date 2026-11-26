@@ -28,6 +28,11 @@ const base = {
 	canRevealPii: false,
 	piiRevealed: true,
 	canViewStats: false,
+	timeZone: 'UTC',
+	timeZoneSetting: 'auto',
+	timeZonePersonal: 'auto',
+	timeZoneSource: 'default' as const,
+	timeZoneLabel: 'UTC (UTC+00:00)',
 	canManageAnalytics: false
 };
 const user = (extra: Record<string, unknown>) => ({
@@ -40,7 +45,12 @@ const user = (extra: Record<string, unknown>) => ({
 });
 
 describe('admin nav follows the permission list', () => {
-	const links = () => screen.getAllByRole('link').map((a) => a.getAttribute('href'));
+	// The sidebar's time zone link goes to the profile, not an admin area.
+	const links = () =>
+		screen
+			.getAllByRole('link')
+			.map((a) => a.getAttribute('href'))
+			.filter((href) => href !== '/profile#time-zone');
 
 	it('shows an admin only the areas they hold', () => {
 		render(AdminLayout, {
@@ -172,7 +182,7 @@ describe('users page: role-aware actions', () => {
 		render(UsersPage, page(user({ isOwner: true })));
 		expect(screen.getByText('Owner')).toBeInTheDocument();
 		expect(screen.getByText('Superadmin')).toBeInTheDocument();
-		expect(screen.getByText('2 of 9 areas')).toBeInTheDocument();
+		expect(screen.getByText('2 of 10 areas')).toBeInTheDocument();
 	});
 });
 

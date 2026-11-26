@@ -1,10 +1,15 @@
-import { utcHourKey } from '$lib/utils/page-views';
+import { utcDay, utcHourKey } from '$lib/utils/page-views';
 import { error } from '@sveltejs/kit';
 import { canViewStats } from '$lib/server/stats-guard';
 import { loadStatsSummary, parseTrafficWindow } from '$lib/server/stats-summary';
+import { dayKey } from '$lib/utils/timezone';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ platform, url, locals }) => {
+export const load: PageServerLoad = async ({ platform, url, locals, parent }) => {
+	// The admin clock resolved by the layout (setting, then browser cookie, then UTC).
+	const { timeZone } = await parent();
+	const noStats = { trafficNowHour: utcHourKey(new Date()), usageToday: utcDay(new Date()) };
+
 	// The dashboard is every admin's landing page, but its stats are gated on the
 	// stats permission: owner always, plain admins only when granted
 	// can_view_stats. The admin layout guard has already run. An admin without
@@ -16,7 +21,8 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
 			traffic: null,
 			usage: null,
 			trafficWindow: 30,
-			trafficNowHour: utcHourKey(new Date())
+			trafficToday: dayKey(new Date(), timeZone),
+			...noStats
 		};
 	}
 
@@ -29,7 +35,8 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
 			traffic: null,
 			usage: null,
 			trafficWindow: 30,
-			trafficNowHour: utcHourKey(new Date())
+			trafficToday: dayKey(new Date(), timeZone),
+			...noStats
 		};
 	}
 
@@ -39,7 +46,9 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
 	try {
 		const summary = await loadStatsSummary(
 			platform.env.DB,
-			parseTrafficWindow(url.searchParams.get('window'))
+			parseTrafficWindow(url.searchParams.get('window')),
+			new Date(),
+			timeZone
 		);
 		return { canViewStats: true as const, ...summary };
 	} catch {

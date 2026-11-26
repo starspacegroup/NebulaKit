@@ -6,6 +6,7 @@
   (/admin/cms/[type]/new and /admin/cms/[type]/[id]).
 -->
 <script lang="ts">
+	import { formatDate as formatZonedDate, NO_DATE } from '$lib/utils/timezone';
 	import { isScheduledItem } from '$lib/cms/schedule';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { browser } from '$app/environment';
@@ -141,15 +142,8 @@
 
 	function formatDate(dateStr: string | null): string {
 		if (!dateStr) return '—';
-		try {
-			return new Date(dateStr).toLocaleDateString('en-US', {
-				year: 'numeric',
-				month: 'short',
-				day: 'numeric'
-			});
-		} catch {
-			return dateStr;
-		}
+		const shown = formatZonedDate(dateStr, data.timeZone);
+		return shown === NO_DATE ? dateStr : shown;
 	}
 
 	// Tag management

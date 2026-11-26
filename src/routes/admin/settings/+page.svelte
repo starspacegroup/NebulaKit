@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { formatDate as formatZonedDate } from '$lib/utils/timezone';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import SetupSummary from '$lib/components/admin/SetupSummary.svelte';
+	import { TIME_ZONE_SOURCE_LABELS } from '$lib/utils/timezone';
+	import TimeZoneSetting from '$lib/components/admin/TimeZoneSetting.svelte';
 	import { fieldName } from '$lib/utils/form-fields';
 	import type { PageData } from './$types';
 
@@ -181,6 +184,13 @@
 
 	<SetupSummary setupInfo={data.setupInfo} />
 
+	<TimeZoneSetting
+		setting={data.timeZoneSetting}
+		label={data.timeZoneLabel}
+		sourceText={TIME_ZONE_SOURCE_LABELS[data.timeZoneSource]}
+		canEdit={!!(data.user?.isOwner || data.user?.isSuperAdmin)}
+	/>
+
 	<header class="section-header">
 		<h2>Authentication Keys</h2>
 		<p class="page-description">Manage OAuth providers and API keys for authentication services.</p>
@@ -316,7 +326,7 @@
 						</div>
 					{/if}
 					<div class="key-meta">
-						<span>Added {new Date(key.createdAt).toLocaleDateString()}</span>
+						<span>Added {formatZonedDate(key.createdAt, data.timeZone)}</span>
 					</div>
 				</div>
 			{/each}

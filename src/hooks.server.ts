@@ -30,6 +30,7 @@ import {
 	utcDay,
 	utcHour
 } from '$lib/utils/page-views';
+import { BOT_UA, classifyTraffic } from '$lib/utils/traffic-class';
 import { recordPageViewBuffered } from '$lib/utils/page-view-buffer';
 import { recordRequest } from '$lib/utils/usage';
 import type { Handle } from '@sveltejs/kit';
@@ -173,7 +174,6 @@ export async function authHandler({ event, resolve }: Parameters<Handle>[0]): Pr
 	return resolve(event);
 }
 
-const BOT_UA = /bot|crawler|spider|preview|facebookexternalhit|lighthouse|headless/i;
 const UNTRACKED_ROUTES = /^\/(admin|api|setup)(\/|$)/;
 
 /**
@@ -182,7 +182,8 @@ const UNTRACKED_ROUTES = /^\/(admin|api|setup)(\/|$)/;
  * buckets, never kept.
  *
  * Deliberately narrow about what counts as a human page view: a matched route,
- * GET, 200, HTML, not an admin/api/setup route, not a bot. Runs LAST in the
+ * GET, 200, HTML, not an admin/api/setup route. Bots are not dropped: each view is classed
+ * (src/lib/utils/traffic-class.ts) and only probably-real visitors get the detailed counters. Runs LAST in the
  * sequence so `locals.user` is populated and `signed_in` is accurate.
  *
  * Exported for direct unit testing (sequence() needs Kit's request store).
@@ -198,15 +199,24 @@ export const pageViewsHandler: Handle = async ({ event, resolve }) => {
 		event.request.method === 'GET' &&
 		response.status === 200 &&
 		(response.headers.get('content-type') ?? '').includes('text/html') &&
-		!UNTRACKED_ROUTES.test(routeId) &&
-		!BOT_UA.test(event.request.headers.get('user-agent') ?? '')
+		!UNTRACKED_ROUTES.test(routeId)
 	) {
 		// Audience buckets: headers are read transiently and mapped to a small
 		// fixed vocabulary; the raw UA/hints are never stored.
 		const headers = event.request.headers;
 		const ua = headers.get('user-agent');
 		const now = new Date();
+		const cf = event.platform?.cf as
+			{ verifiedBotCategory?: string; botManagement?: { score?: number } } | undefined;
 		const view = {
+			// Who it probably was. Bots and likely bots are counted by class only (see recordPageView).
+			trafficClass: classifyTraffic({
+				userAgent: ua,
+				acceptLanguage: headers.get('accept-language'),
+				secFetch: headers.get('sec-fetch-site') ?? headers.get('sec-fetch-mode'),
+				verifiedBotCategory: cf?.verifiedBotCategory ?? null,
+				botScore: cf?.botManagement?.score ?? null
+			}),
 			day: utcDay(now),
 			hour: utcHour(now),
 			pathKey: routeId,

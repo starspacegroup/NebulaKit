@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '$lib/utils/timezone';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -68,7 +69,7 @@
 				>
 				through Google's PageSpeed Insights.
 				{#if lastRun}
-					Last run <time datetime={lastRun}>{new Date(lastRun).toLocaleString()}</time>.
+					Last run <time datetime={lastRun}>{formatDateTime(lastRun, data.timeZone)}</time>.
 				{/if}
 			</p>
 		</div>

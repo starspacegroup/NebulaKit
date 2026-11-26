@@ -18,6 +18,8 @@
 	--color-danger: #dc2626; /* destructive accents (callouts, delete affordances); 4.8:1 on white */
 	--color-success: #1a7f37;
 	--color-warning: #ffc107;
+	--color-on-warning: #1f2328; /* text on a warning-coloured fill: 10:1 */
+	--color-warning-text: #8a5a00; /* amber as TEXT on a light ground: 5.9:1 on white (the fill colour is 1.6:1) */
 
 	/* Solid fills with white text on them (UI kit buttons). Separate from
 	   --color-primary because the dark theme's primary is tuned for text on a
@@ -38,6 +40,18 @@
 	--chart-users: #0f9488;
 	--chart-content: #9d174d;
 	--chart-usage: #b45309;
+
+	/* Code samples (CodeBlock). Each token colour is stepped against --color-surface, the block's
+	   ground, and must clear 4.5:1 there; validate:contrast checks every one in both themes. */
+	--code-keyword: #7a2fb5;
+	--code-string: #0b6b3a;
+	--code-comment: #5a6169;
+	--code-number: #a8470a;
+	--code-tag: #1a5fb4;
+	--code-attr: #8a4e00;
+	--code-function: #0b6a85;
+	--code-variable: #a3205c;
+	--code-punct: #4b5563;
 
 	/* Spacing */
 	--spacing-xs: 0.25rem;
@@ -92,6 +106,8 @@
 	--color-danger: #ef4444; /* destructive accents; 5.26:1 on the dark background */
 	--color-success: #10b981;
 	--color-warning: #f59e0b;
+	--color-on-warning: #1a1a1a; /* 8:1 on the dark theme's amber */
+	--color-warning-text: #fbbf24; /* amber as text on the dark ground: 11:1 */
 	--color-primary-solid: #2563eb;
 	--color-primary-solid-hover: #1d4ed8;
 	--color-danger-solid: #dc2626;
@@ -103,6 +119,16 @@
 	--chart-users: #10a396;
 	--chart-content: #d6336c;
 	--chart-usage: #d97706;
+	/* Code samples: stepped for the dark surface, not derived from the light values. */
+	--code-keyword: #c9a9fb;
+	--code-string: #7ee0a5;
+	--code-comment: #9aa3ad;
+	--code-number: #f5a46c;
+	--code-tag: #7db7ff;
+	--code-attr: #f0c36b;
+	--code-function: #5fd3e0;
+	--code-variable: #f78fb3;
+	--code-punct: #aeb6c0;
 }
 
 /* Reset and base styles */

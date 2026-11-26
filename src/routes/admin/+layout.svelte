@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { invalidateAll } from '$app/navigation';
-	import { setContext } from 'svelte';
+	import { onMount, setContext } from 'svelte';
+	import { detectBrowserTimeZone, TIME_ZONE_SOURCE_LABELS, TZ_COOKIE } from '$lib/utils/timezone';
 	import { writable } from 'svelte/store';
 	import PiiPrivacyToggle from '$lib/components/admin/PiiPrivacyToggle.svelte';
 	import { heldPermissions } from '$lib/access/permissions';
@@ -24,6 +25,7 @@
 					{ path: '/admin/analytics', label: 'Analytics', icon: 'activity' },
 					{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
 					{ path: '/admin/scheduled-jobs', label: 'Scheduled Jobs', icon: 'clock' },
+					{ path: '/admin/status', label: 'Status page', icon: 'activity' },
 					{ path: '/admin/audit', label: 'Audit log', icon: 'activity' }
 				]
 			: []),
@@ -31,6 +33,9 @@
 		{ path: '/admin/cms', label: 'Content', icon: 'document', permission: 'cms' },
 		{ path: '/admin/pages', label: 'Pages', icon: 'layout', permission: 'pages' },
 		{ path: '/admin/redirects', label: 'Redirects', icon: 'link', permission: 'pages' },
+		{ path: '/admin/products', label: 'Products', icon: 'bag', permission: 'shop' },
+		{ path: '/admin/orders', label: 'Orders', icon: 'bag', permission: 'shop' },
+		{ path: '/admin/auctions', label: 'Auctions', icon: 'bag', permission: 'shop' },
 		{ path: '/admin/api-keys', label: 'API Keys', icon: 'key', permission: 'api-keys' },
 		{
 			path: '/admin/contact-form-submissions',
@@ -61,6 +66,25 @@
 		});
 		await invalidateAll();
 	}
+
+	// The browser's own zone, read without asking (Intl needs no permission) and
+	// handed to the server in a plain cookie so SSR can format in it. Rewritten
+	// only when it differs. The server validates it and ignores it whenever the
+	// site pins an explicit zone. Not HttpOnly on purpose: this script writes it.
+	// It is never put in a URL. If the cookie was missing or stale and the site
+	// follows the browser, reload the data once so the page re-renders in it.
+	onMount(() => {
+		const zone = detectBrowserTimeZone();
+		if (!zone) return;
+		const current = document.cookie
+			.split('; ')
+			.find((c) => c.startsWith(`${TZ_COOKIE}=`))
+			?.slice(TZ_COOKIE.length + 1);
+		if (current !== undefined && decodeURIComponent(current) === zone) return;
+		const secure = location.protocol === 'https:' ? '; Secure' : '';
+		document.cookie = `${TZ_COOKIE}=${encodeURIComponent(zone)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+		if (data.timeZoneSetting === 'auto' && data.timeZone !== zone) void invalidateAll();
+	});
 
 	setContext('piiRevealed', piiRevealed);
 	setContext('canRevealPii', data.canRevealPii);
@@ -104,6 +128,20 @@
 							<rect x="3" y="3" width="18" height="18" rx="2" />
 							<line x1="3" y1="9" x2="21" y2="9" />
 							<line x1="9" y1="21" x2="9" y2="9" />
+						</svg>
+					{:else if item.icon === 'bag'}
+						<svg
+							class="nav-icon"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+							<path d="M3 6h18" />
+							<path d="M16 10a4 4 0 0 1-8 0" />
 						</svg>
 					{:else if item.icon === 'link'}
 						<svg
@@ -248,6 +286,15 @@
 			{/each}
 			<PiiPrivacyToggle />
 		</nav>
+		<p
+			class="admin-clock"
+			data-testid="admin-clock"
+			title="Times in admin views use this time zone"
+		>
+			Times shown in <strong>{data.timeZoneLabel}</strong>
+			<span class="clock-why">{TIME_ZONE_SOURCE_LABELS[data.timeZoneSource]}</span>
+			<a href="/profile#time-zone" class="clock-change">Change my time zone</a>
+		</p>
 	</aside>
 	<main class="admin-content">
 		<slot />
@@ -275,6 +322,29 @@
 		font-weight: 700;
 		color: var(--color-text);
 		margin-bottom: var(--spacing-xl);
+	}
+
+	.admin-clock {
+		margin-top: var(--spacing-lg);
+		font-size: 0.8125rem;
+		color: var(--color-text-secondary);
+		line-height: 1.4;
+	}
+
+	.admin-clock strong {
+		color: var(--color-text);
+		font-weight: 600;
+		display: block;
+	}
+
+	.clock-change {
+		display: inline-block;
+		margin-top: var(--spacing-xs);
+		color: var(--color-primary);
+	}
+
+	.clock-why {
+		display: block;
 	}
 
 	.admin-nav {

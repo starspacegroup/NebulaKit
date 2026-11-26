@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import CardField from '$lib/components/CardField.svelte';
+	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
 	import { formatMoney } from '@nebulakit/commerce';
 	import { waitForOrderPaid, type OrderWait } from '$lib/shop/order-status';
@@ -13,6 +15,13 @@
 		setQuantity,
 		type Cart
 	} from '$lib/shop/cart';
+
+	let { data } = $props();
+
+	// With on-page checkout configured, the card form is drawn here and the order is paid on this
+	// page (docs/CHECKOUT.md). Otherwise the shopper is sent to Stripe's page, or the shop arranges
+	// payment. The key is public; it only draws the form.
+	const stripeKey = $derived(data.checkout?.publishableKey ?? null);
 
 	let cart = $state<Cart>([]);
 	let loaded = $state(false);
@@ -28,6 +37,46 @@
 	});
 	let placing = $state(false);
 	let problems = $state<string[]>([]);
+	let problemsBox = $state<HTMLElement>();
+	let card = $state<ReturnType<typeof CardField>>();
+	let cardReady = $state(false);
+	/** The order this checkout made, once the server has made it; kept for "Cancel order". */
+	let pendingOrderId = $state<string | null>(null);
+	let cancelling = $state(false);
+	let cancelled = $state(false);
+
+	/**
+	 * This checkout's id, made once per tab and sent with every "Pay": a double click or a retry
+	 * after a declined card finds the same order and payment instead of making another. Forgotten
+	 * when the checkout ends (paid, cancelled), so the next one starts afresh.
+	 */
+	const KEY_STORE = 'nk-checkout-key';
+	function checkoutKey(): string {
+		try {
+			const saved = sessionStorage.getItem(KEY_STORE);
+			if (saved) return saved;
+			const made = crypto.randomUUID();
+			sessionStorage.setItem(KEY_STORE, made);
+			return made;
+		} catch {
+			return crypto.randomUUID();
+		}
+	}
+	function forgetCheckout() {
+		try {
+			sessionStorage.removeItem(KEY_STORE);
+		} catch {
+			// nothing saved
+		}
+		pendingOrderId = null;
+	}
+
+	/** Show problems and move focus to them, so a keyboard or screen reader user lands on what to fix. */
+	async function showProblems(list: string[]) {
+		problems = list.filter(Boolean);
+		await tick();
+		problemsBox?.focus();
+	}
 	let placed = $state<{ id: string; totalCents: number; currency: string } | null>(null);
 
 	// Coming back from the payment page with ?order=…, the cart has been paid for.
@@ -41,6 +90,7 @@
 		const controller = new AbortController();
 		if (returnedOrder) {
 			saveCart(localStorage, []);
+			forgetCheckout();
 			waitForOrderPaid(returnedOrder, { signal: controller.signal }).then((result) => {
 				if (!controller.signal.aborted) returnState = result;
 			});
@@ -74,8 +124,11 @@
 	let quote = $state<Quote | null>(null);
 	let quoteFailed = $state(false);
 	let quoteRun = 0;
+	/** Bumped to ask the server for the quote again (the total changed under the shopper). */
+	let quoteRefresh = $state(0);
 
 	$effect(() => {
+		void quoteRefresh;
 		if (!loaded || returnedOrder || placed || cart.length === 0) return;
 		const run = ++quoteRun;
 		const country = shipping && /^[A-Za-z]{2}$/.test(address.country) ? address.country : undefined;
@@ -109,22 +162,66 @@
 
 	async function checkout(event: SubmitEvent) {
 		event.preventDefault();
+		if (placing) return;
 		placing = true;
 		problems = [];
+		cancelled = false;
 		try {
+			// The card is checked before an order exists, so a mistyped card costs no order.
+			if (stripeKey) {
+				const wrong = card
+					? await card.check()
+					: 'The card form is still loading. Try again in a moment.';
+				if (wrong) return await showProblems([wrong]);
+			}
+			// Product ids and quantities only. Every price is the server's.
 			const response = await fetch('/api/v1/checkout', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					email,
 					lines: checkoutLines(cart),
-					...(shipping ? { shippingAddress: address } : {})
+					...(shipping ? { shippingAddress: address } : {}),
+					...(stripeKey ? { onSite: true, checkoutKey: checkoutKey() } : {})
 				})
 			});
 			const body = await response.json();
+			if (response.status === 409 && body.orderId) {
+				// This checkout is over: paid (show it) or cancelled (start a fresh one).
+				forgetCheckout();
+				if (body.orderStatus === 'paid' || body.orderStatus === 'pending') {
+					return showOrder(body.orderId);
+				}
+				return await showProblems([body.error]);
+			}
 			if (!response.ok) {
-				problems = [body.error, ...(body.details ?? [])].filter(Boolean);
-				return;
+				return await showProblems([body.error, ...(body.details ?? [])]);
+			}
+			if (stripeKey && body.payment?.clientSecret) {
+				pendingOrderId = body.order.id;
+				const due = body.order.totalCents as number;
+				if (quote && (due !== quote.totalCents || body.order.currency !== quote.currency)) {
+					// Never charge a total the shopper has not seen: show the server's, ask again.
+					quoteRefresh += 1;
+					return await showProblems([
+						`The total is now ${formatMoney(due, body.order.currency)}. Check it, then pay again.`
+					]);
+				}
+				// Charge the card. The cart is kept until the payment is confirmed, so a declined
+				// card loses nothing: the shopper corrects it and pays the same order.
+				const declined = await card?.pay(
+					body.payment.clientSecret,
+					`${window.location.origin}/cart?order=${encodeURIComponent(body.order.id)}`,
+					due
+				);
+				if (declined !== null) {
+					return await showProblems([
+						declined ?? 'The card form is still loading. Try again in a moment.'
+					]);
+				}
+				// Stripe took the card. The order is marked paid by Stripe's signed notice to the
+				// server, not by this page: the order's own page waits for it.
+				return showOrder(body.order.id);
 			}
 			update([]);
 			if (body.payment?.redirectUrl) {
@@ -137,17 +234,43 @@
 				currency: body.order.currency
 			};
 		} catch {
-			problems = ['Could not reach the shop. Nothing was ordered.'];
+			await showProblems(['Could not reach the shop. If a charge shows on your card, contact us.']);
 		} finally {
 			placing = false;
 		}
 	}
+
+	/** The card went through: the order's status page takes over (it also empties the cart). */
+	function showOrder(orderId: string) {
+		forgetCheckout();
+		window.location.assign(`/cart?order=${encodeURIComponent(orderId)}`);
+	}
+
+	/** Back out of the order this checkout made. Stripe closes the payment first, so it can never be paid later. */
+	async function cancelOrder() {
+		if (!pendingOrderId || cancelling) return;
+		cancelling = true;
+		try {
+			const response = await fetch('/api/v1/checkout/cancel', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ orderId: pendingOrderId })
+			});
+			const body = await response.json().catch(() => ({}));
+			if (response.status === 409) return showOrder(pendingOrderId);
+			if (!response.ok) return await showProblems([body.error ?? 'Could not cancel the order.']);
+			forgetCheckout();
+			problems = [];
+			cancelled = true;
+		} catch {
+			await showProblems(['Could not reach the shop. Nothing more will be charged.']);
+		} finally {
+			cancelling = false;
+		}
+	}
 </script>
 
-<svelte:head>
-	<title>Cart</title>
-	<meta name="robots" content="noindex" />
-</svelte:head>
+<SharingMeta title="Cart" noindex={true} />
 
 <section class="cart">
 	<h1>Cart</h1>
@@ -288,12 +411,50 @@
 					>
 				</fieldset>
 			{/if}
-			{#if problems.length}
-				<ul class="problems" role="alert">
-					{#each problems as problem (problem)}<li>{problem}</li>{/each}
-				</ul>
+			{#if stripeKey}
+				<fieldset class="payment">
+					<legend>Payment</legend>
+					<CardField
+						bind:this={card}
+						bind:ready={cardReady}
+						publishableKey={stripeKey}
+						amountCents={quote?.totalCents ?? cartSubtotalCents(cart)}
+						currency={quote?.currency ?? currency}
+					/>
+				</fieldset>
 			{/if}
-			<button type="submit" disabled={placing}>{placing ? 'Placing order…' : 'Place order'}</button>
+			<div
+				class="problems-box"
+				bind:this={problemsBox}
+				tabindex="-1"
+				aria-live="assertive"
+				data-testid="checkout-problems"
+			>
+				{#if problems.length}
+					<ul class="problems" role="alert">
+						{#each problems as problem (problem)}<li>{problem}</li>{/each}
+					</ul>
+				{/if}
+			</div>
+			{#if cancelled}
+				<p role="status">Your order was cancelled. Nothing was charged.</p>
+			{/if}
+			<button type="submit" disabled={placing || (!!stripeKey && !cardReady)}>
+				{#if placing}
+					{stripeKey ? 'Paying…' : 'Placing order…'}
+				{:else if stripeKey && quote}
+					Pay {formatMoney(quote.totalCents, quote.currency)}
+				{:else if stripeKey}
+					Pay
+				{:else}
+					Place order
+				{/if}
+			</button>
+			{#if stripeKey && pendingOrderId}
+				<button type="button" class="cancel" onclick={cancelOrder} disabled={cancelling || placing}>
+					{cancelling ? 'Cancelling…' : 'Cancel order'}
+				</button>
+			{/if}
 		</form>
 	{/if}
 </section>
@@ -376,6 +537,20 @@
 	button:disabled {
 		opacity: 0.6;
 		cursor: wait;
+	}
+	.problems-box:focus {
+		outline: none;
+	}
+	.problems-box:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
+	}
+	.payment {
+		margin-top: 0.5rem;
+	}
+	button:focus-visible {
+		outline: 3px solid var(--color-primary);
+		outline-offset: 2px;
 	}
 	.problems {
 		margin: 0;

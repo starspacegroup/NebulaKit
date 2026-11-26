@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { getPage } from '@nebulakit/builder';
-import { formatMoney, listProducts } from '@nebulakit/commerce';
+import { formatMoney, listProducts, priceNow } from '@nebulakit/commerce';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
 		? (await listProducts(db, { limit })).map((p) => ({
 				slug: p.slug,
 				name: p.name,
-				price: formatMoney(p.priceCents, p.currency),
+				price: formatMoney(priceNow(p, Date.now()).priceCents, p.currency),
 				imageUrl: p.imageUrl
 			}))
 		: [];

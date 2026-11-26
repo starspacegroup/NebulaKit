@@ -43,6 +43,15 @@ export async function finalizeOAuthLogin({
 		.first<AuthIdentityRecord>();
 	if (!user) throw new Error('OAuth user disappeared before session finalization');
 
+	try {
+		await db
+			.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?')
+			.bind(userId)
+			.run();
+	} catch {
+		// Never stop someone signing in over the "last sign-in" note.
+	}
+
 	const isOwner = await resolveOwnerStatus(platform, user);
 	const sessionUser = createSessionUser({
 		...user,

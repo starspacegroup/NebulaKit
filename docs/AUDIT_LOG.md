@@ -5,14 +5,14 @@ owner can answer "who deleted that?" and "who turned that on?" without guessing.
 
 **What is recorded:** mutations only. Never a page view, never a read, never a failed request.
 
-| Area              | Actions                                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------------------- |
-| Users             | `user.invite`, `user.role_change` (admin on or off), `user.delete`, `user.merge`                |
-| Content (CMS)     | `cms.create`, `cms.update` (records the new `status`, so publishing shows), `cms.delete`, types |
-| Settings and keys | `settings.*`, `ai_key.*`, `auth_key.*`, `api_key.create`, `api_key.revoke`                      |
-| Pages (builder)   | `page.create`, `page.save`, `page.delete`, `page.restore`                                       |
-| Shop (`/api/v1`)  | `product.create/update/delete`, `order.update`                                                  |
-| Site              | `site.reset`, `settings.site_updates`, `contact.resolve`                                        |
+| Area              | Actions                                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| Users             | `user.invite`, `user.role_change` (admin on or off), `user.delete`, `user.merge`                     |
+| Content (CMS)     | `cms.create`, `cms.update` (records the new `status`, so publishing shows), `cms.delete`, types      |
+| Settings and keys | `settings.*`, `ai_key.*`, `auth_key.*`, `api_key.create`, `api_key.revoke`                           |
+| Pages (builder)   | `page.create`, `page.save`, `page.delete`, `page.restore`                                            |
+| Shop (`/api/v1`)  | `product.create/update/delete`, `order.update`                                                       |
+| Site              | `site.reset`, `settings.site_updates`, `settings.admin_timezone`, `user.timezone`, `contact.resolve` |
 
 **Secrets are never written.** A key, token or setting change records _that_ it changed, not the
 value. Two layers enforce it: the row detail is built from an allowlist of body fields (never the

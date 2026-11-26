@@ -26,6 +26,18 @@ export const site = {
 	devPort: 4277,
 	/** Production URL, no trailing slash. Used for canonical + OG URLs. */
 	url: 'https://nebulakit.pages.dev',
+	/**
+	 * Default share image for OG/Twitter cards: root-relative path, alt text, pixel size.
+	 * `static/og-image.png` is generated from this file by `bun run og:generate` (and by
+	 * `bun run customize`), so a link to any page without a picture of its own is shared with a
+	 * card for THIS site. See docs/SHARE_IMAGES.md.
+	 */
+	ogImage: {
+		src: '/og-image.png',
+		alt: "NebulaKit — A cosmic-grade SvelteKit starter powered by Cloudflare's full stack.",
+		width: 1200,
+		height: 630
+	},
 	/** GitHub repository in `owner/name` form. */
 	repo: 'starspacegroup/NebulaKit',
 	/** Attribution shown in the footer. */

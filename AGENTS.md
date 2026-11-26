@@ -21,6 +21,8 @@ the architecture.
   local D1 migration gate. Add migration-sensitive tests. See `migrations/README.md`.
 - Use theme tokens from `src/app.css`. Do not hardcode colors. Add the light value and the dark value
   together. Run contrast validation. See `docs/THEME_SYSTEM.md`.
+- Code samples use `CodeBlock` from `$lib/ui`, never a bare `<pre>`. Its colours are the `--code-*`
+  tokens; add a new token kind in the light and dark theme together. See `docs/UI_KIT.md`.
 - Put logs, generated analysis, debug traces, and temporary files in the ignored `.llm-outputs/`
   directory.
 - NebulaKit is a starter template. People create apps from it with "Use this template". Keep the
@@ -58,6 +60,10 @@ the architecture.
 - Sanitize CMS rich text on every create and every update, before you store it. Sanitize it again at
   the render boundary, for legacy rows. Keep URL validation and embed validation canonical. Never
   give unsanitized CMS content to `{@html}`.
+- Never trust an amount from the client. The server computes prices, discounts, tax, shipping, totals,
+  and currency from the catalog and the site settings. The amount of a PaymentIntent is the total of
+  the order. Only the signed and deduplicated Stripe webhook marks an order paid. See
+  `docs/CHECKOUT.md`. The money core is proved in `dafny/PaymentCore.dfy`.
 - Minimize PII in APIs and logs. A reveal of PII must be explicit, audited, short-lived, and
   owner-only.
 - Parameterize D1 statements. Never put user input into SQL, HTML, redirects, headers, or provider
@@ -90,6 +96,17 @@ the architecture.
   500x600 elements in every frame. `preserveAspectRatio="slice"` scales the 400-unit viewBox about 4
   times, so a `stdDeviation` of 40 on a path becomes a blur kernel of about 160px. Each of these
   faults alone added about 10 seconds of total blocking time. The Lighthouse score fell from 100 to 60.
+- Admin dates and times use the helpers in `src/lib/utils/timezone.ts` (`formatDate`, `formatTime`,
+  `formatDateTime`, `dayKey`). Use the zone from `data.timeZone` in the admin layout. Admin numbers use
+  `formatNumber`. A bare `toLocaleString()` call uses the zone and locale of the machine. It shows the
+  wrong clock and causes a hydration mismatch. `tests/unit/admin-timezone.test.ts` fails on a bare call
+  in `src/routes/admin` or `src/lib/components/admin`. The `tz` cookie is untrusted input. Only
+  `resolveTimeZone` may read it. See `docs/ADMIN_TIMEZONE.md`.
+- Product data that goes to Google (the feed, the JSON-LD, the Merchant API sync) is validated and built
+  in one pure module: `packages/commerce/src/google-listing.ts`. Do not add a second set of rules in a
+  route, a component, or a renderer. The price on the page, in the JSON-LD, in the feed, and in the cart
+  must be one number: take it from `priceNow`. `tests/unit/google-markup.test.ts` fails if they
+  disagree. See `docs/GOOGLE_LISTINGS.md`.
 - Add a dependency only when its security, runtime, bundle, and maintenance costs are justified.
 
 ## Verification

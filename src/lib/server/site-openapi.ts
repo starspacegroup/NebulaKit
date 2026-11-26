@@ -39,6 +39,14 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 			body: 'Checkout'
 		}
 	},
+	'/api/v1/checkout/cancel': {
+		post: {
+			summary:
+				'Back out of an unpaid order: Stripe closes the payment first, then the order is cancelled',
+			scope: null,
+			body: 'CheckoutCancel'
+		}
+	},
 	'/api/v1/checkout/quote': {
 		post: {
 			summary: 'Price a cart without ordering, regional pricing included',
@@ -96,7 +104,7 @@ const OPERATIONS: Record<string, Record<string, Op>> = {
 	'/api/v1/webhooks/stripe': {
 		post: {
 			summary:
-				'Stripe checkout events: completed, async succeeded/failed, expired (Stripe-Signature, not an API key; 503 until configured)',
+				'Stripe events: checkout session completed/async/expired, payment_intent succeeded/canceled/payment_failed, charge.refunded (Stripe-Signature, not an API key; 503 until configured; deduplicated by event id)',
 			scope: null
 		}
 	}
@@ -163,7 +171,48 @@ export function siteOpenApi() {
 						imageUrl: { type: ['string', 'null'] },
 						type: { enum: ['physical', 'digital'] },
 						printfulVariantId: { type: ['integer', 'null'] },
-						active: { type: 'boolean' }
+						active: { type: 'boolean' },
+						google: { $ref: '#/components/schemas/GoogleAttributes' }
+					}
+				},
+				GoogleAttributes: {
+					type: 'object',
+					description:
+						'Google Merchant Center attributes (docs/GOOGLE_LISTINGS.md). Every field is optional; null clears one. Sale price is charged at checkout while the sale window is open.',
+					properties: {
+						brand: { type: ['string', 'null'], maxLength: 70 },
+						gtin: {
+							type: ['string', 'null'],
+							description: '8, 12, 13 or 14 digits with a correct check digit'
+						},
+						mpn: { type: ['string', 'null'], maxLength: 70 },
+						condition: { enum: ['new', 'refurbished', 'used', null] },
+						googleProductCategory: { type: ['string', 'null'] },
+						productType: { type: ['string', 'null'], maxLength: 750 },
+						availability: { enum: ['in_stock', 'out_of_stock', 'preorder', 'backorder', null] },
+						availabilityDate: { type: ['string', 'null'], description: 'ISO 8601' },
+						salePriceCents: { type: ['integer', 'null'], minimum: 0 },
+						saleStartsAt: { type: ['string', 'null'], description: 'ISO 8601 with a zone' },
+						saleEndsAt: { type: ['string', 'null'], description: 'ISO 8601 with a zone' },
+						additionalImages: { type: 'array', maxItems: 10, items: { type: 'string' } },
+						color: { type: ['string', 'null'], maxLength: 100 },
+						size: { type: ['string', 'null'], maxLength: 100 },
+						material: { type: ['string', 'null'], maxLength: 200 },
+						gender: { enum: ['male', 'female', 'unisex', null] },
+						ageGroup: { enum: ['newborn', 'infant', 'toddler', 'kids', 'adult', null] },
+						itemGroupId: { type: ['string', 'null'], maxLength: 50 },
+						identifierExists: { type: ['boolean', 'null'] },
+						weightGrams: { type: ['integer', 'null'], minimum: 1 },
+						lengthMm: { type: ['integer', 'null'], minimum: 10, maximum: 30000 },
+						widthMm: { type: ['integer', 'null'], minimum: 10, maximum: 30000 },
+						heightMm: { type: ['integer', 'null'], minimum: 10, maximum: 30000 },
+						adult: { type: 'boolean' },
+						customLabel0: { type: ['string', 'null'], maxLength: 100 },
+						customLabel1: { type: ['string', 'null'], maxLength: 100 },
+						customLabel2: { type: ['string', 'null'], maxLength: 100 },
+						customLabel3: { type: ['string', 'null'], maxLength: 100 },
+						customLabel4: { type: ['string', 'null'], maxLength: 100 },
+						excluded: { type: 'boolean', description: 'Keep the product out of the Google feed' }
 					}
 				},
 				Checkout: {
@@ -178,8 +227,22 @@ export function siteOpenApi() {
 								properties: { productId: { type: 'string' }, quantity: { type: 'integer' } }
 							}
 						},
-						shippingAddress: { type: 'object' }
+						shippingAddress: { type: 'object' },
+						onSite: {
+							type: 'boolean',
+							description: "Pay in the site's own card form (answer carries payment.clientSecret)"
+						},
+						checkoutKey: {
+							type: 'string',
+							format: 'uuid',
+							description: 'One id per checkout; a repeat submit reuses its order and payment'
+						}
 					}
+				},
+				CheckoutCancel: {
+					type: 'object',
+					required: ['orderId'],
+					properties: { orderId: { type: 'string', format: 'uuid' } }
 				},
 				Quote: {
 					type: 'object',

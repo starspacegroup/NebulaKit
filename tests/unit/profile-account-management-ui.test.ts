@@ -18,7 +18,10 @@ const layoutData = {
 	hasAIProviders: false,
 	cmsPaletteItems: [],
 	gaMeasurementId: null,
-	devAuthSimulationEnabled: false
+	devAuthSimulationEnabled: false,
+	timeZonePersonal: 'auto',
+	timeZoneSource: 'default' as const,
+	timeZoneLabel: 'UTC (UTC+00:00)'
 };
 
 describe('Profile Account Management UI', () => {
@@ -177,6 +180,9 @@ describe('Profile Account Management UI', () => {
 					connectedAccounts: [],
 					configuredProviders: { github: false, discord: false },
 					devAuthSimulationEnabled: true,
+					timeZonePersonal: 'auto',
+					timeZoneSource: 'default' as const,
+					timeZoneLabel: 'UTC (UTC+00:00)',
 					hasPassword: false,
 					loginEmails: ['pretend@example.dev']
 				}

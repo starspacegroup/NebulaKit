@@ -1,4 +1,5 @@
 import { reconcileOAuthAccount } from '$lib/server/oauth-account';
+import { applyDiscordProfile } from '$lib/server/discord-profile';
 import { finalizeOAuthLogin } from '$lib/server/oauth-finalization';
 import { getAuthProviderCredentials } from '$lib/utils/auth-provider-config';
 import {
@@ -6,6 +7,7 @@ import {
 	verifyOAuthState,
 	verifyOAuthTransaction
 } from '$lib/utils/oauth-state';
+import { discordDisplayName, discordEmailPolicy } from '$lib/utils/discord-identity';
 import { findValidSession } from '$lib/utils/db';
 import { trackSignIn } from '$lib/server/sign-ins';
 import { isRedirect, redirect } from '@sveltejs/kit';
@@ -89,6 +91,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals, requ
 		if (!userResponse.ok) throw redirect(302, '/auth/login?error=user_fetch_failed');
 		const discordUser = await userResponse.json();
 		const providerUserId = `discord_${discordUser.id}`;
+		const emailPolicy = discordEmailPolicy(discordUser);
 
 		const { userId, linkedProvider } = await reconcileOAuthAccount({
 			db,
@@ -98,7 +101,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals, requ
 			// Discord returns unverified addresses too. Matching one to an existing
 			// account would let anyone who registers a Discord account with a victim's
 			// email take that account over, so only a verified address may match.
-			email: discordUser.verified === true ? discordUser.email : null,
+			email: emailPolicy.matchEmail,
 			linkingUserId: transaction.intent === 'link' ? existingUser?.id : undefined,
 			createUser: async (id) => {
 				// Discord cannot bootstrap ownership; privilege comes from a canonical linked account.
@@ -107,21 +110,19 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals, requ
 						`INSERT INTO users (id, email, name, created_at)
 						 VALUES (?, ?, ?, CURRENT_TIMESTAMP)`
 					)
-					.bind(
-						id,
-						discordUser.email || `${discordUser.username}@discord.local`,
-						discordUser.global_name || discordUser.username
-					)
+					.bind(id, emailPolicy.newAccountEmail, discordDisplayName(discordUser))
 					.run();
 			},
 			updateUser: async (id, match) => {
 				if (match !== 'legacy') return;
 				await db
 					.prepare('UPDATE users SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-					.bind(discordUser.global_name || discordUser.username, id)
+					.bind(discordDisplayName(discordUser), id)
 					.run();
 			}
 		});
+
+		await applyDiscordProfile(db, userId, discordUser);
 
 		return finalizeOAuthLogin({
 			db,

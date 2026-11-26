@@ -6,6 +6,8 @@ import settingsPage from '../../src/routes/admin/settings/+page.svelte?raw';
 import cmsDashboard from '../../src/routes/admin/cms/+page.svelte?raw';
 import cmsManage from '../../src/routes/admin/cms/[type]/+page.svelte?raw';
 import usersPage from '../../src/routes/admin/users/+page.svelte?raw';
+import ordersPage from '../../src/routes/admin/orders/+page.svelte?raw';
+import orderPage from '../../src/routes/admin/orders/[id]/+page.svelte?raw';
 import cmsItemPage from '../../src/routes/[contentType]/[slug]/+page.svelte?raw';
 import cmsListPage from '../../src/routes/[contentType]/+page.svelte?raw';
 import docsPage from '../../src/routes/documentation/+page.svelte?raw';
@@ -52,7 +54,9 @@ describe('layout widths', () => {
 		['cms dashboard', cmsDashboard, '.cms-dashboard'],
 		['cms manage', cmsManage, '.cms-manage'],
 		['ai keys', aiKeysPage, '.ai-keys-page'],
-		['admin settings', settingsPage, '.settings-page']
+		['admin settings', settingsPage, '.settings-page'],
+		['admin orders', ordersPage, '.orders'],
+		['admin order', orderPage, '.order']
 	])('the %s shell fills the page width', (_name, source, selector) => {
 		const declarations = block(source, selector);
 		expect(declarations, `${selector} block not found`).not.toBe('');
@@ -63,7 +67,7 @@ describe('layout widths', () => {
 		expect(block(docsPage, '.docs-container')).toContain('max-width: var(--layout-page-max-width)');
 		// Child combinators, so text inside a callout card still fills its track.
 		expect(docsPage).toMatch(
-			/\.docs-section > p,\n\t\.docs-section > ul,\n\t\.docs-section > ol,\n\t\.docs-section > pre \{\n\t\tmax-width: var\(--layout-prose-max-width\);/
+			/\.docs-section > p,\n\t\.docs-section > ul,\n\t\.docs-section > ol,\n\t\.docs-section > :global\(\.code\) \{\n\t\tmax-width: var\(--layout-prose-max-width\);/
 		);
 	});
 

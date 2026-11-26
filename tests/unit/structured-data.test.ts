@@ -142,7 +142,7 @@ describe('buildPageGraph', () => {
 			'@id': `${site.url}/blog#itemlist`
 		});
 	});
-	it('product: ItemPage + Product + Offer with decimal price and no availability claim', () => {
+	it('product: ItemPage + Product + Offer with decimal price, in stock unless told otherwise', () => {
 		const graph = buildPageGraph({
 			path: '/shop/mug',
 			title: 'Mug',
@@ -158,7 +158,11 @@ describe('buildPageGraph', () => {
 			priceCurrency: 'USD',
 			url: `${site.url}/shop/mug`
 		});
-		expect(JSON.stringify(graph)).not.toContain('availability');
+		expect(product.offers).toMatchObject({
+			availability: 'https://schema.org/InStock',
+			itemCondition: 'https://schema.org/NewCondition',
+			seller: { '@id': `${site.url}/#organization` }
+		});
 		expect(byType(graph, 'ItemPage')[0].mainEntity).toEqual({
 			'@id': `${site.url}/shop/mug#product`
 		});
