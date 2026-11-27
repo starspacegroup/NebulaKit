@@ -34,6 +34,8 @@ the architecture.
 - Update `/documentation` and its focused test in the same change when you change any of these
   user-visible items: route, setup step, command, binding, environment variable, integration,
   shortcut, or admin page. An internal refactor does not need this update.
+  `tests/unit/documentation-drift.test.ts` fails when a route, script, or binding has no mention on
+  the page. Add each new section to the `groups` list in the page script.
 - Keep these surfaces accurate: robots, sitemap, API catalog, agent skills, `auth.md`, Markdown
   negotiation, and WebMCP. Add each public page to `SITEMAP_ROUTES`, or exclude it explicitly.
   NebulaKit is an OAuth client. It is not an OAuth server and not an MCP server. Keep the folder name
