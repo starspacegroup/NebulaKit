@@ -3,6 +3,7 @@
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { site } from '$lib/site.config';
 	import { publicSignInEnabled } from '$lib/public-sign-in';
+	import { t } from '$lib/i18n/messages';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 
@@ -117,12 +118,14 @@
 
 			<div class="nav-actions">
 				{#if user?.isPretend}
-					<span class="pretend-badge" aria-label="Pretend login session">PRETEND</span>
+					<span class="pretend-badge" aria-label={t('nav.pretendSession')}
+						>{t('nav.pretendBadge')}</span
+					>
 				{/if}
 				<button class="command-palette-btn" on:click={onCommandPaletteClick}>
 					<!-- The visible text is the shortcut hint, so the accessible name has to
 					     contain it (WCAG 2.5.3 Label in Name). A bare aria-label replaced it. -->
-					<span class="sr-only">Open command palette,</span>
+					<span class="sr-only">{t('nav.openCommandPalette')}</span>
 					<svg
 						class="command-palette-prompt-icon"
 						width="16"
@@ -157,7 +160,7 @@
 				type="button"
 				class="mobile-menu-btn"
 				on:click={toggleMobileMenu}
-				aria-label="Toggle menu"
+				aria-label={t('nav.toggleMenu')}
 				aria-controls="mobile-navigation"
 				aria-expanded={mobileMenuOpen}
 			>
@@ -205,7 +208,7 @@
 							type="button"
 							class="mobile-menu-close"
 							on:click={closeMobileMenu}
-							aria-label="Close menu"
+							aria-label={t('nav.closeMenu')}
 						>
 							<svg
 								width="24"
@@ -238,7 +241,7 @@
 									<circle cx="11" cy="11" r="8"></circle>
 									<path d="m21 21-4.35-4.35"></path>
 								</svg>
-								Search &amp; commands
+								{t('nav.searchAndCommands')}
 							</button>
 							{#if user}
 								{#if user.isOwner || user.isAdmin || user.isSuperAdmin}
@@ -247,7 +250,7 @@
 										class:active={$page.url.pathname.startsWith('/admin')}
 										on:click={closeMobileMenu}
 									>
-										Admin
+										{t('nav.admin')}
 									</a>
 								{/if}
 								<div class="user-nav-panel">
@@ -264,7 +267,7 @@
 										<div class="user-info">
 											<div class="user-name">{user.name || user.login}</div>
 											{#if user.isPretend}
-												<span class="pretend-badge inline">PRETEND</span>
+												<span class="pretend-badge inline">{t('nav.pretendBadge')}</span>
 											{/if}
 											<div class="user-email">{user.email}</div>
 										</div>
@@ -282,7 +285,7 @@
 											<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 											<circle cx="12" cy="7" r="4" />
 										</svg>
-										Profile
+										{t('nav.profile')}
 									</a>
 									<div class="dropdown-divider"></div>
 									<div class="dropdown-section">
@@ -303,7 +306,7 @@
 												<polyline points="16 17 21 12 16 7" />
 												<line x1="21" y1="12" x2="9" y2="12" />
 											</svg>
-											Logout
+											{t('nav.logout')}
 										</button>
 									</form>
 								</div>
@@ -313,7 +316,7 @@
 											type="button"
 											class="user-avatar-btn"
 											on:click|stopPropagation={toggleUserDropdown}
-											aria-label="User menu"
+											aria-label={t('nav.userMenu')}
 											aria-expanded={userDropdownOpen}
 										>
 											{#if user.avatarUrl}
@@ -330,7 +333,7 @@
 													<div class="user-info">
 														<div class="user-name">{user.name || user.login}</div>
 														{#if user.isPretend}
-															<span class="pretend-badge inline">PRETEND</span>
+															<span class="pretend-badge inline">{t('nav.pretendBadge')}</span>
 														{/if}
 														<div class="user-email">{user.email}</div>
 													</div>
@@ -355,7 +358,7 @@
 														<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 														<circle cx="12" cy="7" r="4" />
 													</svg>
-													Profile
+													{t('nav.profile')}
 												</a>
 												<div class="dropdown-divider"></div>
 												<div class="dropdown-section">
@@ -376,7 +379,7 @@
 															<polyline points="16 17 21 12 16 7" />
 															<line x1="21" y1="12" x2="9" y2="12" />
 														</svg>
-														Logout
+														{t('nav.logout')}
 													</button>
 												</form>
 											</div>
@@ -390,7 +393,7 @@
 										class:active={$page.url.pathname.startsWith('/auth')}
 										on:click={closeMobileMenu}
 									>
-										Sign In
+										{t('nav.signIn')}
 									</a>
 								{/if}
 								<ThemeSwitcher variant="inline" simpleToggle={true} />

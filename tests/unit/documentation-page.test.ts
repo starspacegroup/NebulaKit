@@ -684,4 +684,38 @@ describe('Documentation Page: Google listings', () => {
 			'#google-listings'
 		);
 	});
+	describe('sidebar', () => {
+		it('groups the sections and marks the current one', () => {
+			render(Page);
+			const nav = screen.getByRole('navigation', { name: /documentation navigation/i });
+			expect(within(nav).getByText(/Get started/i)).toBeInTheDocument();
+			expect(within(nav).getByText(/Ship it/i)).toBeInTheDocument();
+			// Exactly one link is current. Which one depends on scroll position, and jsdom has none.
+			expect(nav.querySelectorAll('a[aria-current="location"]')).toHaveLength(1);
+		});
+
+		it('opens and closes the phone nav from the "On this page" button', async () => {
+			const { default: userEvent } = await import('@testing-library/user-event');
+			render(Page);
+			const toggle = screen.getByRole('button', { name: /on this page/i });
+			expect(toggle).toHaveAttribute('aria-expanded', 'false');
+			await userEvent.click(toggle);
+			expect(toggle).toHaveAttribute('aria-expanded', 'true');
+			await userEvent.click(
+				within(screen.getByRole('navigation', { name: /documentation navigation/i })).getByRole(
+					'link',
+					{ name: 'Quick start' }
+				)
+			);
+			expect(toggle).toHaveAttribute('aria-expanded', 'false');
+		});
+
+		it('documents auctions and the tooling scripts', () => {
+			render(Page);
+			const section = document.getElementById('auctions') as HTMLElement;
+			expect(section.textContent).toMatch(/settle-auctions/);
+			expect(section.textContent).toMatch(/proxy bidding/i);
+			expect(document.getElementById('commands')!.textContent).toMatch(/build:ci/);
+		});
+	});
 });
