@@ -42,6 +42,7 @@ section rather than appending to the end:
 | Section (`id`)        | Put this here                                                       |
 | --------------------- | ------------------------------------------------------------------- |
 | `start-here`          | First-run orientation and ordering of setup steps                   |
+| `cloudflare-setup`    | Cloudflare account, Wrangler login, first resources, secrets, and the MCP servers|
 | `quick-start`         | Bun install/dev/build/deploy commands                               |
 | `feature-overview`    | "What you get" — one bullet per user-visible capability             |
 | `how-to-use`          | Task-oriented walkthroughs for using features                       |

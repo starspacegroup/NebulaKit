@@ -627,4 +627,43 @@ describe('Documentation Page', () => {
 		expect(screen.getByText(/bun run landing report/)).toBeInTheDocument();
 		expect(screen.getByText(/Example Co\. pages are marked/)).toBeInTheDocument();
 	});
+	describe('Set Up Cloudflare section', () => {
+		it('walks through the account, Wrangler login, resources, secrets and deploy', () => {
+			render(Page);
+			const section = screen
+				.getByRole('heading', { name: /^Set Up Cloudflare$/i })
+				.closest('section');
+			expect(section?.id).toBe('cloudflare-setup');
+			for (const text of [
+				'dash.cloudflare.com/sign-up',
+				'wrangler login',
+				'wrangler whoami',
+				'bun run setup:cf',
+				'bun run db:migrate',
+				'SESSION_SECRET'
+			]) {
+				expect(section?.textContent, text).toContain(text);
+			}
+		});
+
+		it('shows how to connect the Cloudflare MCP server', () => {
+			render(Page);
+			const section = document.getElementById('cloudflare-setup');
+			expect(section?.textContent).toContain(
+				'claude mcp add --transport http cloudflare-api https://mcp.cloudflare.com/mcp'
+			);
+			expect(section?.textContent).toContain('https://docs.mcp.cloudflare.com/mcp');
+		});
+
+		it('comes right after Start Here and is in the navigation', () => {
+			render(Page);
+			const ids = Array.from(document.querySelectorAll('section.docs-section')).map((s) => s.id);
+			expect(ids.indexOf('cloudflare-setup')).toBe(ids.indexOf('start-here') + 1);
+			const nav = screen.getByRole('navigation', { name: /documentation navigation/i });
+			expect(within(nav).getByRole('link', { name: /set up cloudflare/i })).toHaveAttribute(
+				'href',
+				'#cloudflare-setup'
+			);
+		});
+	});
 });
