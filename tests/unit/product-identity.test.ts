@@ -24,6 +24,20 @@ describe('NebulaKit product identity', () => {
 		expect(publicSurfaces).not.toMatch(/independent Cloudflare-native platform/i);
 	});
 
+	it('does not keep the template hero on a customized site (docs/HERO.md)', () => {
+		const home = read('src/routes/+page.svelte');
+		const status = read('INITIAL_CUSTOMIZATION_STATUS.md');
+		const markedReplaced = /^hero_replaced:\s*true\s*$/m.test(status);
+		const markedComplete = /^status:\s*complete\s*$/m.test(status);
+
+		// A site that left the template slug, or says it is done, must have replaced the hero.
+		if (site.slug !== 'nebulakit' || markedReplaced || markedComplete) {
+			expect(home, 'replace the NebulaKit space hero (.cosmic-bg), see docs/HERO.md').not.toContain(
+				'cosmic-bg'
+			);
+		}
+	});
+
 	it('ships a working customization workflow', () => {
 		for (const path of [
 			'CUSTOMIZE.md',
