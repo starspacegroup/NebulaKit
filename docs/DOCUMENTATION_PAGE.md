@@ -36,32 +36,57 @@ unchanged" in the commit or PR body so the omission is a decision, not an oversi
 
 ## Where It Goes
 
-The page is one route with anchored sections and a nav list at the top. Match the change to a
-section rather than appending to the end:
+The page is one route. A sticky sidebar groups the sections into five parts, and the sidebar
+follows the reader with a scroll-spy. On a phone the sidebar becomes an "On this page" bar. Match
+the change to a section rather than appending to the end:
 
-| Section (`id`)        | Put this here                                                       |
-| --------------------- | ------------------------------------------------------------------- |
-| `start-here`          | First-run orientation and ordering of setup steps                   |
-| `quick-start`         | Bun install/dev/build/deploy commands                               |
-| `feature-overview`    | "What you get" — one bullet per user-visible capability             |
-| `how-to-use`          | Task-oriented walkthroughs for using features                       |
-| `drag-and-drop`       | The widget board, its keyboard control, and the inert-state rule    |
-| `ai-workflow`         | How to work with AI assistants in this repo                         |
-| `commands`            | Full script/command reference                                       |
-| `cloudflare-bindings` | D1, KV, R2, Queues, Workers AI, and any new binding                 |
-| `database-migrations` | Migration workflow and the immutability rule                        |
-| `auth-and-setup`      | Auth providers, owner setup, session behavior                       |
-| `testing`             | How to run tests and the coverage floor                             |
-| `project-structure`   | Directory layout — update when adding a top-level route or lib area |
-| `deployment`          | Cloudflare Pages/Workers deploy steps and required config           |
-| `troubleshooting`     | Failure modes users will actually hit                               |
-| `references`          | Links to repo docs and external resources                           |
-| `contributing`        | Contribution pointers                                               |
+| Group (`id`)  | Section (`id`)                                    | Put this here                                                        |
+| ------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
+| Get started   | `start-here`                                      | First-run orientation and ordering of setup steps                    |
+|               | `cloudflare-setup`                                | Cloudflare account, Wrangler login, first resources, secrets, MCP    |
+|               | `quick-start`                                     | Bun install/dev/build/deploy commands                                |
+|               | `feature-overview`                                | "What you get": one bullet per user-visible capability               |
+|               | `how-to-use`                                      | Task-oriented walkthroughs for using features                        |
+| Build         | `ui-kit`, `modules`                               | The UI kit and the modules built from it                             |
+|               | `drag-and-drop`                                   | The widget board, its keyboard control, and the inert-state rule     |
+|               | `shop-pages-api`                                  | Shop, pages, redirects, and the site API                             |
+|               | `google-listings`                                 | Google product feeds and listing rules                               |
+|               | `auctions`                                        | Auctions, proxy bidding, closing and paying                          |
+|               | `ai-workflow`                                     | How to work with AI assistants in this repo                          |
+| Run your site | `auth-and-setup`                                  | Auth providers, owner setup, session behavior                        |
+|               | `roles-permissions`                               | The role ladder and per-area permissions                             |
+|               | `secrets-at-rest`                                 | How stored secrets are encrypted and rotated                         |
+|               | `admin-analytics`                                 | Stats, retention, and the platform usage meter                       |
+|               | `admin-time-zone`                                 | The admin and per-user time zone                                     |
+|               | `audit-log`, `sign-in-tracking`                   | What admins can see, and its privacy limits                          |
+|               | `lighthouse`, `scheduled-jobs`, `agent-readiness` | Monitoring, cron jobs, agent discovery                               |
+| Ship it       | `cloudflare-bindings`                             | D1, KV, R2, Queues, Workers AI, and any new binding                  |
+|               | `database-migrations`                             | Migration workflow and the immutability rule                         |
+|               | `deployment`                                      | Cloudflare Pages/Workers deploy steps and required config            |
+|               | `troubleshooting`                                 | Failure modes users will actually hit                                |
+| Reference     | `commands`                                        | Full script/command reference. Every `package.json` script goes here |
+|               | `testing`                                         | How to run tests and the coverage floor                              |
+|               | `project-structure`                               | Directory layout; update when adding a top-level route               |
+|               | `references`                                      | Links to repo docs and external resources                            |
+|               | `contributing`                                    | Contribution pointers                                                |
 
 A feature usually lands in **two** places: a one-line capability bullet in `feature-overview`, and
 the actual instructions in `how-to-use` (or `commands` / `auth-and-setup` / `cloudflare-bindings`,
-whichever fits). If a change needs a genuinely new section, add the `<section id="…">` **and** its
-anchor in the `.docs-nav` list — an orphaned section is a bug.
+whichever fits). If a change needs a genuinely new section, add the `<section id="...">` **and** one
+entry in the `groups` array at the top of the page's `<script>`. The sidebar is built from that
+array, so there is no second list to edit. An orphaned section is a bug.
+
+## The drift test
+
+`tests/unit/documentation-drift.test.ts` reads the repo and fails when the page falls behind:
+
+- A `package.json` script with no mention on the page.
+- A top-level route (`src/routes/<name>/`) with no mention on the page.
+- A Cloudflare binding in `wrangler.toml` with no mention on the page.
+- A section missing from `groups`, listed twice, or out of page order.
+
+To fix a failure, document the thing. Add it to an allow list in the test only when it is
+internal, and write the reason next to it.
 
 ## Procedure
 
@@ -69,8 +94,8 @@ anchor in the `.docs-nav` list — an orphaned section is a bug.
    text a user should find — a heading, a command, an instruction. Watch it fail.
 2. **Write the docs** in the matching section. Prose that tells the user what to do, not a changelog
    entry. Use `<code>` for commands, paths, and env vars, consistent with the existing sections.
-3. **Wire up navigation** if you added a section: nav anchor, and a command-palette entry if the
-   feature has its own route (`bun run palette:scan`).
+3. **Wire up navigation** if you added a section: one `groups` entry, and a command-palette entry if
+   the feature has its own route (`bun run palette:scan`).
 4. **Prune** anything the change made untrue — including examples and troubleshooting entries.
 5. **Verify:**
    ```bash
@@ -107,7 +132,7 @@ documentation:
 
 		<nav class="docs-nav" aria-label="Documentation navigation">
 			<a href="#start-here">Start Here</a>
-			<!-- one anchor per section -->
+			<!-- build this list from one `groups` array -->
 		</nav>
 
 		<section id="start-here" class="docs-section">

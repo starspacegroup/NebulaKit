@@ -1,6 +1,126 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { site } from '$lib/site.config';
+	import { onMount } from 'svelte';
+
+	// One entry per section, in reading order. The nav is built from the same ids
+	// the page renders, so a section that is not on the page cannot be linked.
+	type DocGroup = {
+		id: string;
+		label: string;
+		blurb: string;
+		items: { id: string; label: string }[];
+	};
+
+	// The one list that drives the sidebar and the scroll-spy. Keep it in the same
+	// order as the sections below; a test checks that they agree.
+	const groups: DocGroup[] = [
+		{
+			id: 'get-started',
+			label: 'Get started',
+			blurb: 'Create the project, run it locally, and see what ships.',
+			items: [
+				{ id: 'start-here', label: 'Start here' },
+				{ id: 'quick-start', label: 'Quick start' },
+				{ id: 'feature-overview', label: 'What you get' },
+				{ id: 'how-to-use', label: 'How to use the app' }
+			]
+		},
+		{
+			id: 'build',
+			label: 'Build with it',
+			blurb: 'The UI kit, modules, and the storefront you extend.',
+			items: [
+				{ id: 'ui-kit', label: 'UI kit' },
+				{ id: 'modules', label: 'Modules' },
+				{ id: 'drag-and-drop', label: 'Drag and drop' },
+				{ id: 'shop-pages-api', label: 'Shop, pages and API' },
+				{ id: 'google-listings', label: 'Google Listings' },
+				{ id: 'auctions', label: 'Auctions' },
+				{ id: 'ai-workflow', label: 'Working with AI' }
+			]
+		},
+		{
+			id: 'operate',
+			label: 'Run your site',
+			blurb: 'Sign-in, roles, and everything an admin watches.',
+			items: [
+				{ id: 'auth-and-setup', label: 'Sign-in and setup' },
+				{ id: 'roles-permissions', label: 'Roles and permissions' },
+				{ id: 'secrets-at-rest', label: 'Secrets at rest' },
+				{ id: 'admin-analytics', label: 'Admin analytics' },
+				{ id: 'admin-time-zone', label: 'Time zone' },
+				{ id: 'audit-log', label: 'Audit log' },
+				{ id: 'sign-in-tracking', label: 'Sign-in tracking' },
+				{ id: 'lighthouse', label: 'Lighthouse' },
+				{ id: 'scheduled-jobs', label: 'Scheduled jobs' },
+				{ id: 'agent-readiness', label: 'Agent readiness' }
+			]
+		},
+		{
+			id: 'ship',
+			label: 'Ship it',
+			blurb: 'Bindings, migrations, deployment, and what to do when it breaks.',
+			items: [
+				{ id: 'cloudflare-bindings', label: 'Cloudflare bindings' },
+				{ id: 'database-migrations', label: 'Database migrations' },
+				{ id: 'deployment', label: 'Deployment' },
+				{ id: 'troubleshooting', label: 'Troubleshooting' }
+			]
+		},
+		{
+			id: 'reference',
+			label: 'Reference',
+			blurb: 'Commands, tests, layout, and links.',
+			items: [
+				{ id: 'commands', label: 'Commands' },
+				{ id: 'testing', label: 'Testing' },
+				{ id: 'project-structure', label: 'Project structure' },
+				{ id: 'references', label: 'References' },
+				{ id: 'contributing', label: 'Contributing' }
+			]
+		}
+	];
+
+	const sectionLabels: Record<string, string> = Object.fromEntries(
+		groups.flatMap((g) => g.items.map((i) => [i.id, i.label]))
+	);
+
+	let active = $state('start-here');
+	let navOpen = $state(false);
+	const currentLabel = $derived(sectionLabels[active] ?? 'Start here');
+
+	function closeNav() {
+		navOpen = false;
+	}
+
+	// Scroll-spy: the active section is the last one whose top has passed a line
+	// just under the sticky headers. The URL hash seeds it on first paint.
+	onMount(() => {
+		const ids = Object.keys(sectionLabels);
+		const fromHash = decodeURIComponent(location.hash.slice(1));
+		if (ids.includes(fromHash)) active = fromHash;
+
+		let frame = 0;
+		const update = () => {
+			frame = 0;
+			let current = ids[0];
+			for (const id of ids) {
+				const el = document.getElementById(id);
+				if (el && el.getBoundingClientRect().top <= 170) current = id;
+			}
+			active = current;
+		};
+		const onScroll = () => {
+			if (!frame) frame = requestAnimationFrame(update);
+		};
+		update();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => {
+			window.removeEventListener('scroll', onScroll);
+			if (frame) cancelAnimationFrame(frame);
+		};
+	});
 	import CodeBlock from '$lib/ui/CodeBlock.svelte';
 
 	type QuickStartLine =
@@ -65,34 +185,54 @@ bun run deploy`;
 			</p>
 		</header>
 
-		<nav class="docs-nav" aria-label="Documentation navigation">
-			<a href="#start-here">Start Here</a>
-			<a href="#quick-start">Quick Start</a>
-			<a href="#feature-overview">Feature Overview</a>
-			<a href="#how-to-use">How To Use</a>
-			<a href="#ui-kit">UI Kit</a>
-			<a href="#modules">Modules</a>
-			<a href="#drag-and-drop">Drag and Drop</a>
-			<a href="#ai-workflow">AI Workflow</a>
-			<a href="#commands">Commands</a>
-			<a href="#cloudflare-bindings">Cloudflare Bindings</a>
-			<a href="#database-migrations">Database Migrations</a>
-			<a href="#auth-and-setup">Auth and Setup</a>
-			<a href="#secrets-at-rest">Secrets at Rest</a>
-			<a href="#admin-analytics">Admin Analytics</a>
-			<a href="#roles-permissions">Roles and Permissions</a>
-			<a href="#shop-pages-api">Shop, Pages and the Site API</a>
-			<a href="#google-listings">Google Listings</a>
-			<a href="#lighthouse">Lighthouse</a>
-			<a href="#scheduled-jobs">Scheduled Jobs</a>
-			<a href="#agent-readiness">Agent Readiness</a>
-			<a href="#testing">Testing</a>
-			<a href="#project-structure">Structure</a>
-			<a href="#deployment">Deployment</a>
-			<a href="#troubleshooting">Troubleshooting</a>
-			<a href="#references">References</a>
-			<a href="#contributing">Contributing</a>
-		</nav>
+		<aside class="docs-sidebar">
+			<button
+				type="button"
+				class="docs-nav-toggle"
+				aria-expanded={navOpen}
+				aria-controls="docs-nav"
+				onclick={() => (navOpen = !navOpen)}
+			>
+				<span>On this page</span>
+				<span class="docs-nav-current">{currentLabel}</span>
+			</button>
+			<nav class="docs-nav" aria-label="Documentation navigation" id="docs-nav" data-open={navOpen}>
+				{#each groups as group, gi}
+					<div class="docs-nav-group">
+						<p class="docs-nav-label">
+							<span aria-hidden="true">{String(gi + 1).padStart(2, '0')}</span>
+							{group.label}
+						</p>
+						<ul>
+							{#each group.items as item}
+								<li>
+									<a
+										href="#{item.id}"
+										class:active={active === item.id}
+										aria-current={active === item.id ? 'location' : undefined}
+										onclick={closeNav}>{item.label}</a
+									>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/each}
+			</nav>
+		</aside>
+
+		<div class="docs-tiles">
+			<a class="docs-tile" href="#start-here"><span>New here?</span><strong>Start here</strong></a>
+			<a class="docs-tile" href="#quick-start"><span>Run it</span><strong>Quick start</strong></a>
+			<a class="docs-tile" href="#deployment"><span>Go live</span><strong>Deployment</strong></a>
+			<a class="docs-tile" href="#troubleshooting"
+				><span>Stuck?</span><strong>Troubleshooting</strong></a
+			>
+		</div>
+
+		<div class="docs-group" id="group-get-started">
+			<p class="docs-group-label"><span aria-hidden="true">01</span> Get started</p>
+			<p class="docs-group-blurb">Create the project, run it locally, and see what ships.</p>
+		</div>
 
 		<section id="start-here" class="docs-section">
 			<h2>Start Here</h2>
@@ -299,6 +439,11 @@ bun run deploy`;
 			</div>
 		</section>
 
+		<div class="docs-group" id="group-build">
+			<p class="docs-group-label"><span aria-hidden="true">02</span> Build with it</p>
+			<p class="docs-group-blurb">The UI kit, modules, and the storefront you extend.</p>
+		</div>
+
 		<section id="ui-kit" class="docs-section">
 			<h2>UI Kit</h2>
 			<p>
@@ -451,363 +596,6 @@ bun run deploy`;
 				Full reference, including the reorder contract and the component checklist:
 				<code>docs/WIDGET_BOARD.md</code>.
 			</p>
-		</section>
-
-		<section id="ai-workflow" class="docs-section">
-			<h2>Working With AI in This Repo</h2>
-			<p>
-				Treat AI as a fast pair programmer, not as a source of truth. It is useful here because the
-				repo already includes app structure, tests, and strong conventions, which gives the
-				assistant real context to work against.
-			</p>
-			<div class="callout-grid">
-				<div class="callout-card">
-					<h3>Good Prompts</h3>
-					<ul>
-						<li>Point the assistant at a concrete file, route, failing test, or command.</li>
-						<li>Ask it to write or update tests first when changing behavior.</li>
-						<li>
-							Ask for narrow fixes instead of broad rewrites unless you want architectural change.
-						</li>
-					</ul>
-				</div>
-				<div class="callout-card">
-					<h3>Good Validation Habits</h3>
-					<ul>
-						<li>
-							Have the assistant explain which route, store, or service controls the behavior.
-						</li>
-						<li>Require executable validation after changes, not only a diff summary.</li>
-						<li>Always finish by running check, tests, and coverage.</li>
-					</ul>
-				</div>
-				<div class="callout-card">
-					<h3>What AI Is Best At Here</h3>
-					<ul>
-						<li>
-							Tracing a route from UI to service layer and identifying the smallest edit surface.
-						</li>
-						<li>Adding tests around setup, auth, chat, or command palette behavior.</li>
-						<li>
-							Summarizing repo conventions such as Cloudflare bindings, migrations, and theme rules.
-						</li>
-					</ul>
-				</div>
-			</div>
-			<p>
-				If you are using an AI coding agent, keep requests concrete: mention the page or failing
-				test, state the desired behavior, and ask for the smallest validating change that solves it.
-			</p>
-		</section>
-
-		<section id="commands" class="docs-section">
-			<h2>Core Commands</h2>
-			<p>These scripts are defined in package.json and are the canonical local workflow.</p>
-			<div class="callout-grid">
-				<div class="callout-card">
-					<h3>Development</h3>
-					<ul>
-						<li><code>bun run dev</code> runs on host 0.0.0.0, port 4277.</li>
-						<li><code>bun run preview</code> previews the production build on port 4277.</li>
-						<li><code>bun run check</code> runs Svelte sync plus svelte-check.</li>
-					</ul>
-				</div>
-				<div class="callout-card">
-					<h3>Testing</h3>
-					<ul>
-						<li><code>bun run test</code> runs Vitest in CI mode.</li>
-						<li><code>bun run test:watch</code> runs Vitest in watch mode.</li>
-						<li><code>bun run test:e2e</code> runs Playwright tests.</li>
-						<li><code>bun run test:all</code> runs unit tests, then E2E tests.</li>
-					</ul>
-				</div>
-				<div class="callout-card">
-					<h3>Deploy and Validation</h3>
-					<ul>
-						<li><code>bun run deploy</code> builds then deploys .svelte-kit/cloudflare.</li>
-						<li><code>bun run validate:contrast</code> checks theme contrast.</li>
-						<li><code>bun run validate:all</code> runs check + test + contrast validation.</li>
-					</ul>
-				</div>
-			</div>
-		</section>
-
-		<section id="cloudflare-bindings" class="docs-section">
-			<h2>Cloudflare Bindings</h2>
-			<p>NebulaKit is configured for Cloudflare Pages with these bindings in wrangler.toml:</p>
-			<ul>
-				<li><code>DB</code> as D1 database binding (database name: nebulakit-db).</li>
-				<li><code>KV</code> as KV namespace for runtime config and flags.</li>
-				<li><code>BUCKET</code> as R2 bucket binding.</li>
-				<li>Queue producer binding is documented but commented out by default.</li>
-			</ul>
-			<p>
-				Set app secrets in Cloudflare dashboard or Wrangler secrets for production. Avoid committing
-				raw secrets to source control.
-			</p>
-		</section>
-
-		<section id="database-migrations" class="docs-section">
-			<h2>Database Migrations</h2>
-			<p>
-				Migrations are ordered SQL files under <code>migrations/</code> and tracked by D1. Never edit
-				or delete existing migration files once committed to main.
-			</p>
-			<CodeBlock
-				language="sh"
-				code={`# Apply pending migrations to local D1
-bun run db:migrate:local
-
-# Apply pending migrations to remote D1
-bun run db:migrate
-
-# List migration status
-bun run db:migrate:list`}
-			/>
-			<p>
-				When schema changes are needed, create a new file with the next sequence number (for
-				example,
-				<code>0012_add_feature_flag.sql</code>) and use ALTER TABLE or new CREATE statements.
-			</p>
-		</section>
-
-		<section id="auth-and-setup" class="docs-section">
-			<h2>Authentication and Setup Flow</h2>
-			<p>
-				Authentication is built into this app on a setup-first workflow — no third-party auth
-				library sits in the request path. The browser receives an unsigned opaque session token
-				(random, worthless without its server-side record — its SHA-256 digest is the lookup key),
-				while the revocable session record, identity, and roles are loaded from D1 on every request.
-				Authentication fails closed if D1 or <code>SESSION_SECRET</code> is unavailable.
-			</p>
-			<p>
-				You can sign in with email and password, or with GitHub and Discord once those providers are
-				configured. The main routes are <code>/setup</code>, <code>/auth/login</code>,
-				<code>/auth/signup</code>, and <code>/reset</code>.
-			</p>
-			<div class="callout-grid">
-				<div class="callout-card">
-					<h3>1. Configure</h3>
-					<p>
-						Set <code>SESSION_SECRET</code> and <code>SETUP_SECRET</code>, then open
-						<code>/setup</code>
-						and submit the bootstrap secret, GitHub OAuth credentials, and admin GitHub username.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>2. Lock Setup</h3>
-					<p>
-						After owner/config state exists, only the authenticated owner can change setup or manage
-						authentication keys. GitHub and Discord validate unexpired one-time state in D1,
-						exchange the provider code, then atomically consume that state before changing accounts
-						or sessions. Discord does not bootstrap ownership; it inherits owner status only when
-						linked or matched to the configured GitHub owner account.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>3. Reset When Needed</h3>
-					<p>
-						<code>/reset</code> is owner-only. It clears setup-related KV keys, revokes every active D1
-						session, and clears the browser cookie. The reset route can also be disabled.
-					</p>
-				</div>
-			</div>
-		</section>
-
-		<section id="secrets-at-rest" class="docs-section">
-			<h2>Secrets at Rest</h2>
-			<p>
-				AI provider keys and OAuth client secrets saved from the admin screens are encrypted
-				(AES-256-GCM, bound to their record) before they are written to KV, and the admin UI only
-				shows that a key is configured plus its last four characters. Set the
-				<code>ENCRYPTION_KEY</code> secret (<code>bun run generate:encryption-key</code>) so the key
-				lives outside KV; without it the app generates one and keeps it in KV, which encrypts the
-				values but does not defend against someone who can read the whole namespace. To rotate, move
-				the old value to <code>ENCRYPTION_KEY_PREVIOUS</code>; values are re-encrypted when read.
-				Plaintext keys saved by earlier versions are migrated on first read.
-			</p>
-		</section>
-
-		<section id="admin-analytics" class="docs-section">
-			<h2>Admin Analytics</h2>
-			<p>
-				<code>/admin</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day window,
-				views by route, the most-read CMS items, referrers, countries, an audience breakdown, and user
-				and content growth over time. It is first-party — there is no third-party script, no account,
-				and no API key to provision.
-			</p>
-			<p>
-				Everything collected is a daily aggregate counter in D1. There are
-				<strong>no cookies, no identifiers, and no IP addresses</strong> anywhere in the feature. The
-				User-Agent is read to classify the request and then discarded, so only coarse buckets (operating
-				system, browser, device, language, viewport) are ever stored, and country comes from the Cloudflare
-				edge rather than from an IP lookup. Because nothing per-visitor is retained, this needs no consent
-				banner.
-			</p>
-			<div class="callout-grid">
-				<div class="callout-card">
-					<h3>Turning It On</h3>
-					<ol>
-						<li>
-							Apply migrations <code>0007</code> through <code>0009</code>, plus
-							<code>0014</code> for the Top content table, with
-							<code>db:migrate:local</code> (or <code>db:migrate</code> for remote).
-						</li>
-						<li>
-							Collection starts on the next request. Traffic and audience panels fill in as visits
-							arrive.
-						</li>
-						<li>
-							Country stays <code>(unknown)</code> in local development — it is supplied by the Cloudflare
-							edge.
-						</li>
-						<li>
-							<strong>Top content</strong> appears once a published CMS item is read. It is the only counter
-							whose row count grows with your catalogue rather than with a fixed list, so on a large catalogue
-							watch it — the retention cron is what keeps it in hand.
-						</li>
-					</ol>
-				</div>
-				<div class="callout-card">
-					<h3>Granting Access</h3>
-					<p>
-						The owner always sees the dashboard stats. Any other admin needs the <code
-							>can_view_stats</code
-						>
-						flag, which defaults to off so existing admins do not gain access on upgrade. Without it,
-						an admin still lands on <code>/admin</code> but sees no stats:
-					</p>
-					<CodeBlock
-						language="sql"
-						code={`UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';`}
-					/>
-					<p>
-						The permission is re-read from the database on every request, so revoking it takes
-						effect without waiting for a sign-out.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>Retention</h3>
-					<p>
-						The counter tables grow one row per day per dimension unless pruned. Set
-						<code>CRON_SECRET</code> and have any scheduler POST to the retention endpoint; rows older
-						than 400 days are removed.
-					</p>
-					<CodeBlock
-						language="sh"
-						code={`curl -X POST https://your-app/api/cron/prune-view-stats \\
-  -H "Authorization: Bearer $CRON_SECRET"`}
-					/>
-				</div>
-				<div class="callout-card">
-					<h3>Platform Usage Meter</h3>
-					<p>
-						The same page tracks <em>billable</em> Function invocations — a larger set than page
-						views, since bots, <code>/api/*</code> calls, 404s, and non-GET requests all count against
-						your plan. It projects whether today will exhaust the free 100,000-request daily allowance
-						before the UTC reset.
-					</p>
-					<p>
-						Treat it as an early warning and a floor, not a bill: the Cloudflare dashboard remains
-						authoritative.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>Reading Stats From a Dashboard</h3>
-					<p>
-						An external dashboard can read the same numbers as JSON. The owner issues a
-						<strong>stats token</strong> under "Dashboard access" on
-						<code>/admin/analytics</code>; it is shown once, and only its hash is stored. The
-						dashboard then sends it as a bearer token:
-					</p>
-					<CodeBlock
-						language="sh"
-						code={`curl https://your-app/api/stats/summary?window=7 \\
-  -H "Authorization: Bearer nks_…"`}
-					/>
-					<p>
-						The response is read-only and aggregate-only — exactly what <code>/admin</code> shows. Rotate
-						replaces the token; Revoke cuts the dashboard off on its next read. A site that has never
-						issued one answers 401 to every request.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>Connecting Google Analytics</h3>
-					<p>
-						Optional, and off until you turn it on. The owner opens
-						<code>/admin/analytics</code>, pastes either the GA4 Measurement ID (<code
-							>G-ABCD123456</code
-						>) or the whole <code>gtag.js</code> snippet — the ID is read out of it — and saves. A toggle
-						pauses the tag without discarding the ID, and Disconnect removes it entirely.
-					</p>
-					<p>
-						The tag loads on public pages only. <code>/admin</code>, <code>/api</code>, and
-						<code>/setup</code> are excluded, so your own admin traffic stays out of the numbers, and
-						page views are sent on every client-side navigation rather than by gtag's automatic tracking,
-						which would count only the first page of a visit.
-					</p>
-					<p>
-						This is additive: the built-in stats keep working, and reports are read in Google's own
-						console. Google Analytics sets cookies and collects per-visitor data, which is a
-						different privacy posture from the built-in counters — review your privacy policy and
-						add a consent banner where your jurisdiction requires one. Only the owner can change the
-						connection.
-					</p>
-				</div>
-			</div>
-		</section>
-
-		<section id="roles-permissions" class="docs-section">
-			<h2>Roles and Permissions</h2>
-			<p>
-				Access is a ladder, <strong>owner &gt; superadmin &gt; admin &gt; user</strong>, plus a list
-				of named areas each admin may open. One rule does the work: you can only act on someone
-				strictly below you, and you can only hand out a role strictly below your own. An admin
-				cannot promote, demote or delete a peer, a superadmin or the owner, and nobody can promote
-				themselves.
-			</p>
-			<div class="callout-grid">
-				<div class="callout-card">
-					<h3>The owner is configuration</h3>
-					<p>
-						The owner is set by <code>GITHUB_OWNER_ID</code> (or setup), never by the
-						<code>users.role</code> column, so no request can assign or remove it. Superadmins hold
-						every area, including <code>pii</code>, and cannot be limited.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>Areas for admins</h3>
-					<p>
-						<code>cms</code>, <code>pages</code>, <code>users</code> (view the list),
-						<code>users-manage</code> (change roles and delete, below their own role),
-						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code>,
-						<code>lighthouse</code> and <code>shop</code>. Settings, auth keys, AI keys, the
-						analytics connection, setup and reset stay with the owner and superadmins. Only the
-						owner or a superadmin can change an admin's areas.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>Managing access</h3>
-					<p>
-						On <code>/admin/users</code> choose <strong>Manage access</strong> on a row to set the role
-						and tick the areas. The sidebar only shows links the signed-in admin can use, but every load
-						and API also checks the permission itself. Role and areas are re-read from the database on
-						every request, so a change applies on the next click.
-					</p>
-				</div>
-				<div class="callout-card">
-					<h3>Upgrading</h3>
-					<p>
-						Migration <code>0021</code> adds <code>users.role</code> and
-						<code>user_permissions</code>. Existing admins keep every area they could reach before
-						(and <code>can_view_stats</code> becomes the <code>stats</code> permission); nobody is
-						promoted and owner-only areas are not handed out. <code>is_admin</code> and
-						<code>can_view_stats</code> stay in sync. To add an area, add it to
-						<code>src/lib/access/permissions.ts</code>, guard its routes with
-						<code>requirePermission</code>, and give its nav entry a <code>permission</code>.
-					</p>
-				</div>
-			</div>
 		</section>
 
 		<section id="shop-pages-api" class="docs-section">
@@ -1015,26 +803,346 @@ bun run db:migrate:list`}
 			</p>
 		</section>
 
-		<section id="audit-log" class="docs-section">
-			<h2>Audit Log</h2>
+		<section id="auctions" class="docs-section">
+			<h2>Auctions</h2>
 			<p>
-				<a href="/admin/audit">/admin/audit</a> (owners and superadmins) lists who changed what:
-				user role changes, deletes and merges, content publish and delete, settings and key changes,
-				API key create and revoke, builder page save, delete and restore, and shop product and order
-				changes through
-				<code>/api/v1</code>. It records changes only, never page views, and never a secret value: a
-				key or setting change notes that it changed, and any detail field named like a token,
-				secret, password or key is redacted. Filter by actor and action, search, and open a row for
-				its detail.
+				Sell one unit of a product to the highest bidder. Create an auction from a product in
+				<code>/admin/auctions</code> (the <code>shop</code> permission). Shoppers bid at
+				<code>/auctions</code> and <code>/auctions/[slug]</code>. A won auction becomes an ordinary
+				order, so payment, fulfilment and the orders API work as they do for any other sale.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Setup options</h3>
+					<ul>
+						<li>Starting price, and an optional hidden reserve.</li>
+						<li>Buy it now, offered until the first bid (or until the reserve is met).</li>
+						<li>Bid increment, or the tiered default.</li>
+						<li>Extend by N seconds, so nobody wins with a last-moment bid.</li>
+						<li>Winner must pay within N hours. Use 0 for manual payment.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Proxy bidding</h3>
+					<ul>
+						<li>A bidder enters the most they will pay.</li>
+						<li>The board shows only the price needed to stay in front.</li>
+						<li>An equal maximum loses: the earlier bid wins a tie.</li>
+						<li>The winner pays the price on the board, never their maximum.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Closing and paying</h3>
+					<ul>
+						<li>
+							The <code>settle-auctions</code> job runs every 5 minutes. It closes ended auctions and
+							creates one pending order per winner.
+						</li>
+						<li>
+							The winner pays on the auction page. Without Stripe keys the order waits for manual
+							payment.
+						</li>
+						<li>Unpaid winners get one reminder, then the sale lapses and can be relisted.</li>
+					</ul>
+				</div>
+			</div>
+			<p>
+				Bidders must be signed in and see an alias such as “Bidder 7F3A”, never a name or a maximum.
+				Emails (won, outbid, pay soon, win cancelled) send once per event when
+				<code>RESEND_API_KEY</code> and <code>EMAIL_FROM</code> are set. The full rules, tables and
+				job behaviour are in <code>docs/AUCTIONS.md</code>.
+			</p>
+		</section>
+
+		<section id="ai-workflow" class="docs-section">
+			<h2>Working With AI in This Repo</h2>
+			<p>
+				Treat AI as a fast pair programmer, not as a source of truth. It is useful here because the
+				repo already includes app structure, tests, and strong conventions, which gives the
+				assistant real context to work against.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Good Prompts</h3>
+					<ul>
+						<li>Point the assistant at a concrete file, route, failing test, or command.</li>
+						<li>Ask it to write or update tests first when changing behavior.</li>
+						<li>
+							Ask for narrow fixes instead of broad rewrites unless you want architectural change.
+						</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Good Validation Habits</h3>
+					<ul>
+						<li>
+							Have the assistant explain which route, store, or service controls the behavior.
+						</li>
+						<li>Require executable validation after changes, not only a diff summary.</li>
+						<li>Always finish by running check, tests, and coverage.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>What AI Is Best At Here</h3>
+					<ul>
+						<li>
+							Tracing a route from UI to service layer and identifying the smallest edit surface.
+						</li>
+						<li>Adding tests around setup, auth, chat, or command palette behavior.</li>
+						<li>
+							Summarizing repo conventions such as Cloudflare bindings, migrations, and theme rules.
+						</li>
+					</ul>
+				</div>
+			</div>
+			<p>
+				If you are using an AI coding agent, keep requests concrete: mention the page or failing
+				test, state the desired behavior, and ask for the smallest validating change that solves it.
+			</p>
+		</section>
+
+		<div class="docs-group" id="group-operate">
+			<p class="docs-group-label"><span aria-hidden="true">03</span> Run your site</p>
+			<p class="docs-group-blurb">Sign-in, roles, and everything an admin watches.</p>
+		</div>
+
+		<section id="auth-and-setup" class="docs-section">
+			<h2>Authentication and Setup Flow</h2>
+			<p>
+				Authentication is built into this app on a setup-first workflow — no third-party auth
+				library sits in the request path. The browser receives an unsigned opaque session token
+				(random, worthless without its server-side record — its SHA-256 digest is the lookup key),
+				while the revocable session record, identity, and roles are loaded from D1 on every request.
+				Authentication fails closed if D1 or <code>SESSION_SECRET</code> is unavailable.
 			</p>
 			<p>
-				Rows are kept 365 days. The scheduled-jobs Worker fires <code>/api/cron/prune-audit</code>
-				daily (or POST to it with <code>Authorization: Bearer $CRON_SECRET</code> from any
-				scheduler) to delete older ones. Apply migration
-				<code>0025</code> (shared with sign-in tracking) with <code>bun run db:migrate:local</code>.
-				Details:
-				<code>docs/AUDIT_LOG.md</code>.
+				You can sign in with email and password, or with GitHub and Discord once those providers are
+				configured. The main routes are <code>/setup</code>, <code>/auth/login</code>,
+				<code>/auth/signup</code>, and <code>/reset</code>.
 			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>1. Configure</h3>
+					<p>
+						Set <code>SESSION_SECRET</code> and <code>SETUP_SECRET</code>, then open
+						<code>/setup</code>
+						and submit the bootstrap secret, GitHub OAuth credentials, and admin GitHub username.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>2. Lock Setup</h3>
+					<p>
+						After owner/config state exists, only the authenticated owner can change setup or manage
+						authentication keys. GitHub and Discord validate unexpired one-time state in D1,
+						exchange the provider code, then atomically consume that state before changing accounts
+						or sessions. Discord does not bootstrap ownership; it inherits owner status only when
+						linked or matched to the configured GitHub owner account.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>3. Reset When Needed</h3>
+					<p>
+						<code>/reset</code> is owner-only. It clears setup-related KV keys, revokes every active D1
+						session, and clears the browser cookie. The reset route can also be disabled.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<section id="roles-permissions" class="docs-section">
+			<h2>Roles and Permissions</h2>
+			<p>
+				Access is a ladder, <strong>owner &gt; superadmin &gt; admin &gt; user</strong>, plus a list
+				of named areas each admin may open. One rule does the work: you can only act on someone
+				strictly below you, and you can only hand out a role strictly below your own. An admin
+				cannot promote, demote or delete a peer, a superadmin or the owner, and nobody can promote
+				themselves.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>The owner is configuration</h3>
+					<p>
+						The owner is set by <code>GITHUB_OWNER_ID</code> (or setup), never by the
+						<code>users.role</code> column, so no request can assign or remove it. Superadmins hold
+						every area, including <code>pii</code>, and cannot be limited.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Areas for admins</h3>
+					<p>
+						<code>cms</code>, <code>pages</code>, <code>users</code> (view the list),
+						<code>users-manage</code> (change roles and delete, below their own role),
+						<code>stats</code>, <code>pii</code>, <code>api-keys</code>, <code>contact</code>,
+						<code>lighthouse</code> and <code>shop</code>. Settings, auth keys, AI keys, the
+						analytics connection, setup and reset stay with the owner and superadmins. Only the
+						owner or a superadmin can change an admin's areas.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Managing access</h3>
+					<p>
+						On <code>/admin/users</code> choose <strong>Manage access</strong> on a row to set the role
+						and tick the areas. The sidebar only shows links the signed-in admin can use, but every load
+						and API also checks the permission itself. Role and areas are re-read from the database on
+						every request, so a change applies on the next click.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Upgrading</h3>
+					<p>
+						Migration <code>0021</code> adds <code>users.role</code> and
+						<code>user_permissions</code>. Existing admins keep every area they could reach before
+						(and <code>can_view_stats</code> becomes the <code>stats</code> permission); nobody is
+						promoted and owner-only areas are not handed out. <code>is_admin</code> and
+						<code>can_view_stats</code> stay in sync. To add an area, add it to
+						<code>src/lib/access/permissions.ts</code>, guard its routes with
+						<code>requirePermission</code>, and give its nav entry a <code>permission</code>.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<section id="secrets-at-rest" class="docs-section">
+			<h2>Secrets at Rest</h2>
+			<p>
+				AI provider keys and OAuth client secrets saved from the admin screens are encrypted
+				(AES-256-GCM, bound to their record) before they are written to KV, and the admin UI only
+				shows that a key is configured plus its last four characters. Set the
+				<code>ENCRYPTION_KEY</code> secret (<code>bun run generate:encryption-key</code>) so the key
+				lives outside KV; without it the app generates one and keeps it in KV, which encrypts the
+				values but does not defend against someone who can read the whole namespace. To rotate, move
+				the old value to <code>ENCRYPTION_KEY_PREVIOUS</code>; values are re-encrypted when read.
+				Plaintext keys saved by earlier versions are migrated on first read.
+			</p>
+		</section>
+
+		<section id="admin-analytics" class="docs-section">
+			<h2>Admin Analytics</h2>
+			<p>
+				<code>/admin</code> is the built-in analytics surface: traffic over a 1, 7, 30, or 90-day window,
+				views by route, the most-read CMS items, referrers, countries, an audience breakdown, and user
+				and content growth over time. It is first-party — there is no third-party script, no account,
+				and no API key to provision.
+			</p>
+			<p>
+				Everything collected is a daily aggregate counter in D1. There are
+				<strong>no cookies, no identifiers, and no IP addresses</strong> anywhere in the feature. The
+				User-Agent is read to classify the request and then discarded, so only coarse buckets (operating
+				system, browser, device, language, viewport) are ever stored, and country comes from the Cloudflare
+				edge rather than from an IP lookup. Because nothing per-visitor is retained, this needs no consent
+				banner.
+			</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Turning It On</h3>
+					<ol>
+						<li>
+							Apply migrations <code>0007</code> through <code>0009</code>, plus
+							<code>0014</code> for the Top content table, with
+							<code>db:migrate:local</code> (or <code>db:migrate</code> for remote).
+						</li>
+						<li>
+							Collection starts on the next request. Traffic and audience panels fill in as visits
+							arrive.
+						</li>
+						<li>
+							Country stays <code>(unknown)</code> in local development — it is supplied by the Cloudflare
+							edge.
+						</li>
+						<li>
+							<strong>Top content</strong> appears once a published CMS item is read. It is the only counter
+							whose row count grows with your catalogue rather than with a fixed list, so on a large catalogue
+							watch it — the retention cron is what keeps it in hand.
+						</li>
+					</ol>
+				</div>
+				<div class="callout-card">
+					<h3>Granting Access</h3>
+					<p>
+						The owner always sees the dashboard stats. Any other admin needs the <code
+							>can_view_stats</code
+						>
+						flag, which defaults to off so existing admins do not gain access on upgrade. Without it,
+						an admin still lands on <code>/admin</code> but sees no stats:
+					</p>
+					<CodeBlock
+						language="sql"
+						code={`UPDATE users SET can_view_stats = 1 WHERE email = 'someone@example.com';`}
+					/>
+					<p>
+						The permission is re-read from the database on every request, so revoking it takes
+						effect without waiting for a sign-out.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Retention</h3>
+					<p>
+						The counter tables grow one row per day per dimension unless pruned. Set
+						<code>CRON_SECRET</code> and have any scheduler POST to the retention endpoint; rows older
+						than 400 days are removed.
+					</p>
+					<CodeBlock
+						language="sh"
+						code={`curl -X POST https://your-app/api/cron/prune-view-stats \\
+  -H "Authorization: Bearer $CRON_SECRET"`}
+					/>
+				</div>
+				<div class="callout-card">
+					<h3>Platform Usage Meter</h3>
+					<p>
+						The same page tracks <em>billable</em> Function invocations — a larger set than page
+						views, since bots, <code>/api/*</code> calls, 404s, and non-GET requests all count against
+						your plan. It projects whether today will exhaust the free 100,000-request daily allowance
+						before the UTC reset.
+					</p>
+					<p>
+						Treat it as an early warning and a floor, not a bill: the Cloudflare dashboard remains
+						authoritative.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Reading Stats From a Dashboard</h3>
+					<p>
+						An external dashboard can read the same numbers as JSON. The owner issues a
+						<strong>stats token</strong> under "Dashboard access" on
+						<code>/admin/analytics</code>; it is shown once, and only its hash is stored. The
+						dashboard then sends it as a bearer token:
+					</p>
+					<CodeBlock
+						language="sh"
+						code={`curl https://your-app/api/stats/summary?window=7 \\
+  -H "Authorization: Bearer nks_…"`}
+					/>
+					<p>
+						The response is read-only and aggregate-only — exactly what <code>/admin</code> shows. Rotate
+						replaces the token; Revoke cuts the dashboard off on its next read. A site that has never
+						issued one answers 401 to every request.
+					</p>
+				</div>
+				<div class="callout-card">
+					<h3>Connecting Google Analytics</h3>
+					<p>
+						Optional, and off until you turn it on. The owner opens
+						<code>/admin/analytics</code>, pastes either the GA4 Measurement ID (<code
+							>G-ABCD123456</code
+						>) or the whole <code>gtag.js</code> snippet — the ID is read out of it — and saves. A toggle
+						pauses the tag without discarding the ID, and Disconnect removes it entirely.
+					</p>
+					<p>
+						The tag loads on public pages only. <code>/admin</code>, <code>/api</code>, and
+						<code>/setup</code> are excluded, so your own admin traffic stays out of the numbers, and
+						page views are sent on every client-side navigation rather than by gtag's automatic tracking,
+						which would count only the first page of a visit.
+					</p>
+					<p>
+						This is additive: the built-in stats keep working, and reports are read in Google's own
+						console. Google Analytics sets cookies and collects per-visitor data, which is a
+						different privacy posture from the built-in counters — review your privacy policy and
+						add a consent banner where your jurisdiction requires one. Only the owner can change the
+						connection.
+					</p>
+				</div>
+			</div>
 		</section>
 
 		<section id="admin-time-zone" class="docs-section">
@@ -1061,6 +1169,28 @@ bun run db:migrate:list`}
 			</p>
 		</section>
 
+		<section id="audit-log" class="docs-section">
+			<h2>Audit Log</h2>
+			<p>
+				<a href="/admin/audit">/admin/audit</a> (owners and superadmins) lists who changed what:
+				user role changes, deletes and merges, content publish and delete, settings and key changes,
+				API key create and revoke, builder page save, delete and restore, and shop product and order
+				changes through
+				<code>/api/v1</code>. It records changes only, never page views, and never a secret value: a
+				key or setting change notes that it changed, and any detail field named like a token,
+				secret, password or key is redacted. Filter by actor and action, search, and open a row for
+				its detail.
+			</p>
+			<p>
+				Rows are kept 365 days. The scheduled-jobs Worker fires <code>/api/cron/prune-audit</code>
+				daily (or POST to it with <code>Authorization: Bearer $CRON_SECRET</code> from any
+				scheduler) to delete older ones. Apply migration
+				<code>0025</code> (shared with sign-in tracking) with <code>bun run db:migrate:local</code>.
+				Details:
+				<code>docs/AUDIT_LOG.md</code>.
+			</p>
+		</section>
+
 		<section id="sign-in-tracking" class="docs-section">
 			<h2>Sign-in Tracking</h2>
 			<p>
@@ -1079,110 +1209,6 @@ bun run db:migrate:list`}
 				block a sign-in. If you turn it on, say so in your privacy policy. Details:
 				<code>docs/SIGN_IN_TRACKING.md</code>.
 			</p>
-		</section>
-
-		<section id="testing" class="docs-section">
-			<h2>Testing and Quality Gates</h2>
-			<p>
-				NebulaKit follows Test-Driven Development. Write failing tests first, then implementation,
-				then refactor.
-			</p>
-			<CodeBlock
-				language="sh"
-				code={`# Run all tests
-bun run test
-
-# Run tests in watch mode
-bun run test:watch
-
-# Check coverage
-bun run test:coverage
-
-# Run E2E tests
-bun run test:e2e
-
-# Run all tests (unit + E2E)
-bun run test:all`}
-			/>
-			<p>
-				Vitest enforces a 95% floor for lines, statements, functions, and branches. A change is not
-				ready when any metric falls below that threshold.
-			</p>
-		</section>
-
-		<section id="project-structure" class="docs-section">
-			<h2>Project Structure</h2>
-			<CodeBlock
-				language="text"
-				code={`NebulaKit/
-├── .github/              # Copilot and workflow instructions
-├── src/
-│   ├── lib/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── services/       # Business logic
-│   │   ├── stores/         # Svelte stores
-│   │   ├── types/          # Shared type definitions
-│   │   └── utils/          # Helpers
-│   ├── routes/             # SvelteKit routes
-│   │   ├── api/            # API endpoints
-│   │   ├── auth/           # Authentication pages
-│   │   ├── chat/           # Chat UI
-│   │   ├── setup/          # First-time setup flow
-│   │   └── documentation/  # This page
-│   ├── app.css            # Global styles & theme
-│   └── app.html           # HTML shell and install metadata
-├── tests/                  # unit/integration/e2e tests
-├── migrations/             # Immutable D1 migration files
-├── docs/                   # Extended project docs
-└── wrangler.toml           # Cloudflare bindings/config`}
-			/>
-		</section>
-
-		<section id="deployment" class="docs-section">
-			<h2>Deployment to Cloudflare Pages</h2>
-			<ol>
-				<li>Push your repository to GitHub.</li>
-				<li>
-					In Cloudflare dashboard, open
-					<a
-						href="https://dash.cloudflare.com/?to=/:account/pages/new/provider/github"
-						target="_blank"
-						rel="noopener noreferrer">Pages</a
-					>
-					and connect the repository.
-				</li>
-				<li>Use build command <code>bun run build</code>.</li>
-				<li>Use output directory <code>.svelte-kit/cloudflare</code>.</li>
-				<li>Add D1, KV, and R2 bindings to the Pages project settings.</li>
-				<li>Add required environment variables and secrets.</li>
-				<li>Deploy and verify auth, setup flow, and database connectivity.</li>
-			</ol>
-			<p>
-				The local deploy script already uses <code
-					>wrangler pages deploy .svelte-kit/cloudflare</code
-				>.
-			</p>
-		</section>
-
-		<section id="troubleshooting" class="docs-section">
-			<h2>Troubleshooting</h2>
-			<ul>
-				<li>
-					If setup API reports KV unavailable, create KV namespaces and update wrangler.toml binding
-					IDs.
-				</li>
-				<li>
-					If login fails after setup, confirm OAuth callback URL and ensure GitHub credentials are
-					valid.
-				</li>
-				<li>
-					If migrations fail, run <code>bun run db:migrate:list</code> and check migration numbering.
-				</li>
-				<li>
-					If command palette entries are missing, verify AI provider status and authentication
-					state.
-				</li>
-			</ul>
 		</section>
 
 		<section id="lighthouse" class="docs-section">
@@ -1333,6 +1359,232 @@ bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}
 			</p>
 		</section>
 
+		<div class="docs-group" id="group-ship">
+			<p class="docs-group-label"><span aria-hidden="true">04</span> Ship it</p>
+			<p class="docs-group-blurb">
+				Bindings, migrations, deployment, and what to do when it breaks.
+			</p>
+		</div>
+
+		<section id="cloudflare-bindings" class="docs-section">
+			<h2>Cloudflare Bindings</h2>
+			<p>NebulaKit is configured for Cloudflare Pages with these bindings in wrangler.toml:</p>
+			<ul>
+				<li><code>DB</code> as D1 database binding (database name: nebulakit-db).</li>
+				<li><code>KV</code> as KV namespace for runtime config and flags.</li>
+				<li><code>BUCKET</code> as R2 bucket binding.</li>
+				<li>Queue producer binding is documented but commented out by default.</li>
+			</ul>
+			<p>
+				Set app secrets in Cloudflare dashboard or Wrangler secrets for production. Avoid committing
+				raw secrets to source control.
+			</p>
+		</section>
+
+		<section id="database-migrations" class="docs-section">
+			<h2>Database Migrations</h2>
+			<p>
+				Migrations are ordered SQL files under <code>migrations/</code> and tracked by D1. Never edit
+				or delete existing migration files once committed to main.
+			</p>
+			<CodeBlock
+				language="sh"
+				code={`# Apply pending migrations to local D1
+bun run db:migrate:local
+
+# Apply pending migrations to remote D1
+bun run db:migrate
+
+# List migration status
+bun run db:migrate:list`}
+			/>
+			<p>
+				When schema changes are needed, create a new file with the next sequence number (for
+				example,
+				<code>0012_add_feature_flag.sql</code>) and use ALTER TABLE or new CREATE statements.
+			</p>
+		</section>
+
+		<section id="deployment" class="docs-section">
+			<h2>Deployment to Cloudflare Pages</h2>
+			<ol>
+				<li>Push your repository to GitHub.</li>
+				<li>
+					In Cloudflare dashboard, open
+					<a
+						href="https://dash.cloudflare.com/?to=/:account/pages/new/provider/github"
+						target="_blank"
+						rel="noopener noreferrer">Pages</a
+					>
+					and connect the repository.
+				</li>
+				<li>Use build command <code>bun run build</code>.</li>
+				<li>Use output directory <code>.svelte-kit/cloudflare</code>.</li>
+				<li>Add D1, KV, and R2 bindings to the Pages project settings.</li>
+				<li>Add required environment variables and secrets.</li>
+				<li>Deploy and verify auth, setup flow, and database connectivity.</li>
+			</ol>
+			<p>
+				The local deploy script already uses <code
+					>wrangler pages deploy .svelte-kit/cloudflare</code
+				>.
+			</p>
+		</section>
+
+		<section id="troubleshooting" class="docs-section">
+			<h2>Troubleshooting</h2>
+			<ul>
+				<li>
+					If setup API reports KV unavailable, create KV namespaces and update wrangler.toml binding
+					IDs.
+				</li>
+				<li>
+					If login fails after setup, confirm OAuth callback URL and ensure GitHub credentials are
+					valid.
+				</li>
+				<li>
+					If migrations fail, run <code>bun run db:migrate:list</code> and check migration numbering.
+				</li>
+				<li>
+					If command palette entries are missing, verify AI provider status and authentication
+					state.
+				</li>
+			</ul>
+		</section>
+
+		<div class="docs-group" id="group-reference">
+			<p class="docs-group-label"><span aria-hidden="true">05</span> Reference</p>
+			<p class="docs-group-blurb">Commands, tests, layout, and links.</p>
+		</div>
+
+		<section id="commands" class="docs-section">
+			<h2>Core Commands</h2>
+			<p>These scripts are defined in package.json and are the canonical local workflow.</p>
+			<div class="callout-grid">
+				<div class="callout-card">
+					<h3>Development</h3>
+					<ul>
+						<li><code>bun run dev</code> runs on host 0.0.0.0, port 4277.</li>
+						<li><code>bun run preview</code> previews the production build on port 4277.</li>
+						<li><code>bun run check</code> runs Svelte sync plus svelte-check.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Testing</h3>
+					<ul>
+						<li><code>bun run test</code> runs Vitest in CI mode.</li>
+						<li><code>bun run test:watch</code> runs Vitest in watch mode.</li>
+						<li><code>bun run test:e2e</code> runs Playwright tests.</li>
+						<li><code>bun run test:all</code> runs unit tests, then E2E tests.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Deploy and Validation</h3>
+					<ul>
+						<li><code>bun run deploy</code> builds then deploys .svelte-kit/cloudflare.</li>
+						<li><code>bun run validate:contrast</code> checks theme contrast.</li>
+						<li><code>bun run validate:all</code> runs check + test + contrast validation.</li>
+					</ul>
+				</div>
+				<div class="callout-card">
+					<h3>Checks and Tooling</h3>
+					<ul>
+						<li>
+							<code>bun run build:ci</code> checks bindings, then builds. Run it before you push.
+						</li>
+						<li>
+							<code>bun run check:bindings</code>, <code>check:migrations</code> and
+							<code>check:queries</code> catch binding, migration and SQL mistakes early.
+						</li>
+						<li><code>bun run check:watch</code> keeps svelte-check running.</li>
+						<li><code>bun run build:dafny</code> compiles the Dafny proof cores to JavaScript.</li>
+						<li><code>bun run setup:cf</code> creates the Cloudflare resources for you.</li>
+						<li><code>bun run dev:tunnel</code> starts the dev server behind a public tunnel.</li>
+						<li><code>bun run og:generate</code> rebuilds the social-share image.</li>
+						<li><code>bun run seo:external</code> runs the external SEO checks.</li>
+						<li>
+							<code>bun run test:ui</code>, <code>test:e2e:ui</code> and
+							<code>test:e2e:headed</code>
+							open the test runners with a window.
+						</li>
+						<li>
+							<code>bun run palette:scan</code> and <code>test:contrast-exhaustive</code> audit colour
+							use and contrast.
+						</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<section id="testing" class="docs-section">
+			<h2>Testing and Quality Gates</h2>
+			<p>
+				NebulaKit follows Test-Driven Development. Write failing tests first, then implementation,
+				then refactor.
+			</p>
+			<CodeBlock
+				language="sh"
+				code={`# Run all tests
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Check coverage
+bun run test:coverage
+
+# Run E2E tests
+bun run test:e2e
+
+# Run all tests (unit + E2E)
+bun run test:all`}
+			/>
+			<p>
+				Vitest enforces a 95% floor for lines, statements, functions, and branches. A change is not
+				ready when any metric falls below that threshold.
+			</p>
+		</section>
+
+		<section id="project-structure" class="docs-section">
+			<h2>Project Structure</h2>
+			<CodeBlock
+				language="text"
+				code={`NebulaKit/
+├── .github/              # Copilot and workflow instructions
+├── src/
+│   ├── lib/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── services/       # Business logic
+│   │   ├── stores/         # Svelte stores
+│   │   ├── types/          # Shared type definitions
+│   │   └── utils/          # Helpers
+│   ├── routes/             # SvelteKit routes
+│   │   ├── api/            # API endpoints
+│   │   ├── auth/           # Authentication pages
+│   │   ├── admin/          # Owner and admin screens
+│   │   ├── auctions/       # Public auctions
+│   │   ├── chat/           # Chat UI
+│   │   ├── shop/ cart/     # Storefront and checkout
+│   │   ├── status/         # Public status page
+│   │   ├── feeds/          # Google Merchant product feeds
+│   │   ├── media/          # Serves uploaded files from R2
+│   │   ├── privacy/ terms/ # Legal pages: edit before launch
+│   │   ├── setup/          # First-time setup flow
+│   │   └── documentation/  # This page
+│   ├── app.css            # Global styles & theme
+│   └── app.html           # HTML shell and install metadata
+├── tests/                  # unit/integration/e2e tests
+├── migrations/             # Immutable D1 migration files
+├── docs/                   # Extended project docs
+└── wrangler.toml           # Cloudflare bindings/config`}
+			/>
+			<p>
+				<code>/media/&lt;key&gt;</code> streams uploaded files from the R2 bucket, with byte ranges
+				so video plays on iOS. <code>/privacy</code> and <code>/terms</code> ship as template text. Replace
+				both with your own before you launch.
+			</p>
+		</section>
+
 		<section id="references" class="docs-section">
 			<h2>References</h2>
 			<ul>
@@ -1440,35 +1692,212 @@ bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}
 		margin: 0 auto;
 	}
 
-	.docs-nav {
+	/* Phone: one column, a sticky "On this page" bar that opens the nav.
+	   Desktop (>=1024px): the container is a two-column grid; the sidebar is
+	   sticky in column 1 and every section is a direct child in column 2. */
+	.docs-container {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		column-gap: var(--spacing-2xl);
+	}
+
+	.docs-container > * {
+		min-width: 0;
+	}
+
+	.docs-sidebar {
+		position: sticky;
+		top: 4rem; /* sits just under the sticky site header */
+		z-index: 5;
+		margin: 0 calc(var(--spacing-md) * -1) var(--spacing-lg);
+		padding: var(--spacing-sm) var(--spacing-md);
+		background-color: var(--color-background);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.docs-nav-toggle {
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-sm);
-		justify-content: center;
-		margin-bottom: var(--spacing-2xl);
-		padding: var(--spacing-md);
+		width: 100%;
+		justify-content: space-between;
+		gap: var(--spacing-md);
+		padding: var(--spacing-sm) var(--spacing-md);
 		background-color: var(--color-surface);
-		border-radius: var(--radius-lg);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.docs-nav-current {
+		color: var(--color-primary);
+		font-weight: 600;
+	}
+
+	.docs-nav {
+		display: none;
+		max-height: 70vh;
+		overflow-y: auto;
+		padding: var(--spacing-md) 0;
+	}
+
+	.docs-nav[data-open='true'] {
+		display: block;
+	}
+
+	.docs-nav ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.docs-nav-group + .docs-nav-group {
+		margin-top: var(--spacing-md);
+	}
+
+	.docs-nav-label {
+		margin: 0 0 var(--spacing-xs);
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.docs-nav-label span,
+	.docs-group-label span {
+		color: var(--color-primary);
+		margin-right: 0.25rem;
 	}
 
 	.docs-nav a {
-		padding: var(--spacing-sm) var(--spacing-md);
+		display: block;
+		padding: 0.3rem var(--spacing-sm);
 		color: var(--color-text-secondary);
 		text-decoration: none;
-		border-radius: var(--radius-md);
+		border-left: 2px solid transparent;
+		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+		font-size: 0.9rem;
 		transition: all var(--transition-fast);
 	}
 
 	.docs-nav a:hover {
-		color: var(--color-primary);
+		color: var(--color-text);
 		background-color: var(--color-surface-hover);
+	}
+
+	.docs-nav a.active {
+		color: var(--color-primary);
+		border-left-color: var(--color-primary);
+		background-color: var(--color-surface);
+		font-weight: 600;
+	}
+
+	.docs-tiles {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-xl);
+	}
+
+	.docs-tile {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		padding: var(--spacing-md);
+		background-color: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		text-decoration: none;
+		transition: all var(--transition-fast);
+	}
+
+	.docs-tile span {
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+	}
+
+	.docs-tile strong {
+		color: var(--color-text);
+	}
+
+	.docs-tile:hover {
+		border-color: var(--color-primary);
+		transform: translateY(-1px);
+	}
+
+	.docs-group {
+		margin: var(--spacing-xl) 0 var(--spacing-lg);
+		padding: var(--spacing-md) var(--spacing-lg);
+		background-color: var(--color-surface);
+		border-left: 4px solid var(--color-primary);
+		border-radius: var(--radius-md);
+		scroll-margin-top: 9.5rem; /* clears the site header and the phone bar */
+	}
+
+	.docs-group-label {
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text);
+	}
+
+	.docs-group-blurb {
+		margin: 0.25rem 0 0;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 1024px) {
+		.docs-section,
+		.docs-group,
+		.docs-section h3[id] {
+			scroll-margin-top: 5rem;
+		}
+
+		.docs-container {
+			grid-template-columns: 15rem minmax(0, 1fr);
+			align-items: start;
+		}
+
+		.docs-header,
+		.docs-footer {
+			grid-column: 1 / -1;
+		}
+
+		.docs-sidebar {
+			grid-column: 1;
+			grid-row: 2 / span 200;
+			top: 5rem;
+			margin: 0;
+			padding: 0;
+			border-bottom: none;
+			background: none;
+			max-height: calc(100vh - 6rem);
+			overflow-y: auto;
+		}
+
+		.docs-container > :not(.docs-header, .docs-sidebar, .docs-footer) {
+			grid-column: 2;
+		}
+
+		.docs-nav-toggle {
+			display: none;
+		}
+
+		.docs-nav {
+			display: block;
+			max-height: none;
+			padding-top: 0;
+		}
 	}
 
 	.docs-section {
 		margin-bottom: var(--spacing-2xl);
 		padding-bottom: var(--spacing-xl);
 		border-bottom: 1px solid var(--color-border);
-		scroll-margin-top: 5rem;
+		scroll-margin-top: 9.5rem; /* clears the site header and the phone bar */
 	}
 
 	.docs-section:last-of-type {
@@ -1523,6 +1952,8 @@ bunx wrangler secret put CRON_SECRET   # same value as on the Pages project`}
 	}
 
 	.docs-section code {
+		/* Long identifiers such as event names must wrap, not push the page sideways. */
+		overflow-wrap: anywhere;
 		font-family: var(--font-mono);
 		font-size: 0.875rem;
 		padding: 0.125rem 0.375rem;
