@@ -118,3 +118,8 @@ Do this only if the motif benefits from motion. Motion is a cost on every visit.
 - [ ] Only `transform` and `opacity` animate, and reduced motion stops them.
 - [ ] `home-page.test.ts` asserts your copy, and `bun run test` passes.
 - [ ] `hero_replaced: true` in [INITIAL_CUSTOMIZATION_STATUS.md](../INITIAL_CUSTOMIZATION_STATUS.md).
+
+`product-identity.test.ts` enforces the first part of this. Once `site.slug` is not
+`nebulakit`, or the status file says `hero_replaced: true` or `status: complete`, the test
+fails while `.cosmic-bg` is still in `src/routes/+page.svelte`. Renaming the class is
+part of replacing the hero (see the table above), so a site that follows this guide passes.
